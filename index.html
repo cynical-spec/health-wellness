@@ -693,7 +693,7 @@ Short. 4 sentences maximum for the full remedy response. The user is on a phone,
   async function callOpenAI() {
     showThinking();
     try {
-      if (!OPENAI_API_KEY || OPENAI_API_KEY === 'REPLACE_WITH_YOUR_KEY') {
+      if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20) {
         hideThinking();
         renderMessage('assistant', 'Configuration mein thodi problem hai. Admin se sampark karo.');
         return;
