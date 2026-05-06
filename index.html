@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#141414">
+  <title>Sehat Saathi — JioBharatIQ</title>
+  <style>
+    @font-face {
+      font-family: 'JioType';
+      font-weight: 400;
+      src: url('https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/fonts/woff2/JioTypeVarW05-Regular.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'JioType';
+      font-weight: 500;
+      src: url('https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/fonts/woff2/JioTypeW05-Medium.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'JioType';
+      font-weight: 700;
+      src: url('https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/fonts/woff2/JioTypeW05-Bold.woff2') format('woff2');
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg: #141414;
+      --user-bubble: #282828;
+      --assistant-bubble: #3900ad;
+      --primary: #3535f3;
+      --text-high: #ffffff;
+      --text-low: #b5b5b5;
+      --success: #25ab21;
+      --error: #fa2f40;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: 'JioType', sans-serif;
+      color: var(--text-high);
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      padding-top: max(10px, env(safe-area-inset-top));
+      background: #141414;
+      z-index: 10;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .header-btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: var(--text-high);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .header-btn:active { opacity: 0.55; }
+
+    .header-center {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .avatar-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .online-dot {
+      position: absolute;
+      bottom: 1px;
+      right: 1px;
+      width: 10px;
+      height: 10px;
+      background: #25ab21;
+      border-radius: 50%;
+      border: 2px solid #141414;
+    }
+
+    .header-text h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-high);
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-text p {
+      font-size: 12px;
+      font-weight: 400;
+      color: #25ab21;
+    }
+
+    /* ── Chat area ── */
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px 16px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-area::-webkit-scrollbar { display: none; }
+
+    /* ── Home screen ── */
+    .home-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 8px 0 24px;
+      gap: 24px;
+    }
+
+    .jbiq-logo {
+      width: 44px;
+      height: 44px;
+    }
+
+    .home-greeting {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-high);
+      line-height: 1.45;
+    }
+
+    .quick-pills {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #3900ad;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 20px;
+      font-family: 'JioType', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      width: fit-content;
+      transition: opacity 0.15s;
+    }
+
+    .pill:active { opacity: 0.75; }
+
+    .home-subtitle {
+      font-size: 13px;
+      color: var(--text-low);
+      font-weight: 400;
+    }
+
+    /* ── Message bubbles ── */
+    .message-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .message-row.user { align-items: flex-end; }
+    .message-row.assistant { align-items: flex-start; }
+
+    .bubble {
+      max-width: 82%;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 1.55;
+      color: var(--text-high);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .bubble.user {
+      background: var(--user-bubble);
+      border-radius: 18px 18px 4px 18px;
+    }
+
+    .bubble.assistant {
+      background: var(--assistant-bubble);
+      border-radius: 18px 18px 18px 4px;
+    }
+
+    .bubble-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 4px;
+    }
+
+    .speak-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-low);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      opacity: 0.7;
+    }
+
+    .speak-btn:active { opacity: 0.4; }
+
+    .lang-badge {
+      display: inline-flex;
+      align-items: center;
+      background: #25ab21;
+      color: #fff;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'JioType', sans-serif;
+      letter-spacing: 0.2px;
+    }
+
+    /* ── Thinking dots ── */
+    .thinking-bubble {
+      background: var(--assistant-bubble);
+      border-radius: 18px 18px 18px 4px;
+      padding: 16px 20px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 50%;
+      animation: thinkPulse 1.4s infinite;
+    }
+
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes thinkPulse {
+      0%, 80%, 100% { opacity: 0.38; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+
+    /* ── Voice overlay ── */
+    .voice-overlay {
+      position: absolute;
+      inset: 0;
+      background: #141414;
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      padding: 48px 24px;
+    }
+
+    .voice-overlay.active { display: flex; }
+
+    .voice-close {
+      position: absolute;
+      top: max(20px, env(safe-area-inset-top));
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-high);
+    }
+
+    .voice-close:active { opacity: 0.6; }
+
+    .voice-video {
+      width: 220px;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .voice-transcript {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text-high);
+      text-align: center;
+      min-height: 60px;
+      font-family: 'JioType', sans-serif;
+      line-height: 1.5;
+      padding: 0 16px;
+    }
+
+    .voice-label {
+      font-size: 13px;
+      color: var(--text-low);
+      font-weight: 400;
+    }
+
+    /* ── Bottom bar ── */
+    .bottom-bar {
+      padding: 10px 16px;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      background: #141414;
+      flex-shrink: 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .jds-chat-input {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      padding: 6px 6px 6px 14px;
+    }
+
+    .add-btn {
+      width: 34px;
+      height: 34px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-high);
+      flex-shrink: 0;
+    }
+
+    .add-btn:active { opacity: 0.6; }
+
+    #chat-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      font-family: 'JioType', sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--text-high);
+      min-width: 0;
+      padding: 6px 0;
+    }
+
+    #chat-input::placeholder { color: rgba(255,255,255,0.35); }
+
+    .speak-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #3535f3;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-family: 'JioType', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    .speak-pill.listening { background: #fa2f40; }
+    .speak-pill:active { opacity: 0.85; }
+
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      background: #3535f3;
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .send-btn:active { opacity: 0.8; }
+
+    /* ── Toast ── */
+    .toast {
+      position: absolute;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: rgba(255,255,255,0.13);
+      backdrop-filter: blur(10px);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-family: 'JioType', sans-serif;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 200;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <button class="header-btn" onclick="goBack()" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+        <path d="M15 20a1.003 1.003 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a.997.997 0 01.219 1.095.999.999 0 01-.93.615z" fill="currentColor"/>
+      </svg>
+    </button>
+
+    <div class="header-center">
+      <div class="avatar-wrap">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="20" fill="#B8651A"/>
+          <!-- Hair -->
+          <path d="M8 18 Q10 6 20 5 Q30 6 32 18 Q28 10 20 10 Q12 10 8 18Z" fill="#2D1A0E"/>
+          <!-- Face -->
+          <ellipse cx="20" cy="19" rx="9" ry="10" fill="#D4956A"/>
+          <!-- Eyes -->
+          <ellipse cx="16.5" cy="17.5" rx="1.4" ry="1.6" fill="#2D1A0E"/>
+          <ellipse cx="23.5" cy="17.5" rx="1.4" ry="1.6" fill="#2D1A0E"/>
+          <!-- Eye shine -->
+          <circle cx="17.1" cy="17" r="0.5" fill="white"/>
+          <circle cx="24.1" cy="17" r="0.5" fill="white"/>
+          <!-- Smile -->
+          <path d="M16.5 21.5 Q20 23.5 23.5 21.5" stroke="#2D1A0E" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+          <!-- Bindi -->
+          <circle cx="20" cy="13" r="1.1" fill="#E30412"/>
+          <!-- Body / Saree -->
+          <path d="M8 36 Q10 29 20 28 Q30 29 32 36 L40 40 H0Z" fill="#6B21A8"/>
+          <!-- Dupatta hint -->
+          <path d="M11 28 Q15 26 20 28" stroke="#9333EA" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="online-dot"></div>
+      </div>
+      <div class="header-text">
+        <h2>Sehat Saathi</h2>
+        <p>Online</p>
+      </div>
+    </div>
+
+    <button class="header-btn" onclick="startNewConversation()" aria-label="New chat">
+      <img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_edit_pen.svg"
+           width="22" height="22" style="filter:invert(1);opacity:0.9;" alt="New chat">
+    </button>
+  </div>
+
+  <!-- Chat area -->
+  <div class="chat-area" id="chat-area">
+    <div class="home-screen" id="home-screen">
+      <!-- JioBharatIQ 4-dot logomark -->
+      <svg class="jbiq-logo" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="11" cy="11" r="9" fill="#3535f3"/>
+        <circle cx="33" cy="11" r="9" fill="#3535f3"/>
+        <circle cx="11" cy="33" r="9" fill="#3535f3"/>
+        <circle cx="33" cy="33" r="9" fill="#3535f3"/>
+      </svg>
+
+      <p class="home-greeting">Namaste 🙏 Kya ho raha hai?<br>Apni ya ghar ke kisi ke baare mein kuch poochna hai — batao, main yahan hoon.</p>
+
+      <div class="quick-pills">
+        <button class="pill" onclick="showComingSoon(this)">💊 Dawai Reminder</button>
+        <button class="pill" onclick="showComingSoon(this)">🧪 Lab Report</button>
+        <button class="pill" onclick="showComingSoon(this)">🥗 Khaana Guide</button>
+        <button class="pill" onclick="showComingSoon(this)">👨‍👩‍👧 Family</button>
+      </div>
+
+      <p class="home-subtitle">Koi bhi bhasha mein baat karo</p>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar">
+    <div class="jds-chat-input">
+      <button class="add-btn" onclick="showComingSoon()" aria-label="Add">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <input type="text" id="chat-input"
+             placeholder="Kuch bhi poochho..."
+             autocomplete="off" autocorrect="off" spellcheck="false"
+             onkeydown="handleKey(event)">
+      <button class="speak-pill" id="speak-btn" onclick="toggleVoice()">
+        <!-- ic_voice waveform icon -->
+        <svg viewBox="0 0 24 24" fill="none" width="15" height="15">
+          <path d="M12 2a1 1 0 00-1 1v18a1 1 0 002 0V3a1 1 0 00-1-1zM4 9a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1zm4-3a1 1 0 00-1 1v10a1 1 0 102 0V7a1 1 0 00-1-1zm12 3a1 1 0 00-1 1v4a1 1 0 002 0v-4a1 1 0 00-1-1zm-4-3a1 1 0 00-1 1v10a1 1 0 002 0V7a1 1 0 00-1-1z" fill="currentColor"/>
+        </svg>
+        <span id="speak-label">Speak</span>
+      </button>
+      <button class="send-btn" onclick="handleSend()" aria-label="Send">
+        <img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_message_send.svg"
+             width="20" height="20" style="filter:invert(1);" alt="Send">
+      </button>
+    </div>
+  </div>
+
+  <!-- Voice overlay -->
+  <div class="voice-overlay" id="voice-overlay">
+    <button class="voice-close" onclick="stopVoice()" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <video class="voice-video" id="voice-video" autoplay loop muted playsinline
+      src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/states/Dark/HelloJio_Listening_242.mp4">
+    </video>
+    <p class="voice-transcript" id="voice-transcript">...</p>
+    <p class="voice-label">Bol rahe hain...</p>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+</div>
+
+<script>
+  const OPENAI_API_KEY = "REPLACE_WITH_YOUR_KEY";
+
+  const SYSTEM_PROMPT = `You are Sehat Saathi, a warm Ayurvedic home remedy guide inside JioBharatIQ. You help Indian families with everyday health complaints using traditional Ayurvedic and home remedies that have been trusted for generations.
+
+LANGUAGE RULE:
+Detect what language the user is writing or speaking in — Hindi, Marathi, Bengali, Tamil, Telugu, Kannada, Malayalam, Gujarati, Punjabi, Bhojpuri, Haryanvi, or any other Indian language or dialect. Always respond in exactly that language and dialect. If they mix languages respond in the dominant one. Never ask them to switch language. Never respond in English unless they wrote in English. Show warmth through language — use "aap" vs "tum" correctly, use the right dialect register.
+
+YOU WORK IN TWO TURNS:
+
+TURN 1 — User describes complaint:
+First check if this is a serious emergency symptom.
+
+SERIOUS SYMPTOMS — escalate immediately, no remedy ever:
+Chest pain, difficulty breathing, infant under 3 months with fever, seizures, sudden worst-ever headache, vomiting blood, loss of consciousness, one-sided face drooping, sudden arm weakness.
+
+If serious: respond warmly but clearly in their language — tell them this needs a doctor immediately, do not give any home remedy, tell them not to wait.
+
+If NOT serious: ask exactly ONE warm clarifying question in their language. Make it feel like a caring friend asking — not a medical form. The question should help you understand whether this needs a remedy or a doctor.
+
+TURN 2 — After their answer:
+Give the Ayurvedic home remedy response in this exact structure:
+1. What to do right now — specific, practical, one thing
+2. Why it works — one simple sentence, no medical jargon
+3. Safety gate — one sentence on when to see a doctor if it doesn't improve
+
+AYURVEDIC PRINCIPLES:
+Use only ingredients from a typical Indian kitchen — ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk with haldi, honey, rock salt, nimbu paani, cold milk, fennel seeds, cloves, cinnamon. These are all classical Ayurvedic remedies documented in traditional texts and CCRAS guidelines. Never recommend prescription medicines. Never diagnose. Never use clinical terminology.
+
+TONE:
+Warm like a dadi or nani. Unhurried. Specific — one clear action, not a menu of options. Never scary. Never "consult your doctor before following this" — that kills the magic. The safety gate is at the end, naturally, not as a disclaimer.
+
+LENGTH:
+Short. 4 sentences maximum for the full remedy response. The user is on a phone, possibly at night, possibly anxious. Give them the one thing to do.`;
+
+  let conversationHistory = [];
+  let isFirstAssistantMessage = true;
+  let recognition = null;
+  let isListening = false;
+  let toastTimer = null;
+
+  function detectLanguageBadge(text) {
+    if (/[ऀ-ॿ]/.test(text)) return "हिंदी ✓";
+    if (/[ঀ-৿]/.test(text)) return "বাংলা ✓";
+    if (/[஀-௿]/.test(text)) return "தமிழ் ✓";
+    if (/[ఀ-౿]/.test(text)) return "తెలుగు ✓";
+    if (/[ಀ-೿]/.test(text)) return "ಕನ್ನಡ ✓";
+    if (/[ഀ-ൿ]/.test(text)) return "മലയാളം ✓";
+    if (/[઀-૿]/.test(text)) return "ગુજરાતી ✓";
+    if (/[਀-੿]/.test(text)) return "ਪੰਜਾਬੀ ✓";
+    if (/[଀-୿]/.test(text)) return "ଓଡ଼ିଆ ✓";
+    return "भाषा पहचानी ✓";
+  }
+
+  function hideHome() {
+    const h = document.getElementById('home-screen');
+    if (h) h.style.display = 'none';
+  }
+
+  function renderMessage(role, text) {
+    hideHome();
+    const area = document.getElementById('chat-area');
+
+    const row = document.createElement('div');
+    row.className = 'message-row ' + role;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ' + role;
+    bubble.textContent = text;
+    row.appendChild(bubble);
+
+    if (role === 'assistant') {
+      const actions = document.createElement('div');
+      actions.className = 'bubble-actions';
+
+      const spk = document.createElement('button');
+      spk.className = 'speak-btn';
+      spk.setAttribute('aria-label', 'Sunao');
+      spk.innerHTML = '<img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_sound_loud.svg" width="15" height="15" style="filter:invert(0.65);" alt="Play">';
+      spk.onclick = () => speakResponse(text);
+      actions.appendChild(spk);
+
+      if (isFirstAssistantMessage) {
+        const badge = document.createElement('span');
+        badge.className = 'lang-badge';
+        badge.textContent = detectLanguageBadge(text);
+        actions.appendChild(badge);
+        isFirstAssistantMessage = false;
+      }
+
+      row.appendChild(actions);
+    }
+
+    area.appendChild(row);
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function showThinking() {
+    hideHome();
+    const area = document.getElementById('chat-area');
+    const row = document.createElement('div');
+    row.className = 'message-row assistant';
+    row.id = 'thinking-row';
+    const bubble = document.createElement('div');
+    bubble.className = 'thinking-bubble';
+    bubble.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    row.appendChild(bubble);
+    area.appendChild(row);
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function hideThinking() {
+    const el = document.getElementById('thinking-row');
+    if (el) el.remove();
+  }
+
+  async function callOpenAI() {
+    showThinking();
+    try {
+      if (!OPENAI_API_KEY || OPENAI_API_KEY === 'REPLACE_WITH_YOUR_KEY') {
+        hideThinking();
+        renderMessage('assistant', 'API key set karni hai. File mein REPLACE_WITH_YOUR_KEY ki jagah apni OpenAI key daalo.');
+        return;
+      }
+
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + OPENAI_API_KEY
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            ...conversationHistory
+          ],
+          temperature: 0.7,
+          max_tokens: 320
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || 'API error ' + res.status);
+      }
+
+      const data = await res.json();
+      const reply = data.choices[0].message.content.trim();
+      conversationHistory.push({ role: 'assistant', content: reply });
+      hideThinking();
+      renderMessage('assistant', reply);
+      speakResponse(reply);
+    } catch (e) {
+      hideThinking();
+      renderMessage('assistant', 'Thoda network issue aa gaya. Dobara try karo.');
+    }
+  }
+
+  function sendMessage(text) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    conversationHistory.push({ role: 'user', content: trimmed });
+    renderMessage('user', trimmed);
+    callOpenAI();
+  }
+
+  function handleSend() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    sendMessage(text);
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }
+
+  function speakResponse(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'hi-IN';
+    u.rate = 0.88;
+    u.pitch = 1.0;
+    window.speechSynthesis.speak(u);
+  }
+
+  function toggleVoice() {
+    if (isListening) stopVoice();
+    else startVoiceInput();
+  }
+
+  function startVoiceInput() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      showToast('Voice input is aapke browser mein available nahi hai');
+      return;
+    }
+
+    recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'hi-IN';
+
+    const overlay = document.getElementById('voice-overlay');
+    const transcript = document.getElementById('voice-transcript');
+    const btn = document.getElementById('speak-btn');
+    const label = document.getElementById('speak-label');
+
+    overlay.classList.add('active');
+    btn.classList.add('listening');
+    label.textContent = 'Stop';
+    isListening = true;
+    transcript.textContent = '...';
+
+    recognition.onresult = (e) => {
+      const t = Array.from(e.results).map(r => r[0].transcript).join('');
+      transcript.textContent = t || '...';
+    };
+
+    recognition.onend = () => {
+      const t = transcript.textContent;
+      overlay.classList.remove('active');
+      btn.classList.remove('listening');
+      label.textContent = 'Speak';
+      isListening = false;
+      if (t && t !== '...') {
+        sendMessage(t);
+      }
+      transcript.textContent = '...';
+    };
+
+    recognition.onerror = () => {
+      overlay.classList.remove('active');
+      btn.classList.remove('listening');
+      label.textContent = 'Speak';
+      isListening = false;
+    };
+
+    recognition.start();
+  }
+
+  function stopVoice() {
+    if (recognition) { try { recognition.stop(); } catch(e) {} }
+    document.getElementById('voice-overlay').classList.remove('active');
+    const btn = document.getElementById('speak-btn');
+    btn.classList.remove('listening');
+    document.getElementById('speak-label').textContent = 'Speak';
+    isListening = false;
+  }
+
+  function buildHomeHTML() {
+    return `
+      <svg class="jbiq-logo" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="11" cy="11" r="9" fill="#3535f3"/>
+        <circle cx="33" cy="11" r="9" fill="#3535f3"/>
+        <circle cx="11" cy="33" r="9" fill="#3535f3"/>
+        <circle cx="33" cy="33" r="9" fill="#3535f3"/>
+      </svg>
+      <p class="home-greeting">Namaste 🙏 Kya ho raha hai?<br>Apni ya ghar ke kisi ke baare mein kuch poochna hai — batao, main yahan hoon.</p>
+      <div class="quick-pills">
+        <button class="pill" onclick="showComingSoon(this)">💊 Dawai Reminder</button>
+        <button class="pill" onclick="showComingSoon(this)">🧪 Lab Report</button>
+        <button class="pill" onclick="showComingSoon(this)">🥗 Khaana Guide</button>
+        <button class="pill" onclick="showComingSoon(this)">👨‍👩‍👧 Family</button>
+      </div>
+      <p class="home-subtitle">Koi bhi bhasha mein baat karo</p>
+    `;
+  }
+
+  function startNewConversation() {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    conversationHistory = [];
+    isFirstAssistantMessage = true;
+    const area = document.getElementById('chat-area');
+    area.innerHTML = '';
+    const home = document.createElement('div');
+    home.className = 'home-screen';
+    home.id = 'home-screen';
+    home.innerHTML = buildHomeHTML();
+    area.appendChild(home);
+    document.getElementById('chat-input').value = '';
+  }
+
+  function goBack() {
+    if (conversationHistory.length > 0) {
+      startNewConversation();
+    }
+  }
+
+  function showComingSoon() {
+    showToast('Jald aa raha hai ✨');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+</script>
+</body>
+</html>
