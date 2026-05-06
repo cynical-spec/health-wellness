@@ -29,7 +29,7 @@ jobs:
         run: |
           python3 - <<'PYEOF'
           import os
-          key = os.environ["OPENAI_API_KEY"]
+          key = os.environ["OPENAI_API_KEY"].strip()
           with open("index.html", "r") as f:
               html = f.read()
           html = html.replace("REPLACE_WITH_YOUR_KEY", key)
