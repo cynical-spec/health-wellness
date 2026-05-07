@@ -14,11 +14,11 @@
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#141414;--surface:rgba(255,255,255,0.06);--surface2:rgba(255,255,255,0.10);
-  --primary:#3535f3;--primary-dim:rgba(53,53,243,0.15);
-  --bold:#3900ad;--bold-dim:rgba(57,0,173,0.2);
+  --bg:#0a0a0a;--surface:#1a1a1a;--surface2:rgba(255,255,255,0.10);
+  --primary:#6B21A8;--primary-dim:rgba(107,33,168,0.2);
+  --bold:#2d1b69;--bold-dim:rgba(45,27,105,0.3);
   --text:#fff;--text2:#b5b5b5;--text3:rgba(255,255,255,0.38);
-  --success:#25ab21;--error:#fa2f40;--warn:#f7ab20;--sparkle:#1eccb0;
+  --success:#22c55e;--error:#dc2626;--warn:#fb923c;--sparkle:#1eccb0;
   --radius:16px;--radius-sm:10px;--radius-pill:999px;
 }
 html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-family:'JioType',sans-serif;color:var(--text)}
@@ -234,22 +234,13 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .empty-state p{margin-top:8px;font-size:14px;line-height:1.6}
 .divider{height:1px;background:rgba(255,255,255,.06);margin:4px 0}
 
-/* ══ v2 Visual polish ══ */
+/* ══ v3 Visual rules: no drop shadows, no gradients on backgrounds ══ */
 .hub-list-item:hover{background:rgba(255,255,255,.025)}
 .hub-list-item:active{background:rgba(255,255,255,.05);transform:scale(.995)}
-.hub-cards{box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 4px 12px rgba(0,0,0,.18)}
-.sc-card{box-shadow:0 8px 22px rgba(57,0,173,.18), 0 1px 0 rgba(255,255,255,.04) inset}
-.score-card-top, .sc-top-row{align-items:flex-start}
-.peer-card{box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.lab-marker{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .qa-btn{transition:transform .15s ease, background .15s}
 .qa-btn:hover{background:rgba(255,255,255,.08)}
-.assistant-card .assistant-avatar{transition:transform .2s ease, box-shadow .2s ease}
+.assistant-card .assistant-avatar{transition:transform .2s ease}
 .assistant-card:hover .assistant-avatar{transform:translateY(-2px)}
-.update-card{box-shadow:0 4px 14px rgba(0,0,0,.18)}
-.qa-icon{box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
-.bubble.bot{box-shadow:0 2px 8px rgba(57,0,173,.18)}
-.lab-summary{box-shadow:0 4px 14px rgba(57,0,173,.12)}
 
 
 /* ══ Onboarding screen ══ */
@@ -818,6 +809,7 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
 <script>
 const OPENAI_API_KEY = "REPLACE_WITH_YOUR_KEY";
 const GROQ_API_KEY = "REPLACE_WITH_GROQ_KEY";
+const SARVAM_KEY = "REPLACE_WITH_SARVAM_KEY";  // Sarvam STT (Saarika) + TTS (Bulbul)
 
 // ── State ──
 const ST = {
@@ -853,7 +845,9 @@ const ST = {
   // v2: lab + community + wellness
   labStep: 0,
   labData: {},
-  communityPeer: null
+  communityPeer: null,
+  // v3: language detected from latest user message / OpenAI LANG: prefix
+  currentLanguage: 'hi-IN'
 };
 
 const PERSONAS = {
@@ -864,21 +858,36 @@ const PERSONAS = {
 // Default persona for new users — soft, neutral
 const DEFAULT_PERSONA = 'saathi';
 
-const SYSTEM_PROMPT = `You are Sehat Saathi, a warm Ayurvedic health guide inside JioBharatIQ for Indian families.
+const SYSTEM_PROMPT = `You are Sehat Saathi, a warm Ayurvedic home remedy guide inside JioBharatIQ.
 
-LANGUAGE: Always detect and reply in the same language/dialect the user writes in — Hindi, Marathi, Bengali, Tamil, Telugu, Kannada, Punjabi, Bhojpuri, or any Indian language. Never switch language unless user does.
+LANGUAGE RULE: Detect what language the user writes in. Always respond in exactly that language and dialect. Never switch to English unless they wrote in English. Never ask them to change language.
 
-EMERGENCY: For chest pain, breathing difficulty, infant fever (under 3 months), seizures, sudden worst headache, vomiting blood, stroke symptoms — respond warmly but firmly: go to doctor immediately. No remedy.
+YOU WORK IN TWO TURNS:
 
-TWO-TURN FLOW for Ghar ke Nushke:
-Turn 1: User describes complaint → ask ONE warm clarifying question like a caring friend.
-Turn 2: Give remedy: (1) What to do right now — one specific action (2) Why it works — one simple sentence (3) When to see doctor — one natural sentence at end.
+TURN 1 — User describes complaint:
+First check for serious emergency.
 
-Use only kitchen ingredients: ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt, nimbu, fennel, cloves, cinnamon.
+SERIOUS — escalate immediately, no remedy ever:
+Chest pain, difficulty breathing, infant under 3 months with fever, seizures, sudden worst-ever headache, vomiting blood, loss of consciousness.
+Respond warmly but clearly in their language — go to doctor now, do not wait.
 
-For general health questions: answer warmly and practically.
+NOT SERIOUS — ask exactly ONE warm clarifying question in their language. Like a caring friend, not a medical form.
 
-TONE: Like a dadi/nani — warm, unhurried, specific. Max 4 sentences for remedy. No disclaimers upfront.`;
+TURN 2 — After their answer:
+Give remedy in this structure:
+1. What to do right now — one specific action
+2. Why it works — one simple sentence, no jargon
+3. Safety gate — when to see doctor if not improving
+
+Use only kitchen ingredients: ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt.
+
+Never diagnose. Never use medical terms. Never give a list — just the one best thing.
+
+TONE: Warm like dadi or nani. Unhurried. Specific. 4 sentences maximum. Never scary. Never clinical.
+
+OUTPUT FORMAT (strict):
+First line: LANG:<code>  where <code> is one of hi, mr, bn, ta, te, kn, ml, gu, pa, en.
+Second line onward: your warm response in the user's language. No preamble.`;
 
 // ── v2: Wellness + Community system prompts ──
 const WELLNESS_SYSTEM_PROMPT = `You are Sehat Saathi — Wellness mode. You're a warm, modern wellness companion for young Indians (18–35) on JioBharatIQ.
@@ -1535,7 +1544,14 @@ async function callAI(userText, systemOverride) {
         lastErr = '❌ Error ' + res.status + (et ? ': '+et.slice(0,50) : ''); continue;
       }
       const data = await res.json();
-      const reply = data.choices[0].message.content.trim();
+      let reply = data.choices[0].message.content.trim();
+      // v3: Parse LANG: prefix and update currentLanguage for downstream Sarvam TTS
+      const langMatch = reply.match(/^LANG:\s*([a-z]{2,3})\s*\n/i);
+      if (langMatch) {
+        const code = langMatch[1].toLowerCase();
+        ST.currentLanguage = (code.length === 2 ? code + '-IN' : code);
+        reply = reply.replace(/^LANG:\s*[a-z]{2,3}\s*\n/i, '').trim();
+      }
       ST.chatHistory.push({ role: 'assistant', content: reply });
       hideThinking();
       const isFirst = ST.isFirstMsg; ST.isFirstMsg = false;
@@ -2523,109 +2539,148 @@ function showPressureGuide() {
   document.getElementById('breath-ring').style.opacity = '0.3';
 }
 
-// ── VOICE ──
-function toggleVoice(target) {
+// ── v3: Sarvam STT (MediaRecorder → Saarika) ──
+let _mediaRecorder = null;
+let _audioChunks = [];
+
+async function toggleVoice(target) {
   if (ST.isListening) { stopVoice(); return; }
   ST.voiceTarget = target;
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { showToast('Voice input available nahi hai is browser mein'); return; }
-  ST.recognition = new SR();
-  ST.recognition.continuous = false;
-  ST.recognition.interimResults = true;
-  ST.recognition.lang = 'hi-IN';
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('Mic abhi available nahi — text mein likhein');
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _audioChunks = [];
+    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+               : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '';
+    _mediaRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    _mediaRecorder.ondataavailable = e => { if (e.data && e.data.size) _audioChunks.push(e.data); };
+    _mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      const audioBlob = new Blob(_audioChunks, { type: _mediaRecorder.mimeType || 'audio/webm' });
+      hideVoiceOverlay();
+      const transcript = await transcribeWithSarvam(audioBlob);
+      if (transcript) {
+        if (target === 'chat') { addMsg('user', transcript, false); callAI(transcript, getSystemPromptFor(ST.chatCtx)); }
+        else { const inp = document.getElementById('hub-input'); if (inp) { inp.value = transcript; hubKey({ key: 'Enter' }); } }
+      } else {
+        showToast('Awaaz nahi sun paayi — text mein likhein');
+      }
+    };
+    showVoiceOverlay(target);
+    _mediaRecorder.start();
+    ST.isListening = true;
+  } catch (e) {
+    showToast('Mic ka permission chahiye — browser settings mein allow karein');
+    console.error('Mic error:', e);
+  }
+}
+
+function showVoiceOverlay(target) {
   const ov = document.getElementById('voice-ov');
   const txt = document.getElementById('voice-txt');
-  ov.classList.add('on');
+  if (ov) ov.classList.add('on');
+  if (txt) txt.textContent = 'Bolein...';
   const btn = document.getElementById(target === 'chat' ? 'chat-speak' : 'hub-speak');
   const lbl = document.getElementById(target === 'chat' ? 'chat-speak-lbl' : 'hub-speak-lbl');
   if (btn) btn.classList.add('listening');
-  if (lbl) lbl.textContent = 'Stop';
-  ST.isListening = true;
-  txt.textContent = '...';
-  ST.recognition.onresult = e => {
-    txt.textContent = Array.from(e.results).map(r => r[0].transcript).join('') || '...';
-  };
-  ST.recognition.onend = () => {
-    const t = txt.textContent;
-    ov.classList.remove('on');
-    if (btn) btn.classList.remove('listening');
-    if (lbl) lbl.textContent = 'Speak';
-    ST.isListening = false;
-    if (t && t !== '...') {
-      if (target === 'chat') {
-        addMsg('user', t, false);
-        callAI(t);
-      } else {
-        const inp = document.getElementById('hub-input');
-        if (inp) { inp.value = t; hubKey({ key: 'Enter' }); }
-      }
-    }
-    txt.textContent = '...';
-  };
-  ST.recognition.onerror = () => {
-    ov.classList.remove('on');
-    if (btn) btn.classList.remove('listening');
-    if (lbl) lbl.textContent = 'Speak';
-    ST.isListening = false;
-  };
-  ST.recognition.start();
+  if (lbl) lbl.textContent = 'Ruko...';
 }
-
-function stopVoice() {
-  if (ST.recognition) { try { ST.recognition.stop(); } catch(e) {} }
-  document.getElementById('voice-ov').classList.remove('on');
+function hideVoiceOverlay() {
+  const ov = document.getElementById('voice-ov');
+  if (ov) ov.classList.remove('on');
+  const cBtn = document.getElementById('chat-speak'), hBtn = document.getElementById('hub-speak');
+  if (cBtn) cBtn.classList.remove('listening');
+  if (hBtn) hBtn.classList.remove('listening');
+  const cLbl = document.getElementById('chat-speak-lbl'), hLbl = document.getElementById('hub-speak-lbl');
+  if (cLbl) cLbl.textContent = 'Speak';
+  if (hLbl) hLbl.textContent = 'Speak';
   ST.isListening = false;
 }
 
-// ── v2: TTS pluggable backend ──
-// Today: 'webspeech' (free, browser native). Future: 'bhashini' (Govt of India free), 'gcloud' (paid).
-const TTS_BACKEND = 'webspeech';
-
-function pickVoice(detectedLang, persona) {
-  if (!window.speechSynthesis) return null;
-  const voices = window.speechSynthesis.getVoices();
-  if (!voices || !voices.length) return null;
-  const langPrefix = (detectedLang || 'hi-IN').split('-')[0];
-  // Tier 1: exact language match
-  let matches = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith(langPrefix));
-  if (!matches.length) {
-    // Tier 2: hi-IN fallback for any Indian script we lack
-    matches = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('hi'));
+function stopVoice() {
+  if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
+    try { _mediaRecorder.stop(); } catch(e) {}
+  } else {
+    hideVoiceOverlay();
   }
-  if (!matches.length) {
-    // Tier 3: en-IN (better than en-US for Indian names)
-    matches = voices.filter(v => v.lang && v.lang.toLowerCase() === 'en-in');
-  }
-  if (!matches.length) matches = voices;
-  // Within matches, prefer voices whose name matches persona hints
-  const hints = (persona && persona.voiceHint) || [];
-  for (const hint of hints) {
-    const hit = matches.find(v => v.name.toLowerCase().includes(hint.toLowerCase()));
-    if (hit) return hit;
-  }
-  return matches[0];
 }
 
-function speakWebSpeech(text, opts) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const p = PERSONAS[ST.persona] || PERSONAS[DEFAULT_PERSONA];
-  const u = new SpeechSynthesisUtterance(text);
-  // Detect language of the text to be spoken — gives utterance.lang the best chance to use a matching voice
-  const detected = detectLang(text);
-  u.lang = detected.code;
-  u.rate = (opts && opts.quiet) ? 1.0 : p.rate;
-  u.pitch = p.pitch;
-  const voice = pickVoice(detected.code, p);
-  if (voice) u.voice = voice;
-  // Don't fail silently — log if no matching voice
-  if (!voice && console && console.info) console.info('[speak] no voice match for', detected.code, '— using default');
-  window.speechSynthesis.speak(u);
+async function transcribeWithSarvam(audioBlob) {
+  if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes('REPLACE')) {
+    showToast('Voice abhi ready nahi — text mein likhein');
+    return '';
+  }
+  try {
+    const fd = new FormData();
+    fd.append('file', audioBlob, 'rec.webm');
+    fd.append('model', 'saarika:v1');
+    fd.append('language_code', ST.currentLanguage || 'hi-IN');
+    const res = await fetch('https://api.sarvam.ai/speech-to-text', {
+      method: 'POST',
+      headers: { 'api-subscription-key': SARVAM_KEY },
+      body: fd
+    });
+    if (!res.ok) {
+      const errTxt = await res.text();
+      console.error('Sarvam STT', res.status, errTxt);
+      return '';
+    }
+    const data = await res.json();
+    return (data.transcript || '').trim();
+  } catch (e) {
+    console.error('Sarvam STT failed', e);
+    return '';
+  }
 }
+// ── v3: Sarvam TTS (Bulbul) — replaces Web Speech API ──
+const SARVAM_SPEAKERS = { dadi: 'pavithra', maa: 'meera', saathi: 'amol' };
+const SARVAM_LANG_MAP = {
+  'hi-IN':'hi-IN','mr-IN':'hi-IN','bn-IN':'bn-IN','ta-IN':'ta-IN','te-IN':'te-IN',
+  'kn-IN':'kn-IN','ml-IN':'ml-IN','gu-IN':'gu-IN','pa-IN':'pa-IN',
+  // Short codes (LANG: prefix variants)
+  'hi':'hi-IN','mr':'hi-IN','bn':'bn-IN','ta':'ta-IN','te':'te-IN','kn':'kn-IN','ml':'ml-IN','gu':'gu-IN','pa':'pa-IN','en':'en-IN'
+};
+let _currentAudio = null;
 
-function speak(text, quiet) {
-  // Future: route to Bhashini or GCloud here based on TTS_BACKEND
-  if (TTS_BACKEND === 'webspeech') return speakWebSpeech(text, { quiet });
+async function speak(text, quiet) {
+  if (!text) return;
+  // Stop any in-flight audio
+  if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+  if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes('REPLACE')) {
+    if (!quiet) console.info('[speak] SARVAM_KEY missing — skipping TTS');
+    return;
+  }
+  try {
+    const lang = (ST.currentLanguage && SARVAM_LANG_MAP[ST.currentLanguage]) || detectLang(text).code || 'hi-IN';
+    const targetLang = SARVAM_LANG_MAP[lang] || 'hi-IN';
+    const speaker = SARVAM_SPEAKERS[ST.persona] || 'meera';
+    const res = await fetch('https://api.sarvam.ai/text-to-speech', {
+      method: 'POST',
+      headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        inputs: [text.length > 500 ? text.substring(0, 500) : text],
+        target_language_code: targetLang,
+        speaker, pitch: 0, pace: 0.9, loudness: 1.4,
+        speech_sample_rate: 22050, enable_preprocessing: true,
+        model: 'bulbul:v1'
+      })
+    });
+    if (!res.ok) {
+      const errTxt = await res.text();
+      console.error('Sarvam TTS', res.status, errTxt);
+      return;
+    }
+    const data = await res.json();
+    if (data.audios && data.audios[0]) {
+      _currentAudio = new Audio('data:audio/wav;base64,' + data.audios[0]);
+      _currentAudio.play().catch(e => console.warn('autoplay blocked', e));
+    }
+  } catch (e) {
+    console.error('Sarvam TTS failed', e);
+  }
 }
 
 // ── Updates audio ──
@@ -2652,14 +2707,8 @@ window.addEventListener('load', () => {
   ST.recentFeatures = loadRecentFeatures();
   renderQuickActions();
   initHubDynamic();
-  window.speechSynthesis.onvoiceschanged = () => {};
-  setTimeout(() => window.speechSynthesis.getVoices(), 500);
-
-  // Hide all Speak buttons if SpeechRecognition not supported (Firefox etc.)
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    document.querySelectorAll('.bar-speak').forEach(btn => btn.style.display = 'none');
-  }
+  // v3: Voice now uses Sarvam STT/TTS via MediaRecorder; no Web Speech detection needed.
+  // Speak buttons stay visible — if mic permission denied, toggleVoice() shows a toast.
 
   // Hub: toggle send/speak based on input content
   const hubInp = document.getElementById('hub-input');
