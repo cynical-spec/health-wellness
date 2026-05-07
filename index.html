@@ -493,6 +493,9 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
         <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M12 2a1 1 0 00-1 1v18a1 1 0 002 0V3a1 1 0 00-1-1zM4 9a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1zm4-3a1 1 0 00-1 1v10a1 1 0 102 0V7a1 1 0 00-1-1zm12 3a1 1 0 00-1 1v4a1 1 0 002 0v-4a1 1 0 00-1-1zm-4-3a1 1 0 00-1 1v10a1 1 0 002 0V7a1 1 0 00-1-1z" fill="currentColor"/></svg>
         <span id="hub-speak-lbl">Speak</span>
       </button>
+      <button class="bar-send" id="hub-send-btn" onclick="hubSend()" style="display:none">
+        <img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_message_send.svg" width="20" height="20" style="filter:invert(1)" alt="Send">
+      </button>
     </div>
   </div>
 </div>
@@ -900,18 +903,26 @@ function chatSend() {
   callAI(txt);
 }
 function chatKey(e) { if (e.key === 'Enter') { e.preventDefault(); chatSend(); } }
-function clearChat() { document.getElementById('chat-msgs').innerHTML = ''; ST.chatHistory = []; ST.isFirstMsg = true; renderNushkeStart(); }
+function clearChat() {
+  document.getElementById('chat-msgs').innerHTML = '';
+  ST.chatHistory = []; ST.isFirstMsg = true;
+  if (ST.chatCtx === 'nushke') renderNushkeStart();
+  else renderSymptomStart();
+}
 
 // Hub input
+function hubSend() {
+  const txt = document.getElementById('hub-input').value.trim(); if (!txt) return;
+  document.getElementById('hub-input').value = '';
+  document.getElementById('hub-send-btn').style.display = 'none';
+  document.getElementById('hub-speak').style.display = '';
+  ST.chatCtx = 'general'; ST.chatHistory = []; ST.isFirstMsg = true;
+  document.getElementById('chat-ctx-label').textContent = '💬 Sehat Saathi';
+  goTo('s-chat');
+  setTimeout(() => { addMsg('user', txt, false); callAI(txt); }, 100);
+}
 function hubKey(e) {
-  if (e.key === 'Enter') {
-    const txt = document.getElementById('hub-input').value.trim(); if (!txt) return;
-    document.getElementById('hub-input').value = '';
-    ST.chatCtx = 'general'; ST.chatHistory = []; ST.isFirstMsg = true;
-    document.getElementById('chat-ctx-label').textContent = '💬 Sehat Saathi';
-    goTo('s-chat');
-    setTimeout(() => { addMsg('user', txt, false); callAI(txt); }, 100);
-  }
+  if (e.key === 'Enter') { e.preventDefault(); hubSend(); }
 }
 
 // ── MEDICINE FLOW ──
@@ -1390,6 +1401,18 @@ window.addEventListener('load', () => {
   reloadSavedReminders();
   window.speechSynthesis.onvoiceschanged = () => {};
   setTimeout(() => window.speechSynthesis.getVoices(), 500);
+
+  // Hub: toggle send/speak based on input content
+  const hubInp = document.getElementById('hub-input');
+  const hubSendBtn = document.getElementById('hub-send-btn');
+  const hubSpeakBtn = document.getElementById('hub-speak');
+  if (hubInp) {
+    hubInp.addEventListener('input', () => {
+      const hasText = hubInp.value.trim().length > 0;
+      hubSendBtn.style.display = hasText ? '' : 'none';
+      hubSpeakBtn.style.display = hasText ? 'none' : '';
+    });
+  }
 });
 </script>
 </body>
