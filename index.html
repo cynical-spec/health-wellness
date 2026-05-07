@@ -234,6 +234,41 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .empty-state p{margin-top:8px;font-size:14px;line-height:1.6}
 .divider{height:1px;background:rgba(255,255,255,.06);margin:4px 0}
 
+/* ══ Onboarding screen ══ */
+.ob-skip{font-size:13px;font-weight:600;color:var(--text2);background:none;border:none;cursor:pointer;font-family:'JioType',sans-serif}
+.ob-skip:active{opacity:.6}
+.ob-progress{display:flex;gap:5px;padding:0 20px 18px}
+.ob-progress-dot{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.12);transition:background .3s}
+.ob-progress-dot.active{background:var(--primary)}
+.ob-progress-dot.done{background:var(--success)}
+.ob-hero{text-align:center;padding:8px 24px 20px}
+.ob-hero-emoji{font-size:48px;margin-bottom:10px}
+.ob-hero-title{font-size:20px;font-weight:700;margin-bottom:6px;line-height:1.3}
+.ob-hero-sub{font-size:14px;color:var(--text2);line-height:1.5}
+.ob-form{padding:0 20px 20px}
+.ob-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.ob-field-lbl{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:block}
+.ob-input{width:100%;background:var(--surface);border:1.5px solid rgba(255,255,255,.1);border-radius:var(--radius);padding:13px 14px;font-family:'JioType',sans-serif;font-size:15px;color:var(--text);outline:none}
+.ob-input:focus{border-color:var(--primary)}
+.ob-input::placeholder{color:var(--text3)}
+.ob-sex-row{display:flex;gap:8px;margin-bottom:14px}
+.ob-sex-btn{flex:1;background:var(--surface);border:1.5px solid rgba(255,255,255,.1);border-radius:var(--radius);padding:12px 8px;font-family:'JioType',sans-serif;font-size:14px;font-weight:600;color:var(--text);cursor:pointer}
+.ob-sex-btn.selected{border-color:var(--primary);background:var(--primary-dim)}
+.ob-cta{width:100%;background:var(--primary);border:none;border-radius:var(--radius-pill);padding:15px;font-family:'JioType',sans-serif;font-size:16px;font-weight:700;color:#fff;cursor:pointer;margin-top:8px}
+.ob-cta:active{opacity:.85}
+.ob-cta:disabled{opacity:.4;cursor:not-allowed}
+.ob-bmi-card{margin:14px 20px;background:linear-gradient(135deg,rgba(57,0,173,.3),rgba(30,204,176,.18));border:1px solid rgba(109,23,206,.4);border-radius:14px;padding:16px;text-align:center}
+.ob-bmi-num{font-size:28px;font-weight:700;color:#fff;line-height:1}
+.ob-bmi-cat{font-size:13px;font-weight:600;color:var(--sparkle);margin-top:4px}
+.ob-bmi-msg{font-size:12px;color:var(--text2);margin-top:8px;line-height:1.45}
+.ob-scope-grid{display:flex;flex-direction:column;gap:10px;padding:0 20px 20px}
+.ob-scope-card{background:var(--surface);border:1.5px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;font-family:'JioType',sans-serif;text-align:left;color:var(--text);transition:all .15s}
+.ob-scope-card:active{transform:scale(.98)}
+.ob-scope-card.selected{border-color:var(--primary);background:var(--primary-dim)}
+.ob-scope-emoji{font-size:32px;flex-shrink:0}
+.ob-scope-title{font-size:15px;font-weight:700;margin-bottom:3px}
+.ob-scope-sub{font-size:12px;color:var(--text2);line-height:1.4}
+
 /* ══ Hub redesign CSS ══ */
 .hub-initials{width:40px;height:40px;border-radius:50%;background:#3900ad;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;border:2px solid #6D17CE;flex-shrink:0}
 .body{flex:1;overflow-y:auto;overflow-x:hidden;min-height:0}
@@ -302,7 +337,7 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
       <h3 class="home-section-title">Your Assistants</h3>
       <div class="assistants-row" id="assistants-row">
         <!-- Sehat Saathi — LIVE -->
-        <div class="assistant-card" onclick="goTo('s-hub')">
+        <div class="assistant-card" onclick="enterHub()">
           <div class="assistant-avatar active-border" id="av-sehat">
             <img src="https://sunit1986.github.io/design-prototypes/Assets/persona-health.png" alt="Sehat Saathi" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
           </div>
@@ -408,8 +443,8 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
   <!-- Home bottom bar -->
   <div class="bar">
     <div class="bar-inner">
-      <input class="bar-input" placeholder="Kuch bhi poochho Sehat Saathi se..." readonly onclick="goTo('s-hub')">
-      <button class="bar-speak" onclick="goTo('s-hub')">
+      <input class="bar-input" placeholder="Kuch bhi poochho Sehat Saathi se..." readonly onclick="enterHub()">
+      <button class="bar-speak" onclick="enterHub()">
         <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M12 2a1 1 0 00-1 1v18a1 1 0 002 0V3a1 1 0 00-1-1zM4 9a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1zm4-3a1 1 0 00-1 1v10a1 1 0 102 0V7a1 1 0 00-1-1zm12 3a1 1 0 00-1 1v4a1 1 0 002 0v-4a1 1 0 00-1-1zm-4-3a1 1 0 00-1 1v10a1 1 0 002 0V7a1 1 0 00-1-1z" fill="currentColor"/></svg>
         Speak
       </button>
@@ -572,6 +607,23 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
   </div>
 </div>
 
+<!-- ══════════════ ONBOARDING SCREEN ══════════════ -->
+<div class="screen" id="s-onboard">
+  <div class="hdr">
+    <button class="hdr-btn" onclick="skipOnboarding()" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M15 20a1 1 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a1 1 0 01-.71 1.71z" fill="currentColor"/></svg>
+    </button>
+    <div class="hdr-center"><div class="hdr-text"><h2>Sehat Saathi</h2><p style="color:var(--text2)">Aap ko jaanne ke liye</p></div></div>
+    <button class="ob-skip" onclick="skipOnboarding()">Baad mein</button>
+  </div>
+  <div class="ob-progress" id="ob-progress">
+    <div class="ob-progress-dot active"></div>
+    <div class="ob-progress-dot"></div>
+    <div class="ob-progress-dot"></div>
+  </div>
+  <div class="body" id="ob-body"><!-- JS renders --></div>
+</div>
+
 <!-- ══════════════ MEDICINE SCREEN ══════════════ -->
 <div class="screen" id="s-medicine">
   <div class="hdr">
@@ -679,7 +731,18 @@ const ST = {
   familyAdd: {},
   condSelected: new Set(),
   activeReminder: null,
-  snoozeTimer: null
+  snoozeTimer: null,
+  // v2: onboarding + profile
+  userProfile: null,
+  onboardStep: 0,
+  onboardData: {},
+  onboardReturnTo: null,
+  // v2: recent features (for personalized QA)
+  recentFeatures: [],
+  // v2: lab + community + wellness
+  labStep: 0,
+  labData: {},
+  communityPeer: null
 };
 
 const PERSONAS = {
@@ -703,6 +766,207 @@ Use only kitchen ingredients: ajwain, haldi, adrak, tulsi, neem, amla, mulethi, 
 For general health questions: answer warmly and practically.
 
 TONE: Like a dadi/nani — warm, unhurried, specific. Max 4 sentences for remedy. No disclaimers upfront.`;
+
+// ── v2: Profile + Onboarding ──
+function loadProfile() {
+  try { return JSON.parse(localStorage.getItem('ss_profile') || 'null'); } catch(e) { return null; }
+}
+function saveProfile(p) {
+  localStorage.setItem('ss_profile', JSON.stringify(p));
+  ST.userProfile = p;
+}
+function calcBMI(w, h) {
+  const wn = parseFloat(w), hn = parseFloat(h);
+  if (!wn || !hn || hn < 50) return null;
+  const m = hn / 100;
+  return +(wn / (m * m)).toFixed(1);
+}
+function bmiCategory(bmi) {
+  if (!bmi) return null;
+  if (bmi < 18.5) return { cat:'Kam vajan', color:'var(--warn)', msg:'Thoda zyada nutritious khaana — Dadi ke nushke kaam aayenge' };
+  if (bmi < 25)   return { cat:'Sahi vajan', color:'var(--success)', msg:'Wah! Aap healthy range mein hain — aise hi rakhein' };
+  if (bmi < 30)   return { cat:'Thoda zyada vajan', color:'var(--warn)', msg:'Roz halki walk + Sandhya Pranayam shuru karein' };
+  return { cat:'Adhik vajan', color:'var(--error)', msg:'Doctor se baat karein + roz ki dinacharya zaroori hai' };
+}
+
+function enterHub() {
+  // Soft-prompt onboarding for new/under-prompted users
+  const p = ST.userProfile || loadProfile();
+  if (p) ST.userProfile = p;
+  const skipCount = (p && p.skipCount) || 0;
+  if (!p || (!p.completed && skipCount < 3)) {
+    ST.onboardReturnTo = 's-hub';
+    ST.onboardStep = 0;
+    ST.onboardData = (p && p.partialData) || {};
+    goTo('s-onboard');
+    setTimeout(() => renderOnboardStep(0), 50);
+    return;
+  }
+  goTo('s-hub');
+}
+
+function startOnboarding(returnTo) {
+  ST.onboardReturnTo = returnTo || 's-hub';
+  ST.onboardStep = 0;
+  ST.onboardData = {};
+  goTo('s-onboard');
+  setTimeout(() => renderOnboardStep(0), 50);
+}
+
+function setOnboardProgress(i) {
+  const dots = document.querySelectorAll('#ob-progress .ob-progress-dot');
+  dots.forEach((d, idx) => {
+    d.classList.toggle('done', idx < i);
+    d.classList.toggle('active', idx === i);
+  });
+}
+
+function renderOnboardStep(step) {
+  ST.onboardStep = step;
+  setOnboardProgress(step);
+  const body = document.getElementById('ob-body');
+  const d = ST.onboardData;
+
+  if (step === 0) {
+    // Scope
+    body.innerHTML = `
+      <div class="ob-hero">
+        <div class="ob-hero-emoji">🙏</div>
+        <div class="ob-hero-title">Namaste! Sehat Saathi yahaan hai</div>
+        <div class="ob-hero-sub">Aap ko behtar madad ke liye sirf 2 chhote sawaal — sab optional hain</div>
+      </div>
+      <div class="ob-scope-grid">
+        <button class="ob-scope-card ${d.scope==='self'?'selected':''}" onclick="setScope('self')">
+          <div class="ob-scope-emoji">🙋</div>
+          <div><div class="ob-scope-title">Sirf apne liye</div><div class="ob-scope-sub">Apni sehat ke liye Sehat Saathi</div></div>
+        </button>
+        <button class="ob-scope-card ${d.scope==='family'?'selected':''}" onclick="setScope('family')">
+          <div class="ob-scope-emoji">👨‍👩‍👧</div>
+          <div><div class="ob-scope-title">Parivaar ke liye</div><div class="ob-scope-sub">Apne aur kuch khaas logo ke liye</div></div>
+        </button>
+        <button class="ob-scope-card ${d.scope==='household'?'selected':''}" onclick="setScope('household')">
+          <div class="ob-scope-emoji">🏠</div>
+          <div><div class="ob-scope-title">Poore ghar ke liye</div><div class="ob-scope-sub">Sab ki dekhbhal ek jagah</div></div>
+        </button>
+      </div>`;
+  } else if (step === 1) {
+    // Basic info
+    body.innerHTML = `
+      <div class="ob-hero">
+        <div class="ob-hero-emoji">📋</div>
+        <div class="ob-hero-title">Thodi si jaankari</div>
+        <div class="ob-hero-sub">Iska use sirf aap ko behtar nushke aur guidance dene ke liye hoga</div>
+      </div>
+      <div class="ob-form">
+        <label class="ob-field-lbl">Aapki umar</label>
+        <input class="ob-input" id="ob-age" type="number" placeholder="32" inputmode="numeric" value="${d.age||''}" style="margin-bottom:14px">
+        <label class="ob-field-lbl">Aap</label>
+        <div class="ob-sex-row">
+          <button class="ob-sex-btn ${d.sex==='Male'?'selected':''}" onclick="setSex('Male')">Purush</button>
+          <button class="ob-sex-btn ${d.sex==='Female'?'selected':''}" onclick="setSex('Female')">Stree</button>
+          <button class="ob-sex-btn ${d.sex==='Other'?'selected':''}" onclick="setSex('Other')">Anya</button>
+        </div>
+        <div class="ob-form-grid">
+          <div>
+            <label class="ob-field-lbl">Vajan (kg)</label>
+            <input class="ob-input" id="ob-weight" type="number" placeholder="65" inputmode="numeric" value="${d.weight||''}">
+          </div>
+          <div>
+            <label class="ob-field-lbl">Lambai (cm)<span style="color:var(--text3);text-transform:none;font-weight:400"> — optional</span></label>
+            <input class="ob-input" id="ob-height" type="number" placeholder="165" inputmode="numeric" value="${d.height||''}">
+          </div>
+        </div>
+        <button class="ob-cta" onclick="onboardNext()">Aage badhein →</button>
+        <div style="text-align:center;margin-top:10px"><button class="ob-skip" onclick="skipOnboarding()">Abhi nahi, baad mein bharunga</button></div>
+      </div>`;
+  } else if (step === 2) {
+    // Done / family invite
+    const bmi = calcBMI(d.weight, d.height);
+    const cat = bmiCategory(bmi);
+    const showFamily = d.scope === 'family' || d.scope === 'household';
+    body.innerHTML = `
+      <div class="ob-hero">
+        <div class="ob-hero-emoji">✨</div>
+        <div class="ob-hero-title">Bas ho gaya!</div>
+        <div class="ob-hero-sub">Sehat Saathi ab aap ko behtar samjhega</div>
+      </div>
+      ${bmi ? `
+        <div class="ob-bmi-card">
+          <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Aapka BMI</div>
+          <div class="ob-bmi-num">${bmi}</div>
+          <div class="ob-bmi-cat" style="color:${cat.color}">${cat.cat}</div>
+          <div class="ob-bmi-msg">${cat.msg}</div>
+        </div>` : ''}
+      <div class="ob-form">
+        ${showFamily ? `
+          <button class="ob-cta" style="background:var(--surface);color:var(--text);border:1.5px solid rgba(255,255,255,.1);margin-bottom:10px" onclick="finishOnboardingThen('family')">Parivaar add karein →</button>
+          <button class="ob-cta" onclick="finishOnboardingThen(null)">Baad mein karunga, Sehat Saathi kholein</button>
+        ` : `<button class="ob-cta" onclick="finishOnboardingThen(null)">Sehat Saathi kholein →</button>`}
+      </div>`;
+  }
+}
+
+function setScope(s) {
+  ST.onboardData.scope = s;
+  document.querySelectorAll('.ob-scope-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  setTimeout(() => renderOnboardStep(1), 240);
+}
+function setSex(s) {
+  ST.onboardData.sex = s;
+  document.querySelectorAll('.ob-sex-btn').forEach(b => b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+}
+function onboardNext() {
+  const age = document.getElementById('ob-age').value.trim();
+  const weight = document.getElementById('ob-weight').value.trim();
+  const height = document.getElementById('ob-height').value.trim();
+  if (!age || !ST.onboardData.sex || !weight) {
+    showToast('Umar, aap (purush/stree), aur vajan zaroori hai');
+    return;
+  }
+  ST.onboardData.age = age;
+  ST.onboardData.weight = weight;
+  if (height) ST.onboardData.height = height;
+  renderOnboardStep(2);
+}
+function finishOnboardingThen(nextAction) {
+  const d = ST.onboardData;
+  const bmi = calcBMI(d.weight, d.height);
+  const profile = {
+    completed: true,
+    onboardedAt: Date.now(),
+    skipCount: 0,
+    scope: d.scope || 'self',
+    age: d.age,
+    sex: d.sex,
+    weight: d.weight,
+    height: d.height || null,
+    bmi: bmi
+  };
+  saveProfile(profile);
+  showToast('Profile save ho gaya 💚');
+  if (nextAction === 'family') {
+    goTo('s-family');
+    setTimeout(() => { renderFamilyList(); showAddFamily(); }, 200);
+  } else {
+    goTo(ST.onboardReturnTo || 's-hub');
+    if (ST.pendingFeature) { const f = ST.pendingFeature; ST.pendingFeature = null; setTimeout(() => startFeature(f), 200); }
+  }
+}
+function skipOnboarding() {
+  // Save partial state + bump skipCount
+  const existing = loadProfile() || { skipCount: 0 };
+  const updated = {
+    ...existing,
+    completed: existing.completed || false,
+    skipCount: (existing.skipCount || 0) + 1,
+    partialData: ST.onboardData
+  };
+  saveProfile(updated);
+  goTo(ST.onboardReturnTo || 's-hub');
+}
+
 
 // ── Navigation ──
 function goTo(id, noHistory = false) {
@@ -750,7 +1014,23 @@ function selectPersona(p, el) {
 }
 
 // ── Feature routing ──
-function goToFeature(f) { goTo('s-hub'); setTimeout(() => startFeature(f), 100); }
+function goToFeature(f) {
+  // Soft onboarding gate for first-time users
+  const p = ST.userProfile || loadProfile();
+  if (p) ST.userProfile = p;
+  const skipCount = (p && p.skipCount) || 0;
+  if ((!p || !p.completed) && skipCount < 3) {
+    ST.onboardReturnTo = 's-hub';
+    ST.onboardData = (p && p.partialData) || {};
+    goTo('s-onboard');
+    setTimeout(() => { renderOnboardStep(0); }, 50);
+    // After onboarding completes, finishOnboardingThen routes to s-hub. Feature will be triggered manually if needed.
+    ST.pendingFeature = f;
+    return;
+  }
+  goTo('s-hub');
+  setTimeout(() => startFeature(f), 100);
+}
 function startFeature(f) {
   if (f === 'nushke') { ST.chatCtx = 'nushke'; ST.chatHistory = []; ST.isFirstMsg = true; goTo('s-chat'); document.getElementById('chat-ctx-label').textContent = 'Ghar ke Nushke'; renderNushkeStart(); }
   else if (f === 'medicine') { goTo('s-medicine'); renderMedStep(0); }
@@ -1552,6 +1832,7 @@ function showComingSoon() { showToast('Jald aa raha hai'); }
 // ── Init ──
 window.addEventListener('load', () => {
   reloadSavedReminders();
+  ST.userProfile = loadProfile();
   initHubDynamic();
   window.speechSynthesis.onvoiceschanged = () => {};
   setTimeout(() => window.speechSynthesis.getVoices(), 500);
