@@ -2,6 +2,119 @@
 
 ---
 
+## 2026-05-07 — Session 7: v2 Expansion (Onboarding, Personalization, Lab, Community, Voice, Videos)
+
+This was a 9-phase expansion that landed across 9 commits on `main`. Each phase pushed independently and the live URL was kept working between commits.
+
+### Added — Phase 1: Soft Onboarding (commit `7a1fa93`)
+- New `s-onboard` screen — 3-step flow: Scope (self/family/household) → Basic info (age, sex, weight, optional height) → Family invite (optional)
+- BMI auto-calc + warm category messages (Kam vajan / Sahi vajan / Thoda zyada / Adhik vajan) shown after step 2
+- New `localStorage` key `ss_profile` — `{age, sex, weight, height?, bmi, scope, completed, onboardedAt, skipCount, partialData}`
+- Skippable up to 3 times — after 3 skips never auto-prompts; only via explicit "Profile" tile
+- Soft-prompt gate added to `enterHub()` and `goToFeature()` — first hub entry triggers onboarding then resumes pending feature
+- New ST keys: `userProfile`, `onboardStep`, `onboardData`, `onboardReturnTo`, `pendingFeature`
+
+### Added — Phase 2: Personalized Quick Actions (commit `2f08050`)
+- `FEATURE_REGISTRY` constant — 6 health features + 3 cross-assistant placeholders (cricket, astro, bhajan) future-proofed
+- LRU recent-feature tracker (`ss_recent` localStorage key, max 6)
+- `trackFeature()` hooked into both `goToFeature()` and `startFeature()` so any entry path counts
+- Static QA grid replaced with `<div id="qa-grid">` + `renderQuickActions()` JS render
+- New users see default health-feature set; returning users see MRU first
+
+### Added — Phase 3: Voice Personas v2 (commit `9732cc9`)
+- `detectLang(text)` — returns `{code, name, script}` for 9 scripts (Devanagari, Bengali, Tamil, Telugu, Kannada, Malayalam, Gujarati, Gurmukhi, Sinhala) + Roman fallback
+- `pickVoice(lang, persona)` — 3-tier voice match (exact lang → hi-IN → en-IN) with persona `voiceHint` keyword preference
+- `speak()` rewritten via `speakWebSpeech()` shim under `TTS_BACKEND = 'webspeech'` constant — drop-in swap for Bhashini (free, Govt of India) or Google Cloud TTS later
+- `PERSONAS` upgraded with `emoji` + `voiceHint` arrays
+- Default persona changed: `dadi` → `saathi` (soft, neutral default for new users)
+
+### Added — Phase 4+5: Sehat Tools + Wellness Talk (commit `6509c69`)
+- 4 new Sehat Tools list items: **Lab Report Padho**, **Sehat Charcha**, **Wellness Baat**, **Profile**
+- New `WELLNESS_SYSTEM_PROMPT` — younger Bharat audience (18–35), Hinglish tone, hard rule against diagnosis, iCall helpline (9152987821) for crises
+- `getSystemPromptFor(ctx)` — per-context system prompt selector; `chatSend()` now uses it
+- New `s-wellness`-style chat reuses `s-chat` markup with chat context `'wellness'`
+- New `s-community` and `s-lab` screen scaffolds (functional implementations land in Phases 6+7)
+
+### Added — Phase 6: Community / Sehat Charcha (commit `1b211df`)
+- `PEER_PROFILES` — 5 AI peer roleplays:
+  - Sunita (42, Indore, BP, homemaker)
+  - Ramesh (38, Pune, Diabetes, IT)
+  - Priya (28, Bengaluru, anxiety, techie)
+  - Asha (55, Lucknow, joint-pain, retired teacher)
+  - Arjun (24, Mumbai, fitness, MBA student)
+- Profile-based matching — peers within ±10 years of user's age OR matching condition tags float to top with "match" badge
+- Each peer has a unique `sysPrompt` enforcing first-person roleplay, no clinical advice, redirect to doctor for symptoms
+- `COMMUNITY_BASE_PROMPT` wrapper enforcing peer-not-doctor framing
+- Required disclaimer banner shown atop every peer chat: "Yeh ek AI peer roleplay hai — asli user nahi"
+- Header avatar swap to peer emoji on chat entry
+
+### Added — Phase 7: Lab Interpreter (commit `ed20292`)
+- pdf.js (3.11.174) loaded from cdnjs CDN for in-browser PDF page → image conversion
+- `pdfToImages()` — converts up to 5 pages to base64 JPEG dataURLs + extracts text via `getTextContent()`
+- `isPrescription()` — regex guard: rejects PDFs containing prescription markers (Rx, TDS, BD, sig:, dosage) but lacking lab markers (reference range, mg/dL, lab, pathology)
+- `interpretLabPDF()` — sends page images to GPT-4o Vision with structured JSON prompt; returns `{reportType, reportDate, markers[], summary, doctorAdvice}`
+- 4-step UI flow: Triage member → Upload PDF → Processing → Result card
+- Color-coded marker tiles (Normal=green, Low/High=amber, Critical=red)
+- Per-member memory: `ss_lab_reports` localStorage key, `{<memberKey>: [reports]}`, capped 10/member
+- Past reports list shown above upload zone for chosen member
+- Prescription-rejected case shows friendly message + "Try another" CTA (no dead end)
+
+### Added — Phase 8: Nushke Video Cards (commit `3e3134c`)
+- `NUSHKE_VIDEOS` — 15 ingredient/procedure mappings (ajwain, haldi, tulsi, adrak, jeera, mulethi, saunf, methi, neem, amla, nimbu+shahad, anulom-vilom, yoga, malasana, namak)
+- `detectVideo(text)` — keyword matcher on bot reply
+- `injectVideoCard()` — appends a `.video-card` row to chat after each nushke bot reply (gated on `ST.chatCtx === 'nushke'`)
+- Card design: gradient thumbnail (purple→teal) with emoji + small play overlay, title, "AYUSH · duration" meta line
+- Click opens YouTube search query in new tab — durable, no broken video IDs
+
+### Added — Phase 9: Polish + No Dead Ends (commit `f41068c`)
+- Symptoms flow now has 8 starter chips (Sardi-Khansi, Pet ki takleef, Sir dard, Bukhar, Neend, Stress, Badan dard, Skin) — routes through nushke for richer Dadi response + video card
+- Breathwork stop screen now appends 3 follow-up buttons (Community, Wellness, Wapas Hub) so user never lands on a blank end-state
+- Family member add success → custom "🎉 jud gaye!" screen with 4 next-step CTAs (Lab report, Dawai reminder, Family list, Wapas hub) instead of silent return
+- Visual polish: depth shadows on `.hub-cards`, `.sc-card`, `.peer-card`, `.lab-marker`, `.bubble.bot`; hover/active microinteractions on `.qa-btn`, `.assistant-card`, `.hub-list-item`
+
+### Changed
+- Hub header avatar: persona photo → SS initials circle (purple)
+- Hub persona toggle pill cycles `🤝 Saathi` → `🧓 Dadi` → `🤱 Maa` (Saathi default for new users)
+- Sehat Tools list expanded from 4 → 8 items with restored emoji-in-tinted-square icons
+- Hub bar placeholder: "Sehat Saathi se poochho..." (locked at bottom — `min-height:0` on `.body` flex child)
+
+### Fixed
+- TTS now sets `utterance.lang` from response language (was hardcoded `hi-IN` for all output)
+- Static QA grid that didn't reflect user behavior — now LRU-driven
+- Hub feature pills had stripped icons after earlier refactor — restored emoji-in-tint pattern in v2
+- Symptoms flow no longer dead-ends on a single bot greeting
+
+### Broken / Known issues
+- Lab Interpreter requires real `OPENAI_API_KEY` (Vision-capable) — Groq fallback does NOT support image input, so Vision calls bypass the dual-provider pattern
+- Vision API spend: ~$0.01–0.03 per lab report (1–3 pages); capped at 5 pages per upload to limit cost
+- File grew from ~1560 → ~3000 lines (per `wc -l index.html`) — well past 800-line ideal, accepted for prototype scope (see DEC-009)
+- Web Speech voices vary wildly across devices — Indian language voices on iOS Safari are limited; voice picking gracefully falls back but quality differs by OS
+- Nushke video cards open YouTube search in new tab (no embedded curated video IDs yet)
+
+### New localStorage keys (Session 7)
+| Key | Purpose | Shape |
+|---|---|---|
+| `ss_profile` | User profile + onboarding state | `{age, sex, weight, height?, bmi, scope, completed, skipCount, partialData}` |
+| `ss_recent` | Recent feature LRU (max 6) | `string[]` of featureIds |
+| `ss_lab_reports` | Per-member lab report memory | `{<memberKey>: [{date, fileName, reportType, summary, markers, doctorAdvice}]}` |
+
+### New ST keys (Session 7)
+- `userProfile` (hydrated from ss_profile on load)
+- `onboardStep`, `onboardData`, `onboardReturnTo`, `pendingFeature`
+- `recentFeatures` (hydrated from ss_recent)
+- `labStep`, `labData`
+- `communityPeer`
+
+### Next session should start with
+- Run `mcp__JioBharatIQ__validate_prototype` — should remain at 0 errors
+- Test Lab Interpreter with a real lab PDF on mobile
+- Test Community peer chats — verify each persona stays in character across multi-turn conversation
+- Consider: swap `TTS_BACKEND = 'webspeech'` → `'bhashini'` for production-quality Indian language voices
+- Consider: curate real YouTube video IDs for top 5 most-asked nushke procedures (replace search-query approach with embedded videos)
+- Consider: progressive memory — Lab Interpreter could pre-load past markers in the Vision prompt for trending detection (e.g., "HbA1c rising over last 3 reports")
+
+---
+
 ## 2026-05-07 — Session 6: Icon Fix + Hub Gamification
 
 ### Added

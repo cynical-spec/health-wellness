@@ -95,3 +95,59 @@
 - Always run `validate_prototype` before pushing. Zero errors is the bar.
 - JDS dark mode surfaces must use rgba overlays on `#141414`, not arbitrary dark hex values.
 - No emoji anywhere — not in icons, not in labels, not in JS strings that render to UI.
+
+---
+
+## 2026-05-07 — Session 7: Python script "succeeded" but never wrote the file (CSS lost)
+
+**What happened:** First attempt at the hub gamification redesign reported `"CSS inserted: True"` from a Python script. But on the live page, the score card and unlock card had no styling — text was running together, the persona photo rendered enormous because the wrapper's `overflow:hidden` wasn't applying.
+
+**Why it happened:** The Python script had two stages. Stage A read the file into `content`, did `content = content.replace('.divider...', '.divider' + new_css)` and printed "CSS inserted: True". Stage B did `lines = content.split('\n')` BEFORE Stage A ran, so `lines` held the original (pre-CSS) content. Then `new_lines = lines[:N] + [new_body] + lines[M:]` rebuilt content from `lines` (no CSS) and wrote it. The Stage A modification was discarded.
+
+**What was tried:** Inspected the live page; dropped to DevTools and confirmed `.score-card` had no rules. Then ran a `grep -c '.score-card{' index.html` — returned 0. CSS was simply not in the file.
+
+**What fixed it:** Rebuilt the script as a single-pass: read content once, do all string replacements on `content` directly (never via `lines = content.split` followed by writing `'\n'.join(lines)`).
+
+**Rule going forward:** When mutating a file via Python, NEVER mix `content = ...` (string ops) with `lines = content.split('\n'); ... ; '\n'.join(lines)` (line ops) in the same script. Pick ONE strategy. Always write back the variable that has all your edits. Verify post-write with `grep` on the file before committing.
+
+---
+
+## 2026-05-07 — Session 7: Greedy regex stripped wrong `</div>` from QA grid
+
+**What happened:** Replaced the static QA grid HTML with a dynamic `<div id="qa-grid">` container via Python regex. Result: the dynamic container appeared, BUT five orphan `<button class="qa-btn">` blocks remained immediately after, plus a stray `<span class="qa-label">Ghar ke Nushke</span>` inside the container.
+
+**Why it happened:** Used `re.compile(r'<div class="qa-grid">.*?</div>\s*\n', re.DOTALL)` — non-greedy `.*?` matches the FIRST `</div>` it finds, which was the closing tag of the very first `<div class="qa-icon">` inside the first `qa-btn`, not the closing tag of the outer `qa-grid`. Replacement deleted only the first inner div, leaving the rest of the buttons orphaned.
+
+**What was tried:** Re-checked output and saw the leftover `<button class="qa-btn">` lines via `grep`. Realized regex matched too narrow.
+
+**What fixed it:** Second pass with a more specific regex anchoring on the next section marker (`<!-- Updates -->`): `r'(<div class="qa-grid" id="qa-grid"><!-- JS renders --></div>)\s*\n.*?</div>\s*\n\s*\n\s*(<!-- Updates -->)'`. Matched everything from the dynamic container through the next section comment.
+
+**Rule going forward:** When using regex to delete an HTML block ending in `</div>`, anchor the END on a UNIQUE marker that appears AFTER the block (a unique id, a comment marker, the next section's heading) — NOT just `</div>`. HTML has too many closing divs for non-greedy matching to be reliable.
+
+---
+
+## 2026-05-07 — Session 7: Python f-string broke on backslash escape inside `'...'`
+
+**What happened:** Verification block `print(" Profile tile:", 'startOnboarding(\\'s-hub\\')' in content)` raised `SyntaxError: invalid syntax`. The whole script aborted before writing the file. Verification said all checks failed because no edits landed.
+
+**Why it happened:** Python doesn't allow escaped single quotes inside a regular `'...'` string literal — `\\'` inside `'...'` parses as backslash + closing quote. The verification line was meant to test for `startOnboarding('s-hub')` but the escape was syntactically invalid.
+
+**What was tried:** Re-ran with the rest of the script intact — still failed because the syntax error blocked execution before any `f.write()`.
+
+**What fixed it:** Rewrote the verification using a separate `python3 -c` invocation that re-reads the saved file and uses simpler string checks (no nested quotes). Decoupled "do edits" from "verify edits".
+
+**Rule going forward:** In Python heredoc scripts, never write nested-quote string literals like `'text with \'inner\' quotes'`. Use either: (a) double quotes outside `"text with 'inner'"`, or (b) a separate verification step run after the file has been saved. Catch syntax errors early — `python3 -c "import sys; print('ok')"` is cheaper than a failed multi-stage edit.
+
+---
+
+## 2026-05-07 — Session 7: Stub function defined twice (real one shadowed)
+
+**What happened:** When implementing Phase 6 (Community), wrote a real `renderCommunityList()` function but the stub from Phase 4 was still in the file. JavaScript took the SECOND definition (the stub) as authoritative, so clicking "Sehat Charcha" showed "Coming soon" instead of the peer list.
+
+**Why it happened:** Intentionally added stubs in Phase 4+5 so clicking Lab/Community wouldn't error before their phases shipped. But when Phase 6 added the real function, didn't remove the stub. JS hoisting + redefinition meant the last-declared `function renderCommunityList()` won.
+
+**What was tried:** Live page showed stub message. Searched for `function renderCommunityList` and found 2 occurrences.
+
+**What fixed it:** Added `content.replace(<stub_text>, '')` to the Phase 6 script to remove the stub before inserting the real one. Added an `assert content.count('function renderCommunityList') == 1` post-check to catch this class of bug.
+
+**Rule going forward:** When replacing a stub with a real implementation, EXPLICITLY delete the stub. Don't rely on "last definition wins" — assert that the file has exactly ONE definition of any given function. Run `grep -c "function <name>"` before commit.
