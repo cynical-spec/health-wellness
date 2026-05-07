@@ -23,19 +23,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Inject API key
+      - name: Inject API keys
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python3 - <<'PYEOF'
           import os
-          key = os.environ["OPENAI_API_KEY"].strip()
-          with open("index.html", "r") as f:
+          oai  = os.environ.get("OPENAI_API_KEY","").strip()
+          groq = os.environ.get("GROQ_API_KEY","").strip()
+          with open("index.html","r") as f:
               html = f.read()
-          html = html.replace("REPLACE_WITH_YOUR_KEY", key)
-          with open("index.html", "w") as f:
+          html = html.replace("REPLACE_WITH_YOUR_KEY", oai)
+          html = html.replace("REPLACE_WITH_GROQ_KEY", groq)
+          with open("index.html","w") as f:
               f.write(html)
-          print("Key injected successfully")
+          print("Injected. OpenAI:", bool(oai), "Groq:", bool(groq))
           PYEOF
 
       - uses: actions/configure-pages@v5
