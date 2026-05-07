@@ -279,6 +279,17 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .hw-sub{font-size:12px;color:var(--text2)}
 
 
+
+/* ══ Nushke video cards ══ */
+.video-card-row{padding:0 4px;margin-top:-4px}
+.video-card{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(57,0,173,.25),rgba(30,204,176,.12));border:1px solid rgba(109,23,206,.35);border-radius:14px;padding:12px;cursor:pointer;text-align:left;font-family:'JioType',sans-serif;color:var(--text);width:100%;border:none;transition:transform .15s}
+.video-card:active{transform:scale(.98)}
+.vc-thumb{width:64px;height:48px;border-radius:8px;background:linear-gradient(135deg,#6D17CE,#1eccb0);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;position:relative}
+.vc-play-icon{position:absolute;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px}
+.vc-info{flex:1;min-width:0}
+.vc-title{font-size:13px;font-weight:700;line-height:1.3;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vc-meta{font-size:11px;color:var(--text2)}
+.vc-meta-tag{display:inline-block;background:rgba(30,204,176,.15);color:var(--sparkle);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px;margin-right:5px}
 /* ══ Lab Interpreter ══ */
 .lab-body{padding:14px 16px}
 .lab-step-title{font-size:18px;font-weight:700;margin-bottom:6px;line-height:1.3}
@@ -1244,6 +1255,63 @@ const AYUSH_SLOTS = {
     habits:[{ic:'🥛',txt:'Haldi wala doodh'},{ic:'📖',txt:'Ek acchi baat padhna'},{ic:'💤',txt:'Phone door karo'}]
   }
 };
+
+// ── v2: Nushke video cards ──
+const NUSHKE_VIDEOS = [
+  { kw: ['ajwain'],  emoji: '🌾', title: 'Ajwain ki bhaap (steam) — Sardi-Khansi', dur: '1:20', q: 'ajwain steam home remedy ayurveda' },
+  { kw: ['haldi','turmeric','golden milk'],  emoji: '🟡', title: 'Haldi wala doodh kaise banayein', dur: '0:58', q: 'haldi doodh recipe ayurveda golden milk' },
+  { kw: ['tulsi'],   emoji: '🌿', title: 'Tulsi kadha — Immunity boost', dur: '1:45', q: 'tulsi kadha recipe immunity ayurveda' },
+  { kw: ['adrak','ginger'], emoji: '🫚', title: 'Adrak ki chai — Pet aur sardi ke liye', dur: '1:10', q: 'adrak chai ginger tea ayurveda' },
+  { kw: ['jeera'],   emoji: '🟤', title: 'Jeera paani — Paachan shakti', dur: '0:48', q: 'jeera paani digestion ayurveda' },
+  { kw: ['mulethi','licorice'],  emoji: '🪵', title: 'Mulethi kadha — Khansi ke liye', dur: '1:30', q: 'mulethi licorice kadha cough ayurveda' },
+  { kw: ['saunf','fennel'],   emoji: '🌱', title: 'Saunf paani — Acidity ke liye', dur: '0:55', q: 'saunf fennel water acidity remedy' },
+  { kw: ['methi','fenugreek'], emoji: '🌾', title: 'Methi paani — Diabetes ke liye', dur: '1:15', q: 'methi seeds water diabetes ayurveda' },
+  { kw: ['neem'],    emoji: '🌳', title: 'Neem ke fayde aur upyog', dur: '2:00', q: 'neem benefits ayurveda home remedy' },
+  { kw: ['amla'],    emoji: '🟢', title: 'Amla murabba aur juice', dur: '1:20', q: 'amla murabba juice ayurveda recipe' },
+  { kw: ['nimbu','lemon','shahad','honey'], emoji: '🍋', title: 'Nimbu-shahad paani — Subah ka detox', dur: '0:40', q: 'nimbu shahad pani detox ayurveda' },
+  { kw: ['anulom','vilom','pranayam','breathing'], emoji: '🌬', title: 'Anulom-Vilom kaise karein', dur: '3:00', q: 'anulom vilom pranayam tutorial ayurveda' },
+  { kw: ['yoga','asana'], emoji: '🧘', title: 'Aasaan yoga aasan', dur: '4:00', q: 'simple yoga asanas ayurveda beginners' },
+  { kw: ['malasana','squat'], emoji: '🦵', title: 'Malasana — Paachan ke liye', dur: '1:30', q: 'malasana yoga digestion benefits' },
+  { kw: ['namak','salt'], emoji: '🧂', title: 'Namak paani gargle', dur: '0:35', q: 'salt water gargle home remedy' }
+];
+
+function detectVideo(text) {
+  if (!text) return null;
+  const t = text.toLowerCase();
+  for (const v of NUSHKE_VIDEOS) {
+    for (const k of v.kw) {
+      if (t.includes(k)) return v;
+    }
+  }
+  return null;
+}
+
+function injectVideoCard(text, msgsContainer) {
+  const v = detectVideo(text);
+  if (!v) return;
+  const row = document.createElement('div');
+  row.className = 'msg-row bot video-card-row';
+  row.innerHTML = `
+    <button class="video-card" onclick="openVideoLink('${v.q.replace(/'/g, "\'")}')">
+      <div class="vc-thumb">
+        <span>${v.emoji}</span>
+        <div class="vc-play-icon">▶</div>
+      </div>
+      <div class="vc-info">
+        <div class="vc-title">${v.title}</div>
+        <div class="vc-meta"><span class="vc-meta-tag">AYUSH</span>${v.dur} · Tap to watch</div>
+      </div>
+    </button>`;
+  msgsContainer.appendChild(row);
+  msgsContainer.scrollTop = msgsContainer.scrollHeight;
+}
+
+function openVideoLink(query) {
+  // Open YouTube search for the procedure (durable, no broken video IDs)
+  const url = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(query);
+  window.open(url, '_blank', 'noopener');
+}
+
 function initHubDynamic() {
   const h = new Date().getHours();
   const slot = h>=5&&h<12?'morning':h>=12&&h<17?'afternoon':h>=17&&h<21?'evening':'night';
@@ -1385,6 +1453,8 @@ function addMsg(role, text, showBadge) {
     // skill check
     const skill = detectSkill(text);
     if (skill) setTimeout(() => { const skRow = document.createElement('div'); skRow.className = 'msg-row bot'; renderSkillCard(skill, skRow); msgs.appendChild(skRow); msgs.scrollTop = msgs.scrollHeight; }, 600);
+    // nushke video card injection
+    if (ST.chatCtx === 'nushke') setTimeout(() => injectVideoCard(text, msgs), 800);
   }
   msgs.appendChild(row);
   msgs.scrollTop = msgs.scrollHeight;
