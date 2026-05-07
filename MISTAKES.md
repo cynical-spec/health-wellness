@@ -179,3 +179,23 @@
 **What fixed it:** Switched to a fallback: split by terminator-greedy match, then if any leftover text remains after the loop, append it as a final chunk. Updated to `text.match(/[^.!?।]+[.!?।]+\\s*/g) || [text]` plus a residual-text capture in the loop. Also defaulted to `[text]` if no matches at all (super-short stories).
 
 **Rule going forward:** When chunking text on a delimiter, ALWAYS handle the terminator-less remainder explicitly. Don't assume the LLM will always end with punctuation. Verify by playing a story end-to-end and counting that all sentences came through.
+
+---
+
+## 2026-05-07 — Session 8: Hub rebuild ate s-chat and s-onboard screens (mood tap appeared to "go home")
+
+**What happened:** After v3 Phase 2 deployed, tapping any mood button or pressing Enter in the input bar appeared to bounce the user back to the JioBharatIQ home screen (s-home). Both `moodTap` and `hubSend` route to `goTo('s-chat')`, so the bug was somewhere in between.
+
+**Why it happened:** Phase 2 used a marker-bracketed range to replace the hub HTML:
+```py
+hub_start = content.find('<!-- ══════════════ SEHAT HUB ══════════════ -->')
+hub_end = content.find('<!-- ══════════════ COMMUNITY SCREEN', hub_start)
+content = content[:hub_start] + new_hub + content[hub_end:]
+```
+Between those two markers — in source order — sat **two unrelated screens**: `<div class="screen" id="s-chat">` and `<div class="screen" id="s-onboard">`. The replacement deleted them along with the hub. `goTo('s-chat')` then found `getElementById('s-chat') === null`, the if-block didn't run, and the user was left looking at s-home (z-index 1, below everything else).
+
+**What was tried:** First suspected `goTo` logic, then a JS error in `moodTap` swallowing the navigation. Looking at `grep -E '<div class="screen' index.html` finally surfaced the missing screens — only 8 screens in the live file vs 10 in Session 7's last commit.
+
+**What fixed it:** Recovered s-chat + s-onboard from `git show fb16b89:index.html` (the pre-Phase-2 commit), inserted them right before the COMMUNITY SCREEN marker.
+
+**Rule going forward:** When using start/end markers to replace a block in HTML, ALWAYS verify what sits between them BEFORE running the replacement. Run `grep -nE '<div class="screen' file` (or equivalent for whatever entities matter) on both sides of the replacement and diff the lists. If a marker-pair spans more than the intended block, switch to a more specific anchor (the closing `</div>` at the right indentation, or a comment immediately after the intended block). Pair this with a post-replacement count assertion: `assert content.count('<div class="screen') == EXPECTED`.
