@@ -49,7 +49,12 @@ Last successful deploy: 2026-05-07 Session 5
 | Persona selector | Working | Dadi/Maa/Saathi, TTS greeting on select |
 | Hub send/speak toggle | Working | Send appears on type |
 | Voice input | Working | Opens overlay, auto-sends |
-| Hub pills | Working | JDS SVG icons, all navigate correctly |
+| Hub pills | Working | JDS SVG icons, reordered: Nushke+Swas prominent, rest muted |
+| Sehat Score Card | Working | Score 74, 3 daily taps, toggles update score |
+| Streak pill | Working | Static "🔥 7 din" amber pill |
+| Level bar | Working | Sehat Rakshak L2, 68/100 visual bar |
+| Aaj ki kahani | Visual only | Photo + teaser + audio countdown UI, no real audio |
+| Unlock card | Working | Static "Ritucharya — 3 din" card |
 
 ### Chat
 | Feature | Status | Notes |

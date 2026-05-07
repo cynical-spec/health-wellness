@@ -2,6 +2,39 @@
 
 ---
 
+## 2026-05-07 — Session 6: Icon Fix + Hub Gamification
+
+### Added
+- **Sehat Score Card** — Daily anchor number (74), 3 interactive daily taps (Paani piya ✓, Swas kiya ✓, Raat ka khana ○), score auto-updates on tap. Score starts at 37 + increments per completed tap.
+- **Streak pill** — "🔥 7 din" amber pill in score card top-right
+- **Level bar** — "Sehat Rakshak · Level 2", progress bar 68/100, "32 points to Level 3" footer line
+- **"Aaj ki kahani" story card** — Dadi photo, teaser text, visual audio player with 2:00 countdown (prototype, visual only). Sits above feature list.
+- **Unlock card** — "Ritucharya — Monsoon Shield unlocks in 3 more days", amber "3" badge
+- **Feature list reorder** — Ghar ke Nushke + Swas aur Sukoon prominent (purple, top); Dawai Reminder + Meal Planning + Parivaar muted (surface, below)
+- **Persona photos** — All 5 assistant avatars now use persona photos from blueprint CDN (`persona-*.png`) with purple ring border
+- **Inline JDS SVGs** — All Quick Action icons, hub pill icons, header avatar icons replaced with inline SVGs fetched via GitHub API (no filter:invert hacks)
+
+### Changed
+- Hub body rebuilt: greeting removed, replaced with Score Card at top
+- Hub pill order: Nushke → Swas (prominent), Medicine → Meal → Parivaar (muted)
+- `.assistant-avatar` CSS updated to 3px `#6D17CE` ring with box-shadow
+- `.hub-pill-muted` class added for de-emphasized features
+
+### Fixed
+- Quick Actions icons no longer show orange "?" broken image (was `filter:invert(1)` on failed `<img>`)
+- Assistant avatars no longer cartoon geometric SVGs
+
+### Broken / Known issues
+- Story audio is visual-only (prototype) — no real audio attached
+- Streak and score are hardcoded (no persistence layer yet)
+
+### Next session should start with
+- Review gamified hub on mobile at https://cynical-spec.github.io/health-wellness/
+- Consider: save tap state to localStorage so score persists across sessions
+- Consider: wire real audio to the "Aaj ki kahani" story card
+
+---
+
 ## 2026-05-06 — Session 1: Initial Build
 
 ### Added
