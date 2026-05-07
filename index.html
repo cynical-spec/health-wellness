@@ -234,6 +234,24 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .empty-state p{margin-top:8px;font-size:14px;line-height:1.6}
 .divider{height:1px;background:rgba(255,255,255,.06);margin:4px 0}
 
+/* ══ v2 Visual polish ══ */
+.hub-list-item:hover{background:rgba(255,255,255,.025)}
+.hub-list-item:active{background:rgba(255,255,255,.05);transform:scale(.995)}
+.hub-cards{box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 4px 12px rgba(0,0,0,.18)}
+.sc-card{box-shadow:0 8px 22px rgba(57,0,173,.18), 0 1px 0 rgba(255,255,255,.04) inset}
+.score-card-top, .sc-top-row{align-items:flex-start}
+.peer-card{box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.lab-marker{box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.qa-btn{transition:transform .15s ease, background .15s}
+.qa-btn:hover{background:rgba(255,255,255,.08)}
+.assistant-card .assistant-avatar{transition:transform .2s ease, box-shadow .2s ease}
+.assistant-card:hover .assistant-avatar{transform:translateY(-2px)}
+.update-card{box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.qa-icon{box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.bubble.bot{box-shadow:0 2px 8px rgba(57,0,173,.18)}
+.lab-summary{box-shadow:0 4px 14px rgba(57,0,173,.12)}
+
+
 /* ══ Onboarding screen ══ */
 .ob-skip{font-size:13px;font-weight:600;color:var(--text2);background:none;border:none;cursor:pointer;font-family:'JioType',sans-serif}
 .ob-skip:active{opacity:.6}
@@ -2046,7 +2064,19 @@ function renderWellnessStart() {
 function renderSymptomStart() {
   const msgs = document.getElementById('chat-msgs');
   msgs.innerHTML = '';
-  addMsg('bot', 'Kya takleef ho rahi hai? Batao — main poochhti hoon aur sahi raasta dikhaati hoon. 🙏', false);
+  ST.chatHistory = [];
+  const intro = 'Kya takleef ho rahi hai? Niche se chunein, ya likh ke batayein 🙏';
+  addMsg('bot', intro, false);
+  speak(intro);
+  addQuickReplies(
+    ['Sardi-Khansi', 'Pet ki takleef', 'Sir dard', 'Bukhar', 'Neend nahi aati', 'Stress', 'Badan dard', 'Skin problem'],
+    (txt) => {
+      addMsg('user', txt, false);
+      // Route Sehat-related symptoms through nushke flow (richer Dadi response + video card)
+      ST.chatCtx = 'nushke';
+      callAI(txt + ' — kya nushka karein?');
+    }
+  );
 }
 
 // ── Chat input ──
@@ -2373,7 +2403,22 @@ function saveFamilyMember() {
   };
   const fam = loadFamily(); fam.push(member); saveFamily(fam);
   showToast(`${name} add ho gaye!`);
-  renderFamilyList();
+  // Show follow-up suggestions instead of dead-ending on the family list
+  const flow = document.getElementById('family-list');
+  if (flow) {
+    flow.innerHTML = `
+      <div style="text-align:center;padding:30px 16px 20px">
+        <div style="font-size:48px;margin-bottom:12px">🎉</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:6px">${name} jud gaye!</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:24px">${name} ke liye Sehat Saathi ab dekhbhal karega.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;max-width:320px;margin:0 auto">
+          <button class="lab-cta" onclick="goToFeature('lab')">🧪 ${name} ki lab report jodein</button>
+          <button class="lab-cta secondary" onclick="goToFeature('medicine')">💊 ${name} ke liye dawai reminder</button>
+          <button class="lab-cta secondary" onclick="renderFamilyList()">👨‍👩‍👧 Family list dekhein</button>
+          <button class="lab-cta secondary" onclick="goTo('s-hub')">← Wapas Sehat Saathi</button>
+        </div>
+      </div>`;
+  }
 }
 
 // ── BREATHWORK ──
@@ -2434,6 +2479,19 @@ function stopBreath() {
   document.getElementById('breath-btn').textContent = 'Phir Se Karo';
   document.getElementById('breath-intro').style.display = 'block';
   ST.breathRunning = false;
+  // Show follow-up next steps after a moment (no dead end)
+  setTimeout(() => {
+    const body = document.querySelector('#s-breathwork .body') || document.getElementById('s-breathwork');
+    if (!body || document.getElementById('breath-followups')) return;
+    const fu = document.createElement('div');
+    fu.id = 'breath-followups';
+    fu.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-top:18px;width:100%;max-width:300px';
+    fu.innerHTML = `
+      <button class="lab-cta secondary" style="margin:0" onclick="document.getElementById('breath-followups').remove();goToFeature('community')">💬 Apke jaise logo se baat karein</button>
+      <button class="lab-cta secondary" style="margin:0" onclick="document.getElementById('breath-followups').remove();goToFeature('wellness')">🌟 Wellness baat karein</button>
+      <button class="lab-cta secondary" style="margin:0" onclick="document.getElementById('breath-followups').remove();goTo('s-hub')">← Wapas Sehat Saathi</button>`;
+    body.appendChild(fu);
+  }, 1200);
 }
 
 // ── Stretch guide ──
