@@ -1422,13 +1422,19 @@ function showToast(msg) {
   const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
-function showComingSoon() { showToast('Jald aa raha hai ✨'); }
+function showComingSoon() { showToast('Jald aa raha hai'); }
 
 // ── Init ──
 window.addEventListener('load', () => {
   reloadSavedReminders();
   window.speechSynthesis.onvoiceschanged = () => {};
   setTimeout(() => window.speechSynthesis.getVoices(), 500);
+
+  // Hide all Speak buttons if SpeechRecognition not supported (Firefox etc.)
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.querySelectorAll('.bar-speak').forEach(btn => btn.style.display = 'none');
+  }
 
   // Hub: toggle send/speak based on input content
   const hubInp = document.getElementById('hub-input');
@@ -1438,7 +1444,8 @@ window.addEventListener('load', () => {
     hubInp.addEventListener('input', () => {
       const hasText = hubInp.value.trim().length > 0;
       hubSendBtn.style.display = hasText ? '' : 'none';
-      hubSpeakBtn.style.display = hasText ? 'none' : '';
+      // Only show speak if SR is supported
+      hubSpeakBtn.style.display = (hasText || !SR) ? 'none' : '';
     });
   }
 });
