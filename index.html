@@ -277,6 +277,24 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .hw-icon{font-size:28px;flex-shrink:0}
 .hw-title{font-size:15px;font-weight:700;margin-bottom:2px}
 .hw-sub{font-size:12px;color:var(--text2)}
+
+/* ══ Community ══ */
+.community-list{padding:14px 16px}
+.community-intro{padding:0 4px 14px}
+.community-intro h3{font-size:16px;font-weight:700;margin-bottom:5px}
+.community-intro p{font-size:13px;color:var(--text2);line-height:1.5}
+.peer-card{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:13px 14px;margin-bottom:10px;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);text-align:left;transition:all .15s;width:100%;border:none}
+.peer-card:active{background:rgba(255,255,255,.04);transform:scale(.99)}
+.peer-card.matched{border:1.5px solid rgba(53,53,243,.4)}
+.peer-emoji{width:46px;height:46px;border-radius:50%;background:rgba(57,0,173,.2);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.peer-info{flex:1;min-width:0}
+.peer-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.peer-meta{font-size:11px;color:var(--text3);margin-bottom:4px}
+.peer-tags{display:flex;flex-wrap:wrap;gap:5px}
+.peer-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:var(--radius-pill);background:var(--bold-dim);color:var(--text2)}
+.peer-tag.matched{background:var(--primary-dim);color:var(--primary);border:1px solid rgba(53,53,243,.3)}
+.peer-chev{flex-shrink:0;opacity:.3}
+.peer-disclaimer{margin:0 16px 12px;padding:8px 12px;background:rgba(247,171,32,.08);border:1px solid rgba(247,171,32,.18);border-radius:10px;font-size:11px;color:var(--warn);text-align:center;line-height:1.4}
 /* Welcome stats row */
 .hw-stats{display:flex;align-items:center;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);font-size:11px;color:var(--text2);font-weight:600}
 .hw-stat b{color:#fff;font-size:13px;font-weight:700}
@@ -1452,16 +1470,144 @@ function renderNushkeStart() {
 }
 
 
-function renderCommunityList() {
-  const el = document.getElementById('community-body');
-  if (!el) return;
-  el.innerHTML = '<p class="flow-q" style="text-align:center;margin-top:40px">💬 Sehat Charcha</p><p style="text-align:center;color:var(--text2);padding:0 30px;line-height:1.6">Apke jaise logo se baat karne ka feature jaldi aa raha hai...</p>';
-}
 function renderLabStep(step) {
   const el = document.getElementById('lab-body');
   if (!el) return;
   el.innerHTML = '<p class="flow-q" style="text-align:center;margin-top:40px">🧪 Lab Report Padho</p><p style="text-align:center;color:var(--text2);padding:0 30px;line-height:1.6">Lab report upload aur AI analysis jaldi aa raha hai...</p>';
 }
+
+// ── v2: Community AI peers ──
+const PEER_PROFILES = [
+  {
+    id: 'sunita',
+    name: 'Sunita',
+    age: 42,
+    city: 'Indore',
+    emoji: '👩‍🦱',
+    tags: ['BP','homemaker','40+'],
+    intro: "Namaste! Main Sunita — Indore se. Mujhe BP ki problem hai. Aap bhi struggle karte hain?",
+    sysPrompt: "You are Sunita, a 42-year-old homemaker from Indore, MP. You have mild hypertension diagnosed 2 years ago. You manage a household, your husband works in a textile shop, you have two kids in school. You speak Hindi-English mix. You manage your BP through diet (less salt, more lauki/karela), morning walks with neighbours, and Patanjali tablets prescribed by your family doctor. You're warm, motherly, sometimes share gossip naturally. You believe in Ayurveda + modern medicine combined. You roleplay as a fellow user — share YOUR personal experience, ask about theirs, never give medical advice as an authority."
+  },
+  {
+    id: 'ramesh',
+    name: 'Ramesh',
+    age: 38,
+    city: 'Pune',
+    emoji: '👨',
+    tags: ['Diabetes','desk-job','30s'],
+    intro: "Hi! Main Ramesh, IT mein hoon Pune se. Diabetes type 2 hai 3 saal se. Tension lekar mat baithiye, manage ho jata hai.",
+    sysPrompt: "You are Ramesh, a 38-year-old IT professional from Pune. You have Type 2 Diabetes diagnosed 3 years ago. You sit all day at your desk, work from home some days. Your wife is also a software engineer. You take metformin (don't recommend it to anyone), do intermittent fasting, walk 8K steps daily, and eat lots of paneer/dal/sabzi but minimal rice. You speak in casual Hinglish. You roleplay as a peer — share YOUR struggle (frustration with no chai, missing sweets), what works for YOU. Never act like a doctor."
+  },
+  {
+    id: 'priya',
+    name: 'Priya',
+    age: 28,
+    city: 'Bengaluru',
+    emoji: '👩‍💻',
+    tags: ['anxiety','techie','20s'],
+    intro: "Hey! Priya here from Bangalore. I work in tech and deal with anxiety. Therapy + journaling has helped me. Wanna chat?",
+    sysPrompt: "You are Priya, a 28-year-old software engineer from Bengaluru. You've had anxiety since college, now manage it well. You go to a therapist monthly, journal daily, do Yoga Nidra at night, and limit Instagram before bed. You speak in modern Hinglish/English mix — Gen-Z casual. Your roommate also has anxiety. You're empathetic, share resources you've tried (Headspace, iCall helpline 9152987821), but you're NOT a therapist. Always encourage professional help for serious symptoms. Roleplay as a peer."
+  },
+  {
+    id: 'asha',
+    name: 'Asha',
+    age: 55,
+    city: 'Lucknow',
+    emoji: '👵',
+    tags: ['joint-pain','dadi','50+'],
+    intro: "Beta, namaste! Main Asha, Lucknow se. Ghutno mein dard hai, par Dadi ke nushke aur thoda yoga se kaafi farak pada hai.",
+    sysPrompt: "You are Asha, a 55-year-old retired schoolteacher from Lucknow. You have knee osteoarthritis but haven't let it slow you down. You swear by haldi-doodh, daily 15-min yoga, methi water in the morning. Your husband is retired bank manager. You speak in elegant Hindi with occasional English. You're warm, motherly to younger users, peer to other 50+ users. Share YOUR remedies and routine (haldi doodh, methi paani, yoga at 6am) — but always defer clinical questions to doctor."
+  },
+  {
+    id: 'arjun',
+    name: 'Arjun',
+    age: 24,
+    city: 'Mumbai',
+    emoji: '🧑‍🎓',
+    tags: ['fitness','student','20s'],
+    intro: "Yo! Arjun here from Mumbai. Fitness journey started during college, now I'm into strength training + Indian food. Let's chat!",
+    sysPrompt: "You are Arjun, a 24-year-old MBA student from Mumbai. You're into fitness — gym 5 days a week, strength training, lots of dal-rice-chicken-paneer. You went from 90kg to 75kg over 2 years. You speak in modern Mumbai-Hinglish. Your friends call you for gym advice but you always say 'I'm not a trainer'. You roleplay as a peer — share YOUR meal plans, workout splits, mental health struggles during exam season. Never give medical or supplement advice."
+  }
+];
+
+function renderCommunityList() {
+  const el = document.getElementById('community-body');
+  if (!el) return;
+  const profile = ST.userProfile || loadProfile();
+  // Match peers based on user's age/conditions if profile exists
+  const userAge = profile && parseInt(profile.age) || null;
+  const userConds = profile && profile.conditions ? profile.conditions.toLowerCase() : '';
+  
+  function isMatch(peer) {
+    if (!userAge) return false;
+    // Age band match (within ±10 years)
+    const ageDiff = Math.abs(peer.age - userAge);
+    if (ageDiff <= 10) return true;
+    // Condition match
+    for (const t of peer.tags) {
+      if (userConds.includes(t.toLowerCase())) return true;
+    }
+    return false;
+  }
+  
+  // Sort: matched peers first
+  const sorted = [...PEER_PROFILES].sort((a,b) => (isMatch(b)?1:0) - (isMatch(a)?1:0));
+  
+  const introText = profile && profile.completed
+    ? "Aapke jaise logo se milein — sab AI peers hain, asli logo ki experiences se inspired."
+    : "Profile bharein toh aap se match karne wale log dikhayenge. Filhal sab peers dekhein.";
+  
+  let html = `
+    <div class="community-list">
+      <div class="community-intro">
+        <h3>Apke jaise log</h3>
+        <p>${introText}</p>
+      </div>`;
+  
+  for (const peer of sorted) {
+    const matched = isMatch(peer);
+    html += `
+      <button class="peer-card ${matched?'matched':''}" onclick="openPeerChat('${peer.id}')">
+        <div class="peer-emoji">${peer.emoji}</div>
+        <div class="peer-info">
+          <div class="peer-name">${peer.name} ${matched ? '<span style="font-size:10px;color:var(--primary);font-weight:700">· match</span>' : ''}</div>
+          <div class="peer-meta">${peer.age}, ${peer.city}</div>
+          <div class="peer-tags">
+            ${peer.tags.map(t => `<span class="peer-tag ${matched?'matched':''}">${t}</span>`).join('')}
+          </div>
+        </div>
+        <svg class="peer-chev" viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>`;
+  }
+  
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+function openPeerChat(peerId) {
+  const peer = PEER_PROFILES.find(p => p.id === peerId);
+  if (!peer) return;
+  ST.communityPeer = peer;
+  ST.chatCtx = 'community';
+  ST.chatHistory = [];
+  ST.isFirstMsg = true;
+  goTo('s-chat');
+  // Update header
+  document.getElementById('chat-ctx-label').textContent = `${peer.name} · ${peer.city}`;
+  // Update avatar to peer emoji
+  const hdrAvatar = document.querySelector('#s-chat .hdr-avatar > div');
+  if (hdrAvatar && hdrAvatar.tagName !== 'DIV.hdr-online') {
+    hdrAvatar.innerHTML = `<div style="width:40px;height:40px;border-radius:50%;background:rgba(57,0,173,.25);display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid #6D17CE">${peer.emoji}</div>`;
+  }
+  // Show chat
+  const msgs = document.getElementById('chat-msgs');
+  msgs.innerHTML = `<div class="peer-disclaimer">⚠️ Yeh ek AI peer roleplay hai — asli user nahi. Clinical sawal ke liye doctor se milein.</div>`;
+  setTimeout(() => {
+    addMsg('bot', peer.intro, false);
+    speak(peer.intro);
+  }, 200);
+}
+
 
 function renderWellnessStart() {
   const msgs = document.getElementById('chat-msgs');
