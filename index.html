@@ -443,7 +443,7 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
         <p>Online</p>
       </div>
     </div>
-    <button class="persona-mini" id="hub-persona-btn" onclick="cyclePersona()">🧓 Dadi</button>
+    <button class="persona-mini" id="hub-persona-btn" onclick="cyclePersona()">🤝 Saathi</button>
     <button class="hdr-btn" onclick="resetHub()">
       <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
@@ -687,7 +687,7 @@ const GROQ_API_KEY = "REPLACE_WITH_GROQ_KEY";
 const ST = {
   screen: 's-home',
   history: [],
-  persona: 'dadi',
+  persona: 'saathi',  // v2: default soft Saathi
   chatHistory: [],
   chatCtx: 'general',
   isFirstMsg: true,
@@ -721,10 +721,12 @@ const ST = {
 };
 
 const PERSONAS = {
-  dadi:   { label:'Dadi',   rate:0.72, pitch:0.78, lang:'hi-IN' },
-  maa:    { label:'Maa',    rate:0.88, pitch:1.05, lang:'hi-IN' },
-  saathi: { label:'Saathi', rate:0.9,  pitch:1.0,  lang:'hi-IN' }
+  dadi:    { label:'Dadi',    emoji:'🧓', rate:0.72, pitch:0.78, lang:'hi-IN', voiceHint:['female','grandma','swara','heera'] },
+  maa:     { label:'Maa',     emoji:'🤱', rate:0.88, pitch:1.05, lang:'hi-IN', voiceHint:['female','swara','kalpana'] },
+  saathi:  { label:'Saathi',  emoji:'🤝', rate:0.95, pitch:1.0,  lang:'hi-IN', voiceHint:['hindi','en-IN','google'] }
 };
+// Default persona for new users — soft, neutral
+const DEFAULT_PERSONA = 'saathi';
 
 const SYSTEM_PROMPT = `You are Sehat Saathi, a warm Ayurvedic health guide inside JioBharatIQ for Indian families.
 
@@ -1160,15 +1162,29 @@ function toggleStoryAudio(btn){
 function resetHub() { document.getElementById('hub-input').value = ''; }
 
 // ── Language badge ──
+function detectLang(text) {
+  if (/[ऀ-ॿ]/.test(text)) return { code:'hi-IN', name:'Hindi', script:'devanagari' };
+  if (/[ঀ-৿]/.test(text)) return { code:'bn-IN', name:'Bangla', script:'bengali' };
+  if (/[஀-௿]/.test(text)) return { code:'ta-IN', name:'Tamil', script:'tamil' };
+  if (/[ఀ-౿]/.test(text)) return { code:'te-IN', name:'Telugu', script:'telugu' };
+  if (/[ಀ-೿]/.test(text)) return { code:'kn-IN', name:'Kannada', script:'kannada' };
+  if (/[ഀ-ൿ]/.test(text)) return { code:'ml-IN', name:'Malayalam', script:'malayalam' };
+  if (/[઀-૿]/.test(text)) return { code:'gu-IN', name:'Gujarati', script:'gujarati' };
+  if (/[਀-੿]/.test(text)) return { code:'pa-IN', name:'Punjabi', script:'gurmukhi' };
+  if (/[\u0d80-\u0dff]/.test(text)) return { code:'si-LK', name:'Sinhala', script:'sinhala' };
+  // Roman/Marathi/Bhojpuri all default to Hindi voice with en-IN fallback
+  return { code:'hi-IN', name:'Hindi (Roman)', script:'roman' };
+}
 function langBadge(text) {
-  if (/[ऀ-ॿ]/.test(text)) return 'हिंदी ✓';
-  if (/[ঀ-৿]/.test(text)) return 'বাংলা ✓';
-  if (/[஀-௿]/.test(text)) return 'தமிழ் ✓';
-  if (/[ఀ-౿]/.test(text)) return 'తెలుగు ✓';
-  if (/[ಀ-೿]/.test(text)) return 'ಕನ್ನಡ ✓';
-  if (/[ഀ-ൿ]/.test(text)) return 'മലയാളം ✓';
-  if (/[઀-૿]/.test(text)) return 'ગુજરાતી ✓';
-  if (/[਀-੿]/.test(text)) return 'ਪੰਜਾਬੀ ✓';
+  const d = detectLang(text);
+  if (d.script === 'devanagari') return 'हिंदी ✓';
+  if (d.script === 'bengali')    return 'বাংলা ✓';
+  if (d.script === 'tamil')      return 'தமிழ் ✓';
+  if (d.script === 'telugu')     return 'తెలుగు ✓';
+  if (d.script === 'kannada')    return 'ಕನ್ನಡ ✓';
+  if (d.script === 'malayalam')  return 'മലയാളം ✓';
+  if (d.script === 'gujarati')   return 'ગુજરાતી ✓';
+  if (d.script === 'gurmukhi')   return 'ਪੰਜਾਬੀ ✓';
   return null;
 }
 
@@ -1827,19 +1843,55 @@ function stopVoice() {
   ST.isListening = false;
 }
 
-function speak(text, quiet) {
+// ── v2: TTS pluggable backend ──
+// Today: 'webspeech' (free, browser native). Future: 'bhashini' (Govt of India free), 'gcloud' (paid).
+const TTS_BACKEND = 'webspeech';
+
+function pickVoice(detectedLang, persona) {
+  if (!window.speechSynthesis) return null;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices || !voices.length) return null;
+  const langPrefix = (detectedLang || 'hi-IN').split('-')[0];
+  // Tier 1: exact language match
+  let matches = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith(langPrefix));
+  if (!matches.length) {
+    // Tier 2: hi-IN fallback for any Indian script we lack
+    matches = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('hi'));
+  }
+  if (!matches.length) {
+    // Tier 3: en-IN (better than en-US for Indian names)
+    matches = voices.filter(v => v.lang && v.lang.toLowerCase() === 'en-in');
+  }
+  if (!matches.length) matches = voices;
+  // Within matches, prefer voices whose name matches persona hints
+  const hints = (persona && persona.voiceHint) || [];
+  for (const hint of hints) {
+    const hit = matches.find(v => v.name.toLowerCase().includes(hint.toLowerCase()));
+    if (hit) return hit;
+  }
+  return matches[0];
+}
+
+function speakWebSpeech(text, opts) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const p = PERSONAS[ST.persona];
+  const p = PERSONAS[ST.persona] || PERSONAS[DEFAULT_PERSONA];
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = p.lang; u.rate = quiet ? 1.0 : p.rate; u.pitch = p.pitch;
-  // pick a female voice if available
-  const voices = window.speechSynthesis.getVoices();
-  const female = voices.find(v => v.lang.startsWith('hi') && v.name.toLowerCase().includes('female'))
-    || voices.find(v => v.lang.startsWith('hi'))
-    || voices.find(v => v.lang.startsWith('en-IN'));
-  if (female) u.voice = female;
+  // Detect language of the text to be spoken — gives utterance.lang the best chance to use a matching voice
+  const detected = detectLang(text);
+  u.lang = detected.code;
+  u.rate = (opts && opts.quiet) ? 1.0 : p.rate;
+  u.pitch = p.pitch;
+  const voice = pickVoice(detected.code, p);
+  if (voice) u.voice = voice;
+  // Don't fail silently — log if no matching voice
+  if (!voice && console && console.info) console.info('[speak] no voice match for', detected.code, '— using default');
   window.speechSynthesis.speak(u);
+}
+
+function speak(text, quiet) {
+  // Future: route to Bhashini or GCloud here based on TTS_BACKEND
+  if (TTS_BACKEND === 'webspeech') return speakWebSpeech(text, { quiet });
 }
 
 // ── Updates audio ──
