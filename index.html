@@ -234,6 +234,77 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .empty-state p{margin-top:8px;font-size:14px;line-height:1.6}
 .divider{height:1px;background:rgba(255,255,255,.06);margin:4px 0}
 
+
+/* ══ v3 Hub: 3-zone home ══ */
+.hub3-hdr{display:flex;align-items:center;justify-content:space-between;padding:max(14px,env(safe-area-inset-top)) 16px 14px}
+.hub3-hdr-left{display:flex;align-items:center;gap:11px}
+.hub3-name{font-size:16px;font-weight:700;line-height:1.1}
+.hub3-mode{font-size:11px;font-weight:600;color:var(--primary);margin-top:2px}
+.hub3-streak{display:flex;align-items:center;gap:4px;background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.35);color:#fb923c;border-radius:var(--radius-pill);padding:6px 11px;font-size:12px;font-weight:700;cursor:default}
+.hub3-menu-btn{width:36px;height:36px;background:transparent;border:none;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;margin-left:8px}
+.hub3-menu-btn:active{background:var(--surface)}
+/* Zone 1 — Greeting */
+.hub3-greet{padding:8px 16px 18px}
+.hub3-greet h1{font-size:30px;font-weight:700;line-height:1.15;margin-bottom:4px}
+.hub3-greet p{font-size:14px;color:var(--text2);line-height:1.5}
+/* Zone 2 — 3 mood buttons */
+.hub3-moods{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:0 16px 22px}
+.hub3-mood{aspect-ratio:1/.95;background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);transition:all .15s;padding:10px}
+.hub3-mood:active{transform:scale(.96);background:var(--bold-dim);border-color:var(--primary)}
+.hub3-mood-emoji{font-size:34px;line-height:1}
+.hub3-mood-lbl{font-size:12px;font-weight:600;color:var(--text2);text-align:center}
+/* Zone 3 — Story card + score strip */
+.hub3-story{margin:0 16px 14px;background:var(--bold);border-radius:18px;overflow:hidden;border:1px solid rgba(107,33,168,.4)}
+.hub3-story-body{padding:16px 16px 14px}
+.hub3-eyebrow{font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
+.hub3-story-title{font-size:17px;font-weight:700;line-height:1.3;margin-bottom:6px}
+.hub3-story-preview{font-size:13px;color:var(--text2);line-height:1.5;font-style:italic}
+.hub3-story-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.18)}
+.hub3-story-meta{font-size:11px;color:var(--text3);font-weight:500}
+.hub3-suno{background:var(--primary);border:none;color:#fff;border-radius:var(--radius-pill);padding:8px 16px;display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'JioType',sans-serif;font-size:13px;font-weight:700}
+.hub3-suno:active{opacity:.85}
+.hub3-suno-icon{display:flex;align-items:center;justify-content:center}
+/* Score strip */
+.hub3-score{margin:0 16px 16px;background:rgba(107,33,168,.08);border:1px solid rgba(107,33,168,.3);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:14px}
+.hub3-score-left{flex:1;min-width:0}
+.hub3-score-lbl{font-size:10px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+.hub3-score-row{display:flex;align-items:baseline;gap:9px;margin-bottom:6px}
+.hub3-score-num{font-size:32px;font-weight:700;color:#fff;line-height:1}
+.hub3-score-delta{font-size:11px;font-weight:700;color:#22c55e}
+.hub3-score-bar{height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;margin-bottom:5px}
+.hub3-score-fill{height:100%;background:var(--primary);border-radius:2px;transition:width .4s ease}
+.hub3-score-meta{font-size:10px;color:var(--text3);font-weight:500;line-height:1.3}
+.hub3-dots{display:flex;gap:7px;flex-shrink:0}
+.hub3-dot{width:38px;height:38px;border-radius:50%;background:#1a1a1a;border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:all .15s}
+.hub3-dot.done{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.45)}
+.hub3-dot:active{transform:scale(.92)}
+/* Ya seedha poochho hint */
+.hub3-or{text-align:center;font-size:11px;color:var(--text3);font-weight:500;padding:8px 16px 12px}
+/* Bottom input bar — v3 visual */
+.bar-input{font-size:14px}
+.bar-speak{background:#6B21A8;font-weight:700}
+.bar-speak.listening{background:#dc2626}
+/* Mood chips inside chat (after mood tap) */
+.mood-chips{display:flex;flex-wrap:wrap;gap:7px;padding:6px 0}
+.mood-chip{background:var(--surface);border:1px solid rgba(255,255,255,.08);color:var(--text);border-radius:var(--radius-pill);padding:8px 14px;font-family:'JioType',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.mood-chip:active{background:var(--primary-dim);border-color:var(--primary)}
+/* 3-dot bottom sheet */
+.bs-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;display:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.bs-overlay.on{display:block}
+.bs-sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:#141414;border-radius:20px 20px 0 0;z-index:301;transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);padding:14px 16px max(20px,env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.06)}
+.bs-sheet.on{transform:translateY(0)}
+.bs-handle{width:40px;height:4px;background:rgba(255,255,255,.18);border-radius:2px;margin:0 auto 16px}
+.bs-title{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;padding:0 4px 10px}
+.bs-row{display:flex;align-items:center;gap:14px;padding:13px 8px;border-radius:12px;background:none;border:none;color:var(--text);text-align:left;cursor:pointer;width:100%;font-family:'JioType',sans-serif;transition:background .12s}
+.bs-row:active{background:rgba(255,255,255,.04)}
+.bs-row.disabled{opacity:.45;cursor:default;pointer-events:none}
+.bs-row-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.bs-row-text{flex:1;min-width:0}
+.bs-row-name{font-size:14px;font-weight:700;line-height:1.25}
+.bs-row-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.bs-row-tag{font-size:10px;color:var(--warn);background:rgba(251,146,60,.12);padding:2px 7px;border-radius:6px;font-weight:700;flex-shrink:0}
+.bs-divider{height:1px;background:rgba(255,255,255,.05);margin:2px 8px}
+
 /* ══ v3 Visual rules: no drop shadows, no gradients on backgrounds ══ */
 .hub-list-item:hover{background:rgba(255,255,255,.025)}
 .hub-list-item:active{background:rgba(255,255,255,.05);transform:scale(.995)}
@@ -508,200 +579,140 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
   </div>
 </div>
 
-<!-- ══════════════ SEHAT HUB ══════════════ -->
+<!-- ══════════════ SEHAT HUB (v3 — 3-zone home) ══════════════ -->
 <div class="screen" id="s-hub">
-  <div class="hdr">
-    <button class="hdr-btn" onclick="goBack()">
-      <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M15 20a1 1 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a1 1 0 01-.71 1.71z" fill="currentColor"/></svg>
-    </button>
-    <div class="hdr-center">
-      <div class="hdr-avatar">
-        <div class="hub-initials">SS</div>
-        <div class="hdr-online"></div>
-      </div>
-      <div class="hdr-text">
-        <h2>Sehat Saathi</h2>
-        <p>Online</p>
+  <!-- v3 header: SS · Sehat Saathi · Dadi mode · streak · 3-dot menu -->
+  <div class="hub3-hdr">
+    <div class="hub3-hdr-left">
+      <div class="hub-initials">SS</div>
+      <div>
+        <div class="hub3-name">Sehat Saathi</div>
+        <div class="hub3-mode" id="hub3-persona-mode">Saathi mode</div>
       </div>
     </div>
-    <button class="persona-mini" id="hub-persona-btn" onclick="cyclePersona()">🤝 Saathi</button>
-    <button class="hdr-btn" onclick="resetHub()">
-      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    </button>
+    <div style="display:flex;align-items:center">
+      <div class="hub3-streak" id="hub3-streak"><span>🔥</span><span id="hub3-streak-count">0</span> din</div>
+      <button class="hub3-menu-btn" onclick="openToolsSheet()" aria-label="Tools menu">
+        <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><circle cx="5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="19" cy="12" r="1.7" fill="currentColor"/></svg>
+      </button>
+    </div>
   </div>
+
   <div class="body">
-    <!-- Welcome (new user) -->
-    <div class="hub-welcome">
-      <div class="hw-icon">🌱</div>
-      <div style="flex:1;min-width:0">
-        <div class="hw-title">Namaste 🙏 — Sehat Saathi yahaan hai</div>
-        <div class="hw-sub">Aaj ke teen kadam se yatra shuru karein</div>
-        <div class="hw-stats">
-          <span class="hw-stat"><b id="hub-score-mini">0</b> Sehat Score</span>
-          <span class="hw-dot">·</span>
-          <span class="hw-stat hw-stat-streak"><b>🔥 Day 1</b></span>
-          <span class="hw-dot">·</span>
-          <span class="hw-stat hw-stat-lvl"><b>Lv 1</b> Shiksharthi</span>
-        </div>
-      </div>
-    </div>
-    <!-- AYUSH daily habits — JS fills based on time -->
-    <div class="sec-lbl2">Aaj ke teen kadam</div>
-    <div class="hs-taps" id="hub-taps">
-      <button class="hs-tap" id="h1" onclick="toggleHabit('h1',this)"><span class="hs-tap-ic">○</span><span class="hs-tap-txt">—</span></button>
-      <button class="hs-tap" id="h2" onclick="toggleHabit('h2',this)"><span class="hs-tap-ic">○</span><span class="hs-tap-txt">—</span></button>
-      <button class="hs-tap" id="h3" onclick="toggleHabit('h3',this)"><span class="hs-tap-ic">○</span><span class="hs-tap-txt">—</span></button>
+    <!-- Zone 1: Greeting -->
+    <div class="hub3-greet">
+      <h1>Namaste 🙏<br>Aaj kaisa raha?</h1>
+      <p>Batao — main sun rahi hoon</p>
     </div>
 
-    <!-- Aaj ki AYUSH Practice -->
-    <div class="sec-lbl2">Aaj ki AYUSH Practice</div>
-    <div class="hub-cards">
-      <button class="hub-list-item" id="ayush-practice-btn" onclick="startFeature('breathe')">
-        <div class="hli-icon hli-icon-purple" id="ayush-icon" style="font-size:20px">🌬</div>
-        <div class="hli-text">
-          <div class="hli-name" id="ayush-name">Anulom-Vilom Pranayam</div>
-          <div class="hli-sub" id="ayush-sub">5 min · Saans ka santulan · Subah</div>
-        </div>
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <!-- Zone 2: 3 mood buttons -->
+    <div class="hub3-moods">
+      <button class="hub3-mood" onclick="moodTap('theek')">
+        <div class="hub3-mood-emoji">😌</div>
+        <div class="hub3-mood-lbl">Theek hoon</div>
       </button>
-      <div class="hli-div"></div>
-      <div class="hub-list-item">
-        <div class="hli-icon hli-icon-warm">👵</div>
-        <div class="hli-text">
-          <div class="hli-name" id="story-title-hub">Dadi ka subah ka nushka</div>
-          <div class="hli-sub">Dadi ki awaaz · 2 min · Hindi</div>
-        </div>
-        <button class="hli-play" id="story-play-btn" onclick="toggleStoryAudio(this)" aria-label="Play">
-          <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M8 5v14l11-7z" fill="white"/></svg>
+      <button class="hub3-mood" onclick="moodTap('takleef')">
+        <div class="hub3-mood-emoji">🤒</div>
+        <div class="hub3-mood-lbl">Kuch takleef</div>
+      </button>
+      <button class="hub3-mood" onclick="moodTap('tension')">
+        <div class="hub3-mood-emoji">😰</div>
+        <div class="hub3-mood-lbl">Bahut tension</div>
+      </button>
+    </div>
+
+    <!-- Zone 3a: Story card -->
+    <div class="hub3-story" id="hub3-story-card">
+      <div class="hub3-story-body">
+        <div class="hub3-eyebrow">Aaj ki kahani</div>
+        <div class="hub3-story-title" id="hub3-story-title">Dadi ka ajwain waala raaz</div>
+        <div class="hub3-story-preview" id="hub3-story-preview">"Jab mere baba ko pet ki takleef hoti thi..."</div>
+      </div>
+      <div class="hub3-story-foot">
+        <div class="hub3-story-meta" id="hub3-story-meta">Dadi ki awaaz · 2 min · Hindi</div>
+        <button class="hub3-suno" id="hub3-suno-btn" onclick="playStory()">
+          <span class="hub3-suno-icon"><svg viewBox="0 0 24 24" fill="none" width="13" height="13"><path d="M8 5v14l11-7z" fill="white"/></svg></span>
+          <span id="hub3-suno-lbl">Suno</span>
         </button>
       </div>
-      <div class="hli-div"></div>
-      <div class="hub-list-item">
-        <div class="hli-icon hli-icon-lock"><svg viewBox="0 0 24 24" fill="none" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2" stroke="rgba(255,255,255,0.38)" stroke-width="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke="rgba(255,255,255,0.38)" stroke-width="2" stroke-linecap="round"/></svg></div>
-        <div class="hli-text">
-          <div class="hli-name" style="color:var(--sparkle)">Ritucharya — Monsoon Shield</div>
-          <div class="hli-sub">Ayurvedic routine unlock hoga</div>
+    </div>
+
+    <!-- Zone 3b: Compact score strip -->
+    <div class="hub3-score">
+      <div class="hub3-score-left">
+        <div class="hub3-score-lbl">Sehat Score</div>
+        <div class="hub3-score-row">
+          <span class="hub3-score-num" id="hub3-score-num">50</span>
+          <span class="hub3-score-delta" id="hub3-score-delta">+0 aaj</span>
         </div>
-        <span class="hli-badge">3 din aur</span>
+        <div class="hub3-score-bar"><div class="hub3-score-fill" id="hub3-score-fill" style="width:50%"></div></div>
+        <div class="hub3-score-meta" id="hub3-score-meta">Level 2 · 50 points to unlock</div>
+      </div>
+      <div class="hub3-dots">
+        <div class="hub3-dot" id="dot-paani" onclick="markDailyDot('paani', this)" title="Paani piya">💧</div>
+        <div class="hub3-dot" id="dot-swas" onclick="markDailyDot('swas', this)" title="Swas kiya">🌬</div>
+        <div class="hub3-dot" id="dot-khana" onclick="markDailyDot('khana', this)" title="Raat ka khana">🌙</div>
       </div>
     </div>
 
-    <!-- Sehat Tools -->
-    <div class="sec-lbl2">Sehat Tools</div>
-    <div class="hub-cards" style="margin-bottom:20px">
-      <button class="hub-list-item" onclick="startFeature('nushke')">
-        <div class="hli-icon" style="background:rgba(30,204,176,.15);color:#1eccb0;font-size:18px">🌿</div>
-        <div class="hli-text"><div class="hli-name">Ghar ke Nushke</div><div class="hli-sub">Koi takleef? Dadi batayegi</div></div>
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="hli-div"></div>
-      <button class="hub-list-item" onclick="startFeature('lab')">
-        <div class="hli-icon" style="background:rgba(30,204,176,.15);color:#1eccb0;font-size:18px">🧪</div>
-        <div class="hli-text"><div class="hli-name">Lab Report Padho</div><div class="hli-sub">Apni report ka asaan matlab</div></div>
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="hli-div"></div>
-      <button class="hub-list-item" onclick="startFeature('wellness')">
-        <div class="hli-icon" style="background:rgba(37,171,33,.15);color:#25ab21;font-size:18px">🌟</div>
-        <div class="hli-text"><div class="hli-name">Wellness Baat</div><div class="hli-sub">Sehat aur fitness ki baat</div></div>
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="hli-div"></div>
-      <button class="hub-list-item" onclick="startFeature('community')">
-        <div class="hli-icon" style="background:rgba(247,171,32,.15);color:#f7ab20;font-size:18px">💬</div>
-        <div class="hli-text"><div class="hli-name">Sehat Charcha</div><div class="hli-sub">Apke jaise logo se milo</div></div>
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="hli-div"></div>
-      <button class="hub-list-item" onclick="startFeature('medicine')">
-        <div class="hli-icon" style="background:rgba(247,171,32,.15);color:#f7ab20;font-size:18px">💊</div>
-        <div class="hli-text"><div class="hli-name">Dawai Reminder</div><div class="hli-sub">Dawai yaad dila dena mujhe</div></div>
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="hli-div"></div>
-      <button class="hub-list-item" onclick="startFeature('meal')">
-        <div class="hli-icon" style="background:rgba(255,138,28,.15);color:#ff8a1c;font-size:18px">🍽️</div>
-        <div class="hli-text"><div class="hli-name">Meal Planning</div><div class="hli-sub">Ghar ke khaane ka 3-din plan</div></div>
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="hli-div"></div>
-      <button class="hub-list-item" onclick="startFeature('family')">
-        <div class="hli-icon" style="background:rgba(53,53,243,.18);color:#3535f3;font-size:18px">👨‍👩‍👧</div>
-        <div class="hli-text"><div class="hli-name">Parivaar</div><div class="hli-sub">Sab ke liye ek jagah dekhbhal</div></div>
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="hli-div"></div>
-      <button class="hub-list-item" onclick="startOnboarding('s-hub')">
-        <div class="hli-icon" style="background:rgba(255,255,255,.06);color:#fff;font-size:18px">⚙️</div>
-        <div class="hli-text"><div class="hli-name">Profile</div><div class="hli-sub">Apni jaankari edit karein</div></div>
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-    </div>
+    <div class="hub3-or">— ya seedha poochho —</div>
   </div>
+
+  <!-- Bottom bar — Speak primary CTA -->
   <div class="bar">
     <div class="bar-inner">
-      <input class="bar-input" id="hub-input" placeholder="Sehat Saathi se poochho..." onkeydown="hubKey(event)">
+      <input class="bar-input" id="hub-input" placeholder="Kuch bhi batao..." onkeydown="hubKey(event)">
+      <button class="bar-send" id="hub-send-btn" onclick="hubSend()" style="display:none;background:rgba(255,255,255,.12);width:36px;height:36px;border-radius:50%;border:none;display:none;align-items:center;justify-content:center;color:#fff;cursor:pointer">
+        <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M5 12l14 0M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
       <button class="bar-speak" id="hub-speak" onclick="toggleVoice('hub')">
-        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M12 2a1 1 0 00-1 1v18a1 1 0 002 0V3a1 1 0 00-1-1zM4 9a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1zm4-3a1 1 0 00-1 1v10a1 1 0 102 0V7a1 1 0 00-1-1zm12 3a1 1 0 00-1 1v4a1 1 0 002 0v-4a1 1 0 00-1-1zm-4-3a1 1 0 00-1 1v10a1 1 0 002 0V7a1 1 0 00-1-1z" fill="currentColor"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3z" stroke="white" stroke-width="2" fill="white"/><path d="M19 10a7 7 0 01-14 0M12 17v4" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
         <span id="hub-speak-lbl">Speak</span>
       </button>
-      <button class="bar-send" id="hub-send-btn" onclick="hubSend()" style="display:none">
-        <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════ CHAT SCREEN ══════════════ -->
-<div class="screen" id="s-chat">
-  <div class="hdr">
-    <button class="hdr-btn" onclick="goBack()">
-      <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M15 20a1 1 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a1 1 0 01-.71 1.71z" fill="currentColor"/></svg>
-    </button>
-    <div class="hdr-center">
-      <div class="hdr-avatar">
-        <div style="width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid #6D17CE;"><img src="https://sunit1986.github.io/design-prototypes/Assets/persona-health.png" alt="Sehat Saathi" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
-        <div class="hdr-online"></div>
-      </div>
-      <div class="hdr-text">
-        <h2>Sehat Saathi</h2>
-        <p id="chat-ctx-label">Ghar ke Nushke</p>
-      </div>
-    </div>
-    <button class="hdr-btn" onclick="clearChat()">
-      <img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_edit_pen.svg" width="20" height="20" style="filter:invert(1);opacity:.8" alt="New">
-    </button>
-  </div>
-  <div class="chat-messages" id="chat-msgs"></div>
-  <div class="bar">
-    <div class="bar-inner">
-      <input class="bar-input" id="chat-input" placeholder="Apni baat likhein..." onkeydown="chatKey(event)">
-      <button class="bar-speak" id="chat-speak" onclick="toggleVoice('chat')">
-        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M12 2a1 1 0 00-1 1v18a1 1 0 002 0V3a1 1 0 00-1-1zM4 9a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1zm4-3a1 1 0 00-1 1v10a1 1 0 102 0V7a1 1 0 00-1-1zm12 3a1 1 0 00-1 1v4a1 1 0 002 0v-4a1 1 0 00-1-1zm-4-3a1 1 0 00-1 1v10a1 1 0 002 0V7a1 1 0 00-1-1z" fill="currentColor"/></svg>
-        <span id="chat-speak-lbl">Speak</span>
-      </button>
-      <button class="bar-send" onclick="chatSend()">
-        <img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_message_send.svg" width="20" height="20" style="filter:invert(1)" alt="Send">
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════ ONBOARDING SCREEN ══════════════ -->
-<div class="screen" id="s-onboard">
-  <div class="hdr">
-    <button class="hdr-btn" onclick="skipOnboarding()" aria-label="Back">
-      <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M15 20a1 1 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a1 1 0 01-.71 1.71z" fill="currentColor"/></svg>
-    </button>
-    <div class="hdr-center"><div class="hdr-text"><h2>Sehat Saathi</h2><p style="color:var(--text2)">Aap ko jaanne ke liye</p></div></div>
-    <button class="ob-skip" onclick="skipOnboarding()">Baad mein</button>
-  </div>
-  <div class="ob-progress" id="ob-progress">
-    <div class="ob-progress-dot active"></div>
-    <div class="ob-progress-dot"></div>
-    <div class="ob-progress-dot"></div>
-  </div>
-  <div class="body" id="ob-body"><!-- JS renders --></div>
+<!-- ══════════════ TOOLS BOTTOM SHEET ══════════════ -->
+<div class="bs-overlay" id="bs-overlay" onclick="closeToolsSheet()"></div>
+<div class="bs-sheet" id="bs-sheet">
+  <div class="bs-handle"></div>
+  <div class="bs-title">Sehat Tools</div>
+  <button class="bs-row" onclick="closeToolsSheet();startFeature('nushke')">
+    <div class="bs-row-icon" style="background:rgba(30,204,176,.15);color:#1eccb0">🌿</div>
+    <div class="bs-row-text"><div class="bs-row-name">Ghar ke Nushke</div><div class="bs-row-sub">Koi takleef? Dadi batayegi</div></div>
+  </button>
+  <div class="bs-divider"></div>
+  <button class="bs-row" onclick="closeToolsSheet();startFeature('lab')">
+    <div class="bs-row-icon" style="background:rgba(30,204,176,.15);color:#1eccb0">🧪</div>
+    <div class="bs-row-text"><div class="bs-row-name">Lab Report Padho</div><div class="bs-row-sub">Apni report ka asaan matlab</div></div>
+  </button>
+  <div class="bs-divider"></div>
+  <button class="bs-row" onclick="closeToolsSheet();startFeature('medicine')">
+    <div class="bs-row-icon" style="background:rgba(251,146,60,.15);color:#fb923c">💊</div>
+    <div class="bs-row-text"><div class="bs-row-name">Dawai Reminder</div><div class="bs-row-sub">Dawai yaad dila dena mujhe</div></div>
+  </button>
+  <div class="bs-divider"></div>
+  <button class="bs-row" onclick="closeToolsSheet();startFeature('meal')">
+    <div class="bs-row-icon" style="background:rgba(251,146,60,.15);color:#fb923c">🍽️</div>
+    <div class="bs-row-text"><div class="bs-row-name">Meal Planning</div><div class="bs-row-sub">Ghar ke khaane ka 3-din plan</div></div>
+  </button>
+  <div class="bs-divider"></div>
+  <button class="bs-row" onclick="closeToolsSheet();startFeature('family')">
+    <div class="bs-row-icon" style="background:rgba(107,33,168,.18);color:#a855f7">👨‍👩‍👧</div>
+    <div class="bs-row-text"><div class="bs-row-name">Parivaar</div><div class="bs-row-sub">Sab ke liye ek jagah dekhbhal</div></div>
+  </button>
+  <div class="bs-divider"></div>
+  <button class="bs-row disabled">
+    <div class="bs-row-icon" style="background:rgba(255,255,255,.06);color:#888">💬</div>
+    <div class="bs-row-text"><div class="bs-row-name">Sehat Charcha</div><div class="bs-row-sub">Apke jaise logo se milo</div></div>
+    <div class="bs-row-tag">Jald aa raha hai</div>
+  </button>
+  <div class="bs-divider"></div>
+  <button class="bs-row" onclick="closeToolsSheet();startOnboarding('s-hub')">
+    <div class="bs-row-icon" style="background:rgba(255,255,255,.06);color:#fff">⚙️</div>
+    <div class="bs-row-text"><div class="bs-row-name">Profile</div><div class="bs-row-sub">Apni jaankari edit karein</div></div>
+  </button>
 </div>
 
 <!-- ══════════════ COMMUNITY SCREEN (stub Phase 6) ══════════════ -->
@@ -1259,120 +1270,208 @@ function startFeature(f) {
 
 
 
-// ── Hub dynamic content ──
-const AYUSH_SLOTS = {
-  morning:{
-    practice:{icon:'🌬',name:'Anulom-Vilom Pranayam',sub:'5 min · Saans ka santulan · Subah ki urja',slot:'breathe'},
-    story:'Dadi ka subah ka nushka',
-    habits:[{ic:'💧',txt:'Pehla glass pani'},{ic:'🧘',txt:'5 min ki saas'},{ic:'🌿',txt:'Tulsi ki chai'}]
-  },
-  afternoon:{
-    practice:{icon:'🌿',name:'Dinacharya Walk',sub:'10 min · Khaane ke baad · Paachan shakti',slot:'breathe'},
-    story:'Dadi ki dopahar ki tip',
-    habits:[{ic:'🥗',txt:'Halka khaana'},{ic:'🚶',txt:'10 min walk'},{ic:'💧',txt:'Do glass pani'}]
-  },
-  evening:{
-    practice:{icon:'🌙',name:'Sandhya Pranayam',sub:'7 min · Din ka therav · Maan ki shaanti',slot:'breathe'},
-    story:'Dadi ki sham ki baat',
-    habits:[{ic:'🌙',txt:'Samay pe khaana'},{ic:'🧘',txt:'Nadi Shodhana'},{ic:'📵',txt:'Screen band karo'}]
-  },
-  night:{
-    practice:{icon:'💛',name:'Yoga Nidra',sub:'10 min · Gehri neend · AYUSH deep rest',slot:'breathe'},
-    story:'Dadi ki raat ki kahani',
-    habits:[{ic:'🥛',txt:'Haldi wala doodh'},{ic:'📖',txt:'Ek acchi baat padhna'},{ic:'💤',txt:'Phone door karo'}]
-  }
-};
 
-// ── v2: Nushke video cards ──
-const NUSHKE_VIDEOS = [
-  { kw: ['ajwain'],  emoji: '🌾', title: 'Ajwain ki bhaap (steam) — Sardi-Khansi', dur: '1:20', q: 'ajwain steam home remedy ayurveda' },
-  { kw: ['haldi','turmeric','golden milk'],  emoji: '🟡', title: 'Haldi wala doodh kaise banayein', dur: '0:58', q: 'haldi doodh recipe ayurveda golden milk' },
-  { kw: ['tulsi'],   emoji: '🌿', title: 'Tulsi kadha — Immunity boost', dur: '1:45', q: 'tulsi kadha recipe immunity ayurveda' },
-  { kw: ['adrak','ginger'], emoji: '🫚', title: 'Adrak ki chai — Pet aur sardi ke liye', dur: '1:10', q: 'adrak chai ginger tea ayurveda' },
-  { kw: ['jeera'],   emoji: '🟤', title: 'Jeera paani — Paachan shakti', dur: '0:48', q: 'jeera paani digestion ayurveda' },
-  { kw: ['mulethi','licorice'],  emoji: '🪵', title: 'Mulethi kadha — Khansi ke liye', dur: '1:30', q: 'mulethi licorice kadha cough ayurveda' },
-  { kw: ['saunf','fennel'],   emoji: '🌱', title: 'Saunf paani — Acidity ke liye', dur: '0:55', q: 'saunf fennel water acidity remedy' },
-  { kw: ['methi','fenugreek'], emoji: '🌾', title: 'Methi paani — Diabetes ke liye', dur: '1:15', q: 'methi seeds water diabetes ayurveda' },
-  { kw: ['neem'],    emoji: '🌳', title: 'Neem ke fayde aur upyog', dur: '2:00', q: 'neem benefits ayurveda home remedy' },
-  { kw: ['amla'],    emoji: '🟢', title: 'Amla murabba aur juice', dur: '1:20', q: 'amla murabba juice ayurveda recipe' },
-  { kw: ['nimbu','lemon','shahad','honey'], emoji: '🍋', title: 'Nimbu-shahad paani — Subah ka detox', dur: '0:40', q: 'nimbu shahad pani detox ayurveda' },
-  { kw: ['anulom','vilom','pranayam','breathing'], emoji: '🌬', title: 'Anulom-Vilom kaise karein', dur: '3:00', q: 'anulom vilom pranayam tutorial ayurveda' },
-  { kw: ['yoga','asana'], emoji: '🧘', title: 'Aasaan yoga aasan', dur: '4:00', q: 'simple yoga asanas ayurveda beginners' },
-  { kw: ['malasana','squat'], emoji: '🦵', title: 'Malasana — Paachan ke liye', dur: '1:30', q: 'malasana yoga digestion benefits' },
-  { kw: ['namak','salt'], emoji: '🧂', title: 'Namak paani gargle', dur: '0:35', q: 'salt water gargle home remedy' }
-];
+// ── v3: Sehat Score system ──
+function getScore()  { return parseInt(localStorage.getItem('sehatScore') || '50', 10); }
+function getStreak() { return parseInt(localStorage.getItem('sehatStreak') || '0', 10); }
+function getTodayDelta() { return parseInt(localStorage.getItem('sehatTodayDelta_' + new Date().toDateString()) || '0', 10); }
 
-function detectVideo(text) {
-  if (!text) return null;
-  const t = text.toLowerCase();
-  for (const v of NUSHKE_VIDEOS) {
-    for (const k of v.kw) {
-      if (t.includes(k)) return v;
+function bumpScore(points) {
+  const cur = getScore();
+  const next = Math.min(100, Math.max(0, cur + points));
+  localStorage.setItem('sehatScore', next);
+  const today = new Date().toDateString();
+  const delta = getTodayDelta() + points;
+  localStorage.setItem('sehatTodayDelta_' + today, delta);
+  refreshScore();
+  // Streak bump on first +ve action of the day
+  if (points > 0 && delta === points) {
+    const lastDay = localStorage.getItem('sehatLastActiveDay');
+    let streak = getStreak();
+    if (lastDay) {
+      const last = new Date(lastDay), now = new Date();
+      const diffMs = now - last;
+      const oneDay = 24 * 60 * 60 * 1000;
+      if (diffMs < oneDay * 1.5 && diffMs >= oneDay * 0.5) streak += 1;
+      else if (diffMs >= oneDay * 1.5) streak = 1;
+      // same day = no streak change
+    } else {
+      streak = 1;
     }
+    localStorage.setItem('sehatStreak', streak);
+    localStorage.setItem('sehatLastActiveDay', today);
+    refreshStreak();
   }
-  return null;
 }
 
-function injectVideoCard(text, msgsContainer) {
-  const v = detectVideo(text);
-  if (!v) return;
-  const row = document.createElement('div');
-  row.className = 'msg-row bot video-card-row';
-  row.innerHTML = `
-    <button class="video-card" onclick="openVideoLink('${v.q.replace(/'/g, "\'")}')">
-      <div class="vc-thumb">
-        <span>${v.emoji}</span>
-        <div class="vc-play-icon">▶</div>
-      </div>
-      <div class="vc-info">
-        <div class="vc-title">${v.title}</div>
-        <div class="vc-meta"><span class="vc-meta-tag">AYUSH</span>${v.dur} · Tap to watch</div>
-      </div>
-    </button>`;
-  msgsContainer.appendChild(row);
-  msgsContainer.scrollTop = msgsContainer.scrollHeight;
+const DOT_POINTS = { paani: 5, swas: 10, khana: 5 };
+const DOT_NAMES  = { paani: 'Paani piya', swas: 'Swas kiya', khana: 'Raat ka khana' };
+
+function markDailyDot(type, el) {
+  const today = new Date().toDateString();
+  const key = 'daily_' + type + '_' + today;
+  if (localStorage.getItem(key)) return; // already done today
+  localStorage.setItem(key, '1');
+  if (el) el.classList.add('done');
+  const pts = DOT_POINTS[type] || 5;
+  bumpScore(pts);
+  showToast('+' + pts + ' Sehat Score 💚 (' + DOT_NAMES[type] + ')');
 }
 
-function openVideoLink(query) {
-  // Open YouTube search for the procedure (durable, no broken video IDs)
-  const url = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(query);
-  window.open(url, '_blank', 'noopener');
-}
-
-function initHubDynamic() {
-  const h = new Date().getHours();
-  const slot = h>=5&&h<12?'morning':h>=12&&h<17?'afternoon':h>=17&&h<21?'evening':'night';
-  const d = AYUSH_SLOTS[slot];
-  const el = (id) => document.getElementById(id);
-  if(el('ayush-icon')) el('ayush-icon').textContent = d.practice.icon;
-  if(el('ayush-name')) el('ayush-name').textContent = d.practice.name;
-  if(el('ayush-sub')) el('ayush-sub').textContent = d.practice.sub;
-  if(el('ayush-practice-btn')) el('ayush-practice-btn').onclick = () => startFeature(d.practice.slot);
-  if(el('story-title-hub')) el('story-title-hub').textContent = d.story;
-  ['h1','h2','h3'].forEach((id,i) => {
-    const btn = el(id); if(!btn) return;
-    const hab = d.habits[i];
-    btn.querySelector('.hs-tap-ic').textContent = hab.ic;
-    btn.querySelector('.hs-tap-txt').textContent = hab.txt;
+function refreshDailyDots() {
+  const today = new Date().toDateString();
+  ['paani','swas','khana'].forEach(t => {
+    const el = document.getElementById('dot-' + t);
+    if (!el) return;
+    if (localStorage.getItem('daily_' + t + '_' + today)) el.classList.add('done');
+    else el.classList.remove('done');
   });
 }
 
-// ── Habit tap ──
-function toggleHabit(id, el) {
-  el.classList.toggle('done');
-  const ic = el.querySelector('.hs-tap-ic');
-  if (el.classList.contains('done')) { ic.textContent = '✓'; showToast('Wah! Ek kadam aur 💚'); }
-  else {
-    const h = new Date().getHours();
-    const slot = h>=5&&h<12?'morning':h>=12&&h<17?'afternoon':h>=17&&h<21?'evening':'night';
-    const i = ['h1','h2','h3'].indexOf(id);
-    ic.textContent = AYUSH_SLOTS[slot].habits[i]?.ic || '○';
-  }
-  // Bump mini score
-  const done = document.querySelectorAll('.hs-tap.done').length;
-  const sc = document.getElementById('hub-score-mini');
-  if (sc) sc.textContent = done * 5;
+function getLevel(score) {
+  if (score <= 40)  return { num: 1, name: 'Sehat Shishya' };
+  if (score <= 70)  return { num: 2, name: 'Sehat Rakshak' };
+  if (score <= 90)  return { num: 3, name: 'Sehat Mitra' };
+  return { num: 4, name: 'Sehat Guru' };
 }
+
+function refreshScore() {
+  const score = getScore();
+  const delta = getTodayDelta();
+  const lvl = getLevel(score);
+  const numEl = document.getElementById('hub3-score-num');
+  const dEl = document.getElementById('hub3-score-delta');
+  const fEl = document.getElementById('hub3-score-fill');
+  const mEl = document.getElementById('hub3-score-meta');
+  if (numEl) numEl.textContent = score;
+  if (dEl)  dEl.textContent  = (delta > 0 ? '+' : '') + delta + ' aaj';
+  if (fEl)  fEl.style.width  = score + '%';
+  if (mEl) {
+    const nextThreshold = lvl.num === 4 ? 100 : (lvl.num === 1 ? 41 : lvl.num === 2 ? 71 : 91);
+    const ptsToNext = Math.max(0, nextThreshold - score);
+    mEl.textContent = lvl.name + ' · Lv ' + lvl.num + ' · ' + (ptsToNext > 0 ? (ptsToNext + ' points to ' + (lvl.num < 4 ? 'next level' : 'max')) : 'Max level reached!');
+  }
+  // Ritucharya unlock check
+  if ((score >= 91 || getStreak() >= 10) && !localStorage.getItem('ritucharyaUnlocked')) {
+    localStorage.setItem('ritucharyaUnlocked', '1');
+    showToast('🌟 Ritucharya unlocked! Sehat Tools mein dekhein.');
+  }
+}
+
+// ── v3 Hub: 3-zone interactions ──
+const PERSONA_MODE_LBL = { dadi: 'Dadi mode', maa: 'Maa mode', saathi: 'Saathi mode' };
+
+function initHubDynamic() {
+  // Update persona mode label
+  const personaLbl = document.getElementById('hub3-persona-mode');
+  if (personaLbl) personaLbl.textContent = PERSONA_MODE_LBL[ST.persona] || 'Saathi mode';
+  // Update streak
+  refreshStreak();
+  // Update score + dots
+  refreshScore();
+  refreshDailyDots();
+  // Refresh story card if a story is loaded
+  refreshStoryCard();
+}
+
+function refreshStreak() {
+  const el = document.getElementById('hub3-streak-count');
+  if (el) el.textContent = getStreak();
+}
+
+function moodTap(mood) {
+  // Open chat with contextual chips
+  ST.chatCtx = 'mood_' + mood;
+  ST.chatHistory = [];
+  ST.isFirstMsg = true;
+  trackFeature('nushke');
+  goTo('s-chat');
+  document.getElementById('chat-ctx-label').textContent = (mood === 'theek' ? 'Theek hoon' : mood === 'takleef' ? 'Kuch takleef' : 'Bahut tension');
+  setTimeout(() => renderMoodChat(mood), 100);
+}
+
+function renderMoodChat(mood) {
+  const msgs = document.getElementById('chat-msgs');
+  if (!msgs) return;
+  msgs.innerHTML = '';
+  const intros = {
+    theek: 'Wah! Acchi baat hai — aaj kya try karna chahogey? Niche se chunein, ya seedha batao.',
+    takleef: 'Acha — kya takleef ho rahi hai? Niche se chunein, ya likh ke batao.',
+    tension: 'Hmm, samajh sakti hoon. Saans lo — main yahaan hoon. Ek choice chunein.'
+  };
+  const chips = {
+    theek: [
+      { label: 'Aaj ka nushka', action: () => sendMoodMessage('Aaj ka ek accha nushka batao — aam sehat ke liye') },
+      { label: 'Swas karo', action: () => { ST.chatCtx = 'breathe'; goTo('s-breathwork'); } },
+      { label: 'Dadi ki kahani', action: () => triggerStoryFromChat() }
+    ],
+    takleef: [
+      { label: 'Ghar ka nushka', action: () => { ST.chatCtx = 'nushke'; addMsg('user', 'Mujhe ek ghar ka nushka chahiye', false); callAI('Mujhe ek ghar ka nushka chahiye — kya takleef hai poochho', getSystemPromptFor('nushke')); } },
+      { label: 'Lab report', action: () => startFeature('lab') },
+      { label: 'Dawai', action: () => startFeature('medicine') }
+    ],
+    tension: [
+      { label: 'Swas exercise', action: () => goTo('s-breathwork') },
+      { label: 'Baat karo', action: () => { ST.chatCtx = 'general'; sendMoodMessage('Mann bhaari hai — thoda sun lo, koi pressure nahi'); } },
+      { label: 'Sukoon ki kahani', action: () => triggerStoryFromChat('calm') }
+    ]
+  };
+  addMsg('bot', intros[mood], false);
+  speak(intros[mood]);
+  // Render chips
+  const row = document.createElement('div');
+  row.className = 'msg-row bot';
+  const wrap = document.createElement('div');
+  wrap.className = 'mood-chips';
+  for (const c of chips[mood]) {
+    const btn = document.createElement('button');
+    btn.className = 'mood-chip';
+    btn.textContent = c.label;
+    btn.onclick = () => { row.remove(); c.action(); };
+    wrap.appendChild(btn);
+  }
+  row.appendChild(wrap);
+  msgs.appendChild(row);
+}
+
+function sendMoodMessage(text) {
+  addMsg('user', text, false);
+  callAI(text, getSystemPromptFor(ST.chatCtx));
+}
+
+function triggerStoryFromChat(theme) {
+  // Open story card pre-loaded — user navigates back to hub to play
+  goTo('s-hub');
+  setTimeout(() => playStory(theme || 'general'), 200);
+}
+
+
+function playStory(theme) {
+  if (typeof generateAndPlayStory === 'function') return generateAndPlayStory(theme);
+  // Stub fallback (Phase 3 wires real generation)
+  const title = document.getElementById('hub3-story-title');
+  const preview = document.getElementById('hub3-story-preview');
+  if (title && preview) {
+    speak('Dadi ka ajwain waala raaz — jab mere baba ko pet ki takleef hoti thi, hum hamesha thoda ajwain garam paani mein daalte the. Aaj try karo — ek chai chamach ajwain, ek glass garam paani.');
+  }
+}
+
+function refreshStoryCard() {
+  // Phase 3 will populate from generated story state
+}
+
+// ── Bottom sheet ──
+function openToolsSheet() {
+  document.getElementById('bs-overlay').classList.add('on');
+  document.getElementById('bs-sheet').classList.add('on');
+}
+function closeToolsSheet() {
+  document.getElementById('bs-overlay').classList.remove('on');
+  document.getElementById('bs-sheet').classList.remove('on');
+}
+
+
+// ── Habit tap ──
 
 // ── Persona cycle ──
 const PERSONA_ORDER = ['dadi','maa','saathi'];
@@ -1388,17 +1487,6 @@ function cyclePersona() {
 }
 
 // ── Story audio ──
-let _stP=false,_stT=null;
-function toggleStoryAudio(btn){
-  _stP=!_stP;
-  if(_stP){
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" width="12" height="12"><rect x="6" y="5" width="4" height="14" rx="1" fill="white"/><rect x="14" y="5" width="4" height="14" rx="1" fill="white"/></svg>';
-    let s=120;_stT=setInterval(()=>{s--;if(s<=0){clearInterval(_stT);toggleStoryAudio(btn);}},1000);
-  } else {
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M8 5v14l11-7z" fill="white"/></svg>';
-    clearInterval(_stT);
-  }
-}
 
 function resetHub() { document.getElementById('hub-input').value = ''; }
 
