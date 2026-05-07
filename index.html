@@ -587,7 +587,6 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
       <div class="hub-initials">SS</div>
       <div>
         <div class="hub3-name">Sehat Saathi</div>
-        <div class="hub3-mode" id="hub3-persona-mode">Saathi mode</div>
       </div>
     </div>
     <div style="display:flex;align-items:center">
@@ -601,8 +600,8 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
   <div class="body">
     <!-- Zone 1: Greeting -->
     <div class="hub3-greet">
-      <h1>Namaste 🙏<br>Aaj kaisa raha?</h1>
-      <p>Batao — main sun rahi hoon</p>
+      <h1>Namaste<span id="hub3-name"></span> 🙏<br>Aaj kaisa raha?</h1>
+      <p id="hub3-greet-sub">Batao — main sun rahi hoon</p>
     </div>
 
     <!-- Zone 2: 3 mood buttons -->
@@ -880,7 +879,7 @@ const SARVAM_KEY = "REPLACE_WITH_SARVAM_KEY";  // Sarvam STT (Saarika) + TTS (Bu
 const ST = {
   screen: 's-home',
   history: [],
-  persona: 'saathi',  // v2: default soft Saathi
+  persona: 'dadi',  // v3.1: default — slow warm female (Manisha via Sarvam)
   chatHistory: [],
   chatCtx: 'general',
   isFirstMsg: true,
@@ -921,7 +920,7 @@ const PERSONAS = {
   saathi:  { label:'Saathi',  emoji:'🤝', rate:0.95, pitch:1.0,  lang:'hi-IN', voiceHint:['hindi','en-IN','google'] }
 };
 // Default persona for new users — soft, neutral
-const DEFAULT_PERSONA = 'saathi';
+const DEFAULT_PERSONA = 'dadi';
 
 const SYSTEM_PROMPT = `You are Sehat Saathi, a warm Ayurvedic home remedy guide inside JioBharatIQ.
 
@@ -981,7 +980,25 @@ CRITICAL RULES:
 
 LANGUAGE: Reply in user's language. Mix Hindi-English naturally if they do.`;
 
+
+const TENSION_SYSTEM_PROMPT = `You are Sehat Saathi — Emotional Listening mode. The user just told you they are tense, low, or overwhelmed. Your job is to LISTEN, not to prescribe.
+
+CORE RULES:
+- DO NOT suggest food, drinks, or kitchen remedies as the first response. Don't mention haldi/ajwain/tulsi/etc unless the user specifically asks.
+- Acknowledge what they feel. Reflect it back warmly. Then ask ONE gentle open-ended question.
+- If they share a real cause (work, relationship, family, money, exam, sleep), validate it before suggesting anything.
+- Only AFTER 2-3 turns of listening, you may suggest ONE of: a 2-min breathing exercise, a short walk, writing down the worry, calling someone, OR a story break — whichever fits.
+- For mental health crisis (suicide, self-harm, "main mar jaaun", "khatam karna chahta"): respond with deep care, share iCall helpline 9152987821, urge talking to someone trusted. Never minimise.
+- NEVER say "tension chhod do" or "sab theek hoga" — that's dismissive.
+
+LANGUAGE: Reply in user's language (script the user used). Keep replies under 3 sentences. Tone is the warm, patient older sister or aunt — not the doctor.
+
+OUTPUT FORMAT (strict):
+First line: LANG:<code>
+Second line onward: your warm response.`;
+
 function getSystemPromptFor(ctx) {
+  if (ctx === 'tension' || ctx === 'mood_tension') return TENSION_SYSTEM_PROMPT;
   if (ctx === 'wellness') return WELLNESS_SYSTEM_PROMPT;
   if (ctx === 'community' && ST.communityPeer) {
     return COMMUNITY_BASE_PROMPT + '\n\nYOUR PERSONA:\n' + ST.communityPeer.sysPrompt;
@@ -1081,6 +1098,8 @@ function renderOnboardStep(step) {
         <div class="ob-hero-sub">Iska use sirf aap ko behtar nushke aur guidance dene ke liye hoga</div>
       </div>
       <div class="ob-form">
+        <label class="ob-field-lbl">Aapka naam</label>
+        <input class="ob-input" id="ob-name" type="text" placeholder="Sunita / Ramesh / ..." maxlength="30" value="${d.name||''}" style="margin-bottom:14px">
         <label class="ob-field-lbl">Aapki umar</label>
         <input class="ob-input" id="ob-age" type="number" placeholder="32" inputmode="numeric" value="${d.age||''}" style="margin-bottom:14px">
         <label class="ob-field-lbl">Aap</label>
@@ -1141,6 +1160,7 @@ function setSex(s) {
   event.currentTarget.classList.add('selected');
 }
 function onboardNext() {
+  const name = (document.getElementById('ob-name')?.value || '').trim().slice(0, 30);
   const age = document.getElementById('ob-age').value.trim();
   const weight = document.getElementById('ob-weight').value.trim();
   const height = document.getElementById('ob-height').value.trim();
@@ -1148,6 +1168,7 @@ function onboardNext() {
     showToast('Umar, aap (purush/stree), aur vajan zaroori hai');
     return;
   }
+  if (name) ST.onboardData.name = name;
   ST.onboardData.age = age;
   ST.onboardData.weight = weight;
   if (height) ST.onboardData.height = height;
@@ -1161,6 +1182,7 @@ function finishOnboardingThen(nextAction) {
     onboardedAt: Date.now(),
     skipCount: 0,
     scope: d.scope || 'self',
+    name: d.name || null,
     age: d.age,
     sex: d.sex,
     weight: d.weight,
@@ -1412,13 +1434,33 @@ function refreshScore() {
   }
 }
 
+
+function askName() {
+  const name = (prompt('Aapka naam kya hai? (sirf first name)') || '').trim().slice(0, 30);
+  if (!name) return;
+  const p = loadProfile() || { skipCount: 0 };
+  p.name = name;
+  if (!p.completed) p.completed = true;
+  saveProfile(p);
+  initHubDynamic();
+  showToast('Namaste ' + name + ' 🙏');
+}
+
 // ── v3 Hub: 3-zone interactions ──
 const PERSONA_MODE_LBL = { dadi: 'Dadi mode', maa: 'Maa mode', saathi: 'Saathi mode' };
 
 function initHubDynamic() {
-  // Update persona mode label
-  const personaLbl = document.getElementById('hub3-persona-mode');
-  if (personaLbl) personaLbl.textContent = PERSONA_MODE_LBL[ST.persona] || 'Saathi mode';
+  // v3.1: Populate greeting with name (or prompt to set one)
+  const profile = ST.userProfile || loadProfile();
+  const nameEl = document.getElementById('hub3-name');
+  if (nameEl) {
+    if (profile && profile.name) {
+      nameEl.textContent = ' ' + profile.name;
+    } else {
+      nameEl.innerHTML = ' <span style="color:rgba(255,255,255,.45);text-decoration:underline;cursor:pointer" onclick="askName()">apna naam jodein</span>';
+    }
+  }
+
   // Update streak
   refreshStreak();
   // Update score + dots
@@ -1451,7 +1493,7 @@ function renderMoodChat(mood) {
   const intros = {
     theek: 'Wah! Acchi baat hai — aaj kya try karna chahogey? Niche se chunein, ya seedha batao.',
     takleef: 'Acha — kya takleef ho rahi hai? Niche se chunein, ya likh ke batao.',
-    tension: 'Hmm, samajh sakti hoon. Saans lo — main yahaan hoon. Ek choice chunein.'
+    tension: 'Hmm. Saath hoon. Niche se ek chunein, ya seedha jo bhi feel ho rahi hai likh do — koi salah pehle nahi dungi.'
   };
   const chips = {
     theek: [
@@ -1465,8 +1507,8 @@ function renderMoodChat(mood) {
       { label: 'Dawai', action: () => startFeature('medicine') }
     ],
     tension: [
-      { label: 'Swas exercise', action: () => goTo('s-breathwork') },
-      { label: 'Baat karo', action: () => { ST.chatCtx = 'general'; sendMoodMessage('Mann bhaari hai — thoda sun lo, koi pressure nahi'); } },
+      { label: 'Sun lo mujhe', action: () => { ST.chatCtx = 'tension'; sendMoodMessage('Mann bhaari hai. Bas thoda sunna chahti hoon — koi salah nahi.'); } },
+      { label: 'Saans exercise', action: () => goTo('s-breathwork') },
       { label: 'Sukoon ki kahani', action: () => triggerStoryFromChat('calm') }
     ]
   };
@@ -1517,35 +1559,55 @@ function getCurrentSeason() {
   if (m >= 10 || m <= 2) return 'winter';
   return 'summer';
 }
+function getTimeOfDay() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return { slot: 'morning',   label: 'Subah ki kahani' };
+  if (h >= 12 && h < 17) return { slot: 'afternoon', label: 'Dopahar ki tip'   };
+  if (h >= 17 && h < 21) return { slot: 'evening',   label: 'Sham ki baat'    };
+  return { slot: 'night', label: 'Raat ki nasihat' };
+}
 
 let _storyCache = null; // { title, preview, fullText, lang, persona, season, dur, ts }
 let _storyAudio = null;
 let _storyPlaying = false;
 
 async function generateAndPlayStory(theme) {
-  // Reuse cache if same persona/season AND under 30 min old
-  const persona = ST.persona || 'saathi';
+  // v3.1: Stories ALWAYS use Dadi voice (manisha) regardless of current persona
+  const tod = getTimeOfDay();
   const season = getCurrentSeason();
   const lang = ST.currentLanguage || 'hi-IN';
   const langCode = lang.split('-')[0];
-  const reuseOk = _storyCache && _storyCache.persona === persona && _storyCache.season === season && (Date.now() - _storyCache.ts < 30*60*1000) && _storyCache.theme === theme;
+  const profile = ST.userProfile || loadProfile() || {};
+  const userName = profile.name || '';
+  // Cache key includes time-of-day so a fresh story rotates as the day moves on
+  const cacheKey = 'dadi_' + tod.slot + '_' + season + '_' + (theme || 'general');
+  const reuseOk = _storyCache && _storyCache.cacheKey === cacheKey && (Date.now() - _storyCache.ts < 30*60*1000);
   if (!reuseOk) {
     if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20 || OPENAI_API_KEY.includes('REPLACE')) {
-      showToast('Story abhi taiyaar nahi — API key chahiye'); return;
+      showToast('Story abhi taiyaar nahi — API key chahiye'); setSunoLabel('Suno', false); return;
     }
-    // Update card to show "loading"
     setStoryCard({ title: 'Kahani taiyaar ho rahi hai...', preview: '...', meta: 'Thoda intezaar', dur: '' });
-    setSunoLabel('...', false);
+    setSunoLabel('...', true);
     try {
-      const themeHint = theme === 'calm' ? 'About finding calm, slow breathing, or a moment of mental peace.' : 'A gentle health story woven naturally with one Ayurvedic kitchen remedy.';
-      const sysPrompt = `You are ${PERSONA_VOICES[persona]}. Tell a warm personal health story in ${langCode === 'hi' ? 'Hindi (Roman script OK)' : langCode}. First person. Something that happened to your family. ${themeHint} Ends with: "Toh aaj ek kaam karo — [one simple action]". 130 words maximum. Sound like someone talking at the dinner table. Never use bullet points or the word tip. Season context: ${season}.`;
-      const userPrompt = `Give me ONE short story now. Output strictly as JSON: {"title": "<5-7 word catchy Hindi/Hinglish title>", "preview": "<1 sentence quoted teaser, 12 words max>", "fullText": "<the full 130-word story>"}`;
+      const themeHint = theme === 'calm'
+        ? 'About finding calm, slow breathing, or a quiet moment of mental peace.'
+        : 'A gentle health story woven naturally with one Ayurvedic kitchen remedy.';
+      const todHint = {
+        morning:   'It is early morning. The story should fit waking up, breakfast, energy, the sunrise.',
+        afternoon: 'It is afternoon. The story should fit a heavy lunch, post-meal sluggishness, midday heat or rest.',
+        evening:   'It is evening. The story should fit dusk, returning home, light dinner, winding down, family.',
+        night:     'It is night. The story should fit sleep, tossing in bed, late thoughts, warm milk, a nightly ritual.'
+      }[tod.slot];
+      const langWord = langCode === 'hi' ? 'Hindi (Roman script OK)' : langCode;
+      const nameInstruction = userName ? `Address the listener by name "${userName}" once at the very start (e.g., "${userName} beta..." / "Suno ${userName}...").` : '';
+      const sysPrompt = `You are an Indian grandmother — slow, loving, uses beta/beti, tells stories from decades ago. Tell a warm first-person personal health story in ${langWord}. Something that happened to your own family long ago. ${themeHint} ${todHint} Ends with: "Toh aaj ek kaam karo — [one simple, time-appropriate action]". 130 words maximum. Sound like Dadi at the dinner table. ${nameInstruction} Never use bullet points or the word "tip". Season: ${season}. Time-of-day: ${tod.slot}.`;
+      const userPrompt = `Give me ONE short story now. Reply only as JSON: {"title": "<5-7 word warm Hindi/Hinglish title that fits ${tod.slot} time>", "preview": "<1 sentence quoted teaser, 12 words max>", "fullText": "<the full 130-word story>"}`;
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENAI_API_KEY },
         body: JSON.stringify({
           model: 'gpt-4o',
-          max_tokens: 500,
+          max_tokens: 600,
           response_format: { type: 'json_object' },
           messages: [
             { role: 'system', content: sysPrompt },
@@ -1555,27 +1617,53 @@ async function generateAndPlayStory(theme) {
       });
       if (!res.ok) {
         const errTxt = await res.text();
-        console.error('Story gen', res.status, errTxt);
-        showToast('Story load nahi hui — dobara try karein');
-        setStoryCard({ title: 'Dadi ka ajwain waala raaz', preview: '"Jab mere baba ko pet ki takleef hoti thi..."', meta: 'Default · 2 min · Hindi', dur: '2 min' });
+        console.error('[story] OpenAI', res.status, errTxt);
+        // Fallback: render a static seed story so user sees something
+        const fallback = STORY_FALLBACKS[tod.slot] || STORY_FALLBACKS.morning;
+        _storyCache = { ...fallback, langCode: 'hi', persona: 'dadi', season, tod: tod.slot, theme, cacheKey, ts: Date.now(), dur: '2 min' };
+        setStoryCard({ title: fallback.title, preview: '"' + fallback.preview + '"', meta: 'Dadi ki awaaz · 2 min · Hindi', dur: '2 min' });
         setSunoLabel('Suno', false);
+        await playCachedStory();
         return;
       }
       const data = await res.json();
-      const story = JSON.parse(data.choices[0].message.content.trim());
+      let story;
+      try {
+        story = JSON.parse(data.choices[0].message.content.trim());
+      } catch(parseErr) {
+        console.error('[story] JSON parse failed', parseErr, data.choices[0].message.content);
+        const fallback = STORY_FALLBACKS[tod.slot] || STORY_FALLBACKS.morning;
+        _storyCache = { ...fallback, langCode: 'hi', persona: 'dadi', season, tod: tod.slot, theme, cacheKey, ts: Date.now(), dur: '2 min' };
+        setStoryCard({ title: fallback.title, preview: '"' + fallback.preview + '"', meta: 'Dadi ki awaaz · 2 min · Hindi', dur: '2 min' });
+        setSunoLabel('Suno', false);
+        await playCachedStory();
+        return;
+      }
       const dur = Math.max(1, Math.round(story.fullText.length / 250)) + ' min';
-      _storyCache = { ...story, lang, langCode, persona, season, theme, dur, ts: Date.now() };
-      const personaLbl = persona === 'dadi' ? 'Dadi' : persona === 'maa' ? 'Maa' : 'Saathi';
+      _storyCache = { ...story, lang, langCode, persona: 'dadi', season, tod: tod.slot, theme, cacheKey, dur, ts: Date.now() };
       const langName = { hi:'Hindi', mr:'Marathi', bn:'Bangla', ta:'Tamil', te:'Telugu', kn:'Kannada', ml:'Malayalam', gu:'Gujarati', pa:'Punjabi' }[langCode] || 'Hindi';
-      setStoryCard({ title: story.title, preview: '"' + story.preview + '"', meta: personaLbl + ' ki awaaz · ' + dur + ' · ' + langName, dur });
+      setStoryCard({ title: story.title, preview: '"' + story.preview + '"', meta: 'Dadi ki awaaz · ' + dur + ' · ' + langName, dur });
     } catch (e) {
-      console.error('Story gen failed', e);
-      showToast('Story problem aayi'); setSunoLabel('Suno', false); return;
+      console.error('[story] generation failed', e);
+      const fallback = STORY_FALLBACKS[tod.slot] || STORY_FALLBACKS.morning;
+      _storyCache = { ...fallback, langCode: 'hi', persona: 'dadi', season, tod: tod.slot, theme, cacheKey, ts: Date.now(), dur: '2 min' };
+      setStoryCard({ title: fallback.title, preview: '"' + fallback.preview + '"', meta: 'Dadi ki awaaz · 2 min · Hindi', dur: '2 min' });
+      setSunoLabel('Suno', false);
+      await playCachedStory();
+      return;
     }
   }
-  // Now play via Sarvam TTS
   await playCachedStory();
 }
+
+// Time-of-day fallback stories (if OpenAI unreachable)
+const STORY_FALLBACKS = {
+  morning: { title: 'Subah ka pehla ghoont', preview: 'Suno beta, jab main chhoti thi mere papa hamesha kehte the...', fullText: 'Suno beta, jab main chhoti thi mere papa hamesha kehte the — subah uthkar sabse pehle ek glass garam paani peena. Hum bachhe pehle nakhre karte the, par dheere dheere aadat ban gayi. Bahut saalon baad doctor ne bhi yahi bola — subah ka paani ant ko jagata hai, paachan theek karta hai. Ek nimbu ka tukda daal lo, aur swad bhi accha lagega. Toh aaj ek kaam karo — uthe ke baad, chai se pehle, ek glass garam paani piyo. Sirf ek hafte try karo, fark khud dikh jayega.' },
+  afternoon: { title: 'Dopahar ki susti', preview: 'Beta, dopahar ke baad jo neend aati hai na...', fullText: 'Beta, dopahar ke baad jo neend aati hai na, woh sirf khaane ki wajah se nahi hoti. Hamare ghar mein dadi kehti thi — peht bhar ke khao toh dimaag soyega. Unhone humein sikhaya thoda kam khao, aur khaane ke baad das minute aaram se baitho, phir choti si walk. Yeh dinacharya ka hissa tha. Ab to log seedhe phone uthate hain, ya so jaate hain — dono peht ko bhari kar dete hain. Toh aaj ek kaam karo — dopahar ke khaane ke baad, das minute ke liye dheere dheere chal lo, ghar mein hi sahi.' },
+  evening: { title: 'Sham ki haldi waali doodh', preview: 'Mere baba ki ek aadat thi shaam ki...', fullText: 'Mere baba ki ek aadat thi shaam ki — kaam se aane ke baad ek chhoti chai, par doodh aur haldi ke saath. Wo kehte the, "Din bhar ki thakaan haldi le leti hai." Mujhe pehle accha nahi lagta tha — par jab badi hui aur khud dard sehe, tab samjha. Haldi ek chutki, garam doodh, aur thoda gud. Bas itna. Sone se pehle peh lo — neend bhi gehri aati hai, badan bhi halka lagta hai. Toh aaj ek kaam karo — sham ko ek glass garam doodh mein chutki haldi daalo, aur baith ke piyo. Phone door rakh dena.' },
+  night: { title: 'Raat ki shaanti', preview: 'Beta, raat ko jab neend nahi aati...', fullText: 'Beta, raat ko jab neend nahi aati, toh ham phone uthate hain — yeh sabse badi galti hai. Mere ghar mein dadi sone se pehle ek choti si baat karti thi — dheere dheere saans lo, naak se andar, muh se bahar. Char baar. Aankhein band, kandhe dheele. Bas yeh. Phone andheri kamre mein dimaag ko jaga deta hai. Ek choti si aadat — sone se pehle paanch minute saans pe dhyan — neend ko kheench laati hai. Toh aaj ek kaam karo — bistar mein lete ke baad, paanch saans gehri lo, phone neeche rakh do. Subah ka kaam subah hota hai.' }
+};
+
 
 async function playCachedStory() {
   if (!_storyCache) return;
@@ -1591,7 +1679,8 @@ async function playCachedStory() {
       return;
     }
     const targetLang = SARVAM_LANG_MAP[_storyCache.lang] || 'hi-IN';
-    const speaker = SARVAM_SPEAKERS[ST.persona] || 'meera';
+    // v3.1: Stories ALWAYS use Dadi voice (manisha)
+    const speaker = SARVAM_SPEAKERS.dadi;
     // Sarvam has ~500 char limit — chunk if needed
     const chunks = chunkText(_storyCache.fullText, 480);
     const audioParts = [];
@@ -1602,7 +1691,7 @@ async function playCachedStory() {
         body: JSON.stringify({
           inputs: [chunk], target_language_code: targetLang, speaker,
           pitch: 0, pace: 0.9, loudness: 1.4, speech_sample_rate: 22050,
-          enable_preprocessing: true, model: 'bulbul:v1'
+          enable_preprocessing: true, model: 'bulbul:v2'
         })
       });
       if (!res.ok) { console.error('Sarvam story TTS', res.status); break; }
@@ -2933,10 +3022,14 @@ async function transcribeWithSarvam(audioBlob) {
     return '';
   }
   try {
+    // Match file extension to actual MIME type (Sarvam infers format from filename)
+    const mt = (audioBlob.type || '').toLowerCase();
+    const ext = mt.includes('webm') ? 'webm' : mt.includes('mp4') ? 'mp4' : mt.includes('mpeg') ? 'mp3' : mt.includes('wav') ? 'wav' : 'webm';
     const fd = new FormData();
-    fd.append('file', audioBlob, 'rec.webm');
-    fd.append('model', 'saarika:v1');
+    fd.append('file', audioBlob, 'rec.' + ext);
+    fd.append('model', 'saarika:v2');
     fd.append('language_code', ST.currentLanguage || 'hi-IN');
+    fd.append('with_timestamps', 'false');
     const res = await fetch('https://api.sarvam.ai/speech-to-text', {
       method: 'POST',
       headers: { 'api-subscription-key': SARVAM_KEY },
@@ -2944,18 +3037,22 @@ async function transcribeWithSarvam(audioBlob) {
     });
     if (!res.ok) {
       const errTxt = await res.text();
-      console.error('Sarvam STT', res.status, errTxt);
+      console.error('[Sarvam STT]', res.status, errTxt);
+      showToast('Voice problem: ' + (res.status === 401 ? 'API key invalid' : res.status === 400 ? 'Audio format' : 'Network'));
       return '';
     }
     const data = await res.json();
-    return (data.transcript || '').trim();
+    const txt = (data.transcript || '').trim();
+    if (!txt) console.warn('[Sarvam STT] empty transcript', data);
+    return txt;
   } catch (e) {
-    console.error('Sarvam STT failed', e);
+    console.error('[Sarvam STT] failed', e);
+    showToast('Voice ka kuch problem aaya');
     return '';
   }
 }
 // ── v3: Sarvam TTS (Bulbul) — replaces Web Speech API ──
-const SARVAM_SPEAKERS = { dadi: 'pavithra', maa: 'meera', saathi: 'amol' };
+const SARVAM_SPEAKERS = { dadi: 'manisha', maa: 'anushka', saathi: 'arya' };  // Bulbul v2 valid speakers
 const SARVAM_LANG_MAP = {
   'hi-IN':'hi-IN','mr-IN':'hi-IN','bn-IN':'bn-IN','ta-IN':'ta-IN','te-IN':'te-IN',
   'kn-IN':'kn-IN','ml-IN':'ml-IN','gu-IN':'gu-IN','pa-IN':'pa-IN',
@@ -2984,7 +3081,7 @@ async function speak(text, quiet) {
         target_language_code: targetLang,
         speaker, pitch: 0, pace: 0.9, loudness: 1.4,
         speech_sample_rate: 22050, enable_preprocessing: true,
-        model: 'bulbul:v1'
+        model: 'bulbul:v2'
       })
     });
     if (!res.ok) {
