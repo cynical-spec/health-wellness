@@ -235,6 +235,42 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .divider{height:1px;background:rgba(255,255,255,.06);margin:4px 0}
 
 
+
+/* ── v3.2 hub redesign: header chip, carousel, question bubbles ── */
+.hub3-stat-chip{display:flex;align-items:center;gap:6px;background:rgba(107,33,168,.12);border:1px solid rgba(107,33,168,.32);border-radius:var(--radius-pill);padding:5px 10px;font-size:11px;font-weight:700;color:#fff;cursor:default;margin-right:6px}
+.hub3-stat-chip .hsc-score{color:#22c55e}
+.hub3-stat-chip .hsc-streak{color:#fb923c}
+.hub3-stat-chip .hsc-sep{opacity:.35;font-weight:400}
+/* Carousel — horizontal scroll */
+.hub3-carousel-lbl{padding:6px 16px 10px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.42)}
+.hub3-carousel{display:flex;gap:10px;padding:0 16px 14px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.hub3-carousel::-webkit-scrollbar{display:none}
+.hub3-cc{flex:0 0 70%;min-width:240px;background:var(--bold);border:1px solid rgba(107,33,168,.4);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:6px;scroll-snap-align:start;cursor:pointer}
+.hub3-cc:active{transform:scale(.98)}
+.hub3-cc-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:4px}
+.hub3-cc-emoji{font-size:28px;line-height:1;flex-shrink:0}
+.hub3-cc-tag{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.6);background:rgba(255,255,255,.08);padding:3px 7px;border-radius:8px;white-space:nowrap}
+.hub3-cc-tag.kahani{background:rgba(251,146,60,.18);color:#fb923c}
+.hub3-cc-tag.saans{background:rgba(34,197,94,.16);color:#22c55e}
+.hub3-cc-tag.tip{background:rgba(30,204,176,.16);color:#1eccb0}
+.hub3-cc-tag.yoga{background:rgba(168,85,247,.18);color:#c084fc}
+.hub3-cc-title{font-size:14px;font-weight:700;line-height:1.3;color:#fff}
+.hub3-cc-sub{font-size:11px;color:rgba(255,255,255,.6);margin-bottom:8px;flex:1}
+.hub3-cc-btn{align-self:flex-start;background:var(--primary);border:none;color:#fff;border-radius:var(--radius-pill);padding:6px 14px;font-family:'JioType',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px}
+.hub3-cc-btn:active{opacity:.85}
+/* 4 question bubbles */
+.hub3-qs-lbl{padding:6px 16px 8px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.42)}
+.hub3-qs{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 18px}
+.hub3-qb{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);text-align:left;transition:all .15s}
+.hub3-qb:active{transform:scale(.97);background:var(--bold-dim);border-color:var(--primary)}
+.hub3-qb-emoji{font-size:20px;flex-shrink:0}
+.hub3-qb-text{font-size:12px;font-weight:600;line-height:1.3}
+/* Follow-up CTA chips after bot reply */
+.followup-row{padding:4px 0 8px}
+.followup-chips{display:flex;flex-wrap:wrap;gap:6px}
+.followup-chip{background:var(--surface);border:1px solid rgba(255,255,255,.1);color:var(--text);border-radius:var(--radius-pill);padding:6px 12px;font-family:'JioType',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.followup-chip:active{background:var(--primary-dim);border-color:var(--primary)}
+
 /* ══ v3 Hub: 3-zone home ══ */
 .hub3-hdr{display:flex;align-items:center;justify-content:space-between;padding:max(14px,env(safe-area-inset-top)) 16px 14px}
 .hub3-hdr-left{display:flex;align-items:center;gap:11px}
@@ -590,7 +626,7 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
       </div>
     </div>
     <div style="display:flex;align-items:center">
-      <div class="hub3-streak" id="hub3-streak"><span>🔥</span><span id="hub3-streak-count">0</span> din</div>
+      <div class="hub3-stat-chip" id="hub3-stat-chip"><span class="hsc-score" id="hsc-score">💚 50</span><span class="hsc-sep">·</span><span class="hsc-streak"><span id="hub3-streak-count">0</span>🔥</span></div>
       <button class="hub3-menu-btn" onclick="openToolsSheet()" aria-label="Tools menu">
         <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><circle cx="5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="19" cy="12" r="1.7" fill="currentColor"/></svg>
       </button>
@@ -620,41 +656,18 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
       </button>
     </div>
 
-    <!-- Zone 3a: Story card -->
-    <div class="hub3-story" id="hub3-story-card">
-      <div class="hub3-story-body">
-        <div class="hub3-eyebrow">Aaj ki kahani</div>
-        <div class="hub3-story-title" id="hub3-story-title">Dadi ka ajwain waala raaz</div>
-        <div class="hub3-story-preview" id="hub3-story-preview">"Jab mere baba ko pet ki takleef hoti thi..."</div>
-      </div>
-      <div class="hub3-story-foot">
-        <div class="hub3-story-meta" id="hub3-story-meta">Dadi ki awaaz · 2 min · Hindi</div>
-        <button class="hub3-suno" id="hub3-suno-btn" onclick="playStory()">
-          <span class="hub3-suno-icon"><svg viewBox="0 0 24 24" fill="none" width="13" height="13"><path d="M8 5v14l11-7z" fill="white"/></svg></span>
-          <span id="hub3-suno-lbl">Suno</span>
-        </button>
-      </div>
-    </div>
+    <!-- Zone 3a: Aaj ki kahani — scrollable carousel of TOD-specific cards -->
+    <div class="hub3-carousel-lbl">Aaj ke liye</div>
+    <div class="hub3-carousel" id="hub3-carousel"><!-- JS renders TOD cards --></div>
 
-    <!-- Zone 3b: Compact score strip -->
-    <div class="hub3-score">
-      <div class="hub3-score-left">
-        <div class="hub3-score-lbl">Sehat Score</div>
-        <div class="hub3-score-row">
-          <span class="hub3-score-num" id="hub3-score-num">50</span>
-          <span class="hub3-score-delta" id="hub3-score-delta">+0 aaj</span>
-        </div>
-        <div class="hub3-score-bar"><div class="hub3-score-fill" id="hub3-score-fill" style="width:50%"></div></div>
-        <div class="hub3-score-meta" id="hub3-score-meta">Level 2 · 50 points to unlock</div>
-      </div>
-      <div class="hub3-dots">
-        <div class="hub3-dot" id="dot-paani" onclick="markDailyDot('paani', this)" title="Paani piya">💧</div>
-        <div class="hub3-dot" id="dot-swas" onclick="markDailyDot('swas', this)" title="Swas kiya">🌬</div>
-        <div class="hub3-dot" id="dot-khana" onclick="markDailyDot('khana', this)" title="Raat ka khana">🌙</div>
-      </div>
+    <!-- Zone 3b: Aksar log poochhte hain — 4 quick question bubbles -->
+    <div class="hub3-qs-lbl">Aksar log poochhte hain</div>
+    <div class="hub3-qs" id="hub3-qs">
+      <button class="hub3-qb" onclick="askCommonQ('🤕 Sir dard kaise kam karein?')"><span class="hub3-qb-emoji">🤕</span><span class="hub3-qb-text">Sir dard ho raha hai</span></button>
+      <button class="hub3-qb" onclick="askCommonQ('😴 Neend nahi aati raat ko, kya karein?')"><span class="hub3-qb-emoji">😴</span><span class="hub3-qb-text">Neend nahi aati</span></button>
+      <button class="hub3-qb" onclick="askCommonQ('⚖️ Vajan kaise kam karein, ghar ke nuskhe se?')"><span class="hub3-qb-emoji">⚖️</span><span class="hub3-qb-text">Vajan kam karein</span></button>
+      <button class="hub3-qb" onclick="askCommonQ('🦴 Ghutno mein dard hai, kya nuskha hai?')"><span class="hub3-qb-emoji">🦴</span><span class="hub3-qb-text">Ghutno mein dard</span></button>
     </div>
-
-    <div class="hub3-or">— ya seedha poochho —</div>
   </div>
 
   <!-- Bottom bar — Speak primary CTA -->
@@ -922,36 +935,30 @@ const PERSONAS = {
 // Default persona for new users — soft, neutral
 const DEFAULT_PERSONA = 'dadi';
 
-const SYSTEM_PROMPT = `You are Sehat Saathi, a warm Ayurvedic home remedy guide inside JioBharatIQ.
+const SYSTEM_PROMPT = `You are Sehat Saathi — a warm dadi/nani figure inside JioBharatIQ. NOT a remedy machine.
 
-LANGUAGE RULE: Detect what language the user writes in. Always respond in exactly that language and dialect. Never switch to English unless they wrote in English. Never ask them to change language.
+LANGUAGE: Reply in the user's language and dialect. Match their script (if they wrote in Devanagari, reply in Devanagari; if Roman/Hinglish, reply that way). Never switch language unless they do. Never ask them to change language.
 
-YOU WORK IN TWO TURNS:
+YOUR PERSONALITY: Like a real grandmother — slow, listening, asks back. Vary your tone. Don't sound mechanical. Sometimes you just acknowledge ("achha beta", "samajh gayi"), sometimes you share a tiny relatable memory. Don't use bullet lists.
 
-TURN 1 — User describes complaint:
-First check for serious emergency.
+CRITICAL — DO NOT RUSH TO REMEDIES:
+- If complaint is vague ("pet kharab hai", "tabiyat theek nahi", "neend nahi aati") — ASK 1-2 warm clarifying questions FIRST. Don't suggest haldi/ajwain in the first reply unless they describe a clear specific issue.
+- Useful clarifying questions: kab se ho raha hai? kya khaaya tha pehle? saath mein aur kya feel ho raha hai? bukhar bhi hai? umar kya hai (if not known)?
+- After 1-2 clarifications, THEN suggest one simple kitchen remedy + when to see doctor.
+- If user is venting (low mood, stress, family worry) — just LISTEN. Reflect what they said. Don't fix.
+- Vary remedies — don't always say ajwain or haldi. Match the right ingredient to the right complaint.
 
-SERIOUS — escalate immediately, no remedy ever:
-Chest pain, difficulty breathing, infant under 3 months with fever, seizures, sudden worst-ever headache, vomiting blood, loss of consciousness.
-Respond warmly but clearly in their language — go to doctor now, do not wait.
+SERIOUS EMERGENCY (escalate immediately, NO remedy, NO question):
+Chest pain, breathing trouble, infant <3 months with fever, seizure, sudden worst-ever headache, vomiting blood, loss of consciousness, sudden face droop or arm weakness. Tell them warmly but firmly: doctor ke paas turant jao, der mat karo.
 
-NOT SERIOUS — ask exactly ONE warm clarifying question in their language. Like a caring friend, not a medical form.
+KITCHEN INGREDIENT BANK (use only these, only when relevant):
+ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt, nimbu, cloves, cinnamon, fennel, hing.
 
-TURN 2 — After their answer:
-Give remedy in this structure:
-1. What to do right now — one specific action
-2. Why it works — one simple sentence, no jargon
-3. Safety gate — when to see doctor if not improving
-
-Use only kitchen ingredients: ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt.
-
-Never diagnose. Never use medical terms. Never give a list — just the one best thing.
-
-TONE: Warm like dadi or nani. Unhurried. Specific. 4 sentences maximum. Never scary. Never clinical.
+KEEP IT SHORT: 2-4 sentences max. Never lecture.
 
 OUTPUT FORMAT (strict):
 First line: LANG:<code>  where <code> is one of hi, mr, bn, ta, te, kn, ml, gu, pa, en.
-Second line onward: your warm response in the user's language. No preamble.`;
+Second line onward: your warm reply.`;
 
 // ── v2: Wellness + Community system prompts ──
 const WELLNESS_SYSTEM_PROMPT = `You are Sehat Saathi — Wellness mode. You're a warm, modern wellness companion for young Indians (18–35) on JioBharatIQ.
@@ -1391,6 +1398,7 @@ function markDailyDot(type, el) {
   if (el) el.classList.add('done');
   const pts = DOT_POINTS[type] || 5;
   bumpScore(pts);
+  if (typeof refreshScoreChip === 'function') refreshScoreChip();
   showToast('+' + pts + ' Sehat Score 💚 (' + DOT_NAMES[type] + ')');
 }
 
@@ -1412,21 +1420,9 @@ function getLevel(score) {
 }
 
 function refreshScore() {
+  // v3.2: Body score strip removed; just refresh the header chip + run unlock checks
+  if (typeof refreshScoreChip === 'function') refreshScoreChip();
   const score = getScore();
-  const delta = getTodayDelta();
-  const lvl = getLevel(score);
-  const numEl = document.getElementById('hub3-score-num');
-  const dEl = document.getElementById('hub3-score-delta');
-  const fEl = document.getElementById('hub3-score-fill');
-  const mEl = document.getElementById('hub3-score-meta');
-  if (numEl) numEl.textContent = score;
-  if (dEl)  dEl.textContent  = (delta > 0 ? '+' : '') + delta + ' aaj';
-  if (fEl)  fEl.style.width  = score + '%';
-  if (mEl) {
-    const nextThreshold = lvl.num === 4 ? 100 : (lvl.num === 1 ? 41 : lvl.num === 2 ? 71 : 91);
-    const ptsToNext = Math.max(0, nextThreshold - score);
-    mEl.textContent = lvl.name + ' · Lv ' + lvl.num + ' · ' + (ptsToNext > 0 ? (ptsToNext + ' points to ' + (lvl.num < 4 ? 'next level' : 'max')) : 'Max level reached!');
-  }
   // Ritucharya unlock check
   if ((score >= 91 || getStreak() >= 10) && !localStorage.getItem('ritucharyaUnlocked')) {
     localStorage.setItem('ritucharyaUnlocked', '1');
@@ -1455,11 +1451,14 @@ function initHubDynamic() {
   const nameEl = document.getElementById('hub3-name');
   if (nameEl) {
     if (profile && profile.name) {
-      nameEl.textContent = ' ' + profile.name;
+      nameEl.textContent = ', ' + profile.name;
     } else {
       nameEl.innerHTML = ' <span style="color:rgba(255,255,255,.45);text-decoration:underline;cursor:pointer" onclick="askName()">apna naam jodein</span>';
     }
   }
+  // v3.2: Render TOD carousel + refresh header score chip
+  renderTODCarousel();
+  refreshScoreChip();
 
   // Update streak
   refreshStreak();
@@ -1491,9 +1490,9 @@ function renderMoodChat(mood) {
   if (!msgs) return;
   msgs.innerHTML = '';
   const intros = {
-    theek: 'Wah! Acchi baat hai — aaj kya try karna chahogey? Niche se chunein, ya seedha batao.',
-    takleef: 'Acha — kya takleef ho rahi hai? Niche se chunein, ya likh ke batao.',
-    tension: 'Hmm. Saath hoon. Niche se ek chunein, ya seedha jo bhi feel ho rahi hai likh do — koi salah pehle nahi dungi.'
+    theek: { txt: 'Wah! Acchi baat hai — aaj kya try karna chahogey?', say: 'वाह! अच्छी बात है। आज क्या try करना चाहोगे? नीचे से चुनो, या सीधा बताओ।' },
+    takleef: { txt: 'Acha — kya takleef ho rahi hai? Niche se chunein, ya likh ke batao.', say: 'अच्छा। क्या तकलीफ हो रही है? नीचे से चुनो, या लिख के बताओ।' },
+    tension: { txt: 'Hmm. Saath hoon. Niche se ek chunein, ya seedha jo bhi feel ho rahi hai likh do — pehle koi salah nahi dungi, sirf sun rahi hoon.', say: 'हम्म। साथ हूं। नीचे से एक चुनो, या जो भी feel हो रही है लिख दो। पहले कोई सलाह नहीं दूंगी, सिर्फ सुन रही हूं।' }
   };
   const chips = {
     theek: [
@@ -1512,8 +1511,8 @@ function renderMoodChat(mood) {
       { label: 'Sukoon ki kahani', action: () => triggerStoryFromChat('calm') }
     ]
   };
-  addMsg('bot', intros[mood], false);
-  speak(intros[mood]);
+  addMsg('bot', intros[mood].txt, false);
+  speak(intros[mood].txt, { ttsText: intros[mood].say });
   // Render chips
   const row = document.createElement('div');
   row.className = 'msg-row bot';
@@ -1758,6 +1757,160 @@ function showStoryTextDialog() {
   alert(msg); // Minimal fallback — could be upgraded to a sheet
 }
 
+
+// ── v3.2: Aaj ke liye carousel (time-of-day) ──
+const TOD_CARDS = {
+  morning: [
+    { type: 'kahani', emoji: '👵', title: 'Subah ki kahani', sub: 'Dadi ki awaaz · 2 min', cta: 'Suno', action: 'story' },
+    { type: 'saans',  emoji: '🌬', title: 'Anulom-Vilom', sub: 'Saans ka santulan · 5 min', cta: 'Karo', action: 'breathe' },
+    { type: 'yoga',   emoji: '☀️', title: 'Surya Namaskar warmup', sub: 'Body ko jagao · 4 min', cta: 'Karo', action: 'sunsalute' },
+    { type: 'tip',    emoji: '🍋', title: 'Garam paani + nimbu', sub: 'Subah ka detox · 1 min', cta: 'Try', action: 'tip_lemon' }
+  ],
+  afternoon: [
+    { type: 'kahani', emoji: '👵', title: 'Dopahar ki tip', sub: 'Dadi ki awaaz · 2 min', cta: 'Suno', action: 'story' },
+    { type: 'tip',    emoji: '🚶', title: 'Khaane ke baad walk', sub: 'Paachan shakti · 10 min', cta: 'Try', action: 'tip_walk' },
+    { type: 'yoga',   emoji: '🧘', title: 'Sukshma vyayam', sub: 'Stretching · 3 min', cta: 'Karo', action: 'stretch' },
+    { type: 'tip',    emoji: '🥱', title: 'Power nap', sub: 'Bas 20 minute · 1 tip', cta: 'Try', action: 'tip_nap' }
+  ],
+  evening: [
+    { type: 'kahani', emoji: '👵', title: 'Sham ki baat', sub: 'Dadi ki awaaz · 2 min', cta: 'Suno', action: 'story' },
+    { type: 'saans',  emoji: '🌬', title: 'Nadi Shodhana', sub: 'Din ka therav · 7 min', cta: 'Karo', action: 'breathe' },
+    { type: 'tip',    emoji: '🚶', title: 'Sham ki walk', sub: 'Tension utaaro · 15 min', cta: 'Try', action: 'tip_eve_walk' },
+    { type: 'tip',    emoji: '📵', title: 'Screen-free 30 min', sub: 'Khaane se pehle · 1 tip', cta: 'Try', action: 'tip_screenfree' }
+  ],
+  night: [
+    { type: 'kahani', emoji: '👵', title: 'Raat ki nasihat', sub: 'Dadi ki awaaz · 2 min', cta: 'Suno', action: 'story' },
+    { type: 'saans',  emoji: '🌬', title: 'Bhramari Pranayam', sub: 'Mann ki shaanti · 5 min', cta: 'Karo', action: 'breathe' },
+    { type: 'yoga',   emoji: '🧘', title: 'Yoga Nidra', sub: 'Gehri neend · 10 min', cta: 'Karo', action: 'breathe' },
+    { type: 'tip',    emoji: '🥛', title: 'Haldi wala doodh', sub: 'Sone se pehle · 1 tip', cta: 'Try', action: 'tip_haldi' }
+  ]
+};
+
+const TIP_CONTENTS = {
+  tip_lemon: { title: 'Garam paani + nimbu', body: 'Subah uth ke pehle, ek glass garam paani mein ek nimbu nichod ke piyo. Pet saaf hota hai, paachan shakti badhti hai. Bas yahi ek aadat — ek hafte try karo, fark dikh jayega.', say: 'सुबह उठ के पहले, एक ग्लास गरम पानी में एक नींबू निचोड़ के पियो। पेट साफ होता है, पाचन शक्ति बढ़ती है।' },
+  tip_walk: { title: 'Khaane ke baad walk', body: 'Dopahar ke khaane ke baad seedhe na baitho. Bas das minute dheere dheere ghar mein chal lo. Khaana paacheya jaayega aur dopahar ki susti bhi nahi aayegi.', say: 'दोपहर के खाने के बाद सीधे ना बैठो। बस दस मिनट धीरे धीरे घर में चल लो।' },
+  tip_nap: { title: 'Sirf 20 minute ki neend', body: 'Dopahar mein neend aaye toh 20 minute ki choti neend lo — alarm laga ke. Zyada lagi toh raat ko neend nahi aayegi. Yeh ek puraana Indian rivaaj hai — sahi tarike se kiya gaya.', say: 'दोपहर में नींद आए तो बीस मिनट की छोटी नींद लो, अलार्म लगा के।' },
+  tip_eve_walk: { title: 'Sham ki walk', body: 'Sham 6 baje ke around 15 minute ki walk lo. Khali pet par nahi — thoda kuch khaake. Yeh din bhar ki tension ko utaarti hai aur raat ko gehri neend laati hai.', say: 'शाम छह बजे के आसपास पंद्रह मिनट की वॉक लो — दिन भर की टेंशन उतर जाएगी।' },
+  tip_screenfree: { title: 'Khaane se pehle screen band', body: 'Khaane se 30 minute pehle phone, TV, laptop sab band kar do. Khaana achhe se chabaake khao. Paachan dugna ho jaata hai — Ayurved mein iska bahut zikr hai.', say: 'खाने से तीस मिनट पहले फोन, टीवी, लैपटॉप सब बंद कर दो।' },
+  tip_haldi: { title: 'Haldi wala doodh', body: 'Sone se pehle ek glass garam doodh, chutki haldi, thoda gud. Saans ki naliyaa saaf, badan halka, aur neend bhi gehri. Mere ghar mein har raat yahi banta tha.', say: 'सोने से पहले एक ग्लास गरम दूध में चुटकी हल्दी, और थोड़ा गुड़ डाल के पियो।' }
+};
+
+function renderTODCarousel() {
+  const wrap = document.getElementById('hub3-carousel');
+  if (!wrap) return;
+  const tod = getTimeOfDay();
+  const cards = TOD_CARDS[tod.slot] || TOD_CARDS.morning;
+  wrap.innerHTML = cards.map((c, i) => `
+    <div class="hub3-cc" onclick="todCardTap('${c.action}')">
+      <div class="hub3-cc-top">
+        <div class="hub3-cc-emoji">${c.emoji}</div>
+        <span class="hub3-cc-tag ${c.type}">${c.type === 'kahani' ? 'Kahani' : c.type === 'saans' ? 'Saans' : c.type === 'yoga' ? 'Yoga' : 'Tip'}</span>
+      </div>
+      <div class="hub3-cc-title">${c.title}</div>
+      <div class="hub3-cc-sub">${c.sub}</div>
+      <button class="hub3-cc-btn">
+        <svg viewBox="0 0 24 24" fill="none" width="11" height="11"><path d="M8 5v14l11-7z" fill="white"/></svg> ${c.cta}
+      </button>
+    </div>
+  `).join('');
+}
+
+function todCardTap(action) {
+  if (action === 'story') return playStory('general');
+  if (action === 'breathe' || action === 'sunsalute' || action === 'stretch') {
+    goTo('s-breathwork'); return;
+  }
+  // Tip card → show body in chat + speak Devanagari version
+  const tip = TIP_CONTENTS[action];
+  if (tip) {
+    ST.chatCtx = 'tip';
+    ST.chatHistory = [];
+    ST.isFirstMsg = true;
+    goTo('s-chat');
+    document.getElementById('chat-ctx-label').textContent = tip.title;
+    setTimeout(() => {
+      const msgs = document.getElementById('chat-msgs');
+      msgs.innerHTML = '';
+      addMsg('bot', tip.body, false);
+      speak(tip.body, { ttsText: tip.say });
+      // Inject follow-up chips
+      injectFollowups('tip', msgs);
+    }, 100);
+  }
+}
+
+function askCommonQ(question) {
+  ST.chatCtx = 'nushke';
+  ST.chatHistory = [];
+  ST.isFirstMsg = true;
+  goTo('s-chat');
+  document.getElementById('chat-ctx-label').textContent = 'Ghar ke Nushke';
+  setTimeout(() => {
+    document.getElementById('chat-msgs').innerHTML = '';
+    addMsg('user', question, false);
+    callAI(question, getSystemPromptFor('nushke'));
+  }, 100);
+}
+
+function refreshScoreChip() {
+  const score = getScore();
+  const streak = getStreak();
+  const sEl = document.getElementById('hsc-score');
+  const stEl = document.getElementById('hub3-streak-count');
+  if (sEl) sEl.textContent = '💚 ' + score;
+  if (stEl) stEl.textContent = streak;
+}
+
+// Inject 2-3 contextual follow-up chips after bot reply
+function injectFollowups(ctx, msgsContainer) {
+  const followups = {
+    nushke:    ['Aur batao', 'Doctor kab milein?', 'Dadi ki kahani sunein'],
+    tension:   ['Bas suno', 'Saans karein', 'Doctor se baat karein'],
+    mood_tension: ['Bas suno', 'Saans karein', 'Doctor se baat karein'],
+    mood_theek:   ['Aaj ka nushka', 'Saans karein', 'Dadi ki kahani'],
+    mood_takleef: ['Aur batao', 'Lab report', 'Dawai'],
+    wellness:  ['Aur tips', 'Saans karein', 'Plan banao'],
+    tip:       ['Aur tips', 'Try kiya', 'Saans karein'],
+    general:   ['Aur batao', 'Saans karein', 'Wapas hub']
+  };
+  const list = followups[ctx] || followups.general;
+  const row = document.createElement('div');
+  row.className = 'msg-row bot followup-row';
+  const wrap = document.createElement('div');
+  wrap.className = 'followup-chips';
+  for (const label of list) {
+    const btn = document.createElement('button');
+    btn.className = 'followup-chip';
+    btn.textContent = label;
+    btn.onclick = () => {
+      row.remove();
+      handleFollowup(label, ctx);
+    };
+    wrap.appendChild(btn);
+  }
+  row.appendChild(wrap);
+  msgsContainer.appendChild(row);
+  msgsContainer.scrollTop = msgsContainer.scrollHeight;
+}
+
+function handleFollowup(label, ctx) {
+  if (label === 'Saans karein') return goTo('s-breathwork');
+  if (label === 'Wapas hub')   return goTo('s-hub');
+  if (label === 'Lab report')  return startFeature('lab');
+  if (label === 'Dawai')       return startFeature('medicine');
+  if (label === 'Plan banao')  return startFeature('meal');
+  if (label === 'Dadi ki kahani' || label === 'Dadi ki kahani sunein') {
+    goTo('s-hub'); setTimeout(() => playStory('general'), 200); return;
+  }
+  if (label === 'Aaj ka nushka') {
+    addMsg('user', 'Aaj ka ek accha nushka batao', false);
+    callAI('Aaj ka ek accha nushka batao — aam sehat ke liye', getSystemPromptFor('nushke')); return;
+  }
+  // Default — send as user message
+  addMsg('user', label, false);
+  callAI(label, getSystemPromptFor(ST.chatCtx));
+}
+
 // ── Bottom sheet ──
 function openToolsSheet() {
   document.getElementById('bs-overlay').classList.add('on');
@@ -1868,6 +2021,10 @@ function addMsg(role, text, showBadge) {
     if (skill) setTimeout(() => { const skRow = document.createElement('div'); skRow.className = 'msg-row bot'; renderSkillCard(skill, skRow); msgs.appendChild(skRow); msgs.scrollTop = msgs.scrollHeight; }, 600);
     // nushke video card injection
     if (ST.chatCtx === 'nushke') setTimeout(() => injectVideoCard(text, msgs), 800);
+    // v3.2: Follow-up CTA chips (after a beat, only on AI replies — not template ones)
+    if (showBadge !== undefined && typeof injectFollowups === 'function') {
+      setTimeout(() => injectFollowups(ST.chatCtx, msgs), 1100);
+    }
   }
   msgs.appendChild(row);
   msgs.scrollTop = msgs.scrollHeight;
@@ -2451,7 +2608,7 @@ function renderWellnessStart() {
   ST.chatHistory = [];
   const intro = "Hey 👋 Wellness Baat mein swagat! Main fitness, neend, stress, khaane-peene aur lifestyle ki baat karta hoon. Diagnosis nahi karta — bas practical tips. Kya try karna hai aaj?";
   addMsg('bot', intro, false);
-  speak(intro);
+  speak(intro, { ttsText: "हाय! Wellness बात में स्वागत है। मैं fitness, नींद, stress, खाने पीने और lifestyle की बात करता हूं। Diagnosis नहीं करता — बस practical tips। क्या try करना है आज?" });
   addQuickReplies(
     ['Subah ki energy kaise lao?', 'Gym ke baad kya khaaun?', 'Neend nahi aati', 'Stress kaise kam karein?', 'Phone ki aadat chhodun'],
     (txt) => {
@@ -2469,7 +2626,7 @@ function renderSymptomStart() {
   ST.chatHistory = [];
   const intro = 'Kya takleef ho rahi hai? Niche se chunein, ya likh ke batayein 🙏';
   addMsg('bot', intro, false);
-  speak(intro);
+  speak(intro, { ttsText: 'क्या तकलीफ हो रही है? नीचे से चुनें, या लिख के बताएं।' });
   addQuickReplies(
     ['Sardi-Khansi', 'Pet ki takleef', 'Sir dard', 'Bukhar', 'Neend nahi aati', 'Stress', 'Badan dard', 'Skin problem'],
     (txt) => {
@@ -3027,7 +3184,7 @@ async function transcribeWithSarvam(audioBlob) {
     const ext = mt.includes('webm') ? 'webm' : mt.includes('mp4') ? 'mp4' : mt.includes('mpeg') ? 'mp3' : mt.includes('wav') ? 'wav' : 'webm';
     const fd = new FormData();
     fd.append('file', audioBlob, 'rec.' + ext);
-    fd.append('model', 'saarika:v2');
+    fd.append('model', 'saarika:v2.5');
     fd.append('language_code', ST.currentLanguage || 'hi-IN');
     fd.append('with_timestamps', 'false');
     const res = await fetch('https://api.sarvam.ai/speech-to-text', {
@@ -3061,41 +3218,45 @@ const SARVAM_LANG_MAP = {
 };
 let _currentAudio = null;
 
-async function speak(text, quiet) {
+async function speak(text, opts) {
   if (!text) return;
-  // Stop any in-flight audio
+  // opts: { quiet, ttsText } — if ttsText provided, speak THAT (Devanagari version) while displaying `text`
+  const quiet = opts && opts.quiet;
+  const speakText = (opts && opts.ttsText) || text;
   if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
   if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes('REPLACE')) {
     if (!quiet) console.info('[speak] SARVAM_KEY missing — skipping TTS');
     return;
   }
   try {
-    const lang = (ST.currentLanguage && SARVAM_LANG_MAP[ST.currentLanguage]) || detectLang(text).code || 'hi-IN';
-    const targetLang = SARVAM_LANG_MAP[lang] || 'hi-IN';
-    const speaker = SARVAM_SPEAKERS[ST.persona] || 'meera';
+    // v3.2: Smart language routing — Devanagari/Indian-script text → that lang. Pure Roman → en-IN (Indian-English voice handles loanwords better than hi-IN reading Roman as phonemes).
+    const detected = detectLang(speakText);
+    const hasIndic = detected.script !== 'roman';
+    const targetLang = hasIndic ? (SARVAM_LANG_MAP[detected.code] || 'hi-IN') : 'en-IN';
+    const speaker = SARVAM_SPEAKERS[ST.persona] || SARVAM_SPEAKERS.dadi;
     const res = await fetch('https://api.sarvam.ai/text-to-speech', {
       method: 'POST',
       headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        inputs: [text.length > 500 ? text.substring(0, 500) : text],
+        inputs: [speakText.length > 500 ? speakText.substring(0, 500) : speakText],
         target_language_code: targetLang,
-        speaker, pitch: 0, pace: 0.9, loudness: 1.4,
+        speaker, pitch: 0, pace: 0.85, loudness: 1.4,
         speech_sample_rate: 22050, enable_preprocessing: true,
         model: 'bulbul:v2'
       })
     });
     if (!res.ok) {
       const errTxt = await res.text();
-      console.error('Sarvam TTS', res.status, errTxt);
+      console.error('[Sarvam TTS]', res.status, errTxt);
       return;
     }
     const data = await res.json();
     if (data.audios && data.audios[0]) {
       _currentAudio = new Audio('data:audio/wav;base64,' + data.audios[0]);
-      _currentAudio.play().catch(e => console.warn('autoplay blocked', e));
+      _currentAudio.play().catch(e => console.warn('[speak] autoplay blocked', e));
     }
   } catch (e) {
-    console.error('Sarvam TTS failed', e);
+    console.error('[Sarvam TTS] failed', e);
   }
 }
 
