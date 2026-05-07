@@ -1683,7 +1683,12 @@ async function playCachedStory() {
     // Sarvam has ~500 char limit — chunk if needed
     const chunks = chunkText(_storyCache.fullText, 480);
     const audioParts = [];
-    for (const chunk of chunks) {
+    for (let chunk of chunks) {
+      // v3.3: transliterate Roman chunks to Devanagari for natural Hindi voice
+      const detectedScript = detectLang(chunk).script;
+      if (detectedScript === 'roman' && targetLang.startsWith('hi')) {
+        chunk = await transliterateToDevanagari(chunk, targetLang);
+      }
       const res = await fetch('https://api.sarvam.ai/text-to-speech', {
         method: 'POST',
         headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
@@ -1693,7 +1698,7 @@ async function playCachedStory() {
           enable_preprocessing: true, model: 'bulbul:v2'
         })
       });
-      if (!res.ok) { console.error('Sarvam story TTS', res.status); break; }
+      if (!res.ok) { console.error('[story TTS]', res.status); break; }
       const data = await res.json();
       if (data.audios && data.audios[0]) audioParts.push(data.audios[0]);
     }
@@ -3218,28 +3223,73 @@ const SARVAM_LANG_MAP = {
 };
 let _currentAudio = null;
 
+// v3.3: cache Roman → Devanagari transliterations to avoid re-billing same text
+const _translitCache = new Map();
+async function transliterateToDevanagari(text, langCode) {
+  if (!text) return text;
+  if (_translitCache.has(text)) return _translitCache.get(text);
+  if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes('REPLACE')) return text;
+  try {
+    const target = (langCode && langCode.length === 5) ? langCode : 'hi-IN';
+    const res = await fetch('https://api.sarvam.ai/transliterate', {
+      method: 'POST',
+      headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input: text.length > 950 ? text.substring(0, 950) : text,
+        source_language_code: target,
+        target_language_code: target,
+        spoken_form: true,
+        numerals_format: 'international'
+      })
+    });
+    if (!res.ok) {
+      const errTxt = await res.text();
+      console.warn('[transliterate]', res.status, errTxt);
+      return text; // fall back to original
+    }
+    const data = await res.json();
+    const out = (data.transliterated_text || text).trim();
+    _translitCache.set(text, out);
+    if (_translitCache.size > 60) {
+      // evict oldest entry to bound memory
+      const firstKey = _translitCache.keys().next().value;
+      _translitCache.delete(firstKey);
+    }
+    return out;
+  } catch (e) {
+    console.warn('[transliterate] failed, using original', e);
+    return text;
+  }
+}
+
 async function speak(text, opts) {
   if (!text) return;
-  // opts: { quiet, ttsText } — if ttsText provided, speak THAT (Devanagari version) while displaying `text`
+  // opts: { quiet, ttsText } — if ttsText provided, speak THAT (caller-supplied Devanagari) and skip transliteration.
   const quiet = opts && opts.quiet;
-  const speakText = (opts && opts.ttsText) || text;
+  const callerTtsText = opts && opts.ttsText;
   if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
   if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes('REPLACE')) {
     if (!quiet) console.info('[speak] SARVAM_KEY missing — skipping TTS');
     return;
   }
   try {
-    // v3.2: Smart language routing — Devanagari/Indian-script text → that lang. Pure Roman → en-IN (Indian-English voice handles loanwords better than hi-IN reading Roman as phonemes).
-    const detected = detectLang(speakText);
-    const hasIndic = detected.script !== 'roman';
-    const targetLang = hasIndic ? (SARVAM_LANG_MAP[detected.code] || 'hi-IN') : 'en-IN';
+    // v3.3: Detect script → if Roman/Hinglish, transliterate to the target Indian script BEFORE TTS so Bulbul speaks natural Hindi (not letter-by-letter phonemes).
+    const detected = detectLang(text);
+    const targetLangCode = (detected.script !== 'roman')
+      ? (SARVAM_LANG_MAP[detected.code] || 'hi-IN')
+      : (SARVAM_LANG_MAP[ST.currentLanguage] || 'hi-IN');
+    let speakText = callerTtsText || text;
+    // If caller didn't supply Devanagari version AND text is Roman, transliterate to target script first.
+    if (!callerTtsText && detected.script === 'roman' && targetLangCode.startsWith('hi')) {
+      speakText = await transliterateToDevanagari(text, targetLangCode);
+    }
     const speaker = SARVAM_SPEAKERS[ST.persona] || SARVAM_SPEAKERS.dadi;
     const res = await fetch('https://api.sarvam.ai/text-to-speech', {
       method: 'POST',
       headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         inputs: [speakText.length > 500 ? speakText.substring(0, 500) : speakText],
-        target_language_code: targetLang,
+        target_language_code: targetLangCode,
         speaker, pitch: 0, pace: 0.85, loudness: 1.4,
         speech_sample_rate: 22050, enable_preprocessing: true,
         model: 'bulbul:v2'
