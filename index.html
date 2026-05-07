@@ -242,6 +242,13 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .hw-icon{font-size:28px;flex-shrink:0}
 .hw-title{font-size:15px;font-weight:700;margin-bottom:2px}
 .hw-sub{font-size:12px;color:var(--text2)}
+/* Welcome stats row */
+.hw-stats{display:flex;align-items:center;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);font-size:11px;color:var(--text2);font-weight:600}
+.hw-stat b{color:#fff;font-size:13px;font-weight:700}
+.hw-stat-streak{color:#f7ab20}
+.hw-stat-streak b{color:#f7ab20}
+.hw-stat-lvl b{color:var(--sparkle)}
+.hw-dot{opacity:.3}
 /* Habit chips */
 .hs-taps{display:flex;gap:7px;padding:8px 16px 0}
 .hs-tap{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;background:var(--surface);border:1.5px solid rgba(255,255,255,.08);border-radius:var(--radius-pill);padding:9px 4px;font-family:'JioType',sans-serif;font-size:11px;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;transition:all .2s;white-space:nowrap}
@@ -435,9 +442,16 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
     <!-- Welcome (new user) -->
     <div class="hub-welcome">
       <div class="hw-icon">🌱</div>
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="hw-title">Namaste 🙏 — Sehat Saathi yahaan hai</div>
-        <div class="hw-sub">Aaj ke teen kadam se apni yatra shuru karein</div>
+        <div class="hw-sub">Aaj ke teen kadam se yatra shuru karein</div>
+        <div class="hw-stats">
+          <span class="hw-stat"><b id="hub-score-mini">0</b> Sehat Score</span>
+          <span class="hw-dot">·</span>
+          <span class="hw-stat hw-stat-streak"><b>🔥 Day 1</b></span>
+          <span class="hw-dot">·</span>
+          <span class="hw-stat hw-stat-lvl"><b>Lv 1</b> Shiksharthi</span>
+        </div>
       </div>
     </div>
     <!-- AYUSH daily habits — JS fills based on time -->
@@ -801,6 +815,10 @@ function toggleHabit(id, el) {
     const i = ['h1','h2','h3'].indexOf(id);
     ic.textContent = AYUSH_SLOTS[slot].habits[i]?.ic || '○';
   }
+  // Bump mini score
+  const done = document.querySelectorAll('.hs-tap.done').length;
+  const sc = document.getElementById('hub-score-mini');
+  if (sc) sc.textContent = done * 5;
 }
 
 // ── Persona cycle ──
