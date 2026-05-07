@@ -2,6 +2,97 @@
 
 ---
 
+## 2026-05-07 — Session 8: v3 — 3-zone Home, Sarvam Voice, Dynamic Story
+
+This session was a major UX rewire — the Sehat hub was reimagined as a clean 3-zone home (greeting / mood / story+score) instead of a tool list. Voice fully migrated from Web Speech API to Sarvam (Saarika STT + Bulbul TTS). The story card now generates fresh content per persona + season + language. Tools moved to a bottom-sheet behind a 3-dot menu.
+
+### Phase 1 — Sarvam Voice + new SYSTEM_PROMPT + v3 visual tokens (commit `fb16b89`)
+- **STT replacement**: `toggleVoice()` now uses MediaRecorder → Sarvam Saarika (`saarika:v1`) instead of Web Speech `SpeechRecognition`. Audio recorded as webm/opus → POST to `api.sarvam.ai/speech-to-text`.
+- **TTS replacement**: `speak(text)` now POSTs to `api.sarvam.ai/text-to-speech` with `bulbul:v1` model. Speakers: `pavithra` (Dadi), `meera` (Maa), `amol` (Saathi). All Indian languages (hi/mr/bn/ta/te/kn/ml/gu/pa) with Roman + script support via `SARVAM_LANG_MAP`.
+- **Web Speech removed completely**: deleted `speakWebSpeech`, `pickVoice`, `TTS_BACKEND`, `SpeechRecognition` detection — replaced with Sarvam pipeline.
+- **New `SARVAM_KEY` constant** + GitHub Actions workflow now injects it from `secrets.SARVAM_KEY`.
+- **New SYSTEM_PROMPT**: explicit two-turn flow, `LANG:<code>` prefix on every reply, max 4 sentences. `callAI()` parser strips the prefix and updates `ST.currentLanguage` for downstream Sarvam TTS routing.
+- **v3 color tokens**: `--bg:#0a0a0a` (was `#141414`), `--primary:#6B21A8` (was `#3535f3`), `--surface:#1a1a1a`, `--bold:#2d1b69`, `--success:#22c55e`, `--error:#dc2626`, `--warn:#fb923c` (was `#f7ab20`).
+- **All drop shadows removed** (per v3 visual rules: no gradients on backgrounds, no shadows).
+
+### Phase 2 — 3-zone Hub + Bottom-Sheet Tools + Mood Chips (commit `e7dc57c`)
+- **Sehat hub rebuilt** with three zones only:
+  - **Zone 1** — Greeting: "Namaste 🙏 / Aaj kaisa raha?" + small "Saathi mode" persona label + "🔥 7 din" amber streak pill (top-right) + 3-dot menu button.
+  - **Zone 2** — Three mood buttons (😌 Theek hoon, 🤒 Kuch takleef, 😰 Bahut tension) — the only decision on the home screen.
+  - **Zone 3** — One story card ("Aaj ki kahani" with title + quoted preview + meta + Suno button) + compact score strip (Sehat Score number + delta + thin progress bar + level meta + 3 daily dots 💧 🌬 🌙).
+- **Bottom input bar** locked: "Kuch bhi batao..." placeholder + purple Speak primary CTA (red "Ruko..." while recording).
+- **Mood tap → chat with contextual chips**:
+  - Theek hoon → [Aaj ka nushka, Swas karo, Dadi ki kahani]
+  - Kuch takleef → [Ghar ka nushka, Lab report, Dawai]
+  - Bahut tension → [Swas exercise, Baat karo, Sukoon ki kahani]
+- **3-dot menu bottom sheet**: Sehat Tools list moved here (Ghar ke Nushke, Lab Report, Dawai Reminder, Meal Planning, Parivaar, Profile). Sehat Charcha shows "Jald aa raha hai" tag (downgraded from Session 7 implementation per spec).
+- **Sehat Score system** with localStorage persistence:
+  - 4 levels: Sehat Shishya (0–40), Sehat Rakshak (41–70), Sehat Mitra (71–90), Sehat Guru (91–100).
+  - Daily dots: paani (+5), swas (+10), khana (+5) — one tap per day per dot.
+  - Streak auto-bumps on first +ve action of a new day; resets if more than 1.5 days idle.
+  - Ritucharya unlock toast at score ≥91 OR streak ≥10.
+- **Removed Wellness Baat tile** (per spec — not in user's tool list).
+- **Removed `AYUSH_SLOTS` time-based content** + obsolete `toggleHabit` / old `toggleStoryAudio` (replaced by Phase 3 dynamic story).
+- **`.bs-overlay` + `.bs-sheet` CSS** for bottom-sheet animation (translateY transform + backdrop blur).
+
+### Phase 3 — Dynamic Story + Meal Planning Chronic-Condition Context (commit `95cf75c`)
+- **`generateAndPlayStory(theme)`** — calls OpenAI (`response_format: { type: 'json_object' }`) with persona-voice system prompt (Dadi/Maa/Saathi) + current season (monsoon/winter/summer) + detected language. Returns `{title, preview, fullText}`. Cached for 30 min per (persona, season, theme).
+- **Sarvam TTS playback chunked** — `chunkText(text, 480)` splits at sentence boundaries (Hindi `।` supported); plays chunks sequentially via `audio.onended` chain.
+- **Story card live-updates** with generated title/preview/meta/duration; "Suno" button toggles play/pause/Roko.
+- **+3 Sehat Score** awarded after a story finishes playing.
+- **Meal Planning chronic-condition aware**: `mealGenerate()` and `handleFridgePhoto()` now build an `IMPORTANT — household chronic conditions to respect` block from `loadProfile().conditions` + each family member's `conditions`. The system prompt instructs the model to avoid contraindicated foods (e.g., low-glycaemic for Diabetes, low-sodium for BP, no spicy/fried for acidity).
+- **Story text dialog fallback** — if Sarvam TTS fails or browser blocks autoplay, story is shown as `alert()` text (minimal MVP fallback).
+
+### Visual rules enforced (v3)
+- `#0a0a0a` background, `#6B21A8` primary, `#fb923c` amber, `#22c55e` success, `#dc2626` error
+- User bubble `#1a1a1a`, assistant bubble `#2d1b69`
+- Done dot tint `rgba(34,197,94,0.12)`, pending dot `#1a1a1a`
+- All tap targets ≥44px (mood buttons + dots are 38px+ in compact zones, but all nav/Speak ≥44px)
+- Border radius 16–18px on cards
+- No gradients on backgrounds, no drop shadows
+- System sans-serif (JioType still loaded for compatibility but not enforced)
+
+### Required secret
+- **`SARVAM_KEY`** must be added to GitHub repo secrets — workflow `deploy.yml` now injects it (Phase 1). User confirmed they would add this.
+
+### New ST keys (Session 8)
+- `currentLanguage` — last detected language code (`hi-IN` etc.) used by Sarvam TTS
+
+### New localStorage keys (Session 8)
+| Key | Purpose |
+|---|---|
+| `sehatScore` | Persistent Sehat Score (0–100) |
+| `sehatStreak` | Consecutive-day streak count |
+| `sehatLastActiveDay` | toDateString of last active day |
+| `sehatTodayDelta_<dateStr>` | Per-day score delta for "+X aaj" display |
+| `daily_<paani\|swas\|khana>_<dateStr>` | Daily dot completion flags |
+| `ritucharyaUnlocked` | Set when score≥91 or streak≥10 |
+
+### Removed / deprecated
+- `AYUSH_SLOTS` constant (Session 7 time-of-day rotation)
+- `toggleHabit()` (Session 7 score chip system)
+- Old `toggleStoryAudio()` mock countdown (Session 7)
+- `speakWebSpeech()`, `pickVoice()`, `TTS_BACKEND` (Session 7 voice v2)
+- `SpeechRecognition` / `webkitSpeechRecognition` detection (Session 1)
+- Wellness Baat tile (Session 7)
+- Sehat Charcha peer chat — downgraded to "Jald aa raha hai" stub (kept `PEER_PROFILES` constant + `renderCommunityList()` for future revival)
+
+### Broken / Known issues (Session 8)
+- **`SARVAM_KEY` must be set in GitHub Secrets** before voice works. Without it, both STT and TTS show graceful "Voice abhi ready nahi" toasts.
+- Story TTS chunking is sentence-boundary based — Indian-script sentences may exceed 480 char in rare cases; OK for prototype.
+- Sarvam STT does not auto-detect language; we send `ST.currentLanguage` (defaults `hi-IN`). User may need to start in Hindi before speaking other languages — language switches via OpenAI `LANG:` parsing on subsequent turns.
+- Mobile autoplay restrictions may prevent the first Audio() from playing without user gesture; the play button click acts as gesture.
+- File grew to ~170KB / ~3700 lines.
+
+### Next session should start with
+- **Add `SARVAM_KEY` to GitHub repo secrets** (`gh secret set SARVAM_KEY`).
+- Smoke-test on mobile: home loads → mood tap → chat opens with chips → Speak transcribes via Sarvam → response in detected language → spoken via Bulbul.
+- Test story: Suno → OpenAI generates fresh story → Sarvam plays → +3 score → reload page → score persists.
+- Verify Lab Report (still uses GPT-4o Vision, unchanged).
+- Consider: cache last 3 stories per (persona, season) for offline-friendly retry.
+
+---
+
 ## 2026-05-07 — Session 7: v2 Expansion (Onboarding, Personalization, Lab, Community, Voice, Videos)
 
 This was a 9-phase expansion that landed across 9 commits on `main`. Each phase pushed independently and the live URL was kept working between commits.

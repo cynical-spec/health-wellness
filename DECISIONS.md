@@ -128,6 +128,60 @@
 
 ---
 
+## DEC-016 — Replace Web Speech API with Sarvam (Saarika STT + Bulbul TTS)
+**Date:** 2026-05-07 (Session 8)
+**Decision:** Removed all `window.speechSynthesis` and `window.SpeechRecognition` code. Voice in/out now goes through Sarvam AI: STT via `api.sarvam.ai/speech-to-text` (model `saarika:v1`), TTS via `api.sarvam.ai/text-to-speech` (model `bulbul:v1`). Personas mapped to specific Sarvam speakers: Dadi → pavithra, Maa → meera, Saathi → amol. New `SARVAM_KEY` secret + workflow injection.
+**Reason:** Web Speech API quality on Indian languages is severely device-dependent and broken on Firefox/Edge entirely. Production needs consistent Indian-language voice. Sarvam is built specifically for Indian languages, has decent free tier for prototyping, and gives us per-persona speaker control we couldn't reliably get from browser TTS. The TTS_BACKEND shim from DEC-010 was the migration path; this commit collapses it.
+**Trade-offs:** Now dependent on Sarvam uptime + network reachability + a paid (or rate-limited) API. Without `SARVAM_KEY` set, voice silently disables (text still works). Bulbul has ~500 char input cap — story playback chunks at sentence boundaries.
+**Revisit if:** Sarvam pricing changes substantially, OR Bhashini (Govt of India free TTS) reaches production parity, OR the prototype needs offline voice.
+
+---
+
+## DEC-017 — `LANG:<code>` prefix on every assistant reply, parsed and stripped client-side
+**Date:** 2026-05-07 (Session 8)
+**Decision:** Updated SYSTEM_PROMPT to require the model to prepend `LANG:hi` (or `mr`/`bn`/`ta`/`te`/`kn`/`ml`/`gu`/`pa`/`en`) on the first line of every response. `callAI()` parses this prefix, sets `ST.currentLanguage`, then strips it before rendering.
+**Reason:** Sarvam TTS needs an explicit `target_language_code` — the script-detection regex from DEC-003 worked for Devanagari/Bengali/etc. but failed for Roman-Hindi (Hinglish), Marathi-in-Devanagari (looks like Hindi), and code-switched replies. Letting the model declare the language eliminates ambiguity.
+**Trade-offs:** Costs ~2 tokens per reply (negligible). If the model omits the prefix, we fall back to `detectLang()` script regex. If both fail, defaults to `hi-IN`.
+**Revisit if:** Models start ignoring the prefix instruction reliably, OR we move to a structured `response_format: json_object` flow throughout (currently used only for stories + lab reports).
+
+---
+
+## DEC-018 — Sehat hub becomes a 3-zone "home", tools move to bottom sheet
+**Date:** 2026-05-07 (Session 8)
+**Decision:** The Sehat hub no longer shows a feature list as the default view. Three zones only — greeting, 3 mood buttons, story card + score strip. All tools (Nushke / Lab / Dawai / Meal / Family / Profile) are accessible via a 3-dot menu in the header that opens a bottom sheet. Mood taps lead to a chat with contextual chips that route to features.
+**Reason:** The earlier list-style hub presented every tool with equal weight, which made the "what should I do" decision overwhelming. The 3-zone design forces a single primary decision (mood) and lets the AI guide users to the right tool through chips. Story card surfaces proactive content. Score strip rewards engagement without dominating real-estate.
+**Trade-offs:** Tools are one tap deeper now. Heavy users who knew the previous layout will need to discover the menu. Mitigated by mood chips routing to the most likely tool for each emotional state.
+**Revisit if:** Analytics show users not finding tools they need, OR a tool sees a sharp engagement drop after this change.
+
+---
+
+## DEC-019 — Story content generated dynamically per persona + season + language
+**Date:** 2026-05-07 (Session 8)
+**Decision:** "Aaj ki kahani" no longer ships pre-written stories. On Suno-tap, OpenAI generates a fresh 130-word first-person Ayurvedic story with the persona's voice (Dadi grandmother / Maa kitchen-wisdom / Saathi peer), seasonally appropriate (monsoon/winter/summer), in the user's detected language. JSON-mode response gives `{title, preview, fullText}`. Cached for 30 minutes per (persona, season, theme) to avoid regenerating on every tap.
+**Reason:** Static stories don't scale across 9 languages × 3 personas × 3 seasons × multiple themes (general/calm) = 162+ variants. Generating on demand keeps content fresh, language-appropriate, and lets us ship one feature for 9+ languages at once. The 30-min cache amortises API cost.
+**Trade-offs:** ~$0.005 per story generation. Cold-start latency (~3–5s) before audio plays. If OpenAI is unreachable, falls back to a default Dadi-ajwain story.
+**Revisit if:** Story quality varies too much across personas/languages, OR API spend grows past budget — at which point pre-generate top 30 (persona × season × language) combos and cache permanently.
+
+---
+
+## DEC-020 — Sehat Charcha downgraded to "Jald aa raha hai" stub
+**Date:** 2026-05-07 (Session 8)
+**Decision:** The 5 AI-peer roleplay system built in Session 7 (DEC-012) is hidden behind a disabled tile in the new bottom sheet labelled "Jald aa raha hai". `PEER_PROFILES`, `renderCommunityList`, and `openPeerChat` remain in the codebase as dormant code.
+**Reason:** User explicitly requested this in the Session 8 spec — Charcha was the one tool not deemed ready alongside the v3 redesign. Keeping the code dormant lets us re-enable later without rebuilding from scratch. Disabling cleanly is preferable to silently shipping a feature that doesn't meet the new bar.
+**Trade-offs:** Dead code carries some maintenance cost. Will need explicit decision to re-enable or delete.
+**Revisit if:** Community is ready to ship (real peers backed by real users + moderation), or after 3 months of dormancy → consider removing.
+
+---
+
+## DEC-021 — Meal Planning prompt explicitly enumerates household chronic conditions
+**Date:** 2026-05-07 (Session 8)
+**Decision:** Meal Planning system prompt now reads household chronic conditions from `ss_profile` (user) + `ss_family` (each member's `conditions` field) and prepends "IMPORTANT — household chronic conditions to respect" to the user message. The model is instructed to avoid contraindicated foods (low-glycaemic for Diabetes, low-sodium for BP, no spicy/fried for acidity, etc.).
+**Reason:** A meal plan that ignores BP or Diabetes is worse than no meal plan — could actually harm. Pulling conditions from existing storage means no new UI, just smarter prompting.
+**Trade-offs:** Prompt grows by ~50–150 tokens per request. The model still relies on its general knowledge of contraindications — not a replacement for a registered dietician. Disclaimer should remain visible (not yet enforced — TODO).
+**Revisit if:** Users report inappropriate meal suggestions for known conditions → switch to a structured rule-based filter on top of the AI output.
+
+---
+
 ## DEC-015 — `FEATURE_REGISTRY` includes cross-assistant placeholders
 **Date:** 2026-05-07 (Session 7)
 **Decision:** `FEATURE_REGISTRY` includes `cricket`, `astro`, `bhajan` entries with `external: true` flag, even though those assistants are not yet built. They route to `showComingSoon()`.

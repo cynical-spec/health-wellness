@@ -1,5 +1,17 @@
 # Status — Sehat Saathi
-*Last updated: 2026-05-07 — Session 7 (v2 Expansion)*
+*Last updated: 2026-05-07 — Session 8 (v3 — 3-zone Home + Sarvam Voice)*
+
+## Session 8 highlights
+- **Sehat hub fully redesigned** as 3-zone home (greeting / 3 moods / story+score). Tools moved to bottom-sheet behind 3-dot menu.
+- **Voice migrated to Sarvam** — Saarika STT + Bulbul TTS, all Indian languages, persona-mapped speakers (pavithra/meera/amol).
+- **Dynamic story generation** per persona+season+language via OpenAI → played through Sarvam TTS.
+- **Sehat Score persisted** with 4 levels (Shishya→Rakshak→Mitra→Guru), daily dots (paani/swas/khana), streak tracking, Ritucharya unlock at 91+.
+- **Meal Planning** now respects household chronic conditions in the system prompt.
+- **Visual tokens v3**: `#0a0a0a` bg, `#6B21A8` purple, `#fb923c` amber, no gradients, no drop shadows.
+
+⚠️ **Required secret**: `SARVAM_KEY` must be set in GitHub Secrets before voice works.
+
+
 
 ---
 

@@ -151,3 +151,31 @@
 **What fixed it:** Added `content.replace(<stub_text>, '')` to the Phase 6 script to remove the stub before inserting the real one. Added an `assert content.count('function renderCommunityList') == 1` post-check to catch this class of bug.
 
 **Rule going forward:** When replacing a stub with a real implementation, EXPLICITLY delete the stub. Don't rely on "last definition wins" — assert that the file has exactly ONE definition of any given function. Run `grep -c "function <name>"` before commit.
+
+---
+
+## 2026-05-07 — Session 8: Verification ran but no edits landed (file size unchanged)
+
+**What happened:** Phase 4+5 of Session 7 was implemented via a Python heredoc. The script ran without raising, the success messages printed, but on inspection the file size hadn't changed and `grep` showed none of the new functions or constants were present.
+
+**Why it happened:** The script had a SyntaxError later in its body (`'startOnboarding(\\'s-hub\\')'` — escaped single quote inside a single-quoted string literal). Python parses the entire heredoc before executing any of it, so the syntax error aborted the whole script *before* `f.write()` ran. Earlier in the script, the messages `print("CSS inserted: True")` and friends were string literals from an earlier successful test run that I'd carried into the new script, so they printed as if everything had succeeded — but they were stale.
+
+**What was tried:** Wasted ~10 min thinking the regex match was failing. Re-ran the script with verbose output. Eventually saw the `SyntaxError: invalid syntax` line at the end of the previous Bash output and realised the entire script had aborted.
+
+**What fixed it:** Removed the broken nested-quote line, reran. Edits landed. Added a separate post-check via `python3 -c "..."` so verification reads the actual saved file rather than relying on the same in-memory variable.
+
+**Rule going forward:** After a Python heredoc edit, ALWAYS re-read the saved file in a separate `python3 -c` and verify needles. Don't trust in-script `print(... in content)` assertions — if the script crashed before the write, you'd never know. Two-step pattern: edit, then verify-from-disk.
+
+---
+
+## 2026-05-07 — Session 8: Sarvam TTS chunking ate the last sentence
+
+**What happened:** Story playback worked for the first 3 chunks but the final sentence was missing. The story ended abruptly mid-thought.
+
+**Why it happened:** First version of `chunkText()` used `text.match(/[^.!?।]+[.!?।]+/g)` — the regex requires both content AND a terminator. The last "sentence" of the story didn't end with `.` `!` `?` or `।` (the LLM occasionally ends with a quote mark or word). Without a terminator, regex returned `null` for that fragment, so the leftover text was silently dropped.
+
+**What was tried:** Played the story twice, noticed it cut off at the same place. Re-checked — yes, no terminator on the final fragment.
+
+**What fixed it:** Switched to a fallback: split by terminator-greedy match, then if any leftover text remains after the loop, append it as a final chunk. Updated to `text.match(/[^.!?।]+[.!?।]+\\s*/g) || [text]` plus a residual-text capture in the loop. Also defaulted to `[text]` if no matches at all (super-short stories).
+
+**Rule going forward:** When chunking text on a delimiter, ALWAYS handle the terminator-less remainder explicitly. Don't assume the LLM will always end with punctuation. Verify by playing a story end-to-end and counting that all sentences came through.
