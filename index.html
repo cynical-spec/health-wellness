@@ -1447,17 +1447,172 @@ function triggerStoryFromChat(theme) {
 
 
 function playStory(theme) {
-  if (typeof generateAndPlayStory === 'function') return generateAndPlayStory(theme);
-  // Stub fallback (Phase 3 wires real generation)
-  const title = document.getElementById('hub3-story-title');
-  const preview = document.getElementById('hub3-story-preview');
-  if (title && preview) {
-    speak('Dadi ka ajwain waala raaz — jab mere baba ko pet ki takleef hoti thi, hum hamesha thoda ajwain garam paani mein daalte the. Aaj try karo — ek chai chamach ajwain, ek glass garam paani.');
+  return generateAndPlayStory(theme || 'general');
+}
+
+// ── v3: Dynamic story generation (OpenAI + Sarvam TTS) ──
+const PERSONA_VOICES = {
+  dadi:   'an Indian grandmother — slow, loving, uses beta/beti, tells stories from decades ago',
+  maa:    'an Indian mother — practical, kitchen wisdom, slightly modern, uses arre and suno',
+  saathi: 'a peer friend — casual, warm, uses yaar, shares like texting a friend'
+};
+
+function getCurrentSeason() {
+  const m = new Date().getMonth() + 1;
+  if (m >= 6 && m <= 9) return 'monsoon';
+  if (m >= 10 || m <= 2) return 'winter';
+  return 'summer';
+}
+
+let _storyCache = null; // { title, preview, fullText, lang, persona, season, dur, ts }
+let _storyAudio = null;
+let _storyPlaying = false;
+
+async function generateAndPlayStory(theme) {
+  // Reuse cache if same persona/season AND under 30 min old
+  const persona = ST.persona || 'saathi';
+  const season = getCurrentSeason();
+  const lang = ST.currentLanguage || 'hi-IN';
+  const langCode = lang.split('-')[0];
+  const reuseOk = _storyCache && _storyCache.persona === persona && _storyCache.season === season && (Date.now() - _storyCache.ts < 30*60*1000) && _storyCache.theme === theme;
+  if (!reuseOk) {
+    if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20 || OPENAI_API_KEY.includes('REPLACE')) {
+      showToast('Story abhi taiyaar nahi — API key chahiye'); return;
+    }
+    // Update card to show "loading"
+    setStoryCard({ title: 'Kahani taiyaar ho rahi hai...', preview: '...', meta: 'Thoda intezaar', dur: '' });
+    setSunoLabel('...', false);
+    try {
+      const themeHint = theme === 'calm' ? 'About finding calm, slow breathing, or a moment of mental peace.' : 'A gentle health story woven naturally with one Ayurvedic kitchen remedy.';
+      const sysPrompt = `You are ${PERSONA_VOICES[persona]}. Tell a warm personal health story in ${langCode === 'hi' ? 'Hindi (Roman script OK)' : langCode}. First person. Something that happened to your family. ${themeHint} Ends with: "Toh aaj ek kaam karo — [one simple action]". 130 words maximum. Sound like someone talking at the dinner table. Never use bullet points or the word tip. Season context: ${season}.`;
+      const userPrompt = `Give me ONE short story now. Output strictly as JSON: {"title": "<5-7 word catchy Hindi/Hinglish title>", "preview": "<1 sentence quoted teaser, 12 words max>", "fullText": "<the full 130-word story>"}`;
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENAI_API_KEY },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          max_tokens: 500,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: sysPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+      if (!res.ok) {
+        const errTxt = await res.text();
+        console.error('Story gen', res.status, errTxt);
+        showToast('Story load nahi hui — dobara try karein');
+        setStoryCard({ title: 'Dadi ka ajwain waala raaz', preview: '"Jab mere baba ko pet ki takleef hoti thi..."', meta: 'Default · 2 min · Hindi', dur: '2 min' });
+        setSunoLabel('Suno', false);
+        return;
+      }
+      const data = await res.json();
+      const story = JSON.parse(data.choices[0].message.content.trim());
+      const dur = Math.max(1, Math.round(story.fullText.length / 250)) + ' min';
+      _storyCache = { ...story, lang, langCode, persona, season, theme, dur, ts: Date.now() };
+      const personaLbl = persona === 'dadi' ? 'Dadi' : persona === 'maa' ? 'Maa' : 'Saathi';
+      const langName = { hi:'Hindi', mr:'Marathi', bn:'Bangla', ta:'Tamil', te:'Telugu', kn:'Kannada', ml:'Malayalam', gu:'Gujarati', pa:'Punjabi' }[langCode] || 'Hindi';
+      setStoryCard({ title: story.title, preview: '"' + story.preview + '"', meta: personaLbl + ' ki awaaz · ' + dur + ' · ' + langName, dur });
+    } catch (e) {
+      console.error('Story gen failed', e);
+      showToast('Story problem aayi'); setSunoLabel('Suno', false); return;
+    }
+  }
+  // Now play via Sarvam TTS
+  await playCachedStory();
+}
+
+async function playCachedStory() {
+  if (!_storyCache) return;
+  // Toggle pause
+  if (_storyPlaying && _storyAudio) { _storyAudio.pause(); _storyAudio = null; _storyPlaying = false; setSunoLabel('Suno', false); return; }
+  setSunoLabel('Loading...', true);
+  // Generate audio via Sarvam TTS
+  try {
+    if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes('REPLACE')) {
+      // No Sarvam key — show text dialog instead
+      showStoryTextDialog();
+      setSunoLabel('Suno', false);
+      return;
+    }
+    const targetLang = SARVAM_LANG_MAP[_storyCache.lang] || 'hi-IN';
+    const speaker = SARVAM_SPEAKERS[ST.persona] || 'meera';
+    // Sarvam has ~500 char limit — chunk if needed
+    const chunks = chunkText(_storyCache.fullText, 480);
+    const audioParts = [];
+    for (const chunk of chunks) {
+      const res = await fetch('https://api.sarvam.ai/text-to-speech', {
+        method: 'POST',
+        headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inputs: [chunk], target_language_code: targetLang, speaker,
+          pitch: 0, pace: 0.9, loudness: 1.4, speech_sample_rate: 22050,
+          enable_preprocessing: true, model: 'bulbul:v1'
+        })
+      });
+      if (!res.ok) { console.error('Sarvam story TTS', res.status); break; }
+      const data = await res.json();
+      if (data.audios && data.audios[0]) audioParts.push(data.audios[0]);
+    }
+    if (!audioParts.length) { showToast('Awaaz nahi mili — text dekh sakte ho'); showStoryTextDialog(); setSunoLabel('Suno', false); return; }
+    // Play sequentially
+    setSunoLabel('Roko', true);
+    _storyPlaying = true;
+    let idx = 0;
+    const playNext = () => {
+      if (!_storyPlaying) return;
+      if (idx >= audioParts.length) {
+        _storyPlaying = false; setSunoLabel('Suno', false);
+        bumpScore(3); // reward listening
+        return;
+      }
+      _storyAudio = new Audio('data:audio/wav;base64,' + audioParts[idx++]);
+      _storyAudio.onended = playNext;
+      _storyAudio.onerror = () => { _storyPlaying = false; setSunoLabel('Suno', false); };
+      _storyAudio.play().catch(e => { console.warn('autoplay blocked', e); _storyPlaying = false; setSunoLabel('Suno', false); showStoryTextDialog(); });
+    };
+    playNext();
+  } catch (e) {
+    console.error('Story play failed', e); setSunoLabel('Suno', false); showStoryTextDialog();
   }
 }
 
+function chunkText(text, maxLen) {
+  const sentences = text.match(/[^.!?।]+[.!?।]+\s*/g) || [text];
+  const chunks = []; let cur = '';
+  for (const s of sentences) {
+    if ((cur + s).length > maxLen) { if (cur) chunks.push(cur); cur = s; }
+    else { cur += s; }
+  }
+  if (cur) chunks.push(cur);
+  return chunks;
+}
+
+function setStoryCard({ title, preview, meta, dur }) {
+  const t = document.getElementById('hub3-story-title');
+  const p = document.getElementById('hub3-story-preview');
+  const m = document.getElementById('hub3-story-meta');
+  if (t) t.textContent = title;
+  if (p) p.textContent = preview;
+  if (m) m.textContent = meta;
+}
+function setSunoLabel(label, busy) {
+  const lbl = document.getElementById('hub3-suno-lbl');
+  if (lbl) lbl.textContent = label;
+  const btn = document.getElementById('hub3-suno-btn');
+  if (btn) btn.style.opacity = busy ? '0.7' : '1';
+}
 function refreshStoryCard() {
-  // Phase 3 will populate from generated story state
+  if (!_storyCache) return;
+  const personaLbl = _storyCache.persona === 'dadi' ? 'Dadi' : _storyCache.persona === 'maa' ? 'Maa' : 'Saathi';
+  const langName = { hi:'Hindi', mr:'Marathi', bn:'Bangla', ta:'Tamil', te:'Telugu', kn:'Kannada', ml:'Malayalam', gu:'Gujarati', pa:'Punjabi' }[_storyCache.langCode] || 'Hindi';
+  setStoryCard({ title: _storyCache.title, preview: '"' + _storyCache.preview + '"', meta: personaLbl + ' ki awaaz · ' + _storyCache.dur + ' · ' + langName });
+}
+function showStoryTextDialog() {
+  if (!_storyCache) return;
+  const msg = _storyCache.title + '\n\n' + _storyCache.fullText;
+  alert(msg); // Minimal fallback — could be upgraded to a sheet
 }
 
 // ── Bottom sheet ──
@@ -2407,13 +2562,21 @@ function handleFridgePhoto(e) {
   reader.onload = function(ev) {
     const b64 = ev.target.result.split(',')[1];
     const fam = ST.mealData.for === 'family' ? loadFamily() : [];
-    const famInfo = fam.length ? `\nFamily: ${fam.map(m=>`${m.name} (${m.age}y, ${m.conditions||'healthy'}`).join('; ')}` : '';
+    const profile = ST.userProfile || loadProfile();
+    const conds = [];
+    if (profile && profile.conditions) conds.push('User: ' + profile.conditions);
+    for (const m of fam) {
+      const c = (m.conditions || '').trim();
+      if (c && c.toLowerCase() !== 'no condition') conds.push(`${m.name} (${m.age}y): ${c}`);
+    }
+    const condCtx = conds.length ? '\nHousehold chronic conditions to respect: ' + conds.join('; ') + '. Avoid contraindicated foods.' : '';
+    const famInfo = fam.length ? `\nFamily of ${fam.length} (${fam.map(m=>m.name).join(', ')})` : '';
     renderMealStep(2);
     goTo('s-chat');
     document.getElementById('chat-ctx-label').textContent = 'Meal Planning';
     ST.chatHistory = []; ST.isFirstMsg = true;
     addMsg('user', '📷 Fridge ki photo bheji hai', false);
-    callAIWithVision(b64, `Yeh meri fridge hai. ${famInfo}\nAaj ke available ingredients dekh ke ek 3-din ka healthy Indian meal plan banao. Breakfast, lunch, dinner — sab ke liye. Indian dishes — roti, dal, sabzi, chawal. Simple aur nutritious.`);
+    callAIWithVision(b64, `Yeh meri fridge hai.${famInfo}${condCtx}\nAaj ke available ingredients dekh ke ek 3-din ka healthy Indian meal plan banao that RESPECTS the household chronic conditions. Breakfast, lunch, dinner. Indian dishes — roti, dal, sabzi, chawal. Simple aur nutritious.`);
   };
   reader.readAsDataURL(file);
 }
@@ -2421,13 +2584,27 @@ function handleFridgePhoto(e) {
 function mealGenerate() {
   const text = document.getElementById('fridge-text').value.trim();
   const fam = ST.mealData.for === 'family' ? loadFamily() : [];
-  const famInfo = fam.length ? `Family ke liye: ${fam.map(m=>`${m.name} (${m.age}y, ${m.conditions||'healthy'})`).join('; ')}` : 'Sirf apne liye';
-  const userMsg = `${famInfo}. Ghar mein available: ${text || 'common Indian ingredients'}. 3-din ka healthy Indian meal plan banao — breakfast, lunch, dinner. Har meal mein portion aur ingredients batao.`;
+  const profile = ST.userProfile || loadProfile();
+  // Build chronic-condition context — diet must respect each member's conditions
+  const conds = [];
+  if (profile && profile.scope) {
+    const selfCond = (profile.conditions || '').trim();
+    if (selfCond) conds.push('User (self): ' + selfCond);
+  }
+  for (const m of fam) {
+    const c = (m.conditions || '').trim();
+    if (c && c.toLowerCase() !== 'no condition') conds.push(`${m.name} (${m.age}y): ${c}`);
+  }
+  const condContext = conds.length
+    ? 'IMPORTANT — household chronic conditions to respect in meal choices: ' + conds.join('; ') + '. Avoid contraindicated foods (e.g., for Diabetes: low glycaemic; for BP: low sodium; for acidity: avoid spicy/fried).'
+    : 'No chronic conditions reported in this household.';
+  const famInfo = fam.length ? `Family ke liye (${fam.length} log): ${fam.map(m=>`${m.name} ${m.age}y`).join(', ')}` : 'Sirf apne liye';
+  const userMsg = `${famInfo}. ${condContext} Ghar mein available: ${text || 'common Indian ingredients'}. 3-din ka healthy Indian meal plan banao — breakfast, lunch, dinner. Har meal mein portion aur ingredients batao.`;
   goTo('s-chat');
   document.getElementById('chat-ctx-label').textContent = 'Meal Planning';
   ST.chatHistory = []; ST.isFirstMsg = true;
   addMsg('user', text ? `Available hai: ${text}` : 'Common ingredients se meal plan banao', false);
-  callAI(userMsg, `You are a nutrition expert specializing in Indian cuisine. Create practical, healthy 3-day meal plans using common Indian ingredients. Format clearly: Day 1/2/3, then Breakfast/Lunch/Dinner. Keep portions realistic for Indian families. Include nutrients briefly. Respond in the same language the user uses.`);
+  callAI(userMsg, `You are a nutrition expert specializing in Indian cuisine. Create practical, healthy 3-day meal plans using common Indian ingredients, RESPECTING the household chronic conditions provided. Format clearly: Day 1/2/3, then Breakfast/Lunch/Dinner. Keep portions realistic for Indian families. Include nutrients briefly. Respond in the same language the user uses. First line must be LANG:<code>.`);
 }
 
 // ── FAMILY ──
