@@ -125,3 +125,31 @@
 - Verify Groq key is working (user added GROQ_API_KEY secret)
 - Test full conversation flow end-to-end on mobile
 - Check voice input works with new build
+
+---
+
+## 2026-05-07 — Session 5: CLAUDE.md Compliance Verification
+
+### Added
+- CLAUDE.md added to repo with full project rules
+- Firefox voice check — Speak buttons hidden when SpeechRecognition not supported
+
+### Changed
+- README.md rewritten with correct GitHub Actions setup (Secrets-based, not manual key replacement)
+- Last emoji removed from showComingSoon() toast
+
+### Fixed
+- Gap vs CLAUDE.md Rule 6: voice API fallback now correctly hides Speak button on unsupported browsers
+- README was describing outdated manual key injection — updated to Secrets + Actions workflow
+
+### Broken / Known issues
+- File is 1,430+ lines (over 800-line ideal in CLAUDE.md — flagged, acceptable for prototype)
+- Icons load via CDN img (may flash on slow connections)
+- setTimeout reminders don't persist across page reloads
+
+### Next session should start with
+- Full end-to-end test on physical mobile device
+- Verify: speak "pet dukhtay" -> Marathi reply -> badge -> TTS
+- Verify: "chest pain" -> escalation (no remedy)
+- Verify: Groq fallback fires correctly when OpenAI unreachable
+
