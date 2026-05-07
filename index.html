@@ -509,26 +509,50 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
     <div class="sec-lbl2">Sehat Tools</div>
     <div class="hub-cards" style="margin-bottom:20px">
       <button class="hub-list-item" onclick="startFeature('nushke')">
-        <div class="hli-icon hli-icon-purple"></div>
+        <div class="hli-icon" style="background:rgba(30,204,176,.15);color:#1eccb0;font-size:18px">🌿</div>
         <div class="hli-text"><div class="hli-name">Ghar ke Nushke</div><div class="hli-sub">Koi takleef? Dadi batayegi</div></div>
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="hli-div"></div>
+      <button class="hub-list-item" onclick="startFeature('lab')">
+        <div class="hli-icon" style="background:rgba(30,204,176,.15);color:#1eccb0;font-size:18px">🧪</div>
+        <div class="hli-text"><div class="hli-name">Lab Report Padho</div><div class="hli-sub">Apni report ka asaan matlab</div></div>
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="hli-div"></div>
+      <button class="hub-list-item" onclick="startFeature('wellness')">
+        <div class="hli-icon" style="background:rgba(37,171,33,.15);color:#25ab21;font-size:18px">🌟</div>
+        <div class="hli-text"><div class="hli-name">Wellness Baat</div><div class="hli-sub">Sehat aur fitness ki baat</div></div>
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="hli-div"></div>
+      <button class="hub-list-item" onclick="startFeature('community')">
+        <div class="hli-icon" style="background:rgba(247,171,32,.15);color:#f7ab20;font-size:18px">💬</div>
+        <div class="hli-text"><div class="hli-name">Sehat Charcha</div><div class="hli-sub">Apke jaise logo se milo</div></div>
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="hli-div"></div>
       <button class="hub-list-item" onclick="startFeature('medicine')">
-        <div class="hli-icon hli-icon-lock"></div>
+        <div class="hli-icon" style="background:rgba(247,171,32,.15);color:#f7ab20;font-size:18px">💊</div>
         <div class="hli-text"><div class="hli-name">Dawai Reminder</div><div class="hli-sub">Dawai yaad dila dena mujhe</div></div>
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="hli-div"></div>
       <button class="hub-list-item" onclick="startFeature('meal')">
-        <div class="hli-icon hli-icon-lock"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="hli-icon" style="background:rgba(255,138,28,.15);color:#ff8a1c;font-size:18px">🍽️</div>
         <div class="hli-text"><div class="hli-name">Meal Planning</div><div class="hli-sub">Ghar ke khaane ka 3-din plan</div></div>
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="hli-div"></div>
       <button class="hub-list-item" onclick="startFeature('family')">
-        <div class="hli-icon hli-icon-lock"></div>
+        <div class="hli-icon" style="background:rgba(53,53,243,.18);color:#3535f3;font-size:18px">👨‍👩‍👧</div>
         <div class="hli-text"><div class="hli-name">Parivaar</div><div class="hli-sub">Sab ke liye ek jagah dekhbhal</div></div>
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="hli-div"></div>
+      <button class="hub-list-item" onclick="startOnboarding('s-hub')">
+        <div class="hli-icon" style="background:rgba(255,255,255,.06);color:#fff;font-size:18px">⚙️</div>
+        <div class="hli-text"><div class="hli-name">Profile</div><div class="hli-sub">Apni jaankari edit karein</div></div>
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
@@ -597,6 +621,28 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
     <div class="ob-progress-dot"></div>
   </div>
   <div class="body" id="ob-body"><!-- JS renders --></div>
+</div>
+
+<!-- ══════════════ COMMUNITY SCREEN (stub Phase 6) ══════════════ -->
+<div class="screen" id="s-community">
+  <div class="hdr">
+    <button class="hdr-btn" onclick="goBack()">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M15 20a1 1 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a1 1 0 01-.71 1.71z" fill="currentColor"/></svg>
+    </button>
+    <div class="hdr-center"><div class="hdr-text"><h2>Sehat Charcha</h2><p style="color:var(--text2)">Apke jaise log</p></div></div>
+  </div>
+  <div class="flow-screen" id="community-body"></div>
+</div>
+
+<!-- ══════════════ LAB INTERPRETER SCREEN (stub Phase 7) ══════════════ -->
+<div class="screen" id="s-lab">
+  <div class="hdr">
+    <button class="hdr-btn" onclick="goBack()">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M15 20a1 1 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a1 1 0 01-.71 1.71z" fill="currentColor"/></svg>
+    </button>
+    <div class="hdr-center"><div class="hdr-text"><h2>Lab Report Padho</h2><p style="color:var(--text2)">PDF upload karein</p></div></div>
+  </div>
+  <div class="flow-screen" id="lab-body"></div>
 </div>
 
 <!-- ══════════════ MEDICINE SCREEN ══════════════ -->
@@ -743,6 +789,42 @@ Use only kitchen ingredients: ajwain, haldi, adrak, tulsi, neem, amla, mulethi, 
 For general health questions: answer warmly and practically.
 
 TONE: Like a dadi/nani — warm, unhurried, specific. Max 4 sentences for remedy. No disclaimers upfront.`;
+
+// ── v2: Wellness + Community system prompts ──
+const WELLNESS_SYSTEM_PROMPT = `You are Sehat Saathi — Wellness mode. You're a warm, modern wellness companion for young Indians (18–35) on JioBharatIQ.
+
+LANGUAGE: Detect the user's language and reply in code-mixed Hindi-English (Hinglish) if they write in Roman, or in pure script if they use Hindi/Tamil/Bengali/etc. Be casual and modern — like a fitness buddy or older cousin.
+
+SCOPE: General wellness, fitness, sleep, mental health basics, nutrition, screen time, stress, gym basics, productivity, habit formation, lifestyle.
+
+HARD RULES:
+- NEVER diagnose. NEVER suggest medications. NEVER name specific conditions.
+- For any symptom or pain question: respond warmly, then redirect: "Iske liye Ghar ke Nushke section mein Dadi se baat karo, ya doctor se milein."
+- For mental health crisis (suicide, self-harm): respond with care, give iCall helpline (9152987821) and urge talking to someone trusted.
+- Keep replies under 5 sentences. Practical, specific, actionable.
+
+TONE: Energetic, non-preachy, real. Like "bhai try this" not "you should consider". Mix Hinglish naturally. Use modern references (gym, hostel, WFH, screen time).`;
+
+const COMMUNITY_BASE_PROMPT = `You are NOT an AI assistant. You are roleplaying as a fellow JioBharatIQ user — a real person sharing your own lived experience with health.
+
+CRITICAL RULES:
+- You are a peer, NOT a doctor. Talk like a friend, not an expert.
+- Share your own story, struggles, and what HAS worked for you personally.
+- Use first-person ("main", "mera", "humne kiya"). Sound like a real WhatsApp neighbour.
+- For clinical questions, redirect: "Doctor se milein bhai/behen — main bhi koshish kar rahi/raha hoon" or "Sehat Saathi mein Dadi ke nushke try karo".
+- Keep replies under 4 sentences. Casual, warm, sometimes joke.
+- NEVER claim certainty. Use "shayad", "mere ghar mein", "doctor ne mujhe bola tha".
+
+LANGUAGE: Reply in user's language. Mix Hindi-English naturally if they do.`;
+
+function getSystemPromptFor(ctx) {
+  if (ctx === 'wellness') return WELLNESS_SYSTEM_PROMPT;
+  if (ctx === 'community' && ST.communityPeer) {
+    return COMMUNITY_BASE_PROMPT + '\n\nYOUR PERSONA:\n' + ST.communityPeer.sysPrompt;
+  }
+  return SYSTEM_PROMPT;
+}
+
 
 // ── v2: Profile + Onboarding ──
 function loadProfile() {
@@ -1070,6 +1152,9 @@ function startFeature(f) {
   else if (f === 'family') { goTo('s-family'); renderFamilyList(); }
   else if (f === 'breathe') { goTo('s-breathwork'); }
   else if (f === 'symptoms') { ST.chatCtx = 'general'; ST.chatHistory = []; ST.isFirstMsg = true; goTo('s-chat'); document.getElementById('chat-ctx-label').textContent = 'Symptoms'; renderSymptomStart(); }
+  else if (f === 'wellness') { ST.chatCtx = 'wellness'; ST.chatHistory = []; ST.isFirstMsg = true; goTo('s-chat'); document.getElementById('chat-ctx-label').textContent = 'Wellness Baat'; renderWellnessStart(); }
+  else if (f === 'community') { goTo('s-community'); renderCommunityList(); }
+  else if (f === 'lab') { goTo('s-lab'); renderLabStep(0); }
 }
 
 
@@ -1366,6 +1451,36 @@ function renderNushkeStart() {
   });
 }
 
+
+function renderCommunityList() {
+  const el = document.getElementById('community-body');
+  if (!el) return;
+  el.innerHTML = '<p class="flow-q" style="text-align:center;margin-top:40px">💬 Sehat Charcha</p><p style="text-align:center;color:var(--text2);padding:0 30px;line-height:1.6">Apke jaise logo se baat karne ka feature jaldi aa raha hai...</p>';
+}
+function renderLabStep(step) {
+  const el = document.getElementById('lab-body');
+  if (!el) return;
+  el.innerHTML = '<p class="flow-q" style="text-align:center;margin-top:40px">🧪 Lab Report Padho</p><p style="text-align:center;color:var(--text2);padding:0 30px;line-height:1.6">Lab report upload aur AI analysis jaldi aa raha hai...</p>';
+}
+
+function renderWellnessStart() {
+  const msgs = document.getElementById('chat-msgs');
+  if (!msgs) return;
+  msgs.innerHTML = '';
+  ST.chatHistory = [];
+  const intro = "Hey 👋 Wellness Baat mein swagat! Main fitness, neend, stress, khaane-peene aur lifestyle ki baat karta hoon. Diagnosis nahi karta — bas practical tips. Kya try karna hai aaj?";
+  addMsg('bot', intro, false);
+  speak(intro);
+  addQuickReplies(
+    ['Subah ki energy kaise lao?', 'Gym ke baad kya khaaun?', 'Neend nahi aati', 'Stress kaise kam karein?', 'Phone ki aadat chhodun'],
+    (txt) => {
+      addMsg('user', txt, false);
+      callAI(txt, WELLNESS_SYSTEM_PROMPT);
+    }
+  );
+}
+
+
 // ── Symptoms flow ──
 function renderSymptomStart() {
   const msgs = document.getElementById('chat-msgs');
@@ -1379,7 +1494,7 @@ function chatSend() {
   const txt = inp.value.trim(); if (!txt) return;
   inp.value = '';
   addMsg('user', txt, false);
-  callAI(txt);
+  callAI(txt, getSystemPromptFor(ST.chatCtx));
 }
 function chatKey(e) { if (e.key === 'Enter') { e.preventDefault(); chatSend(); } }
 function clearChat() {
