@@ -617,6 +617,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 
 <script>
 const OPENAI_API_KEY = "REPLACE_WITH_YOUR_KEY";
+const GROQ_API_KEY = "REPLACE_WITH_GROQ_KEY";
 
 // ── State ──
 const ST = {
@@ -815,47 +816,59 @@ function addQuickReplies(options, onSelect) {
   row.appendChild(wrap); msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight;
 }
 
-// ── AI call ──
+// ── AI call — tries OpenAI, falls back to Groq ──
 async function callAI(userText, systemOverride) {
-  if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20 || OPENAI_API_KEY.includes('REPLACE')) {
-    hideThinking();
-    addMsg('bot', '⚙️ OpenAI key abhi set nahi hua — GitHub Secret check karo.', false);
+  const hasOpenAI = OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes('REPLACE');
+  const hasGroq   = GROQ_API_KEY   && GROQ_API_KEY.length   > 20 && !GROQ_API_KEY.includes('REPLACE');
+  if (!hasOpenAI && !hasGroq) {
+    addMsg('bot', '⚙️ API key set nahi hai — GitHub Secrets mein OPENAI_API_KEY ya GROQ_API_KEY daalo.', false);
     return;
   }
   ST.chatHistory.push({ role: 'user', content: userText });
   showThinking();
-  try {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENAI_API_KEY },
-      body: JSON.stringify({
-        model: 'gpt-4o', temperature: 0.75, max_tokens: 400,
-        messages: [{ role: 'system', content: systemOverride || SYSTEM_PROMPT }, ...ST.chatHistory]
-      })
-    });
-    if (!res.ok) {
-      let errText = '';
-      try { const j = await res.json(); errText = j.error?.message || ''; } catch(e2) {}
-      if (res.status === 401) throw new Error('❌ API key invalid ya expire ho gayi. GitHub Secret mein naya key daalo.');
-      if (res.status === 429) throw new Error('⏳ Bahut jaldi requests — thoda wait karo phir try karo.');
-      if (res.status === 400) throw new Error('❌ Request error: ' + (errText || res.status));
-      throw new Error('❌ Server error ' + res.status + (errText ? ': ' + errText.slice(0,60) : ''));
+
+  const msgs = [{ role: 'system', content: systemOverride || SYSTEM_PROMPT }, ...ST.chatHistory];
+
+  // Try each provider in order
+  const providers = [];
+  if (hasOpenAI) providers.push({ url:'https://api.openai.com/v1/chat/completions', key:OPENAI_API_KEY, model:'gpt-4o' });
+  if (hasGroq)   providers.push({ url:'https://api.groq.com/openai/v1/chat/completions', key:GROQ_API_KEY, model:'llama-3.3-70b-versatile' });
+
+  let lastErr = '';
+  for (const p of providers) {
+    try {
+      const res = await fetch(p.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + p.key },
+        body: JSON.stringify({ model: p.model, temperature: 0.75, max_tokens: 400, messages: msgs })
+      });
+      if (!res.ok) {
+        let et = ''; try { const j = await res.json(); et = j.error?.message || ''; } catch(e2) {}
+        if (res.status === 401) { lastErr = '❌ API key invalid (' + p.url.split('/')[2] + ')'; continue; }
+        if (res.status === 429) { lastErr = '⏳ Rate limit — thoda wait karo'; break; }
+        lastErr = '❌ Error ' + res.status + (et ? ': '+et.slice(0,50) : ''); continue;
+      }
+      const data = await res.json();
+      const reply = data.choices[0].message.content.trim();
+      ST.chatHistory.push({ role: 'assistant', content: reply });
+      hideThinking();
+      const isFirst = ST.isFirstMsg; ST.isFirstMsg = false;
+      addMsg('bot', reply, isFirst);
+      speak(reply);
+      return; // success
+    } catch(e) {
+      lastErr = '🌐 ' + p.url.split('/')[2] + ' tak connection nahi bana';
+      // try next provider
     }
-    const data = await res.json();
-    const reply = data.choices[0].message.content.trim();
-    ST.chatHistory.push({ role: 'assistant', content: reply });
-    hideThinking();
-    const isFirst = ST.isFirstMsg;
-    ST.isFirstMsg = false;
-    addMsg('bot', reply, isFirst);
-    speak(reply);
-  } catch (e) {
-    // remove the failed user message from history so retry works
-    ST.chatHistory.pop();
-    hideThinking();
-    const msg = (e.message && e.message.length < 120) ? e.message : '🌐 Network check karo aur dobara try karo.';
-    addMsg('bot', msg, false);
   }
+
+  // All providers failed
+  ST.chatHistory.pop();
+  hideThinking();
+  const isAllNet = lastErr.startsWith('🌐');
+  addMsg('bot', isAllNet
+    ? '🌐 Server tak pahunch nahi ho raha.\n\n👉 Try karo:\n• WiFi ↔ Mobile Data switch karo\n• Thodi der baad dobara karo\n• VPN on karo agar available ho'
+    : lastErr, false);
 }
 
 async function callAIWithVision(base64img, userText) {
