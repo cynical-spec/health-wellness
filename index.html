@@ -1621,8 +1621,14 @@ async function generateAndPlayStory(theme) {
   const cacheKey = 'dadi_' + tod.slot + '_' + season + '_' + (theme || 'general');
   const reuseOk = _storyCache && _storyCache.cacheKey === cacheKey && (Date.now() - _storyCache.ts < 30*60*1000);
   if (!reuseOk) {
-    if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20 || OPENAI_API_KEY.includes('REPLACE')) {
-      showToast('Story abhi taiyaar nahi — API key chahiye'); setSunoLabel('Suno', false); return;
+    const hasAI = (OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes('REPLACE')) || (GROQ_API_KEY && GROQ_API_KEY.length > 20 && !GROQ_API_KEY.includes('REPLACE'));
+    if (!hasAI) {
+      // Fall back to seed stories — voice still works
+      const fallback = STORY_FALLBACKS[tod.slot] || STORY_FALLBACKS.morning;
+      _storyCache = { ...fallback, langCode: 'hi', persona: 'dadi', season, tod: tod.slot, theme, cacheKey, ts: Date.now(), dur: '2 min' };
+      setStoryCard({ title: fallback.title, preview: '"' + fallback.preview + '"', meta: 'Dadi ki awaaz · 2 min · Hindi', dur: '2 min' });
+      setSunoLabel('Suno', false);
+      await playCachedStory(); return;
     }
     setStoryCard({ title: 'Kahani taiyaar ho rahi hai...', preview: '...', meta: 'Thoda intezaar', dur: '' });
     setSunoLabel('...', true);
@@ -1640,36 +1646,11 @@ async function generateAndPlayStory(theme) {
       const nameInstruction = userName ? `Address the listener by name "${userName}" once at the very start (e.g., "${userName} beta..." / "Suno ${userName}...").` : '';
       const sysPrompt = `You are an Indian grandmother — slow, loving, uses beta/beti, tells stories from decades ago. Tell a warm first-person personal health story in ${langWord}. Something that happened to your own family long ago. ${themeHint} ${todHint} Ends with: "Toh aaj ek kaam karo — [one simple, time-appropriate action]". 130 words maximum. Sound like Dadi at the dinner table. ${nameInstruction} Never use bullet points or the word "tip". Season: ${season}. Time-of-day: ${tod.slot}.`;
       const userPrompt = `Give me ONE short story now. Reply only as JSON: {"title": "<5-7 word warm Hindi/Hinglish title that fits ${tod.slot} time>", "preview": "<1 sentence quoted teaser, 12 words max>", "fullText": "<the full 130-word story>"}`;
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENAI_API_KEY },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          max_tokens: 600,
-          response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: sysPrompt },
-            { role: 'user', content: userPrompt }
-          ]
-        })
-      });
-      if (!res.ok) {
-        const errTxt = await res.text();
-        console.error('[story] OpenAI', res.status, errTxt);
-        // Fallback: render a static seed story so user sees something
-        const fallback = STORY_FALLBACKS[tod.slot] || STORY_FALLBACKS.morning;
-        _storyCache = { ...fallback, langCode: 'hi', persona: 'dadi', season, tod: tod.slot, theme, cacheKey, ts: Date.now(), dur: '2 min' };
-        setStoryCard({ title: fallback.title, preview: '"' + fallback.preview + '"', meta: 'Dadi ki awaaz · 2 min · Hindi', dur: '2 min' });
-        setSunoLabel('Suno', false);
-        await playCachedStory();
-        return;
-      }
-      const data = await res.json();
       let story;
       try {
-        story = JSON.parse(data.choices[0].message.content.trim());
-      } catch(parseErr) {
-        console.error('[story] JSON parse failed', parseErr, data.choices[0].message.content);
+        story = await callAIJSON(sysPrompt, userPrompt, { maxTokens: 700 });
+      } catch (storyErr) {
+        console.error('[story] AI provider failed', storyErr);
         const fallback = STORY_FALLBACKS[tod.slot] || STORY_FALLBACKS.morning;
         _storyCache = { ...fallback, langCode: 'hi', persona: 'dadi', season, tod: tod.slot, theme, cacheKey, ts: Date.now(), dur: '2 min' };
         setStoryCard({ title: fallback.title, preview: '"' + fallback.preview + '"', meta: 'Dadi ki awaaz · 2 min · Hindi', dur: '2 min' });
@@ -2198,6 +2179,45 @@ function addQuickReplies(options, onSelect) {
 }
 
 // ── AI call — tries OpenAI, falls back to Groq ──
+
+// v3.6: Provider-agnostic JSON-mode helper (Groq primary, OpenAI fallback)
+async function callAIJSON(systemPrompt, userPrompt, opts) {
+  const hasOpenAI = OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes('REPLACE');
+  const hasGroq   = GROQ_API_KEY   && GROQ_API_KEY.length   > 20 && !GROQ_API_KEY.includes('REPLACE');
+  const providers = [];
+  if (hasGroq)   providers.push({ url:'https://api.groq.com/openai/v1/chat/completions', key:GROQ_API_KEY, model:'llama-3.3-70b-versatile' });
+  if (hasOpenAI) providers.push({ url:'https://api.openai.com/v1/chat/completions', key:OPENAI_API_KEY, model:'gpt-4o-mini' });
+  const maxTokens = (opts && opts.maxTokens) || 600;
+  for (const p of providers) {
+    try {
+      const _t = performance.now();
+      const res = await fetch(p.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + p.key },
+        body: JSON.stringify({
+          model: p.model,
+          max_tokens: maxTokens,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+      if (!res.ok) {
+        console.warn('[callAIJSON]', p.model, res.status, await res.text());
+        continue; // try next provider
+      }
+      const data = await res.json();
+      console.info('[AI-JSON]', p.model, Math.round(performance.now() - _t), 'ms');
+      return JSON.parse(data.choices[0].message.content.trim());
+    } catch (e) {
+      console.warn('[callAIJSON] failed for', p.model, e);
+    }
+  }
+  throw new Error('No AI provider available');
+}
+
 async function callAI(userText, systemOverride) {
   const hasOpenAI = OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes('REPLACE');
   const hasGroq   = GROQ_API_KEY   && GROQ_API_KEY.length   > 20 && !GROQ_API_KEY.includes('REPLACE');
@@ -2210,10 +2230,10 @@ async function callAI(userText, systemOverride) {
 
   const msgs = [{ role: 'system', content: systemOverride || SYSTEM_PROMPT }, ...ST.chatHistory];
 
-  // v3.5: gpt-4o-mini is ~6× faster than gpt-4o (~0.6s vs ~3.5s) and plenty smart for warm conversation; gpt-4o still used for Vision (Lab)
+  // v3.6: Groq first (~1s, reliable), OpenAI fallback (currently key may be invalid in live env)
   const providers = [];
-  if (hasOpenAI) providers.push({ url:'https://api.openai.com/v1/chat/completions', key:OPENAI_API_KEY, model:'gpt-4o-mini' });
   if (hasGroq)   providers.push({ url:'https://api.groq.com/openai/v1/chat/completions', key:GROQ_API_KEY, model:'llama-3.3-70b-versatile' });
+  if (hasOpenAI) providers.push({ url:'https://api.openai.com/v1/chat/completions', key:OPENAI_API_KEY, model:'gpt-4o-mini' });
 
   let lastErr = '';
   for (const p of providers) {
@@ -2260,7 +2280,11 @@ async function callAI(userText, systemOverride) {
 }
 
 async function callAIWithVision(base64img, userText) {
-  if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20) return;
+  if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20 || OPENAI_API_KEY.includes('REPLACE')) {
+    // Graceful fallback — no Vision key, route to text-only meal generation via Groq
+    addMsg('bot', 'Photo padhne ke liye OpenAI Vision chahiye, abhi Groq active hai. Ek kaam karo — fridge mein kya hai woh text mein likh do, main meal plan bana deti hoon.', false);
+    return;
+  }
   showThinking();
   try {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -2357,7 +2381,7 @@ function isPrescription(text) {
 
 async function interpretLabPDF(pages, memberName) {
   if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20 || OPENAI_API_KEY.includes('REPLACE')) {
-    throw new Error('OpenAI API key nahi mila. GitHub Secrets mein set karein.');
+    throw new Error('NO_VISION_KEY');  // surfaced to user as friendly fallback
   }
   const promptText = `You are a clinical lab report interpreter. Analyze this lab report image(s) for ${memberName || 'the patient'}.
 
@@ -2579,8 +2603,17 @@ async function handleLabUpload(e) {
     ST.labData.fileName = file.name;
     renderLabStep(3);
   } catch (err) {
-    console.error(err);
-    showToast('Error: ' + (err.message || 'Report padhne mein dikkat'));
+    console.error('[lab]', err);
+    if (err && err.message === 'NO_VISION_KEY') {
+      // Friendly fallback — Vision needs OpenAI key; show a helpful message
+      ST.labData.result = {
+        reportType: 'NOT_A_LAB_REPORT',
+        summary: 'Lab Interpreter ke liye OpenAI Vision API ki zaroorat hai. Abhi sirf Groq active hai (Vision support nahi). Apni OpenAI key GitHub Secrets mein add karein, ya report ke values seedha chat mein paste karein — Sehat Saathi padh dega.'
+      };
+      renderLabStep(3);
+      return;
+    }
+    showToast('Error: ' + ((err && err.message) || 'Report padhne mein dikkat'));
     setTimeout(() => renderLabStep(1), 1500);
   }
 }
