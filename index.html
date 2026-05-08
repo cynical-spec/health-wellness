@@ -237,6 +237,33 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 
 
 
+
+/* ── v3.7: Movement skill cards + animated overlay ── */
+.move-card{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(34,197,94,.18),rgba(30,204,176,.1));border:1px solid rgba(34,197,94,.3);border-radius:14px;padding:12px;cursor:pointer;text-align:left;font-family:'JioType',sans-serif;color:var(--text);width:100%;transition:transform .15s}
+.move-card:active{transform:scale(.98)}
+.move-card-emoji{width:46px;height:46px;border-radius:12px;background:rgba(34,197,94,.18);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.move-card-info{flex:1;min-width:0}
+.move-card-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.move-card-sub{font-size:11px;color:var(--text2)}
+.move-card-cta{background:#22c55e;color:#000;border:none;border-radius:var(--radius-pill);padding:6px 12px;font-family:'JioType',sans-serif;font-size:11px;font-weight:700;flex-shrink:0;cursor:pointer}
+/* Movement player overlay */
+#move-ov{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:310;display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px 24px;backdrop-filter:blur(8px)}
+#move-ov.on{display:flex}
+.move-ov-close{position:absolute;top:max(20px,env(safe-area-inset-top));right:20px;width:42px;height:42px;background:rgba(255,255,255,.1);border:none;border-radius:50%;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px}
+.move-ov-title{font-size:22px;font-weight:700;color:#fff;text-align:center;margin-bottom:4px}
+.move-ov-sub{font-size:13px;color:rgba(255,255,255,.6);text-align:center;margin-bottom:18px;max-width:300px;line-height:1.45}
+.move-ov-anim{width:200px;height:200px;display:flex;align-items:center;justify-content:center;font-size:80px;border-radius:50%;background:rgba(34,197,94,.1);border:2px solid rgba(34,197,94,.3);margin-bottom:22px}
+.move-ov-anim.pulse{animation:movePulse 4s ease-in-out infinite}
+@keyframes movePulse{0%,100%{transform:scale(1);background:rgba(34,197,94,.1)}50%{transform:scale(1.15);background:rgba(34,197,94,.22)}}
+.move-ov-step-text{font-size:18px;font-weight:600;color:#fff;text-align:center;min-height:60px;max-width:340px;line-height:1.45;margin-bottom:14px}
+.move-ov-counter{font-size:42px;font-weight:700;color:#22c55e;line-height:1;margin-bottom:8px;font-variant-numeric:tabular-nums}
+.move-ov-progress{display:flex;gap:6px;margin-bottom:18px}
+.move-ov-progress-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.18)}
+.move-ov-progress-dot.done{background:#22c55e}
+.move-ov-actions{display:flex;gap:10px;width:100%;max-width:300px}
+.move-ov-btn{flex:1;background:#22c55e;color:#000;border:none;border-radius:var(--radius-pill);padding:13px;font-family:'JioType',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+.move-ov-btn.secondary{background:rgba(255,255,255,.08);color:#fff}
+
 /* ── v3.4: Voice picker overlay ── */
 #voice-picker-ov{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px 20px;backdrop-filter:blur(10px)}
 #voice-picker-ov.on{display:flex}
@@ -885,11 +912,29 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
 </div>
 
 
+
+<!-- v3.7: Movement skill player overlay -->
+<div id="move-ov" role="dialog" aria-label="Movement player">
+  <button class="move-ov-close" onclick="closeMovement()" aria-label="Close">✕</button>
+  <div class="move-ov-anim pulse" id="move-ov-anim">🌬</div>
+  <div class="move-ov-counter" id="move-ov-counter">3</div>
+  <div class="move-ov-title" id="move-ov-title">Anulom-Vilom</div>
+  <div class="move-ov-step-text" id="move-ov-step">Daahini naak band karke baayi se saans lo...</div>
+  <div class="move-ov-progress" id="move-ov-progress"></div>
+  <div class="move-ov-actions">
+    <button class="move-ov-btn secondary" onclick="closeMovement()">Bas</button>
+    <button class="move-ov-btn" id="move-ov-next" onclick="moveNextStep()">Aage badho</button>
+  </div>
+</div>
+
 <!-- v3.4: Voice picker overlay -->
 <div id="voice-picker-ov" role="dialog" aria-label="Voice picker">
   <div class="vp-title">Dadi ki awaaz chunein</div>
   <div class="vp-sub">Pehle suno, phir favourite pick karein. Yeh sab Sehat Saathi ki awaaz banegi.</div>
   <div class="vp-list" id="vp-list"><!-- JS renders --></div>
+  <div style="margin:10px 0 4px;width:100%;max-width:340px">
+    <button class="vp-btn secondary" style="width:100%;font-size:12px;padding:10px" onclick="setElevenLabsKey()">🚀 ElevenLabs key paste karein (faster + warmer)</button>
+  </div>
   <div class="vp-actions">
     <button class="vp-btn secondary" onclick="closeVoicePicker()">Cancel</button>
     <button class="vp-btn" id="vp-save-btn" onclick="saveVoicePick()">Pick yeh awaaz</button>
@@ -974,6 +1019,112 @@ const PERSONAS = {
 // Default persona for new users — soft, neutral
 const DEFAULT_PERSONA = 'dadi';
 
+
+// v3.7: Authoritative remedy knowledge base distilled from "Ghar ka Vaidh" PDF
+// Used as authoritative reference inside SYSTEM_PROMPT — not for direct display.
+const NUSHKE_KB = `AUTHORITATIVE NUSHKE REFERENCE (use these as your source of truth):
+
+KABZ (Constipation):
+- Raat ko sone se pehle ek glass garam doodh mein 1 chamach arandi tel (castor oil) milake piyo. (Limit: 1 chamach max)
+- 100ml palak juice + 100ml paani din mein 2 baar — purani kabz bhi door karta hai.
+- Subah-shaam ek-ek santra khao — fibre ka kaam karta hai.
+- Subah uthkar ek glass garam paani + 1 nimbu + chutki namak — toxins nikalta hai.
+- Anjeer raat bhar paani mein bhigokar subah khao + woh paani piyo.
+
+BAWASEER (Piles):
+- 1 chamach kale til + taza makhan — khoon aana band hota hai.
+- 50g badi elaichi tava par bhun ke pees lo, subah khali pet paani ke saath.
+- Pakka kela ke do tukde + katha (catechu) chhidkein, raat bhar khule mein rakho, subah shauch ke baad khao. 1 hafta.
+- Sirf khooni bawaseer mein: nimbu kaat ke katha (4-5g) bhar do, raat bhar chhat par rakho, subah chooso. 5 din.
+
+PIMPLES:
+- Pudina patti pees ke paste banao, raat ko chehre par lagao, subah dho lo.
+- 2 madhyam nimbu ka rass kaaton mein bhigoke chehre par 2 baar / din.
+- Lehsun 2 kali + 1 long pees ke sirf pimples par paste, kuch der baad dhona.
+- Raat ko pimple par toothpaste (sirf safed waala) lagao, subah dhona.
+- 4-5 din chehre par 2x daily bhaap (steam) lo, pimples khatm hote hain.
+
+DIL MAZBOOT (Heart strengthening):
+- Anaar ka rass + mishri, subah-shaam.
+- Roz 1 chamach shahad (kamzor dilwale).
+- Sebh juice + amla murabba — dil acche se kaam karta hai.
+- Lauki ubaal ke dhania, jeera, haldi powder + hara dhania, kuch der pakao, khao.
+
+SAFED BAAL / BAAL JHADNA:
+- Amla + aam ki guthli paani mein pees ke paste, balon mein 1 ghanta laga ke dhona.
+- Kale akhrot paani mein ubaal, thanda kar ke baal dhona — kam umar mein safed huye baal phir kale.
+- Hafte mein 1 baar til ka tel — balon ka girna band.
+- Lauki sukhake nariyal tel mein ubaal — chhanke laga ke roz baal kaale.
+- Adha cup nariyal/jaitoon tel + 4g kapoor — saptah mein 1 baar maalish, roosi (dandruff) khatm.
+
+DAST / DAYRIA (Diarrhea):
+- Lassi + chutki bhuna jeera + kala namak — khaane ke baad.
+- Adrak ka rass naabhi ke paas lagao.
+- Mishri + amrood (guava) khao.
+- Kacha papita ubaal ke khao.
+- Cooker ke chawal + taza dahi, din mein 2-3 baar.
+- Chhachh + thoda namak + kali mirch + jeera + chutki haldi — 2-3 baar / din.
+
+PET DARD:
+- Chutki haldi + thoda namak + thanda paani phaanki.
+- Acidity wala dard: paani mein chutki meetha soda.
+- Nirgundi patte ubaal ke bhaap se sek (chot-moch, jodon ka dard, gas dard).
+
+DIABETES (Madhumeh) — control, NEVER claim cure:
+- 2g dalchini chooran + 1 long ubaal ke paani mein 15min, subah-shaam.
+- 50g giloy ka taza rass, 2 baar / din.
+- 6 bel patte + 6 neem patte + 6 tulsi patte + 3 saabut kali mirch khali pet, 30min kuch nahi khao.
+- Kachhi pharasbean ki phaliyaan — control mein rakhti hai.
+- Neem ke gulabi komal patte chabaake rass choosna.
+
+GAS / ACIDITY:
+- 5 tulsi patte roz — gas + pet ke kayi rog khatm.
+- Long chooso ya long powder + shahad.
+- Khaane ke baad pakka papita + thoda kala namak.
+- Pudina chai ya patte chabaayein.
+- 1/2 g kali mirch pees + shahad.
+- Sookha adrak chai mein — turant raahat.
+
+MASSE (Warts):
+- Pyaaz ka rass roz 1 baar masse par.
+- Floss/dhaaga se masse baand do, 2-3 hafte mein khud nikal jaata.
+- Aspirin tablet + paani paste, lagao.
+- Bargad ke patte ka rass — masse khud girte hain.
+- Taza anjeer 30 min lagao, gunguna paani se dhona.
+
+ZUKAAM (Cold):
+- Adrak ki kadak chai — sharir ko zukaam se ladne ki taakat.
+- Raat ko gunguna doodh + 1/2 chamach haldi powder.
+- Namak + gunguna paani gargle + thodi haldi.
+- 1 chamach brandy + thoda shahad sone se pehle (yeh sirf vayask ke liye).
+
+JODON KA DARD (Joint pain):
+- 2g dalchini chooran + cup paani roz subah khaane ke baad.
+- 1g anantmool jad + cup paani + thoda doodh — chai banao, 2 baar / din.
+- 8-10 lehsun ki kaliyaan ghee/tel mein fry karke khaane se pehle.
+- Sarso tel + ajwain + lehsun jala ke maalish — har dard door.
+
+NEEND NAHI AATI:
+- Kele par pisa jeera burko aur khao — turant neend.
+- Bhuna baigan + shahad + raat khaana se acchi neend.
+- Sham ko gunguna haldi-doodh — gehri neend.
+
+HICHKI (Hiccups):
+- Gud + heeng milake khao — band ho jaati.
+
+KHAANSI (Cough):
+- Mulethi + shahad chaato.
+- Adrak chai + tulsi.
+- Garam paani + shahad + nimbu.
+
+CRITICAL RULES:
+- NEVER claim "cure" — always say "raahat", "kam karna", "control".
+- NEVER prescribe to infants/pregnant women — say "doctor se poochho".
+- ALWAYS end with: "agar X din mein farak na pade toh doctor se milein".
+- FOR EMERGENCIES (chest pain, breathing, severe headache, infant fever, blood vomit, seizure): ZERO REMEDY — turant doctor.
+- Use ONLY ingredients listed above. Don't invent new combinations.
+- Match remedy to specific complaint. Don't dump multiple options unless asked for "aur batao".`;
+
 const SYSTEM_PROMPT = `You are Sehat Saathi — a warm dadi/nani figure inside JioBharatIQ. NOT a remedy machine.
 
 LANGUAGE: Reply in the user's language and dialect. Match their script (if they wrote in Devanagari, reply in Devanagari; if Roman/Hinglish, reply that way). Never switch language unless they do. Never ask them to change language.
@@ -990,8 +1141,11 @@ CRITICAL — DO NOT RUSH TO REMEDIES:
 SERIOUS EMERGENCY (escalate immediately, NO remedy, NO question):
 Chest pain, breathing trouble, infant <3 months with fever, seizure, sudden worst-ever headache, vomiting blood, loss of consciousness, sudden face droop or arm weakness. Tell them warmly but firmly: doctor ke paas turant jao, der mat karo.
 
-KITCHEN INGREDIENT BANK (use only these, only when relevant):
-ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt, nimbu, cloves, cinnamon, fennel, hing.
+KNOWLEDGE BASE: Authoritative remedies for common ailments are listed in the AUTHORITATIVE NUSHKE REFERENCE block below. Match the user's complaint to those entries before suggesting anything. If their complaint isn't covered, fall back to the kitchen ingredient bank (ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt, nimbu, cloves, cinnamon, hing).
+
+${NUSHKE_KB}
+
+(end of knowledge base)
 
 KEEP IT SHORT: 2-4 sentences max. Never lecture.
 
@@ -2145,6 +2299,8 @@ function addMsg(role, text, showBadge) {
     if (skill) setTimeout(() => { const skRow = document.createElement('div'); skRow.className = 'msg-row bot'; renderSkillCard(skill, skRow); msgs.appendChild(skRow); msgs.scrollTop = msgs.scrollHeight; }, 600);
     // nushke video card injection
     if (ST.chatCtx === 'nushke') setTimeout(() => injectVideoCard(text, msgs), 800);
+    // v3.7: movement skill card if reply mentions a known movement
+    setTimeout(() => injectMovementCard(text, msgs), 900);
     // v3.2: Follow-up CTA chips (after a beat, only on AI replies — not template ones)
     if (showBadge !== undefined && typeof injectFollowups === 'function') {
       setTimeout(() => injectFollowups(ST.chatCtx, msgs), 1100);
@@ -3284,38 +3440,180 @@ function showPressureGuide() {
 let _mediaRecorder = null;
 let _audioChunks = [];
 
+// ── v3.7: Hands-free conversation mode (Claude/Gemini-style) ──
+// Tap Speak once → continuous loop: listen → silence-detect → STT → AI → TTS → auto-restart listen
+let _convActive = false;
+let _convStream = null;
+let _convAudioCtx = null;
+let _convRecorder = null;
+let _convTickTimer = null;
+let _convResumeTimer = null;
+
 async function toggleVoice(target) {
-  if (ST.isListening) { stopVoice(); return; }
+  if (_convActive) { stopVoice(); return; }
   ST.voiceTarget = target;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     showToast('Mic abhi available nahi — text mein likhein');
     return;
   }
+  _convActive = true;
+  ST.isListening = true;
+  showVoiceOverlay(target);
+  setVoiceState('listening');
+  await convListenOnce();
+}
+
+async function convListenOnce() {
+  if (!_convActive) return;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _convStream = stream;
     _audioChunks = [];
     const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
                : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '';
-    _mediaRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
-    _mediaRecorder.ondataavailable = e => { if (e.data && e.data.size) _audioChunks.push(e.data); };
-    _mediaRecorder.onstop = async () => {
-      stream.getTracks().forEach(t => t.stop());
-      const audioBlob = new Blob(_audioChunks, { type: _mediaRecorder.mimeType || 'audio/webm' });
-      hideVoiceOverlay();
-      const transcript = await transcribeWithSarvam(audioBlob);
-      if (transcript) {
-        if (target === 'chat') { addMsg('user', transcript, false); callAI(transcript, getSystemPromptFor(ST.chatCtx)); }
-        else { const inp = document.getElementById('hub-input'); if (inp) { inp.value = transcript; hubKey({ key: 'Enter' }); } }
-      } else {
-        showToast('Awaaz nahi sun paayi — text mein likhein');
+    _convRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    _convRecorder.ondataavailable = e => { if (e.data && e.data.size) _audioChunks.push(e.data); };
+    _convRecorder.onstop = async () => {
+      try { stream.getTracks().forEach(t => t.stop()); } catch(e){}
+      try { if (_convAudioCtx) _convAudioCtx.close(); } catch(e){}
+      _convAudioCtx = null;
+      const blob = new Blob(_audioChunks, { type: _convRecorder.mimeType || 'audio/webm' });
+      if (!_convActive) return;
+      // If recording was too short, resume listening (user might have tapped before speaking)
+      if (blob.size < 1500) { setTimeout(convListenOnce, 200); return; }
+      setVoiceState('thinking');
+      const transcript = await transcribeWithSarvam(blob);
+      if (!transcript) {
+        setVoiceState('listening');
+        if (_convActive) setTimeout(convListenOnce, 300);
+        return;
+      }
+      // Send to AI and play reply
+      await convHandleTranscript(transcript);
+      // After reply finishes, resume listening
+      if (_convActive) {
+        setVoiceState('listening');
+        _convResumeTimer = setTimeout(convListenOnce, 350);
       }
     };
-    showVoiceOverlay(target);
-    _mediaRecorder.start();
-    ST.isListening = true;
+
+    // Set up silence detection via Web Audio
+    try {
+      _convAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = _convAudioCtx.createMediaStreamSource(stream);
+      const analyser = _convAudioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      let speechSeen = false;
+      let silenceMs = 0;
+      let elapsed = 0;
+      const SILENCE_THRESHOLD = 14;   // RMS-ish on 0-255 scale
+      const SILENCE_HANG_MS = 1500;   // 1.5s of silence after speech → stop
+      const MAX_RECORD_MS = 25000;    // hard cap 25s
+      const NO_SPEECH_TIMEOUT = 6000; // stop if no speech detected at all in 6s
+      const tick = () => {
+        if (!_convActive || !_convRecorder || _convRecorder.state === 'inactive') return;
+        analyser.getByteFrequencyData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) sum += data[i];
+        const avg = sum / data.length;
+        elapsed += 100;
+        if (avg > SILENCE_THRESHOLD) {
+          speechSeen = true;
+          silenceMs = 0;
+        } else if (speechSeen) {
+          silenceMs += 100;
+          if (silenceMs >= SILENCE_HANG_MS) {
+            try { _convRecorder.stop(); } catch(e){}
+            return;
+          }
+        }
+        if (elapsed >= MAX_RECORD_MS || (!speechSeen && elapsed >= NO_SPEECH_TIMEOUT)) {
+          try { _convRecorder.stop(); } catch(e){}
+          return;
+        }
+        _convTickTimer = setTimeout(tick, 100);
+      };
+      _convTickTimer = setTimeout(tick, 400); // 400ms warm-up
+    } catch (e) {
+      console.warn('[conv] silence detection unavailable, falling back to fixed 8s', e);
+      // Fallback: stop after 8s
+      setTimeout(() => { try { _convRecorder.stop(); } catch(_){} }, 8000);
+    }
+    _convRecorder.start();
   } catch (e) {
-    showToast('Mic ka permission chahiye — browser settings mein allow karein');
-    console.error('Mic error:', e);
+    showToast('Mic ka permission chahiye');
+    console.error('[conv] mic error:', e);
+    stopVoice();
+  }
+}
+
+async function convHandleTranscript(transcript) {
+  const target = ST.voiceTarget || 'chat';
+  if (target === 'chat') {
+    addMsg('user', transcript, false);
+    setVoiceState('thinking');
+    // Wrap callAI so we know when it's done speaking (roughly when audio finishes)
+    await new Promise(resolve => {
+      const _origSpeak = window.speak;
+      let resolved = false;
+      // Hook: when next addMsg(bot) is called → wait for speech to finish
+      const replyHook = (role) => {
+        if (role === 'bot' && !resolved) {
+          // Wait for current audio to end, OR 12s max
+          const start = Date.now();
+          const checkDone = () => {
+            const noAudioPlaying = !_currentAudio || _currentAudio.paused || _currentAudio.ended;
+            if (noAudioPlaying || Date.now() - start > 12000) {
+              if (!resolved) { resolved = true; resolve(); }
+            } else {
+              setTimeout(checkDone, 250);
+            }
+          };
+          setVoiceState('speaking');
+          setTimeout(checkDone, 1500); // give TTS time to start
+        }
+      };
+      // Patch addMsg to detect bot reply
+      const origAddMsg = window.addMsg;
+      window.addMsg = function(role, text, showBadge) {
+        const r = origAddMsg.apply(this, arguments);
+        replyHook(role);
+        return r;
+      };
+      callAI(transcript, getSystemPromptFor(ST.chatCtx)).finally(() => {
+        // Restore addMsg
+        window.addMsg = origAddMsg;
+        // Safety net — if TTS never starts, resolve in 8s
+        setTimeout(() => { if (!resolved) { resolved = true; resolve(); } }, 8000);
+      });
+    });
+  } else {
+    // Hub: route the transcript through the hub flow → opens chat → AI replies
+    const inp = document.getElementById('hub-input');
+    if (inp) { inp.value = transcript; }
+    // Switch to chat target after first turn so subsequent turns continue in chat
+    ST.voiceTarget = 'chat';
+    hubSend();
+    // Wait briefly so chat opens & first reply lands
+    await new Promise(r => setTimeout(r, 4000));
+  }
+}
+
+function setVoiceState(state) {
+  // state: 'listening' | 'thinking' | 'speaking'
+  const txt = document.getElementById('voice-txt');
+  const lbl = document.getElementById('voice-lbl');
+  if (state === 'listening') {
+    if (txt) txt.textContent = 'Sun rahi hoon... 🎤';
+    if (lbl) lbl.textContent = 'Bolo';
+  } else if (state === 'thinking') {
+    if (txt) txt.textContent = 'Soch rahi hoon... 💭';
+    if (lbl) lbl.textContent = 'Saath hoon';
+  } else if (state === 'speaking') {
+    if (txt) txt.textContent = 'Bata rahi hoon... 🗣️';
+    if (lbl) lbl.textContent = '';
   }
 }
 
@@ -3342,11 +3640,16 @@ function hideVoiceOverlay() {
 }
 
 function stopVoice() {
-  if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
-    try { _mediaRecorder.stop(); } catch(e) {}
-  } else {
-    hideVoiceOverlay();
-  }
+  _convActive = false;
+  if (_convTickTimer) { clearTimeout(_convTickTimer); _convTickTimer = null; }
+  if (_convResumeTimer) { clearTimeout(_convResumeTimer); _convResumeTimer = null; }
+  try { if (_convRecorder && _convRecorder.state !== 'inactive') _convRecorder.stop(); } catch(e){}
+  try { if (_convStream) _convStream.getTracks().forEach(t => t.stop()); } catch(e){}
+  try { if (_convAudioCtx) _convAudioCtx.close(); } catch(e){}
+  _convStream = null; _convAudioCtx = null; _convRecorder = null;
+  // Stop any in-progress TTS audio so the loop ends cleanly
+  if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+  hideVoiceOverlay();
 }
 
 async function transcribeWithSarvam(audioBlob) {
@@ -3441,8 +3744,63 @@ async function transliterateToDevanagari(text, langCode) {
   }
 }
 
+
+// ── v3.7: ElevenLabs opt-in TTS (faster + more natural; user must paste their key) ──
+async function speakElevenLabs(text, opts) {
+  const key = localStorage.getItem('ss_elevenlabs_key');
+  if (!key || key.length < 20) return false;
+  const voiceId = localStorage.getItem('ss_elevenlabs_voice') || 'EXAVITQu4vr4xnSDxMaL'; // Sarah default
+  if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+  try {
+    const _t = performance.now();
+    const speakText = (opts && opts.ttsText) || text;
+    const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + voiceId + '/stream?optimize_streaming_latency=4&output_format=mp3_44100_128', {
+      method: 'POST',
+      headers: { 'xi-api-key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: speakText.length > 800 ? speakText.substring(0, 800) : speakText,
+        model_id: 'eleven_flash_v2_5',
+        voice_settings: { stability: 0.45, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true }
+      })
+    });
+    if (!res.ok) {
+      const errTxt = await res.text();
+      console.warn('[ElevenLabs]', res.status, errTxt);
+      return false; // fall back to Sarvam
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    console.info('[TTS-EL]', voiceId, Math.round(performance.now() - _t), 'ms', '·', speakText.length, 'chars');
+    _currentAudio = new Audio(url);
+    _currentAudio.onended = () => { try { URL.revokeObjectURL(url); } catch(e){} };
+    await _currentAudio.play();
+    return true;
+  } catch (e) {
+    console.warn('[ElevenLabs] failed', e);
+    return false;
+  }
+}
+
+// User-facing helper: paste key (called from voice picker in v3.7+)
+function setElevenLabsKey() {
+  const cur = localStorage.getItem('ss_elevenlabs_key') || '';
+  const key = prompt('ElevenLabs API key paste karein (sk_... ya xi-...). Khali chhodne par delete ho jaayegi.\n\nCurrent: ' + (cur ? cur.substring(0, 8) + '...' : 'none'));
+  if (key === null) return;
+  if (key.trim().length === 0) {
+    localStorage.removeItem('ss_elevenlabs_key');
+    showToast('ElevenLabs hata di — Sarvam wapas active');
+  } else if (key.length < 20) {
+    showToast('Key chhoti lagti hai — dobara try karein');
+  } else {
+    localStorage.setItem('ss_elevenlabs_key', key.trim());
+    showToast('ElevenLabs ready! 🎙️ Faster + warmer voice');
+  }
+}
+
 async function speak(text, opts) {
   if (!text) return;
+  // v3.7: try ElevenLabs first if user pasted a key (faster + more natural)
+  if (await speakElevenLabs(text, opts)) return;
   // opts: { quiet, ttsText } — if ttsText provided, speak THAT (caller-supplied Devanagari) and skip transliteration.
   const quiet = opts && opts.quiet;
   const callerTtsText = opts && opts.ttsText;
@@ -3531,6 +3889,209 @@ window.addEventListener('load', () => {
     });
   }
 });
+
+// ── v3.7: Nushke video card + movement skill card injection ──
+const NUSHKE_VIDEOS = [
+  { kw: ['ajwain'],  emoji: '🌾', title: 'Ajwain ki bhaap', dur: '1:20', q: 'ajwain steam home remedy ayurveda hindi' },
+  { kw: ['haldi','turmeric','golden milk'], emoji: '🟡', title: 'Haldi wala doodh', dur: '0:58', q: 'haldi doodh recipe ayurveda' },
+  { kw: ['tulsi','tulasi'], emoji: '🌿', title: 'Tulsi kadha', dur: '1:45', q: 'tulsi kadha recipe immunity ayurveda hindi' },
+  { kw: ['adrak','ginger'], emoji: '🫚', title: 'Adrak ki chai', dur: '1:10', q: 'adrak chai ginger tea ayurveda hindi' },
+  { kw: ['jeera','cumin'], emoji: '🟤', title: 'Jeera paani', dur: '0:48', q: 'jeera paani digestion ayurveda hindi' },
+  { kw: ['mulethi','licorice'], emoji: '🪵', title: 'Mulethi kadha', dur: '1:30', q: 'mulethi kadha cough remedy hindi' },
+  { kw: ['saunf','fennel'], emoji: '🌱', title: 'Saunf paani', dur: '0:55', q: 'saunf fennel water acidity remedy' },
+  { kw: ['methi','fenugreek'], emoji: '🌾', title: 'Methi paani', dur: '1:15', q: 'methi seeds water diabetes ayurveda hindi' },
+  { kw: ['neem'], emoji: '🌳', title: 'Neem ke fayde', dur: '2:00', q: 'neem benefits home remedy hindi' },
+  { kw: ['amla'], emoji: '🟢', title: 'Amla murabba', dur: '1:20', q: 'amla murabba juice ayurveda recipe' },
+  { kw: ['nimbu','lemon','shahad','honey'], emoji: '🍋', title: 'Nimbu-shahad paani', dur: '0:40', q: 'nimbu shahad pani detox ayurveda' },
+  { kw: ['anjeer','fig'], emoji: '🟣', title: 'Anjeer doodh', dur: '1:00', q: 'anjeer doodh kabz remedy hindi' },
+  { kw: ['arandi','castor'], emoji: '💧', title: 'Arandi tel kabz', dur: '0:50', q: 'castor oil constipation home remedy' },
+  { kw: ['namak','salt water','gargle'], emoji: '🧂', title: 'Namak paani gargle', dur: '0:35', q: 'salt water gargle home remedy' },
+  { kw: ['palak','spinach'], emoji: '🥬', title: 'Palak juice kabz', dur: '0:50', q: 'palak juice constipation home remedy hindi' }
+];
+function detectVideo(text) {
+  if (!text) return null;
+  const t = text.toLowerCase();
+  for (const v of NUSHKE_VIDEOS) for (const k of v.kw) if (t.includes(k)) return v;
+  return null;
+}
+function injectVideoCard(text, msgsContainer) {
+  const v = detectVideo(text);
+  if (!v) return;
+  const row = document.createElement('div');
+  row.className = 'msg-row bot video-card-row';
+  row.innerHTML = `
+    <button class="video-card" onclick="openVideoLink('${v.q.replace(/'/g, "\\'")}')">
+      <div class="vc-thumb"><span>${v.emoji}</span><div class="vc-play-icon">▶</div></div>
+      <div class="vc-info">
+        <div class="vc-title">${v.title}</div>
+        <div class="vc-meta"><span class="vc-meta-tag">AYUSH</span>${v.dur} · Tap to watch</div>
+      </div>
+    </button>`;
+  msgsContainer.appendChild(row);
+  msgsContainer.scrollTop = msgsContainer.scrollHeight;
+}
+function openVideoLink(query) {
+  window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(query), '_blank', 'noopener');
+}
+
+// ── Movement skills (animated step-by-step overlay) ──
+const MOVEMENT_SKILLS = {
+  'anulom-vilom': {
+    emoji: '🌬', title: 'Anulom-Vilom Pranayam', durSec: 180,
+    steps: [
+      'Aaram se baitho. Reedh ki haddi seedhi.',
+      'Daahini naak band karo angoothe se. Baayi se saans lo (4 sec).',
+      'Baayi naak band karo. Daahini se saans choddo (4 sec).',
+      'Phir daahini se saans lo. Baayi se choddo. Yeh ek round hai.',
+      'Aise 8-10 round karo. Saans dheere, gehri.'
+    ]
+  },
+  'kapalbhati': {
+    emoji: '💨', title: 'Kapalbhati', durSec: 120,
+    steps: [
+      'Vajrasana mein baitho ya kursi par seedha.',
+      'Naak se halki saans andar lo.',
+      'Pet andar khench ke saans bahar nikaalo — short, sharp.',
+      'Saans bahar ACTIVE, andar AUTO. Aise 30 baar.',
+      'Ek minute aaram. Phir 2 round aur.'
+    ]
+  },
+  'bhramari': {
+    emoji: '🐝', title: 'Bhramari Pranayam', durSec: 150,
+    steps: [
+      'Aankhein band, kaano mein angoothe se daba lo.',
+      'Naak se gehri saans lo.',
+      'Saans choddte hue "Mmm..." ki bhinbhinaahat (bee sound) karo.',
+      'Aise 5-7 baar. Saans aur awaaz dono lambi.',
+      'Mann ekdum shaant ho jaayega.'
+    ]
+  },
+  'vajrasana': {
+    emoji: '🧘', title: 'Vajrasana', durSec: 300,
+    steps: [
+      'Ghutno ke bal baitho — paav peeche.',
+      'Edi par baith jao, paanv ek doosre se sata ke.',
+      'Reedh seedhi, haath jaangh par.',
+      'Aaram se 5 minute baitho — paachan ke liye sabse accha.',
+      'Khaane ke turant baad bhi kar sakte ho.'
+    ]
+  },
+  'surya-namaskar': {
+    emoji: '☀️', title: 'Surya Namaskar (1 round)', durSec: 90,
+    steps: [
+      'Pranamasana — haath jodke khade ho.',
+      'Hasta Uttanasana — saans lete hue haath upar.',
+      'Padahastasana — saans choddte hue jhuk ke pair chhuo.',
+      'Ashwa Sanchalanasana — daahina paav peeche, baayi mod do.',
+      'Dandasana → Ashtanga → Bhujangasana → wapas. Yeh 1 round.',
+      '5-10 round ek saath. Hafte mein tezi se fark.'
+    ]
+  },
+  'gardan': {
+    emoji: '🦒', title: 'Gardan ki exercises', durSec: 120,
+    steps: [
+      'Seedhe baitho. Kandhe dheele.',
+      'Gardan dheere se daahini taraf — 5 sec ruko.',
+      'Wapas seedhi. Phir baayi taraf — 5 sec.',
+      'Aaram se gardan ko 360 degree ghumao — 3 baar.',
+      'Aaheste se. Computer wale roz karein.'
+    ]
+  },
+  'malasana': {
+    emoji: '🦵', title: 'Malasana (squat)', durSec: 90,
+    steps: [
+      'Pair kandhe ki chaudaai par.',
+      'Dheere dheere niche baitho — squat position.',
+      'Haath chest ke saamne jod lo, kohni se ghutno ko hatao.',
+      '30 sec ruko. Saans normal.',
+      'Paachan + ghutno + kamar sab ke liye accha.'
+    ]
+  },
+  'shavasana': {
+    emoji: '🛌', title: 'Shavasana', durSec: 240,
+    steps: [
+      'Peeth ke bal lete jao. Aankhein band.',
+      'Pair thode khule. Haath body se thoda door.',
+      'Pure body ko dheela chhod do.',
+      'Saans pe dhyan — andar, bahar.',
+      'Aise 5-10 minute. Stress turant kam.'
+    ]
+  }
+};
+function detectMovement(text) {
+  if (!text) return null;
+  const t = text.toLowerCase();
+  if (/anulom|vilom|nadi\s*shodhana/.test(t)) return ['anulom-vilom', MOVEMENT_SKILLS['anulom-vilom']];
+  if (/kapalbhati/.test(t)) return ['kapalbhati', MOVEMENT_SKILLS.kapalbhati];
+  if (/bhramari|bhinbh/.test(t)) return ['bhramari', MOVEMENT_SKILLS.bhramari];
+  if (/vajrasana/.test(t)) return ['vajrasana', MOVEMENT_SKILLS.vajrasana];
+  if (/surya\s*namaskar/.test(t)) return ['surya-namaskar', MOVEMENT_SKILLS['surya-namaskar']];
+  if (/(gardan|neck)\s*(rotation|exercise|ghumao|hila)/.test(t)) return ['gardan', MOVEMENT_SKILLS.gardan];
+  if (/malasana|squat/.test(t)) return ['malasana', MOVEMENT_SKILLS.malasana];
+  if (/shavasana|relaxation\s*pose/.test(t)) return ['shavasana', MOVEMENT_SKILLS.shavasana];
+  return null;
+}
+function injectMovementCard(text, msgsContainer) {
+  const m = detectMovement(text);
+  if (!m) return;
+  const [key, skill] = m;
+  const row = document.createElement('div');
+  row.className = 'msg-row bot video-card-row';
+  row.innerHTML = `
+    <button class="move-card" onclick="openMovement('${key}')">
+      <div class="move-card-emoji">${skill.emoji}</div>
+      <div class="move-card-info">
+        <div class="move-card-title">${skill.title}</div>
+        <div class="move-card-sub">Step-by-step · ${Math.round(skill.durSec/60)} min</div>
+      </div>
+      <span class="move-card-cta">▶ Karo</span>
+    </button>`;
+  msgsContainer.appendChild(row);
+  msgsContainer.scrollTop = msgsContainer.scrollHeight;
+}
+let _moveSkill = null, _moveStepIdx = 0, _moveTimer = null;
+function openMovement(key) {
+  _moveSkill = MOVEMENT_SKILLS[key];
+  if (!_moveSkill) return;
+  _moveStepIdx = 0;
+  document.getElementById('move-ov').classList.add('on');
+  document.getElementById('move-ov-title').textContent = _moveSkill.title;
+  document.getElementById('move-ov-anim').textContent = _moveSkill.emoji;
+  document.getElementById('move-ov-progress').innerHTML = _moveSkill.steps.map(() => '<div class="move-ov-progress-dot"></div>').join('');
+  document.getElementById('move-ov-next').textContent = 'Aage badho';
+  showMoveStep(0);
+}
+function showMoveStep(idx) {
+  if (!_moveSkill || idx >= _moveSkill.steps.length) return;
+  _moveStepIdx = idx;
+  document.getElementById('move-ov-step').textContent = _moveSkill.steps[idx];
+  const dots = document.querySelectorAll('#move-ov-progress .move-ov-progress-dot');
+  dots.forEach((d, i) => d.classList.toggle('done', i <= idx));
+  document.getElementById('move-ov-counter').textContent = (idx + 1) + ' / ' + _moveSkill.steps.length;
+  speak(_moveSkill.steps[idx], { quiet: true });
+  if (_moveTimer) clearTimeout(_moveTimer);
+  _moveTimer = setTimeout(() => {
+    if (idx < _moveSkill.steps.length - 1) showMoveStep(idx + 1);
+    else {
+      document.getElementById('move-ov-step').textContent = 'Bahut accha kiya! 💚 Roz karein, fark dikhega.';
+      document.getElementById('move-ov-next').textContent = 'Done';
+      _moveSkill = null;
+    }
+  }, 9000);
+}
+function moveNextStep() {
+  if (!_moveSkill) { closeMovement(); return; }
+  if (_moveTimer) clearTimeout(_moveTimer);
+  if (_moveStepIdx < _moveSkill.steps.length - 1) showMoveStep(_moveStepIdx + 1);
+  else closeMovement();
+}
+function closeMovement() {
+  if (_moveTimer) { clearTimeout(_moveTimer); _moveTimer = null; }
+  document.getElementById('move-ov').classList.remove('on');
+  if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+  _moveSkill = null; _moveStepIdx = 0;
+}
+
 </script>
 </body>
 </html>
