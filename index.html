@@ -236,6 +236,27 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 
 
 
+
+/* ── v3.4: Voice picker overlay ── */
+#voice-picker-ov{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px 20px;backdrop-filter:blur(10px)}
+#voice-picker-ov.on{display:flex}
+.vp-title{font-size:20px;font-weight:700;text-align:center;color:#fff;margin-bottom:4px}
+.vp-sub{font-size:13px;color:rgba(255,255,255,.6);text-align:center;margin-bottom:16px;max-width:300px;line-height:1.45}
+.vp-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px}
+.vp-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid rgba(255,255,255,.08);border-radius:14px;padding:11px 12px;cursor:pointer;transition:all .15s}
+.vp-row.selected{border-color:var(--primary);background:var(--primary-dim)}
+.vp-row-emoji{font-size:24px;flex-shrink:0;width:36px;text-align:center}
+.vp-row-info{flex:1;min-width:0}
+.vp-row-name{font-size:14px;font-weight:700}
+.vp-row-desc{font-size:11px;color:var(--text2);margin-top:2px}
+.vp-play-btn{background:rgba(255,255,255,.08);border:none;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.vp-play-btn:active{opacity:.7}
+.vp-play-btn.loading{opacity:.5}
+.vp-actions{display:flex;gap:10px;width:100%;max-width:340px;margin-top:10px}
+.vp-btn{flex:1;background:var(--primary);border:none;color:#fff;border-radius:var(--radius-pill);padding:13px;font-family:'JioType',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+.vp-btn.secondary{background:var(--surface);color:var(--text);border:1.5px solid rgba(255,255,255,.1)}
+.vp-btn:active{opacity:.85}
+
 /* ── v3.2 hub redesign: header chip, carousel, question bubbles ── */
 .hub3-stat-chip{display:flex;align-items:center;gap:6px;background:rgba(107,33,168,.12);border:1px solid rgba(107,33,168,.32);border-radius:var(--radius-pill);padding:5px 10px;font-size:11px;font-weight:700;color:#fff;cursor:default;margin-right:6px}
 .hub3-stat-chip .hsc-score{color:#22c55e}
@@ -626,7 +647,13 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
       </div>
     </div>
     <div style="display:flex;align-items:center">
-      <div class="hub3-stat-chip" id="hub3-stat-chip"><span class="hsc-score" id="hsc-score">💚 50</span><span class="hsc-sep">·</span><span class="hsc-streak"><span id="hub3-streak-count">0</span>🔥</span></div>
+      <button class="hub3-stat-chip" id="hub3-stat-chip" onclick="openVoicePicker()" aria-label="Awaaz aur score" style="background:rgba(107,33,168,.12);cursor:pointer">
+        <span class="hsc-score" id="hsc-score">💚 50</span>
+        <span class="hsc-sep">·</span>
+        <span class="hsc-streak"><span id="hub3-streak-count">0</span>🔥</span>
+        <span class="hsc-sep">·</span>
+        <span style="font-size:13px">🎙️</span>
+      </button>
       <button class="hub3-menu-btn" onclick="openToolsSheet()" aria-label="Tools menu">
         <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><circle cx="5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="19" cy="12" r="1.7" fill="currentColor"/></svg>
       </button>
@@ -854,6 +881,18 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
     <p class="breath-instruction" id="breath-instr">Naak se saans lo, andar rokho, bahar nikalo, bahar rokho — har step 4 second ka. 4 rounds karein.</p>
     <button class="breath-start-btn" id="breath-btn" onclick="startBreath()">Shuru Karo</button>
     <div id="stretch-steps-wrap" style="display:none;width:100%"></div>
+  </div>
+</div>
+
+
+<!-- v3.4: Voice picker overlay -->
+<div id="voice-picker-ov" role="dialog" aria-label="Voice picker">
+  <div class="vp-title">Dadi ki awaaz chunein</div>
+  <div class="vp-sub">Pehle suno, phir favourite pick karein. Yeh sab Sehat Saathi ki awaaz banegi.</div>
+  <div class="vp-list" id="vp-list"><!-- JS renders --></div>
+  <div class="vp-actions">
+    <button class="vp-btn secondary" onclick="closeVoicePicker()">Cancel</button>
+    <button class="vp-btn" id="vp-save-btn" onclick="saveVoicePick()">Pick yeh awaaz</button>
   </div>
 </div>
 
@@ -1694,8 +1733,8 @@ async function playCachedStory() {
         headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           inputs: [chunk], target_language_code: targetLang, speaker,
-          pitch: 0, pace: 0.9, loudness: 1.4, speech_sample_rate: 22050,
-          enable_preprocessing: true, model: 'bulbul:v2'
+          pace: 0.78, speech_sample_rate: 22050,
+          enable_preprocessing: true, model: 'bulbul:v3'
         })
       });
       if (!res.ok) { console.error('[story TTS]', res.status); break; }
@@ -1914,6 +1953,107 @@ function handleFollowup(label, ctx) {
   // Default — send as user message
   addMsg('user', label, false);
   callAI(label, getSystemPromptFor(ST.chatCtx));
+}
+
+
+// ── v3.4: Voice picker (Bulbul v3 candidates) ──
+const VOICE_OPTIONS = [
+  { id: 'kavitha', emoji: '👵', name: 'Kavitha — Dadi',  desc: 'Mature, slow, warm grandmother (default)' },
+  { id: 'pooja',   emoji: '🤱', name: 'Pooja — Maami',   desc: 'Warm aunty, calm pace' },
+  { id: 'priya',   emoji: '👩', name: 'Priya — Maa',     desc: 'Motherly, gentle, mid pace' },
+  { id: 'shruti',  emoji: '👩', name: 'Shruti — Bua',    desc: 'Steady, mature middle-aged' },
+  { id: 'ritu',    emoji: '👵', name: 'Ritu — Naani',    desc: 'Soft elderly, slow' },
+  { id: 'kavya',   emoji: '👩‍🦱', name: 'Kavya — Saathi', desc: 'Younger neutral peer' }
+];
+
+let _vpSelected = null;
+let _vpCurrentAudio = null;
+
+function openVoicePicker() {
+  _vpSelected = localStorage.getItem('ss_voice_pref') || 'kavitha';
+  renderVoicePickerList();
+  document.getElementById('voice-picker-ov').classList.add('on');
+}
+
+function closeVoicePicker() {
+  if (_vpCurrentAudio) { try { _vpCurrentAudio.pause(); } catch(e){} _vpCurrentAudio = null; }
+  document.getElementById('voice-picker-ov').classList.remove('on');
+}
+
+function renderVoicePickerList() {
+  const list = document.getElementById('vp-list');
+  list.innerHTML = VOICE_OPTIONS.map(v => `
+    <div class="vp-row ${_vpSelected === v.id ? 'selected' : ''}" id="vp-row-${v.id}" onclick="vpSelect('${v.id}')">
+      <div class="vp-row-emoji">${v.emoji}</div>
+      <div class="vp-row-info">
+        <div class="vp-row-name">${v.name}</div>
+        <div class="vp-row-desc">${v.desc}</div>
+      </div>
+      <button class="vp-play-btn" id="vp-play-${v.id}" onclick="event.stopPropagation();vpPlaySample('${v.id}')" aria-label="Sun ke dekho">
+        <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M8 5v14l11-7z" fill="white"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+function vpSelect(id) {
+  _vpSelected = id;
+  document.querySelectorAll('.vp-row').forEach(r => r.classList.remove('selected'));
+  const row = document.getElementById('vp-row-' + id);
+  if (row) row.classList.add('selected');
+  // Auto-preview on select for friction-free trial
+  vpPlaySample(id);
+}
+
+async function vpPlaySample(speakerId) {
+  if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes('REPLACE')) {
+    showToast('Voice ready nahi — API key chahiye'); return;
+  }
+  // Stop any in-flight sample
+  if (_vpCurrentAudio) { try { _vpCurrentAudio.pause(); } catch(e){} _vpCurrentAudio = null; }
+  // Visual: dim the play button
+  document.querySelectorAll('.vp-play-btn').forEach(b => b.classList.remove('loading'));
+  const btn = document.getElementById('vp-play-' + speakerId);
+  if (btn) btn.classList.add('loading');
+  const sample = 'नमस्ते बेटा, आज कैसे हो? कुछ खाया कि नहीं? बैठो, मैं तुम्हें एक छोटा सा घरेलू नुस्खा बताती हूं।';
+  try {
+    const res = await fetch('https://api.sarvam.ai/text-to-speech', {
+      method: 'POST',
+      headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        inputs: [sample], target_language_code: 'hi-IN',
+        speaker: speakerId, pace: 0.8,
+        speech_sample_rate: 22050, enable_preprocessing: true,
+        model: 'bulbul:v3'
+      })
+    });
+    if (!res.ok) {
+      const errTxt = await res.text();
+      console.error('[vpSample]', res.status, errTxt);
+      showToast('Sample fail — try later');
+      if (btn) btn.classList.remove('loading');
+      return;
+    }
+    const data = await res.json();
+    if (data.audios && data.audios[0]) {
+      _vpCurrentAudio = new Audio('data:audio/wav;base64,' + data.audios[0]);
+      _vpCurrentAudio.onended = () => { if (btn) btn.classList.remove('loading'); };
+      _vpCurrentAudio.play().catch(e => { if (btn) btn.classList.remove('loading'); });
+    } else {
+      if (btn) btn.classList.remove('loading');
+    }
+  } catch (e) {
+    console.error('[vpSample] failed', e);
+    if (btn) btn.classList.remove('loading');
+  }
+}
+
+function saveVoicePick() {
+  if (!_vpSelected) { closeVoicePicker(); return; }
+  localStorage.setItem('ss_voice_pref', _vpSelected);
+  const v = VOICE_OPTIONS.find(o => o.id === _vpSelected);
+  showToast('Awaaz save ho gayi 💚 ' + (v ? v.name.split('—')[0].trim() : ''));
+  closeVoicePicker();
 }
 
 // ── Bottom sheet ──
@@ -3214,7 +3354,7 @@ async function transcribeWithSarvam(audioBlob) {
   }
 }
 // ── v3: Sarvam TTS (Bulbul) — replaces Web Speech API ──
-const SARVAM_SPEAKERS = { dadi: 'manisha', maa: 'anushka', saathi: 'arya' };  // Bulbul v2 valid speakers
+const SARVAM_SPEAKERS = { dadi: 'kavitha', maa: 'priya', saathi: 'kavya' };  // v3.4: Bulbul v3 — warm mature voices (kavitha=dadi, priya=maa, kavya=saathi)
 const SARVAM_LANG_MAP = {
   'hi-IN':'hi-IN','mr-IN':'hi-IN','bn-IN':'bn-IN','ta-IN':'ta-IN','te-IN':'te-IN',
   'kn-IN':'kn-IN','ml-IN':'ml-IN','gu-IN':'gu-IN','pa-IN':'pa-IN',
@@ -3283,16 +3423,16 @@ async function speak(text, opts) {
     if (!callerTtsText && detected.script === 'roman' && targetLangCode.startsWith('hi')) {
       speakText = await transliterateToDevanagari(text, targetLangCode);
     }
-    const speaker = SARVAM_SPEAKERS[ST.persona] || SARVAM_SPEAKERS.dadi;
+    const speaker = (localStorage.getItem('ss_voice_pref')) || SARVAM_SPEAKERS[ST.persona] || SARVAM_SPEAKERS.dadi;
     const res = await fetch('https://api.sarvam.ai/text-to-speech', {
       method: 'POST',
       headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         inputs: [speakText.length > 500 ? speakText.substring(0, 500) : speakText],
         target_language_code: targetLangCode,
-        speaker, pitch: 0, pace: 0.85, loudness: 1.4,
+        speaker, pace: 0.78,
         speech_sample_rate: 22050, enable_preprocessing: true,
-        model: 'bulbul:v2'
+        model: 'bulbul:v3'
       })
     });
     if (!res.ok) {
