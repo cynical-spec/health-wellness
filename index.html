@@ -1733,8 +1733,8 @@ async function playCachedStory() {
         headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           inputs: [chunk], target_language_code: targetLang, speaker,
-          pace: 0.78, speech_sample_rate: 22050,
-          enable_preprocessing: true, model: 'bulbul:v3'
+          pitch: 0, pace: 0.9, loudness: 1.4, speech_sample_rate: 22050,
+          enable_preprocessing: true, model: 'bulbul:v2'
         })
       });
       if (!res.ok) { console.error('[story TTS]', res.status); break; }
@@ -1958,12 +1958,10 @@ function handleFollowup(label, ctx) {
 
 // ── v3.4: Voice picker (Bulbul v3 candidates) ──
 const VOICE_OPTIONS = [
-  { id: 'kavitha', emoji: '👵', name: 'Kavitha — Dadi',  desc: 'Mature, slow, warm grandmother (default)' },
-  { id: 'pooja',   emoji: '🤱', name: 'Pooja — Maami',   desc: 'Warm aunty, calm pace' },
-  { id: 'priya',   emoji: '👩', name: 'Priya — Maa',     desc: 'Motherly, gentle, mid pace' },
-  { id: 'shruti',  emoji: '👩', name: 'Shruti — Bua',    desc: 'Steady, mature middle-aged' },
-  { id: 'ritu',    emoji: '👵', name: 'Ritu — Naani',    desc: 'Soft elderly, slow' },
-  { id: 'kavya',   emoji: '👩‍🦱', name: 'Kavya — Saathi', desc: 'Younger neutral peer' }
+  { id: 'manisha', emoji: '👵', name: 'Manisha — Dadi',  desc: 'Warm, mature grandmother (default)' },
+  { id: 'anushka', emoji: '🤱', name: 'Anushka — Maa',   desc: 'Motherly, gentle' },
+  { id: 'vidya',   emoji: '👩', name: 'Vidya — Bua',     desc: 'Steady mature middle-aged' },
+  { id: 'arya',    emoji: '👩‍🦱', name: 'Arya — Saathi',  desc: 'Younger neutral peer' }
 ];
 
 let _vpSelected = null;
@@ -2022,9 +2020,9 @@ async function vpPlaySample(speakerId) {
       headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         inputs: [sample], target_language_code: 'hi-IN',
-        speaker: speakerId, pace: 0.8,
+        speaker: speakerId, pace: 0.85, pitch: 0, loudness: 1.4,
         speech_sample_rate: 22050, enable_preprocessing: true,
-        model: 'bulbul:v3'
+        model: 'bulbul:v2'
       })
     });
     if (!res.ok) {
@@ -2212,9 +2210,9 @@ async function callAI(userText, systemOverride) {
 
   const msgs = [{ role: 'system', content: systemOverride || SYSTEM_PROMPT }, ...ST.chatHistory];
 
-  // Try each provider in order
+  // v3.5: gpt-4o-mini is ~6× faster than gpt-4o (~0.6s vs ~3.5s) and plenty smart for warm conversation; gpt-4o still used for Vision (Lab)
   const providers = [];
-  if (hasOpenAI) providers.push({ url:'https://api.openai.com/v1/chat/completions', key:OPENAI_API_KEY, model:'gpt-4o' });
+  if (hasOpenAI) providers.push({ url:'https://api.openai.com/v1/chat/completions', key:OPENAI_API_KEY, model:'gpt-4o-mini' });
   if (hasGroq)   providers.push({ url:'https://api.groq.com/openai/v1/chat/completions', key:GROQ_API_KEY, model:'llama-3.3-70b-versatile' });
 
   let lastErr = '';
@@ -3354,7 +3352,7 @@ async function transcribeWithSarvam(audioBlob) {
   }
 }
 // ── v3: Sarvam TTS (Bulbul) — replaces Web Speech API ──
-const SARVAM_SPEAKERS = { dadi: 'kavitha', maa: 'priya', saathi: 'kavya' };  // v3.4: Bulbul v3 — warm mature voices (kavitha=dadi, priya=maa, kavya=saathi)
+const SARVAM_SPEAKERS = { dadi: 'manisha', maa: 'anushka', saathi: 'vidya' };  // v3.5: Bulbul v2 — 3x faster than v3 (median 2s vs 6s); warm female voices
 const SARVAM_LANG_MAP = {
   'hi-IN':'hi-IN','mr-IN':'hi-IN','bn-IN':'bn-IN','ta-IN':'ta-IN','te-IN':'te-IN',
   'kn-IN':'kn-IN','ml-IN':'ml-IN','gu-IN':'gu-IN','pa-IN':'pa-IN',
@@ -3367,10 +3365,17 @@ let _currentAudio = null;
 const _translitCache = new Map();
 async function transliterateToDevanagari(text, langCode) {
   if (!text) return text;
-  if (_translitCache.has(text)) return _translitCache.get(text);
+  // v3.5: normalize cache key (case + whitespace) for higher hit rate
+  const cacheKey = text.toLowerCase().replace(/\s+/g, ' ').trim();
+  if (_translitCache.has(cacheKey)) return _translitCache.get(cacheKey);
+  // v3.5: skip transliteration for very short text (3 words or less) — Bulbul handles short phrases OK
+  if (text.length < 16 && text.split(/\s+/).length <= 3) return text;
+  // v3.5: skip if text is mostly English (no Hindi loanwords) — heuristic: very few short Devanagari-ish trigrams
+  if (!/\b(beta|beti|hai|nahi|kya|mein|aap|tum|hum|pet|sir|sehat|ghar|nushka|takleef|dard|paani|chai|doodh|namaste|nasha|saans|neend|bukhar|khaaya|piya|kiya|raha|rahi|rahe|aaj|kal|subah|sham|raat|dopahar|theek|achha|achhi|acche|wah|haldi|adrak|ajwain|tulsi|jeera)\b/i.test(text)) return text;
   if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes('REPLACE')) return text;
   try {
     const target = (langCode && langCode.length === 5) ? langCode : 'hi-IN';
+    const _tStart = performance.now();
     const res = await fetch('https://api.sarvam.ai/transliterate', {
       method: 'POST',
       headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
@@ -3382,6 +3387,7 @@ async function transliterateToDevanagari(text, langCode) {
         numerals_format: 'international'
       })
     });
+    console.info('[Transliterate]', Math.round(performance.now() - _tStart), 'ms');
     if (!res.ok) {
       const errTxt = await res.text();
       console.warn('[transliterate]', res.status, errTxt);
@@ -3389,8 +3395,8 @@ async function transliterateToDevanagari(text, langCode) {
     }
     const data = await res.json();
     const out = (data.transliterated_text || text).trim();
-    _translitCache.set(text, out);
-    if (_translitCache.size > 60) {
+    _translitCache.set(cacheKey, out);
+    if (_translitCache.size > 200) {
       // evict oldest entry to bound memory
       const firstKey = _translitCache.keys().next().value;
       _translitCache.delete(firstKey);
@@ -3424,15 +3430,16 @@ async function speak(text, opts) {
       speakText = await transliterateToDevanagari(text, targetLangCode);
     }
     const speaker = (localStorage.getItem('ss_voice_pref')) || SARVAM_SPEAKERS[ST.persona] || SARVAM_SPEAKERS.dadi;
+    const _t0 = performance.now();
     const res = await fetch('https://api.sarvam.ai/text-to-speech', {
       method: 'POST',
       headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         inputs: [speakText.length > 500 ? speakText.substring(0, 500) : speakText],
         target_language_code: targetLangCode,
-        speaker, pace: 0.78,
+        speaker, pitch: 0, pace: 0.85, loudness: 1.4,
         speech_sample_rate: 22050, enable_preprocessing: true,
-        model: 'bulbul:v3'
+        model: 'bulbul:v2'
       })
     });
     if (!res.ok) {
@@ -3440,6 +3447,7 @@ async function speak(text, opts) {
       console.error('[Sarvam TTS]', res.status, errTxt);
       return;
     }
+    console.info('[TTS]', speaker, Math.round(performance.now() - _t0), 'ms', '·', speakText.length, 'chars');
     const data = await res.json();
     if (data.audios && data.audios[0]) {
       _currentAudio = new Audio('data:audio/wav;base64,' + data.audios[0]);
