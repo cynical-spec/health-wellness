@@ -3978,9 +3978,10 @@ function _renderRxStepInner(step){
     </button>`;
     for (const m of fam) {
       const key = 'fam_' + m.name;
+      const condStr = Array.isArray(m.conditions) ? m.conditions.join(', ') : (m.conditions || '');
       html += `<button class="lab-member-btn" onclick="rxSelectMember('${key}','${m.name.replace(/'/g,"")}')">
         <div class="lab-mem-avatar">${m.name.charAt(0).toUpperCase()}</div>
-        <div class="lab-mem-info"><div class="lab-mem-name">${m.name}</div><div class="lab-mem-meta">${m.age||'-'} saal · ${(m.conditions||[]).join(', ') || 'Koi condition nahi'}</div></div>
+        <div class="lab-mem-info"><div class="lab-mem-name">${m.name}</div><div class="lab-mem-meta">${m.age||'-'} saal · ${condStr || 'Koi condition nahi'}</div></div>
       </button>`;
     }
     html += `<button class="lab-member-btn" onclick="goTo('s-family');setTimeout(()=>{renderFamilyList();showAddFamily();},100)">
