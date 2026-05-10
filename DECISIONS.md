@@ -2,6 +2,51 @@
 
 ---
 
+## DEC-015 — Three magical moments get equal primary real estate (Symptoms / Lab / Dawai)
+**Date:** 2026-05-10 (Session 10 / v5)
+**Decision:** The home now treats Symptoms triage, Lab Report, and Dawai parchi as three peer entry points. Symptoms keeps its 8-button `tri-grid`, but a new 2-card `aham-row` (gradient, full-width tiles) sits directly under the hero promoting Lab and Dawai. Wellness goals stay where they are. The `tri-rail` keeps secondary use cases but loses Lab and Dawai (now promoted) and gains "Mera Sehat" (unified Reminders + Orders + Reports list).
+**Reason:** Earlier sessions iterated on whichever flow we tested last — this kept demoting Lab/Dawai because nobody was tapping them, but they weren't being tapped *because* their flows ended in dead-end summaries. Promoting before completion would have been a UX lie; completing all three flows simultaneously and giving them peer real estate is the right time to commit.
+**Trade-offs:** Above-the-fold height grew. On a 390×844 frame the `aham-row` pushes the wellness grid below the fold by ~120px. Acceptable — Lab and Dawai are higher-intent surfaces than wellness for tier-2/3 users with a real takleef in hand.
+**Revisit if:** Tap-rate analytics show the `aham-row` underperforming the symptoms grid by >5x, OR the home becomes too long to scan on a 390px screen.
+
+---
+
+## DEC-016 — Template-based OCR fallback for every AI-Vision feature
+**Date:** 2026-05-10 (Session 10 / v5)
+**Decision:** Every AI-Vision-dependent feature (Lab Interpreter photo+PDF, RX prescription photo+PDF) ships with a hand-written template fallback that runs through the same UI animation and returns a realistic, on-tone sample result. `LAB_PHOTO_TEMPLATES` (3 reports — Anaemia, High-Cholesterol, Diabetes) and `RX_TEMPLATES` (3 prescriptions — Diabetes-BP, Pediatric-Fever, Cold-Cough) are cycled randomly per scan. Sample summaries are tagged `[Sample analysis — prototype mode bina Vision API ke]` so the user knows the source. Real Vision (when keys land) replaces the template return — call sites stay identical.
+**Reason:** Vision-only paths break for: (a) new dev environments without `OPENAI_API_KEY`, (b) Indian ISPs that block OpenAI (DEC-004), (c) demo settings where keys can't be exposed, (d) CI/preview deploys. The user explicitly said "for prototype the lab report interpreter and medicine prescription upload and fulfilment should be some template as we will need proper API key for vision which we will do later" — this is the architectural codification of that.
+**Trade-offs:** Templates have to be maintained alongside the real AI prompt. Worth it — they double as regression tests, demo content, and ISP-resilience.
+**Revisit if:** Vision becomes universally reliable AND template content becomes a maintenance burden.
+
+---
+
+## DEC-017 — Reliance Netmeds as the (templated) fulfilment partner
+**Date:** 2026-05-10 (Session 10 / v5)
+**Decision:** "Sehat Bazaar" branding throughout the order flow names Reliance Netmeds as the fulfilment partner ("Reliance Netmeds — Tier 2 + 3 delivery · COD available · 100% original"). Order IDs use the `NM<base36>` prefix. Tier 2/3 ready: COD highlighted, free delivery above ₹199, Hindi WhatsApp tracking, addresses pre-seeded with Lucknow + Varanasi.
+**Reason:** User direction: "medicine reminder then gets tied up with medicine fulfillment, netmeds is acquired by reliance and they do serve tier 2 and tier 3 cities." Netmeds-Reliance is the most credible tier-2/3 medicine fulfilment in India today, and a Jio family product naturally co-brands with the rest of the Reliance health stack. The flow currently uses templates — when real Netmeds API access is provisioned (B2B partnership), wire `orderPlace()` to their `/api/orders` and they'll handle fulfilment from their warehouse network.
+**Trade-offs:** Hard dependency on a single provider's API surface eventually. Mitigated by keeping the cart shape generic — the order object has `items[].sku` mapped via `MEDICINE_CATALOG`, and the Netmeds adapter is one function away.
+**Revisit if:** A different pharmacy partnership offers better tier-2/3 coverage, or Netmeds API becomes restrictive.
+
+---
+
+## DEC-018 — Three reminder delivery channels: App / WhatsApp / Voice call
+**Date:** 2026-05-10 (Session 10 / v5)
+**Decision:** Every saved reminder picks one of three delivery channels: (a) JBIQ App full-screen overlay (existing path, real), (b) WhatsApp Hindi message to a phone number (placeholder — toast warns "prototype hai"), (c) Voice call where Saathi reads the reminder aloud (placeholder, same toast). The channel is part of the reminder model on `ss_rems`. WhatsApp/Voice paths require a phone number; the input is conditional.
+**Reason:** User direction: "the reminder can happen two ways via JBIQ app as full screen reminder to the user and or whatsapp, alternatively voice recording can also happen for your family to receive call where digital literacy is a problem." For tier-2/3 users, the most loving caregiving move is setting a reminder on *their own* phone for *their dadi/papa* who can't read English on a glass screen. Voice call is the killer feature for that segment.
+**Trade-offs:** WhatsApp requires Gupshup/Twilio business API (~₹0.30 per message in India). Voice call requires Twilio Voice or Exotel (~₹0.50 per call). Both have small monthly minimums. Templates of the message text are baked into the prototype so the integration is one function call away.
+**Revisit if:** WhatsApp Business API pricing changes materially, OR users prefer SMS over WhatsApp in field testing.
+
+---
+
+## DEC-019 — PR preview via raw.githack + workflow artifact (no Pages source change)
+**Date:** 2026-05-10 (Session 10 / v5)
+**Decision:** `pr-preview.yml` posts a PR comment with two preview URLs (raw.githack.com and jsDelivr) plus a downloadable artifact link. The artifact has API keys injected so reviewers can run the full chat/voice experience locally. The existing `deploy.yml` and Pages source (Actions → main) are unchanged.
+**Reason:** The user asked "figure out way of putting this in preview before we merge". The cleanest options were: (a) switch Pages source to a `gh-pages` branch and serve `/preview/<branch>/` subpaths — but that's a one-time settings change and we'd lose the existing `deploy.yml`; (b) use Netlify/Vercel — adds a new external dependency; (c) use raw.githack.com which serves any GitHub branch's index.html with proper Content-Type and JS execution support — zero setup, zero new dependencies. Option (c) wins for a single-file static prototype. The artifact path covers reviewers who need full-feature preview with API keys.
+**Trade-offs:** raw.githack.com is a third-party CDN — it could go down (rare; backed by jsDelivr-class infra). Worst case the artifact path always works. PR previews only show changes from `main`; doesn't show inline diffs vs. a baseline.
+**Revisit if:** Multiple PRs need to co-exist as previews on the canonical `cynical-spec.github.io/health-wellness` domain (then switch to gh-pages branch + subpath layout).
+
+---
+
 ## DEC-012 — Symptoms-triage as the primary path on the hub (Tier 2/3 reframe)
 **Date:** 2026-05-10 (Session 9)
 **Decision:** Replace the 3-zone mood-first hub with a symptoms-triage-first layout: 8-button `tri-grid` of common takleefs as the primary CTA, the 3 mood emojis collapsed into a single-line `tri-mood` strip, and other use cases (Story, Saans, Lab, Dawai, Meal, Parivaar) demoted to a subtle horizontal `tri-rail`. The header (greeting + `tri-hero`) frames the whole screen as "Kya takleef hai?".

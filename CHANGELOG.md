@@ -2,6 +2,79 @@
 
 ---
 
+## 2026-05-10 — Session 10: v5 — End-to-end Dawai parchi: scan → reminder → Sehat Bazaar order → tracking
+
+User feedback after v4.2: "Right now symptoms triage has overtaken the entire experience" — Lab Report and Dawai Reminder were buried in a small `tri-rail` underneath the wellness + symptoms grids. The product had three magical moments queued (symptoms triage, lab interpretation, prescription-to-doorstep) but only one had been built into a real surface. The user explicitly asked for the second and third experiences (lab + prescription→reminder→fulfilment) to be nailed end-to-end, with Reliance Netmeds (acquired by Reliance, serves tier 2/3) as the fulfilment partner. Vision API is unavailable in the prototype, so OCR is template-driven for now.
+
+### Added — `v5` end-to-end experience
+- **Hub: `aham-row` action cards** — two prominent gradient tiles right under the hero ("Dawai parchi" + "Lab report"), elevating both flows to first-class entry points. The pill on Dawai parchi shows a live "N active" count when the user has reminders. Symptoms grid and wellness grid keep their place below.
+- **New screen `s-rx`: Prescription → Reminder flow (5 steps)**:
+  1. **Member triage** — Self / family member / "Add new" (mirrors Lab member step for consistency).
+  2. **Method picker** — Photo (camera capture, `accept="image/*" capture="environment"`) / PDF / Manually likhein. Manual path opens an inline editor immediately.
+  3. **Scanning animation** — paper card with a green sweeping scan-line + 3 progressing status messages (`Doctor ka likha padh raha hoon → Dawaiyaan dhoondh raha hoon → Dose aur timing nikaal raha hoon`). 2.5s total. Feels like real OCR.
+  4. **Extracted medicines review** — auto-populated cards with name, strength, dose, timing chips, duration, doctor's notes. Each card has an inline edit pencil that swaps to a 5-field editor (name / strength / dose / duration / notes). Add-medicine button for manual additions. Confidence pill (`94% confidence`) on the header.
+  5. **Reminder timing + delivery channel** — per-medicine timing chips (Subah/Dopahar/Shaam/Raat) + first-reminder time picker. Three-way delivery channel picker:
+     - 📱 **JBIQ App full-screen reminder** (default — uses existing `setTimeout` + `Notification` path).
+     - 💬 **WhatsApp message** — Hindi text to family member's phone.
+     - 📞 **Voice call** — Saathi awaaz padhke sunayegi, ideal for dadi/papa with low literacy.
+     - Phone-number input appears conditionally for WhatsApp/Voice. WhatsApp/Voice are placeholder (toast: `prototype hai, real send nahi hoga`) until Twilio/Gupshup integrated.
+  6. **Confirmation + cross-sell** — celebration tick + summary, then a warm gradient banner: "Yeh dawaiyaan ghar mangao? Sehat Bazaar (Reliance Netmeds) — tier 2/3 mein bhi delivery, COD available."
+
+- **3 sample prescriptions** in `RX_TEMPLATES` (cycled randomly per scan): Dr. Sharma diabetes-BP combo (Metformin + Telma + Becosules), Dr. Patel pediatric fever (Crocin + Azithral + ORS-L), Dr. Khan cold-cough (Cetzine + Benadryl + Vicks). Each has doctor name, clinic, confidence, and 3 medicines with realistic Indian dosing/timing.
+
+- **`MEDICINE_CATALOG`** — 9 medicines with brand name, generic salt, manufacturer (USV / Glenmark / Pfizer / GSK / Alembic / Cipla / Dr. Reddy's / J&J / P&G), MRP, discounted price, pack size, emoji. SKUs match prescription templates 1:1.
+
+- **New screen `s-order`: Sehat Bazaar order flow (4 steps)**:
+  1. **Cart** — Reliance Netmeds banner ("Tier 2 + 3 delivery · COD available · 100% original"), per-item card with brand, generic, manufacturer, pack, MRP/price/discount %, quantity stepper, and a "Generic available" cross-sell row where applicable. Bill block with subtotal, savings, free-delivery threshold (₹199), total.
+  2. **Address picker** — 2 default addresses (Ghar Lucknow / Maa-Papa Varanasi); "Naya address jodein" via `prompt()` (5 fields). Tag pill (Ghar / Maa-Papa / Naya), name, full address, phone.
+  3. **Payment** — UPI / COD / Jio Wallet (with 5% cashback teaser). COD highlighted as tier 2/3-friendly default.
+  4. **Success** — animated tick (cubic-bezier pop), order ID (`NM<base36>`), delivery summary, ETA "Kal shaam tak", payment label, WhatsApp tracking-link confirmation banner ("`+91...` pe order updates milte rahenge — Hindi mein").
+
+- **New screen `s-track`: Order tracking timeline** — 5-stage vertical timeline (Order placed → Confirmed by pharmacy → Packed → Out for delivery → Delivered) with live re-render every 3s. Each stage has a colored dot (done = green, active = orange pulse, pending = grey), connecting line, name, sub-label, and timestamp. For prototype demo, `scheduleOrderProgress()` auto-advances the order through stages every 12s so users can watch it move. Shows order summary card with ID, ETA, address, phone, payment, plus item list.
+
+- **New screen `s-bazaar`: Mera Sehat (unified hub)** — three sections:
+  - **Active reminders** — list with name+strength, who/timing/time, delivery-channel pill (App/WhatsApp/Voice color-coded), per-row delete button. Empty-state CTA to scan.
+  - **Mere orders** — order cards with item count, total, member, date, status pill (Placed/Packing/Out for Delivery/Delivered). Tap → opens tracking.
+  - **Lab reports** — flat list across all members; tap → re-renders past lab result.
+  - Replaces the orphan "Sehat Charcha · Jald aa raha hai" disabled row in tools sheet.
+
+- **Lab Interpreter upgrades**:
+  - Step 1 now offers **Photo + PDF + Manual** entry side-by-side (`lab-method-row`). Photo path uses `LAB_PHOTO_TEMPLATES` (3 sample reports — Anaemia CBC, High-cholesterol Lipid, Diabetes HbA1c) since Vision API key isn't available in prototype. Each sample is realistic with correct ranges, mixed Normal/High/Low/Critical statuses, doctor advice, and tier 2/3-appropriate Hindi summaries.
+  - Step 3 (result) gets a new warm-gradient CTA: **"Doctor ne dawai likhi hai? Reminder lagao →"** which calls `saveLabAndStartRx()` — saves the lab report and pre-seeds the RX flow with the same member, jumping straight to the method picker. Closes the lab → prescription loop.
+  - PDF Vision-fail fallback now also returns a sample analysis (instead of just an error message) tagged `[Sample analysis — prototype mode bina Vision API ke]`.
+
+- **PR Preview workflow** (`.github/workflows/pr-preview.yml`) — auto-comments on every PR with three preview surfaces:
+  - **raw.githack.com URL** — instant, no setup, works for symptoms+RX+Lab+Bazaar (chat/voice locked since no keys).
+  - **jsDelivr CDN mirror** — cached secondary URL.
+  - **Full-feature artifact** — index.html with API keys injected (uses GH Secrets), downloadable from the workflow run, runnable via `python3 -m http.server`. The comment is updated in-place on each push, not appended.
+
+- **localStorage keys**:
+  - `ss_orders` — order history with full snapshot (items, address, payment, status index, timestamps).
+  - `ss_addresses` — saved addresses (defaults seeded).
+  - **Extended `ss_rems`** — added fields: `rxId`, `strength`, `member`, `dose`, `duration_days`, `channel` (`app`/`whatsapp`/`voice`), `phone`, `notes`. Backward-compatible — legacy reminders still display.
+
+### Changed
+- **Hub layout** — `aham-row` inserted between `tri-hero` and `tri-well-grid` (wellness goals). Symptoms grid stays where it was (below wellness). The `tri-rail` had Lab + Dawai cards removed (those are promoted) and a new "Mera Sehat" tile added (replaces them, shows live `N reminder · M order` count).
+- **`startFeature('medicine')`** is now an alias for `startFeature('rx')` — old call sites continue to work but route to the new RX flow. The legacy `s-medicine` screen is unchanged but is no longer reachable from the hub.
+- **Tools bottom sheet** — "Dawai Reminder" row replaced with "Dawai parchi · reminder · order" (routes to `rx`); the disabled "Sehat Charcha — Jald aa raha hai" row replaced with "Mera Sehat" (routes to `bazaar`).
+
+### Broken / Known issues
+- **OCR is template-driven** — `rxOnPhoto`, `rxOnPdf`, `handleLabPhoto` all return random `RX_TEMPLATES` / `LAB_PHOTO_TEMPLATES` results instead of actual OCR. Real Vision API integration (OpenAI GPT-4o or Sarvam OCR or Bhashini) is the next priority. Templates are clearly marked `[Sample analysis — prototype mode]` in summaries.
+- **WhatsApp + Voice channels are placeholders** — saving a reminder with channel `whatsapp`/`voice` shows a toast ("prototype hai, real send nahi hoga") and still schedules an in-app reminder under the hood. Real Twilio/Gupshup integration is straightforward but needs paid API keys.
+- **Order timeline auto-advances on the client** via `setTimeout` (12s per stage). If the user closes the tab, progress resumes from `statusIdx` but timestamps regenerate from `placedAt + i*12s` — they're representative, not real.
+- **Address `prompt()`-based add** is functional but ugly. Polished modal is a small follow-up — kept simple to avoid CSS bloat in this session.
+- File grew from 4803 → 6051 lines. Past the DEC-009 threshold (5000) but the new code is clearly sectioned with `// ══ v5: ... ══` markers; revisit DEC-009 next session.
+- The promoted `aham-row` makes the home longer above-the-fold. Acceptable since this is the user's stated priority — but worth measuring tap-rate post-deploy.
+
+### Next session should start with
+- **Live preview QA**: open the PR's raw.githack URL on a 390px viewport. Tap "Dawai parchi" → photo (it will trigger the camera on a real phone, picker on desktop) → confirm scanning anim → confirm 3 medicines render → edit one → set timing chips → pick WhatsApp channel + enter a number → confirm → tap "Sehat Bazaar se ghar mangao" → cart → address → COD → success → tap "track" → watch the timeline animate. End-to-end happy path should take ~90 seconds.
+- **Real OCR**: wire `rxOnPhoto` / `rxOnPdf` to the existing `interpretLabPDF` Vision call (or a separate `interpretRx()` Vision call) once an OpenAI key with Vision is reliably available. Keep `RX_TEMPLATES` as fallback for ISP-blocked users.
+- **Real WhatsApp/Voice**: pick provider (Gupshup if hi-IN focus, Twilio if global). Build a thin Cloudflare Worker proxy so we don't expose provider keys client-side.
+- **Address-picker modal** — replace `prompt()` with a real form sheet.
+- **Sehat Score wiring** — `bumpScore(2)` for setting a reminder, `bumpScore(3)` for placing an order. Already in code; verify on the live URL that the score chip updates.
+
+---
+
 ## 2026-05-10 — Session 9c: v4.2 — Maa/Dadi tone for wellness, habit-cards, TTS pronunciation fix
 
 User feedback after v4.1 shipped, with screenshots: (a) Wellness mode opened with `Bhai, sustainable healthy weight ke liye...` — wrong register; the magical-moment is the Maa/Dadi warm voice and "bhai/yaar/buddy" breaks it; (b) Wellness-mode replies showed only follow-up chips (`Aur tips / Saans karein / Plan banao`) — no recipe/animation card for the practical "30-min walk + pani peena" advice the AI was giving; (c) Acupressure step 4/5 read "Choddo. Doosre haath par bhi karo." — Roman "choddo" gets read by Sarvam Bulbul TTS with the wrong Hindi stress and **sounds vulgar** to the listener.

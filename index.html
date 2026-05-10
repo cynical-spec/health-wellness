@@ -629,6 +629,214 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
 .hli-badge{font-size:11px;font-weight:700;color:var(--warn);flex-shrink:0;white-space:nowrap}
 /* Persona mini pill in header */
 .persona-mini{background:var(--bold-dim);border:1px solid rgba(53,53,243,.35);border-radius:var(--radius-pill);padding:5px 10px;font-family:'JioType',sans-serif;font-size:11px;font-weight:700;color:var(--text);cursor:pointer;white-space:nowrap}
+
+/* ══ v5: Aham kaam — hero action cards on hub ══ */
+.aham-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:6px 16px 4px}
+.aham-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:linear-gradient(135deg,rgba(57,0,173,.42),rgba(107,33,168,.20));border:1px solid rgba(168,85,247,.32);border-radius:16px;padding:14px 13px;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);text-align:left;min-height:104px;overflow:hidden;transition:transform .12s}
+.aham-card:active{transform:scale(.98)}
+.aham-card.warm{background:linear-gradient(135deg,rgba(251,146,60,.26),rgba(247,171,32,.10));border-color:rgba(251,146,60,.32)}
+.aham-card-emoji{font-size:24px;line-height:1}
+.aham-card-name{font-size:14px;font-weight:700;line-height:1.2}
+.aham-card-sub{font-size:11px;color:var(--text2);line-height:1.35}
+.aham-card-pill{position:absolute;top:8px;right:8px;font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:rgba(34,197,94,.18);color:#22c55e;border:1px solid rgba(34,197,94,.34);border-radius:var(--radius-pill);padding:2px 7px}
+.aham-card.warm .aham-card-pill{background:rgba(251,146,60,.18);color:#fb923c;border-color:rgba(251,146,60,.34)}
+
+/* ══ v5: Prescription / OCR / Bazaar / Order flow shared shell ══ */
+.rx-body{padding:14px 16px 28px}
+.rx-step-title{font-size:18px;font-weight:700;margin-bottom:6px;line-height:1.3}
+.rx-step-sub{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:18px}
+.rx-progress{display:flex;gap:6px;padding:0 16px 14px}
+.rx-progress-dot{height:4px;border-radius:2px;background:rgba(255,255,255,.12);flex:1;transition:background .3s}
+.rx-progress-dot.done{background:var(--primary)}
+
+/* Method picker — Photo / PDF / Manual */
+.rx-methods{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.rx-method-card{display:flex;align-items:center;gap:14px;background:var(--surface);border:1.5px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 14px;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);text-align:left;width:100%;transition:all .15s}
+.rx-method-card:active{background:rgba(255,255,255,.04)}
+.rx-method-card.recommended{border-color:rgba(168,85,247,.4);background:rgba(57,0,173,.16)}
+.rx-method-icon{width:46px;height:46px;border-radius:12px;background:rgba(107,33,168,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.rx-method-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.rx-method-sub{font-size:11px;color:var(--text2);line-height:1.4}
+.rx-method-tag{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#a855f7;background:rgba(168,85,247,.16);border:1px solid rgba(168,85,247,.3);border-radius:var(--radius-pill);padding:2px 7px;margin-top:5px;display:inline-block}
+
+/* OCR scanning anim */
+.rx-scan-wrap{position:relative;background:var(--surface);border-radius:14px;padding:18px;margin-bottom:14px;overflow:hidden;min-height:240px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.rx-scan-paper{width:200px;height:160px;background:#f4f1ec;border-radius:6px;position:relative;box-shadow:0 6px 14px rgba(0,0,0,.4);overflow:hidden}
+.rx-scan-paper::before{content:"℞";position:absolute;top:8px;left:10px;font-size:18px;font-weight:700;color:#222;font-family:Georgia,serif}
+.rx-scan-line{content:"";position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#22c55e,transparent);box-shadow:0 0 12px #22c55e;animation:scanLine 1.6s ease-in-out infinite;top:10px}
+@keyframes scanLine{0%{top:10px;opacity:.85}50%{top:140px;opacity:1}100%{top:10px;opacity:.85}}
+.rx-scan-paper-lines{position:absolute;top:36px;left:14px;right:14px;display:flex;flex-direction:column;gap:7px}
+.rx-scan-paper-lines .ln{height:5px;background:rgba(20,20,20,.16);border-radius:2px}
+.rx-scan-paper-lines .ln.short{width:55%}
+.rx-scan-paper-lines .ln.med{width:78%}
+.rx-scan-status{font-size:13px;font-weight:600;color:var(--text);text-align:center}
+.rx-scan-status .blink{display:inline-block;width:6px;height:6px;background:#22c55e;border-radius:50%;margin-left:6px;animation:dots 1.2s infinite;vertical-align:middle}
+
+/* Detected medicine card list */
+.rx-meds-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.rx-meds-head-l{font-size:12px;color:var(--text2);font-weight:600}
+.rx-conf-pill{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#22c55e;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.32);border-radius:var(--radius-pill);padding:3px 9px}
+.rx-med-card{background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:13px 14px;margin-bottom:9px;display:flex;align-items:flex-start;gap:12px}
+.rx-med-pillicon{width:40px;height:40px;border-radius:10px;background:rgba(251,146,60,.18);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.rx-med-info{flex:1;min-width:0}
+.rx-med-name{font-size:14px;font-weight:700;line-height:1.2}
+.rx-med-strength{font-size:11px;color:var(--text3);margin-top:1px}
+.rx-med-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.rx-med-meta-pill{font-size:10px;font-weight:600;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-pill);padding:3px 9px;color:var(--text2)}
+.rx-med-meta-pill b{color:var(--text);font-weight:700}
+.rx-med-edit{background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;align-self:flex-start;font-size:12px}
+.rx-med-edit:active{color:var(--primary)}
+.rx-med-add{width:100%;background:none;border:1.5px dashed rgba(255,255,255,.18);border-radius:12px;padding:13px;font-family:'JioType',sans-serif;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:14px;margin-top:4px}
+.rx-med-add:active{border-color:var(--primary);color:var(--text)}
+
+/* Manual edit modal */
+.rx-edit-card{background:var(--surface);border:1.5px solid rgba(168,85,247,.4);border-radius:14px;padding:14px;margin-bottom:9px}
+.rx-edit-card label{display:block;font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px;margin-top:8px}
+.rx-edit-card input,.rx-edit-card select{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'JioType',sans-serif;font-size:13px;outline:none}
+.rx-edit-card input:focus,.rx-edit-card select:focus{border-color:var(--primary)}
+.rx-edit-row{display:flex;gap:8px;margin-top:10px}
+.rx-edit-row button{flex:1;padding:10px;border-radius:var(--radius-pill);border:none;font-family:'JioType',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+.rx-edit-row .save{background:var(--primary);color:#fff}
+.rx-edit-row .cancel{background:var(--surface2);color:var(--text)}
+
+/* Reminder timing chips per medicine */
+.rx-timing-card{background:var(--surface);border-radius:14px;padding:13px 14px;margin-bottom:10px}
+.rx-timing-head{font-size:13px;font-weight:700;margin-bottom:3px}
+.rx-timing-head .strength{color:var(--text3);font-weight:500;font-size:11px;margin-left:6px}
+.rx-timing-q{font-size:11px;color:var(--text2);margin-bottom:8px}
+.rx-timing-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.rx-timing-chip{padding:7px 11px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:var(--radius-pill);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'JioType',sans-serif}
+.rx-timing-chip.selected{background:rgba(168,85,247,.18);border-color:rgba(168,85,247,.5);color:var(--text)}
+.rx-timing-time{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--text3);margin-top:4px}
+.rx-timing-time input[type=time]{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--text);padding:5px 8px;font-family:'JioType',sans-serif;font-size:12px;color-scheme:dark}
+
+/* Reminder delivery channel */
+.rx-channel{background:var(--surface);border-radius:14px;padding:14px;margin-bottom:14px}
+.rx-channel-head{font-size:13px;font-weight:700;margin-bottom:4px}
+.rx-channel-sub{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:12px}
+.rx-channel-opt{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.07);border-radius:12px;padding:12px;cursor:pointer;margin-bottom:8px;transition:all .15s}
+.rx-channel-opt.selected{border-color:var(--primary);background:rgba(57,0,173,.16)}
+.rx-channel-opt-ic{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.rx-channel-opt.selected .rx-channel-opt-ic{background:rgba(168,85,247,.22)}
+.rx-channel-opt-name{font-size:13px;font-weight:700}
+.rx-channel-opt-sub{font-size:10px;color:var(--text3);margin-top:1px;line-height:1.35}
+.rx-channel-opt-radio{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rx-channel-opt.selected .rx-channel-opt-radio{border-color:var(--primary)}
+.rx-channel-opt.selected .rx-channel-opt-radio::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.rx-channel-phone{margin-top:10px;display:none}
+.rx-channel-phone.on{display:block}
+.rx-channel-phone label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;display:block}
+.rx-channel-phone input{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'JioType',sans-serif;font-size:13px;outline:none}
+
+.rx-cta{width:100%;background:var(--primary);border:none;border-radius:var(--radius-pill);padding:14px;font-family:'JioType',sans-serif;font-size:15px;font-weight:700;color:#fff;cursor:pointer;margin-top:8px}
+.rx-cta:active{opacity:.85}
+.rx-cta.secondary{background:var(--surface);color:var(--text);border:1.5px solid rgba(255,255,255,.1);margin-top:8px}
+.rx-cta.warm{background:linear-gradient(135deg,#fb923c,#f97316);color:#fff}
+
+/* Bazaar / Cart styling */
+.bz-banner{background:linear-gradient(135deg,rgba(57,0,173,.32),rgba(30,204,176,.18));border:1px solid rgba(168,85,247,.3);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px}
+.bz-banner-ic{width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.bz-banner-l{font-size:13px;font-weight:700;line-height:1.3}
+.bz-banner-l .small{font-size:10px;color:var(--text2);font-weight:500;display:block;margin-top:2px}
+
+.bz-cart-card{background:var(--surface);border-radius:14px;padding:13px 14px;margin-bottom:9px;display:flex;align-items:flex-start;gap:12px}
+.bz-cart-pic{width:54px;height:54px;border-radius:10px;background:linear-gradient(135deg,#f4f1ec,#e6e0d4);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;color:#222}
+.bz-cart-info{flex:1;min-width:0}
+.bz-cart-name{font-size:13px;font-weight:700;line-height:1.2}
+.bz-cart-meta{font-size:11px;color:var(--text3);margin-top:2px;line-height:1.35}
+.bz-cart-pricing{display:flex;align-items:center;gap:8px;margin-top:6px}
+.bz-cart-mrp{font-size:11px;color:var(--text3);text-decoration:line-through}
+.bz-cart-price{font-size:14px;font-weight:700;color:#22c55e}
+.bz-cart-disc{font-size:10px;font-weight:700;color:#fb923c;background:rgba(251,146,60,.14);border-radius:var(--radius-pill);padding:1px 7px}
+.bz-cart-qty{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-pill);padding:2px;align-self:flex-start;margin-top:6px}
+.bz-cart-qty button{width:24px;height:24px;border:none;background:none;color:var(--text);cursor:pointer;font-size:14px;font-weight:700}
+.bz-cart-qty span{font-size:13px;font-weight:700;min-width:18px;text-align:center}
+.bz-alt{margin-top:6px;font-size:10px;color:var(--text2);background:rgba(255,255,255,.03);border-radius:8px;padding:5px 8px;line-height:1.4}
+.bz-alt b{color:#fb923c}
+
+.bz-bill{background:var(--surface);border-radius:14px;padding:14px;margin-bottom:14px}
+.bz-bill-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text2);padding:5px 0}
+.bz-bill-row.total{border-top:1px dashed rgba(255,255,255,.12);margin-top:6px;padding-top:10px;color:var(--text);font-weight:700;font-size:15px}
+.bz-bill-row.save{color:#22c55e;font-size:12px}
+
+/* Address selection */
+.bz-addr-card{display:flex;align-items:flex-start;gap:12px;background:var(--surface);border:1.5px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px;cursor:pointer;margin-bottom:9px;width:100%;text-align:left;font-family:'JioType',sans-serif;color:var(--text)}
+.bz-addr-card.selected{border-color:var(--primary);background:rgba(57,0,173,.16)}
+.bz-addr-radio{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.bz-addr-card.selected .bz-addr-radio{border-color:var(--primary)}
+.bz-addr-card.selected .bz-addr-radio::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.bz-addr-tag{font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#fb923c;background:rgba(251,146,60,.14);border-radius:var(--radius-pill);padding:2px 7px;display:inline-block;margin-bottom:4px}
+.bz-addr-name{font-size:13px;font-weight:700;line-height:1.2}
+.bz-addr-line{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.45}
+
+/* Payment methods */
+.bz-pay-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.bz-pay-opt{display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid rgba(255,255,255,.07);border-radius:12px;padding:12px;cursor:pointer}
+.bz-pay-opt.selected{border-color:var(--primary);background:rgba(57,0,173,.16)}
+.bz-pay-opt-ic{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.bz-pay-opt-name{font-size:13px;font-weight:700}
+.bz-pay-opt-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.bz-pay-radio{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:auto}
+.bz-pay-opt.selected .bz-pay-radio{border-color:var(--primary)}
+.bz-pay-opt.selected .bz-pay-radio::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--primary)}
+
+/* Order success — celebration */
+.bz-success{padding:30px 16px 24px;text-align:center}
+.bz-tick{width:96px;height:96px;border-radius:50%;background:rgba(34,197,94,.14);border:3px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:46px;margin:0 auto 18px;animation:tickPop .6s cubic-bezier(.2,1.6,.5,1)}
+@keyframes tickPop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.1);opacity:1}100%{transform:scale(1);opacity:1}}
+.bz-success h2{font-size:22px;font-weight:700;margin-bottom:6px}
+.bz-success p{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:18px}
+.bz-success-id{font-size:11px;color:var(--text3);background:var(--surface);border-radius:var(--radius-pill);padding:6px 14px;display:inline-block;margin-bottom:18px;letter-spacing:.5px;font-weight:700}
+
+/* Order tracking timeline */
+.bz-track{padding:14px 16px}
+.bz-track-summary{background:var(--surface);border-radius:14px;padding:14px;margin-bottom:14px}
+.bz-track-id{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.5px;margin-bottom:4px}
+.bz-track-eta{font-size:14px;font-weight:700;line-height:1.3}
+.bz-track-eta b{color:#22c55e}
+.bz-track-addr{font-size:11px;color:var(--text2);margin-top:4px;line-height:1.45}
+.bz-tl{position:relative;padding-left:24px}
+.bz-tl-step{position:relative;padding:0 0 22px 14px}
+.bz-tl-step:last-child{padding-bottom:0}
+.bz-tl-step::before{content:"";position:absolute;left:-12px;top:6px;width:16px;height:16px;border-radius:50%;background:var(--surface);border:2px solid rgba(255,255,255,.18)}
+.bz-tl-step.done::before{background:#22c55e;border-color:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.18)}
+.bz-tl-step.active::before{background:#fb923c;border-color:#fb923c;box-shadow:0 0 0 4px rgba(251,146,60,.22);animation:reminderPulse 2s ease infinite}
+.bz-tl-step::after{content:"";position:absolute;left:-5px;top:24px;width:2px;bottom:-4px;background:rgba(255,255,255,.12)}
+.bz-tl-step:last-child::after{display:none}
+.bz-tl-step.done::after{background:#22c55e}
+.bz-tl-name{font-size:13px;font-weight:700;color:var(--text)}
+.bz-tl-step:not(.done):not(.active) .bz-tl-name{color:var(--text3)}
+.bz-tl-meta{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.45}
+
+/* My Sehat / Bazaar list */
+.bz-section-lbl{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.4);padding:14px 16px 8px}
+.bz-list-card{background:var(--surface);border-radius:14px;padding:13px 14px;margin:0 16px 9px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.bz-list-card:active{opacity:.8}
+.bz-list-ic{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.bz-list-info{flex:1;min-width:0}
+.bz-list-name{font-size:13px;font-weight:700;line-height:1.25}
+.bz-list-sub{font-size:11px;color:var(--text3);margin-top:2px;line-height:1.4}
+.bz-list-status{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border-radius:var(--radius-pill);padding:3px 9px;flex-shrink:0}
+.bz-list-status.placed{background:rgba(168,85,247,.18);color:#a855f7;border:1px solid rgba(168,85,247,.3)}
+.bz-list-status.shipped{background:rgba(251,146,60,.18);color:#fb923c;border:1px solid rgba(251,146,60,.3)}
+.bz-list-status.delivered{background:rgba(34,197,94,.18);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+.bz-list-status.active{background:rgba(34,197,94,.16);color:#22c55e;border:1px solid rgba(34,197,94,.28)}
+.bz-empty{text-align:center;padding:30px 24px;color:var(--text3);font-size:12px;line-height:1.6}
+.bz-empty-emoji{font-size:32px;margin-bottom:8px;opacity:.6}
+
+/* Channel pill on reminder list */
+.rem-channel-pill{font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border-radius:var(--radius-pill);padding:2px 7px;margin-left:6px}
+.rem-channel-pill.app{background:rgba(168,85,247,.16);color:#a855f7}
+.rem-channel-pill.whatsapp{background:rgba(37,211,102,.18);color:#25d366}
+.rem-channel-pill.voice{background:rgba(251,146,60,.16);color:#fb923c}
+
+/* Lab — photo capture button (in addition to PDF) */
+.lab-method-row{display:flex;gap:8px;margin-bottom:14px}
+.lab-method-row > label,.lab-method-row > button{flex:1;background:var(--surface);border:1.5px dashed rgba(255,255,255,.16);border-radius:14px;padding:18px 10px;text-align:center;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);transition:all .15s}
+.lab-method-row > label:hover,.lab-method-row > button:hover{border-color:var(--primary);background:var(--primary-dim)}
+.lab-method-row .lm-ic{font-size:30px;margin-bottom:6px;display:block}
+.lab-method-row .lm-name{font-size:12px;font-weight:700;margin-bottom:2px}
+.lab-method-row .lm-sub{font-size:10px;color:var(--text3);line-height:1.4}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
@@ -778,6 +986,22 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
       <p>Bolein ya niche se chunein — sehat banao ya koi takleef ho</p>
     </div>
 
+    <!-- v5: Aham kaam — prescription + lab as first-class entry points (no longer buried in rail) -->
+    <div class="aham-row">
+      <button class="aham-card" onclick="startFeature('rx')">
+        <span class="aham-card-pill" id="aham-rx-pill">Scan</span>
+        <div class="aham-card-emoji">💊</div>
+        <div class="aham-card-name">Dawai parchi</div>
+        <div class="aham-card-sub">Scan karo · reminder lago · ghar mangao</div>
+      </button>
+      <button class="aham-card warm" onclick="startFeature('lab')">
+        <span class="aham-card-pill">AI</span>
+        <div class="aham-card-emoji">🧪</div>
+        <div class="aham-card-name">Lab report</div>
+        <div class="aham-card-sub">Photo ya PDF · asaan zubaan mein samjhao</div>
+      </button>
+    </div>
+
     <!-- v4.1: Wellness goals — proactive path for younger / general audience -->
     <div class="tri-rail-lbl">Aaj behtar feel karo</div>
     <div class="tri-grid" id="tri-well-grid">
@@ -865,6 +1089,11 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
     <!-- v4: Aur kya kar sakte ho — subtle horizontal rail of secondary use cases -->
     <div class="tri-rail-lbl">Aur kya kar sakte ho</div>
     <div class="tri-rail" id="tri-rail">
+      <button class="tri-rail-card" onclick="startFeature('bazaar')">
+        <span class="tri-rail-emoji">🗂</span>
+        <span class="tri-rail-name">Mera Sehat</span>
+        <span class="tri-rail-sub" id="tri-rail-bazaar-sub">Reminders · Orders</span>
+      </button>
       <button class="tri-rail-card" onclick="playStory('general')">
         <span class="tri-rail-emoji">📖</span>
         <span class="tri-rail-name">Dadi ki kahani</span>
@@ -874,16 +1103,6 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
         <span class="tri-rail-emoji">🌬</span>
         <span class="tri-rail-name">Saans karein</span>
         <span class="tri-rail-sub">2 min · Try</span>
-      </button>
-      <button class="tri-rail-card" onclick="startFeature('lab')">
-        <span class="tri-rail-emoji">🧪</span>
-        <span class="tri-rail-name">Lab report</span>
-        <span class="tri-rail-sub">Padhke samjhao</span>
-      </button>
-      <button class="tri-rail-card" onclick="startFeature('medicine')">
-        <span class="tri-rail-emoji">💊</span>
-        <span class="tri-rail-name">Dawai yaad</span>
-        <span class="tri-rail-sub">Reminder</span>
       </button>
       <button class="tri-rail-card" onclick="startFeature('meal')">
         <span class="tri-rail-emoji">🍽</span>
@@ -928,9 +1147,14 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
     <div class="bs-row-text"><div class="bs-row-name">Lab Report Padho</div><div class="bs-row-sub">Apni report ka asaan matlab</div></div>
   </button>
   <div class="bs-divider"></div>
-  <button class="bs-row" onclick="closeToolsSheet();startFeature('medicine')">
+  <button class="bs-row" onclick="closeToolsSheet();startFeature('rx')">
     <div class="bs-row-icon" style="background:rgba(251,146,60,.15);color:#fb923c">💊</div>
-    <div class="bs-row-text"><div class="bs-row-name">Dawai Reminder</div><div class="bs-row-sub">Dawai yaad dila dena mujhe</div></div>
+    <div class="bs-row-text"><div class="bs-row-name">Dawai parchi · reminder · order</div><div class="bs-row-sub">Scan, yaad dilao, ghar mangao</div></div>
+  </button>
+  <div class="bs-divider"></div>
+  <button class="bs-row" onclick="closeToolsSheet();startFeature('bazaar')">
+    <div class="bs-row-icon" style="background:rgba(168,85,247,.16);color:#a855f7">🗂</div>
+    <div class="bs-row-text"><div class="bs-row-name">Mera Sehat</div><div class="bs-row-sub">Reminders · Orders · Reports</div></div>
   </button>
   <div class="bs-divider"></div>
   <button class="bs-row" onclick="closeToolsSheet();startFeature('meal')">
@@ -1086,6 +1310,52 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
 </div>
 
 
+
+<!-- ══════════════ v5: PRESCRIPTION SCAN + REMINDER + ORDER FLOW ══════════════ -->
+<div class="screen" id="s-rx">
+  <div class="hdr">
+    <button class="hdr-btn" onclick="rxBack()">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M15 20a1 1 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a1 1 0 01-.71 1.71z" fill="currentColor"/></svg>
+    </button>
+    <div class="hdr-center"><div class="hdr-text"><h2 id="rx-hdr-title">Dawai Reminder</h2><p style="color:var(--text2)" id="rx-hdr-sub">Prescription scan ya manual</p></div></div>
+  </div>
+  <div id="rx-progress-wrap"></div>
+  <div class="body" id="rx-body" style="overflow-y:auto"></div>
+</div>
+
+<!-- ══════════════ v5: SEHAT BAZAAR — ORDER FLOW (cart, address, payment, success) ══════════════ -->
+<div class="screen" id="s-order">
+  <div class="hdr">
+    <button class="hdr-btn" onclick="orderBack()">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M15 20a1 1 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a1 1 0 01-.71 1.71z" fill="currentColor"/></svg>
+    </button>
+    <div class="hdr-center"><div class="hdr-text"><h2 id="order-hdr-title">Sehat Bazaar</h2><p style="color:var(--text2)" id="order-hdr-sub">Reliance Netmeds ke saath</p></div></div>
+  </div>
+  <div id="order-progress-wrap"></div>
+  <div class="body" id="order-body" style="overflow-y:auto"></div>
+</div>
+
+<!-- ══════════════ v5: ORDER TRACKING SCREEN ══════════════ -->
+<div class="screen" id="s-track">
+  <div class="hdr">
+    <button class="hdr-btn" onclick="goBack()">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M15 20a1 1 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a1 1 0 01-.71 1.71z" fill="currentColor"/></svg>
+    </button>
+    <div class="hdr-center"><div class="hdr-text"><h2>Order Track Karein</h2></div></div>
+  </div>
+  <div class="body" id="track-body" style="overflow-y:auto"></div>
+</div>
+
+<!-- ══════════════ v5: MERA SEHAT — REMINDERS + ORDERS + REPORTS ══════════════ -->
+<div class="screen" id="s-bazaar">
+  <div class="hdr">
+    <button class="hdr-btn" onclick="goBack()">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M15 20a1 1 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a1 1 0 01-.71 1.71z" fill="currentColor"/></svg>
+    </button>
+    <div class="hdr-center"><div class="hdr-text"><h2>Mera Sehat</h2><p style="color:var(--text2)">Reminders, orders, reports</p></div></div>
+  </div>
+  <div class="body" id="bazaar-body" style="overflow-y:auto"></div>
+</div>
 
 <!-- v3.7: Movement skill player overlay -->
 <div id="move-ov" role="dialog" aria-label="Movement player">
@@ -1721,7 +1991,9 @@ function goToFeature(f) {
 function startFeature(f) {
   trackFeature(f);
   if (f === 'nushke') { ST.chatCtx = 'nushke'; ST.chatHistory = []; ST.isFirstMsg = true; goTo('s-chat'); document.getElementById('chat-ctx-label').textContent = 'Ghar ke Nushke'; renderNushkeStart(); }
-  else if (f === 'medicine') { goTo('s-medicine'); renderMedStep(0); }
+  else if (f === 'medicine') { startRx(); }                  // legacy alias → new RX flow
+  else if (f === 'rx') { startRx(); }
+  else if (f === 'bazaar') { startBazaar(); }
   else if (f === 'meal') { goTo('s-meal'); renderMealStep(0); }
   else if (f === 'family') { goTo('s-family'); renderFamilyList(); }
   else if (f === 'breathe') { goTo('s-breathwork'); }
@@ -1848,6 +2120,8 @@ function initHubDynamic() {
   refreshDailyDots();
   // Refresh story card if a story is loaded
   refreshStoryCard();
+  // v5: Mera Sehat tile counts + RX pill badge
+  if (typeof updateHubBazaarSub === 'function') updateHubBazaarSub();
 }
 
 function refreshStreak() {
@@ -2883,14 +3157,23 @@ function renderLabStep(step) {
     el.innerHTML = `
       <div class="lab-body">
         <div class="lab-step-title">${memberLabel} ki nayi report</div>
-        <div class="lab-step-sub">PDF upload karein — Sehat Saathi padhke aap ko asaan zubaan mein samjhayega</div>
-        <label class="lab-upload-zone" for="lab-pdf-input">
-          <div class="lab-upload-icon">🧪</div>
-          <div class="lab-upload-text">Lab report PDF chunein</div>
-          <div class="lab-upload-hint">Sirf clinical lab reports — prescriptions nahi (max 5 pages, 10MB)</div>
-          <input type="file" id="lab-pdf-input" accept="application/pdf" style="display:none" onchange="handleLabUpload(event)">
-        </label>
+        <div class="lab-step-sub">Photo khichein, PDF upload karein, ya values manually paste karein</div>
+        <div class="lab-method-row">
+          <label for="lab-photo-input">
+            <span class="lm-ic">📷</span>
+            <div class="lm-name">Photo lijiye</div>
+            <div class="lm-sub">Camera khulega · saaf khichein</div>
+            <input type="file" id="lab-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleLabPhoto(event)">
+          </label>
+          <label for="lab-pdf-input">
+            <span class="lm-ic">📄</span>
+            <div class="lm-name">PDF chunein</div>
+            <div class="lm-sub">Softcopy report</div>
+            <input type="file" id="lab-pdf-input" accept="application/pdf" style="display:none" onchange="handleLabUpload(event)">
+          </label>
+        </div>
         <div class="lab-warn">⚠️ Yeh AI-based interpretation hai. Doctor se confirm karna zaroori hai.</div>
+        <div style="margin-top:10px;font-size:11px;color:var(--text3);text-align:center">Prototype mein Vision API ke bina sample analysis dikhta hai</div>
         ${pastHtml}
       </div>`;
   } else if (step === 2) {
@@ -2948,7 +3231,8 @@ function renderLabStep(step) {
           ${result.summary || '-'}
         </div>
         ${result.doctorAdvice ? `<div class="lab-doctor">👨‍⚕️ ${result.doctorAdvice}</div>` : ''}
-        <button class="lab-cta" onclick="saveLabAndContinue()">Save karein aur aage badhein →</button>
+        <button class="lab-cta" onclick="saveLabAndContinue()">Save karein →</button>
+        <button class="lab-cta" style="background:linear-gradient(135deg,#fb923c,#f97316);margin-top:8px" onclick="saveLabAndStartRx()">Doctor ne dawai likhi hai? Reminder lagao →</button>
         <button class="lab-cta secondary" onclick="renderLabStep(1)">Doosri report dekhein</button>
       </div>`;
   }
@@ -2990,17 +3274,57 @@ async function handleLabUpload(e) {
   } catch (err) {
     console.error('[lab]', err);
     if (err && err.message === 'NO_VISION_KEY') {
-      // Friendly fallback — Vision needs OpenAI key; show a helpful message
-      ST.labData.result = {
-        reportType: 'NOT_A_LAB_REPORT',
-        summary: 'Lab Interpreter ke liye OpenAI Vision API ki zaroorat hai. Abhi sirf Groq active hai (Vision support nahi). Apni OpenAI key GitHub Secrets mein add karein, ya report ke values seedha chat mein paste karein — Sehat Saathi padh dega.'
-      };
+      // Friendly fallback — Vision unavailable, use template-based sample
+      const tpl = LAB_PHOTO_TEMPLATES[Math.floor(Math.random()*LAB_PHOTO_TEMPLATES.length)];
+      ST.labData.result = Object.assign({}, tpl, {
+        summary: '[Sample analysis — prototype mode bina Vision API ke] ' + tpl.summary
+      });
+      ST.labData.fileName = file.name;
       renderLabStep(3);
+      showToast('Sample analysis dikhayi — Vision API ke bina');
       return;
     }
     showToast('Error: ' + ((err && err.message) || 'Report padhne mein dikkat'));
     setTimeout(() => renderLabStep(1), 1500);
   }
+}
+
+// — Photo capture path: uses template result (no Vision API in prototype) —
+function handleLabPhoto(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  if (f.size > 10 * 1024 * 1024) { showToast('Photo 10MB se badi hai'); return; }
+  renderLabStep(2);
+  setTimeout(() => {
+    const tpl = LAB_PHOTO_TEMPLATES[Math.floor(Math.random() * LAB_PHOTO_TEMPLATES.length)];
+    ST.labData.result = Object.assign({}, tpl, {
+      summary: '[Sample analysis — prototype mode] ' + tpl.summary
+    });
+    ST.labData.fileName = f.name;
+    renderLabStep(3);
+  }, 2200);
+}
+
+// — After saving lab, kick off prescription flow for the same member —
+function saveLabAndStartRx() {
+  const result = ST.labData.result;
+  if (result && result.reportType !== 'NOT_A_LAB_REPORT' && ST.labData.member) {
+    const report = {
+      date: new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }),
+      fileName: ST.labData.fileName || 'report',
+      reportType: result.reportType,
+      summary: result.summary,
+      markers: result.markers,
+      doctorAdvice: result.doctorAdvice
+    };
+    saveLabReport(ST.labData.member, report);
+  }
+  // Pre-seed the RX flow with the same member
+  ST.rxStep = 0;
+  ST.rxData = { meds: [], member: ST.labData.member || 'self', memberLabel: ST.labData.memberLabel || 'Aap', channel:'app', phone:'' };
+  goTo('s-rx');
+  renderRxStep(1);
+  showToast('Lab save ho gayi · ab parchi scan karein');
 }
 
 function saveLabAndContinue() {
@@ -3379,6 +3703,930 @@ function dismissReminder() {
 // reload reminders on start
 function reloadSavedReminders() {
   loadReminders().forEach(rem => scheduleReminder(rem));
+}
+
+// ══════════════ v5: PRESCRIPTION SCAN + REMINDER + ORDER FLOW ══════════════
+//
+// This is the end-to-end Bharat experience: scan/upload prescription → OCR mock
+// → set reminders (with WhatsApp/voice-call options for low-literacy family) →
+// order via "Sehat Bazaar" (Reliance Netmeds template) → COD/UPI mock →
+// timeline tracking → delivered. Templates are used because real Vision API
+// is unavailable in the prototype — flagged with `[OCR template]` in summaries
+// so the user knows.
+
+// — Sample prescriptions (cycled on each scan to feel real) —
+const RX_TEMPLATES = [
+  {
+    label: 'Dr. Sharma · Diabetes + BP',
+    doctor: 'Dr. Anil Sharma, MBBS MD',
+    clinic: 'Ashok Clinic, Lucknow',
+    date: 'Aaj',
+    confidence: 0.94,
+    meds: [
+      { sku:'metformin500',  name:'Metformin', strength:'500 mg',  form:'tablet', qty:30, dose:'1 tablet', timing:['Subah','Raat'], duration:30, when:'after_food', notes:'Khaane ke baad' },
+      { sku:'telma40',        name:'Telma',     strength:'40 mg',   form:'tablet', qty:30, dose:'1 tablet', timing:['Subah'],         duration:30, when:'before_food', notes:'Subah khaali pet' },
+      { sku:'becosules',      name:'Becosules', strength:'1 cap',   form:'capsule',qty:15, dose:'1 capsule',timing:['Dopahar'],       duration:15, when:'after_food', notes:'Lunch ke baad' }
+    ]
+  },
+  {
+    label: 'Dr. Patel · Pediatric fever',
+    doctor: 'Dr. Meena Patel, MBBS',
+    clinic: 'Shanti Hospital, Indore',
+    date: 'Aaj',
+    confidence: 0.91,
+    meds: [
+      { sku:'crocin250',  name:'Crocin (Paracetamol)', strength:'250 mg/5 ml', form:'syrup', qty:1,  dose:'5 ml',     timing:['Subah','Dopahar','Shaam','Raat'], duration:3, when:'any',         notes:'Bukhar 100°F+ par hi dein' },
+      { sku:'azithral200',name:'Azithral',             strength:'200 mg/5 ml',  form:'syrup', qty:1,  dose:'5 ml',     timing:['Subah'],                          duration:5, when:'before_food', notes:'1 ghanta khaane se pehle' },
+      { sku:'orsl',       name:'ORS-L',                strength:'200 ml',       form:'sachet',qty:6,  dose:'1 glass',  timing:['Subah','Dopahar','Shaam'],         duration:3, when:'any',         notes:'Loose motion ke saath' }
+    ]
+  },
+  {
+    label: 'Dr. Khan · Cold + Cough',
+    doctor: 'Dr. Imran Khan, MBBS',
+    clinic: 'Care Clinic, Patna',
+    date: 'Aaj',
+    confidence: 0.89,
+    meds: [
+      { sku:'cetzine10',   name:'Cetzine',         strength:'10 mg',      form:'tablet', qty:10, dose:'1 tablet', timing:['Raat'],            duration:10, when:'after_food', notes:'Sone se pehle' },
+      { sku:'benadryl100', name:'Benadryl Cough',  strength:'100 ml',     form:'syrup',  qty:1,  dose:'10 ml',    timing:['Subah','Raat'],     duration:5,  when:'after_food', notes:'Bottle hilakar' },
+      { sku:'vicks',       name:'Vicks Vaporub',   strength:'25 g',       form:'balm',   qty:1,  dose:'lagao',    timing:['Raat'],             duration:7,  when:'any',         notes:'Seene aur peeth par' }
+    ]
+  }
+];
+
+// — Medicine catalog (Indian pricing, MRP + discount; mock fulfilment data) —
+const MEDICINE_CATALOG = {
+  metformin500:  { brand:'Metformin 500 mg (Glycomet)', mfr:'USV', mrp:32,  price:22, pack:'10 tab',  emoji:'💊', generic:'Metformin Hydrochloride 500 mg' },
+  telma40:        { brand:'Telma 40 mg',                 mfr:'Glenmark', mrp:178, price:138, pack:'15 tab',  emoji:'💊', generic:'Telmisartan 40 mg' },
+  becosules:      { brand:'Becosules Capsules',          mfr:'Pfizer',   mrp:65,  price:54,  pack:'15 cap',  emoji:'🟡', generic:'B-complex with Vitamin C' },
+  crocin250:      { brand:'Crocin Advance Syrup',        mfr:'GSK',      mrp:62,  price:55,  pack:'60 ml',   emoji:'🍼', generic:'Paracetamol 250 mg/5 ml' },
+  azithral200:    { brand:'Azithral 200 Syrup',          mfr:'Alembic',  mrp:115, price:96,  pack:'15 ml',   emoji:'🍼', generic:'Azithromycin 200 mg/5 ml' },
+  orsl:           { brand:'ORS-L Apple',                 mfr:'Cipla',    mrp:30,  price:24,  pack:'200 ml',  emoji:'🥤', generic:'Oral Rehydration Salts' },
+  cetzine10:      { brand:'Cetzine 10 mg',               mfr:'Dr.Reddys',mrp:48,  price:39,  pack:'10 tab',  emoji:'💊', generic:'Cetirizine 10 mg' },
+  benadryl100:    { brand:'Benadryl Cough Syrup',        mfr:'J&J',      mrp:135, price:115, pack:'100 ml',  emoji:'🍼', generic:'Diphenhydramine + Ammonium Chloride' },
+  vicks:          { brand:'Vicks Vaporub',               mfr:'P&G',      mrp:165, price:148, pack:'25 g',    emoji:'🫙', generic:'Camphor + Menthol + Eucalyptus' }
+};
+
+// — Photo-OCR templates for Lab Reports (when Vision unavailable) —
+const LAB_PHOTO_TEMPLATES = [
+  {
+    reportType:'CBC (Complete Blood Count)',
+    reportDate:'Aaj',
+    confidence:0.93,
+    markers:[
+      { name:'Hemoglobin',     value:'10.8 g/dL', range:'12-15 g/dL',  status:'Low' },
+      { name:'WBC Count',       value:'7,500 /uL', range:'4,000-11,000',status:'Normal' },
+      { name:'Platelets',       value:'2.4 lakh',  range:'1.5-4.5 lakh',status:'Normal' },
+      { name:'RBC Count',       value:'4.1 mil/uL',range:'4.5-5.5 mil', status:'Low' }
+    ],
+    summary:'Aap ka khoon thoda kam hai (Hemoglobin 10.8 — normal 12 se kam). Yeh anaemia ke shuruaati lakshan hain — ghabraane ki baat nahi, lekin doctor se zaroor milein. Roz palak, anar, gud-chana lijiye, aur Iron tablet doctor likhein toh shuru karein.',
+    doctorAdvice:'7 din mein doctor se milkar Iron supplement par baat karein. Heavy bleeding ho toh turant.'
+  },
+  {
+    reportType:'Lipid Profile',
+    reportDate:'Aaj',
+    confidence:0.95,
+    markers:[
+      { name:'Total Cholesterol',  value:'232 mg/dL', range:'<200',     status:'High' },
+      { name:'LDL',                value:'158 mg/dL', range:'<100',     status:'High' },
+      { name:'HDL',                value:'38 mg/dL',  range:'>40',      status:'Low' },
+      { name:'Triglycerides',      value:'180 mg/dL', range:'<150',     status:'High' }
+    ],
+    summary:'Cholesterol normal se thoda zyada hai. Tala-bhuna kam karein, roz 30 min walk lagaye, ghee/butter ke jagah olive oil. Saans phoolne ya seene mein dard ho toh turant doctor.',
+    doctorAdvice:'15 din mein cardiology consultation karein. Statins ki zaroorat ho sakti hai.'
+  },
+  {
+    reportType:'Blood Sugar (HbA1c + Fasting)',
+    reportDate:'Aaj',
+    confidence:0.96,
+    markers:[
+      { name:'HbA1c',           value:'7.4%',      range:'<5.7%',       status:'High' },
+      { name:'Fasting Glucose', value:'142 mg/dL', range:'70-100',      status:'High' },
+      { name:'PP Glucose',      value:'205 mg/dL', range:'<140',        status:'High' }
+    ],
+    summary:'Sugar level controlled nahi hai — diabetes hai (HbA1c 7.4% normal 5.7% se zyada). Cheeni-meetha bilkul band, atte mein chana milayein, roz 45 min walk. Pyas zyada lage, baar-baar peshaab aaye toh doctor turant.',
+    doctorAdvice:'Diabetologist se 1 hafte mein milein. Metformin/Insulin par baat ho sakti hai.'
+  }
+];
+
+// — Mock saved addresses (tier 2/3 ready) —
+const DEFAULT_ADDRESSES = [
+  { id:'home', tag:'Ghar', name:'Aap', line:'House 24-B, Kashi Mohalla, Civil Lines', city:'Lucknow', pin:'226001', phone:'+91 98XXXXXX12' },
+  { id:'maa',  tag:'Maa-Papa',  name:'Sushila Devi', line:'Plot 7, Indira Nagar', city:'Varanasi', pin:'221002', phone:'+91 94XXXXXX55' }
+];
+function loadAddresses(){ try { return JSON.parse(localStorage.getItem('ss_addresses')||'null') || DEFAULT_ADDRESSES; } catch(e){ return DEFAULT_ADDRESSES; } }
+function saveAddresses(a){ localStorage.setItem('ss_addresses', JSON.stringify(a)); }
+
+// — Orders persistence —
+function loadOrders(){ try { return JSON.parse(localStorage.getItem('ss_orders')||'[]'); } catch(e){ return []; } }
+function saveOrders(o){ localStorage.setItem('ss_orders', JSON.stringify(o)); }
+
+// — RX state holders on ST —
+ST.rxStep = 0;
+ST.rxData = {};
+ST.orderStep = 0;
+ST.orderData = {};
+ST.editingMedIdx = null;
+
+// ─── Prescription flow entry ───
+function startRx() {
+  ST.rxStep = 0;
+  ST.rxData = { meds: [], member:'self', memberLabel:'Aap', channel:'app', phone:'' };
+  goTo('s-rx');
+  renderRxStep(0);
+}
+function rxBack(){ if (ST.rxStep > 0) renderRxStep(ST.rxStep - 1); else goBack(); }
+
+function renderRxProgress(step, total){
+  const wrap = document.getElementById('rx-progress-wrap');
+  if (!wrap) return;
+  let h = '<div class="rx-progress">';
+  for (let i = 0; i < total; i++) h += `<div class="rx-progress-dot${i<=step?' done':''}"></div>`;
+  h += '</div>';
+  wrap.innerHTML = h;
+}
+
+function renderRxStep(step){
+  ST.rxStep = step;
+  const el = document.getElementById('rx-body'); if (!el) return;
+  const titleEl = document.getElementById('rx-hdr-title');
+  const subEl = document.getElementById('rx-hdr-sub');
+  renderRxProgress(step, 5);
+
+  if (step === 0) {
+    // Member triage
+    if (titleEl) titleEl.textContent = 'Yeh dawai kiske liye?';
+    if (subEl) subEl.textContent = 'Member chunein';
+    const fam = loadFamily();
+    const profile = ST.userProfile || loadProfile();
+    const selfLabel = profile && profile.age ? `Aap (${profile.age} saal)` : 'Aap (self)';
+    let html = `<div class="rx-body">
+      <div class="rx-step-title">Yeh dawai kiske liye?</div>
+      <div class="rx-step-sub">Hum is member ke liye reminder + order history rakhenge</div>
+      <div class="lab-member-list">`;
+    html += `<button class="lab-member-btn" onclick="rxSelectMember('self','${selfLabel.replace(/'/g,"")}')">
+      <div class="lab-mem-avatar">${(profile && profile.sex==='Female')?'👩':(profile && profile.sex==='Male')?'👨':'🧑'}</div>
+      <div class="lab-mem-info"><div class="lab-mem-name">${selfLabel}</div><div class="lab-mem-meta">Apni dawaiyaan</div></div>
+    </button>`;
+    for (const m of fam) {
+      const key = 'fam_' + m.name;
+      html += `<button class="lab-member-btn" onclick="rxSelectMember('${key}','${m.name.replace(/'/g,"")}')">
+        <div class="lab-mem-avatar">${m.name.charAt(0).toUpperCase()}</div>
+        <div class="lab-mem-info"><div class="lab-mem-name">${m.name}</div><div class="lab-mem-meta">${m.age||'-'} saal · ${(m.conditions||[]).join(', ') || 'Koi condition nahi'}</div></div>
+      </button>`;
+    }
+    html += `<button class="lab-member-btn" onclick="goTo('s-family');setTimeout(()=>{renderFamilyList();showAddFamily();},100)">
+      <div class="lab-mem-avatar" style="background:var(--surface2);font-size:20px">+</div>
+      <div class="lab-mem-info"><div class="lab-mem-name">Naya member jodein</div><div class="lab-mem-meta">Maa, papa, bachha, koi bhi</div></div>
+    </button></div></div>`;
+    el.innerHTML = html;
+    return;
+  }
+
+  if (step === 1) {
+    if (titleEl) titleEl.textContent = 'Parchi kaise daal sakte hain?';
+    if (subEl) subEl.textContent = ST.rxData.memberLabel + ' ke liye';
+    el.innerHTML = `<div class="rx-body">
+      <div class="rx-step-title">${ST.rxData.memberLabel} ki parchi</div>
+      <div class="rx-step-sub">Doctor ki parchi ki photo khichein, ya manually likhein</div>
+      <div class="rx-methods">
+        <label class="rx-method-card recommended" for="rx-photo-input">
+          <div class="rx-method-icon">📷</div>
+          <div style="flex:1">
+            <div class="rx-method-name">Parchi ka photo khichein</div>
+            <div class="rx-method-sub">Camera khulega — saaf photo lijiye</div>
+            <span class="rx-method-tag">Sabse aasaan · AI padhega</span>
+          </div>
+          <input type="file" id="rx-photo-input" accept="image/*" capture="environment" style="display:none" onchange="rxOnPhoto(event)">
+        </label>
+        <label class="rx-method-card" for="rx-pdf-input">
+          <div class="rx-method-icon" style="background:rgba(30,204,176,.18)">📄</div>
+          <div style="flex:1">
+            <div class="rx-method-name">PDF upload karein</div>
+            <div class="rx-method-sub">Doctor ne softcopy bheji ho — PDF chunein</div>
+          </div>
+          <input type="file" id="rx-pdf-input" accept="application/pdf" style="display:none" onchange="rxOnPdf(event)">
+        </label>
+        <button class="rx-method-card" onclick="rxManualStart()">
+          <div class="rx-method-icon" style="background:rgba(251,146,60,.18)">✍️</div>
+          <div style="flex:1;text-align:left">
+            <div class="rx-method-name">Manually likhein</div>
+            <div class="rx-method-sub">Naam yaad hai? Seedha add kar dein</div>
+          </div>
+        </button>
+      </div>
+      <div class="lab-warn">Yeh prototype hai — abhi Vision API ke bina sample data ka istemaal ho raha hai. Real prescription bhi save hogi.</div>
+    </div>`;
+    return;
+  }
+
+  if (step === 2) {
+    // Scanning anim then auto-advance to review
+    if (titleEl) titleEl.textContent = 'Padh raha hoon...';
+    if (subEl) subEl.textContent = 'Thoda waqt';
+    el.innerHTML = `<div class="rx-body">
+      <div class="rx-scan-wrap">
+        <div class="rx-scan-paper">
+          <div class="rx-scan-line"></div>
+          <div class="rx-scan-paper-lines">
+            <div class="ln med"></div><div class="ln short"></div>
+            <div class="ln"></div><div class="ln short"></div>
+            <div class="ln med"></div><div class="ln"></div>
+            <div class="ln short"></div><div class="ln med"></div>
+          </div>
+        </div>
+        <div class="rx-scan-status" id="rx-scan-msg">Doctor ka likha padh raha hoon<span class="blink"></span></div>
+      </div>
+    </div>`;
+    setTimeout(() => { const m=document.getElementById('rx-scan-msg'); if(m) m.innerHTML='Dawaiyaan dhoondh raha hoon<span class="blink"></span>'; }, 900);
+    setTimeout(() => { const m=document.getElementById('rx-scan-msg'); if(m) m.innerHTML='Dose aur timing nikaal raha hoon<span class="blink"></span>'; }, 1700);
+    setTimeout(() => renderRxStep(3), 2500);
+    return;
+  }
+
+  if (step === 3) {
+    // Review extracted meds
+    if (titleEl) titleEl.textContent = 'Yeh dawaiyaan dikhi';
+    if (subEl) subEl.textContent = 'Galti ho toh edit karein';
+    let html = `<div class="rx-body">
+      <div class="rx-step-title">Parchi padh li ✓</div>
+      <div class="rx-step-sub">${ST.rxData.doctor || 'Manual entry'}${ST.rxData.clinic ? ' · ' + ST.rxData.clinic : ''}</div>
+      <div class="rx-meds-head">
+        <div class="rx-meds-head-l">${ST.rxData.meds.length} dawaiyaan mili</div>
+        ${ST.rxData.confidence ? `<div class="rx-conf-pill">${Math.round(ST.rxData.confidence*100)}% confidence</div>` : ''}
+      </div>`;
+    ST.rxData.meds.forEach((m, i) => {
+      if (ST.editingMedIdx === i) {
+        html += renderRxEditCard(i);
+      } else {
+        const cat = MEDICINE_CATALOG[m.sku];
+        const emoji = (cat && cat.emoji) || (m.form === 'syrup' ? '🍼' : '💊');
+        html += `<div class="rx-med-card">
+          <div class="rx-med-pillicon">${emoji}</div>
+          <div class="rx-med-info">
+            <div class="rx-med-name">${m.name}</div>
+            <div class="rx-med-strength">${m.strength} · ${m.form}</div>
+            <div class="rx-med-meta">
+              <div class="rx-med-meta-pill"><b>${m.dose}</b></div>
+              <div class="rx-med-meta-pill">${(m.timing||[]).join(', ') || '-'}</div>
+              <div class="rx-med-meta-pill"><b>${m.duration}</b> din</div>
+            </div>
+            ${m.notes ? `<div style="font-size:10px;color:var(--text3);margin-top:6px;font-style:italic">📝 ${m.notes}</div>` : ''}
+          </div>
+          <button class="rx-med-edit" onclick="rxEditMed(${i})" aria-label="Edit">✎</button>
+        </div>`;
+      }
+    });
+    html += `<button class="rx-med-add" onclick="rxAddMed()">+ Aur dawai jodein</button>`;
+    html += `<button class="rx-cta" onclick="renderRxStep(4)">${ST.rxData.meds.length === 0 ? 'Pehle ek dawai jodein' : 'Reminder lagao →'}</button>`;
+    if (ST.rxData.meds.length === 0) html = html.replace('<button class="rx-cta"', '<button class="rx-cta" disabled style="opacity:.5;pointer-events:none"');
+    html += `<button class="rx-cta secondary" onclick="renderRxStep(1)">Phir se scan karein</button>
+    </div>`;
+    el.innerHTML = html;
+    return;
+  }
+
+  if (step === 4) {
+    // Reminder timings + delivery channel
+    if (titleEl) titleEl.textContent = 'Reminder lagao';
+    if (subEl) subEl.textContent = 'Kab yaad dilana hai?';
+    let html = `<div class="rx-body">
+      <div class="rx-step-title">Reminder kab lagana hai?</div>
+      <div class="rx-step-sub">Har dawai ka time chunein — hum yaad dila denge</div>`;
+    ST.rxData.meds.forEach((m, i) => {
+      const opts = ['Subah','Dopahar','Shaam','Raat'];
+      const def = { 'Subah':'08:00','Dopahar':'13:00','Shaam':'18:00','Raat':'21:30' };
+      m._time = m._time || (m.timing && m.timing[0] ? def[m.timing[0]] : '08:00');
+      html += `<div class="rx-timing-card">
+        <div class="rx-timing-head">${m.name}<span class="strength">${m.strength} · ${m.dose}</span></div>
+        <div class="rx-timing-q">Kab leni hai? (ek ya zyada chunein)</div>
+        <div class="rx-timing-chips" data-med="${i}">`;
+      opts.forEach(o => {
+        const sel = (m.timing||[]).includes(o);
+        html += `<button class="rx-timing-chip ${sel?'selected':''}" onclick="rxToggleTiming(${i},'${o}',this)">${o}</button>`;
+      });
+      html += `</div><div class="rx-timing-time">⏰ Pehla reminder time:<input type="time" value="${m._time}" onchange="rxSetTime(${i}, this.value)"></div>
+      </div>`;
+    });
+
+    // Delivery channel
+    const ch = ST.rxData.channel || 'app';
+    html += `<div class="rx-channel">
+      <div class="rx-channel-head">Reminder kahan bheje?</div>
+      <div class="rx-channel-sub">Ghar mein jin ki literacy kam hai unhe WhatsApp ya phone call best hai</div>
+      <button class="rx-channel-opt ${ch==='app'?'selected':''}" onclick="rxSetChannel('app')" style="border:none;width:100%;font-family:inherit;color:inherit;text-align:left">
+        <div class="rx-channel-opt-ic">📱</div>
+        <div style="flex:1"><div class="rx-channel-opt-name">JBIQ App pe full-screen reminder</div><div class="rx-channel-opt-sub">Phone unlock karte hi peeli pulse + notification</div></div>
+        <div class="rx-channel-opt-radio"></div>
+      </button>
+      <button class="rx-channel-opt ${ch==='whatsapp'?'selected':''}" onclick="rxSetChannel('whatsapp')" style="border:none;width:100%;font-family:inherit;color:inherit;text-align:left">
+        <div class="rx-channel-opt-ic" style="color:#25d366">💬</div>
+        <div style="flex:1"><div class="rx-channel-opt-name">WhatsApp pe message</div><div class="rx-channel-opt-sub">"Maa, dawai ka waqt — Metformin 500" — Hindi mein</div></div>
+        <div class="rx-channel-opt-radio"></div>
+      </button>
+      <button class="rx-channel-opt ${ch==='voice'?'selected':''}" onclick="rxSetChannel('voice')" style="border:none;width:100%;font-family:inherit;color:inherit;text-align:left">
+        <div class="rx-channel-opt-ic" style="color:#fb923c">📞</div>
+        <div style="flex:1"><div class="rx-channel-opt-name">Phone call (dadi ke liye best)</div><div class="rx-channel-opt-sub">Saathi awaaz mein bolegi — padhna nahi aata? No problem.</div></div>
+        <div class="rx-channel-opt-radio"></div>
+      </button>
+      <div class="rx-channel-phone${ch==='whatsapp'||ch==='voice'?' on':''}">
+        <label>${ch==='voice'?'Call kis number par karna hai?':'WhatsApp kis number par bhejna hai?'}</label>
+        <input type="tel" placeholder="+91 98XXXXXXXX" value="${ST.rxData.phone||''}" oninput="ST.rxData.phone=this.value">
+      </div>
+    </div>`;
+
+    html += `<button class="rx-cta" onclick="rxSaveReminders()">Reminders set karein →</button>
+      <button class="rx-cta secondary" onclick="renderRxStep(3)">Wapas dawaiyaan dekhein</button>
+    </div>`;
+    el.innerHTML = html;
+    return;
+  }
+
+  if (step === 5) {
+    // Confirmation + offer to order
+    if (titleEl) titleEl.textContent = 'Reminders set ho gaye ✓';
+    if (subEl) subEl.textContent = ST.rxData.memberLabel + ' ke liye';
+    const channelLabel = { app:'JBIQ App', whatsapp:'WhatsApp', voice:'Voice call' }[ST.rxData.channel] || 'App';
+    const totalDays = Math.max(...ST.rxData.meds.map(m => m.duration || 1));
+    let html = `<div class="bz-success">
+      <div class="bz-tick">✓</div>
+      <h2>Reminders ready!</h2>
+      <p>${ST.rxData.meds.length} dawaiyaan ke liye reminder set hai · ${channelLabel} pe yaad dilayenge</p>
+      <div class="bz-success-id">${totalDays} din chalega · ${ST.rxData.memberLabel}</div>
+    </div>
+    <div style="padding:0 16px 24px">
+      <div class="bz-banner">
+        <div class="bz-banner-ic">🛒</div>
+        <div style="flex:1">
+          <div class="bz-banner-l">Yeh dawaiyaan ghar mangao?<span class="small">Sehat Bazaar (Reliance Netmeds) — tier 2/3 mein bhi delivery, COD available</span></div>
+        </div>
+      </div>
+      <button class="rx-cta warm" onclick="orderFromRx()">Sehat Bazaar se ghar mangao →</button>
+      <button class="rx-cta secondary" onclick="goTo('s-hub')">Ab nahi · Wapas Sehat Saathi</button>
+      <button class="rx-cta secondary" onclick="startFeature('bazaar')">Mere reminders dekhein</button>
+    </div>`;
+    el.innerHTML = html;
+    return;
+  }
+}
+
+// — Photo / PDF handlers — both use template results because no Vision key —
+function rxOnPhoto(e){
+  const f = e.target.files[0]; if (!f) return;
+  const tpl = RX_TEMPLATES[Math.floor(Math.random()*RX_TEMPLATES.length)];
+  ST.rxData.doctor = tpl.doctor;
+  ST.rxData.clinic = tpl.clinic;
+  ST.rxData.confidence = tpl.confidence;
+  ST.rxData.meds = JSON.parse(JSON.stringify(tpl.meds));
+  ST.rxData.source = 'photo';
+  ST.rxData.fileName = f.name;
+  renderRxStep(2);
+}
+function rxOnPdf(e){
+  const f = e.target.files[0]; if (!f) return;
+  const tpl = RX_TEMPLATES[Math.floor(Math.random()*RX_TEMPLATES.length)];
+  ST.rxData.doctor = tpl.doctor;
+  ST.rxData.clinic = tpl.clinic;
+  ST.rxData.confidence = tpl.confidence;
+  ST.rxData.meds = JSON.parse(JSON.stringify(tpl.meds));
+  ST.rxData.source = 'pdf';
+  ST.rxData.fileName = f.name;
+  renderRxStep(2);
+}
+function rxManualStart(){
+  ST.rxData.doctor = 'Manual entry';
+  ST.rxData.clinic = '';
+  ST.rxData.confidence = null;
+  ST.rxData.meds = [];
+  ST.rxData.source = 'manual';
+  ST.editingMedIdx = null;
+  renderRxStep(3);
+  setTimeout(rxAddMed, 50);
+}
+
+function rxSelectMember(key, label){
+  ST.rxData.member = key;
+  ST.rxData.memberLabel = label;
+  setTimeout(() => renderRxStep(1), 150);
+}
+
+function rxAddMed(){
+  ST.rxData.meds.push({ sku:'', name:'', strength:'', form:'tablet', dose:'1 tablet', timing:['Subah'], duration:7, when:'after_food', notes:'' });
+  ST.editingMedIdx = ST.rxData.meds.length - 1;
+  renderRxStep(3);
+}
+function rxEditMed(i){ ST.editingMedIdx = i; renderRxStep(3); }
+function renderRxEditCard(i){
+  const m = ST.rxData.meds[i];
+  return `<div class="rx-edit-card">
+    <label>Dawai ka naam</label>
+    <input id="rx-edit-name-${i}" placeholder="Metformin, Crocin, ..." value="${(m.name||'').replace(/"/g,'&quot;')}">
+    <label>Dose / mg</label>
+    <input id="rx-edit-strength-${i}" placeholder="500 mg" value="${(m.strength||'').replace(/"/g,'&quot;')}">
+    <label>Kitni baar dena hai?</label>
+    <input id="rx-edit-dose-${i}" placeholder="1 tablet" value="${(m.dose||'').replace(/"/g,'&quot;')}">
+    <label>Kitne din?</label>
+    <input id="rx-edit-duration-${i}" type="number" min="1" max="180" value="${m.duration||7}">
+    <label>Notes (optional)</label>
+    <input id="rx-edit-notes-${i}" placeholder="Khaane ke baad" value="${(m.notes||'').replace(/"/g,'&quot;')}">
+    <div class="rx-edit-row">
+      <button class="cancel" onclick="rxCancelEdit(${i})">Cancel</button>
+      <button class="save" onclick="rxSaveEdit(${i})">Save</button>
+    </div>
+    ${ST.rxData.meds.length > 1 ? `<button style="margin-top:8px;background:none;border:none;color:#dc2626;font-size:11px;cursor:pointer;width:100%" onclick="rxDeleteMed(${i})">🗑 Hatao</button>` : ''}
+  </div>`;
+}
+function rxSaveEdit(i){
+  const m = ST.rxData.meds[i];
+  m.name = (document.getElementById('rx-edit-name-'+i).value || '').trim() || 'Dawai';
+  m.strength = (document.getElementById('rx-edit-strength-'+i).value || '').trim();
+  m.dose = (document.getElementById('rx-edit-dose-'+i).value || '').trim() || '1 tablet';
+  m.duration = parseInt(document.getElementById('rx-edit-duration-'+i).value || 7, 10);
+  m.notes = (document.getElementById('rx-edit-notes-'+i).value || '').trim();
+  if (!m.timing || !m.timing.length) m.timing = ['Subah'];
+  ST.editingMedIdx = null;
+  renderRxStep(3);
+}
+function rxCancelEdit(i){
+  const m = ST.rxData.meds[i];
+  if (!m.name) ST.rxData.meds.splice(i, 1);
+  ST.editingMedIdx = null;
+  renderRxStep(3);
+}
+function rxDeleteMed(i){
+  ST.rxData.meds.splice(i, 1);
+  ST.editingMedIdx = null;
+  renderRxStep(3);
+}
+function rxToggleTiming(i, t, btn){
+  const m = ST.rxData.meds[i];
+  m.timing = m.timing || [];
+  const idx = m.timing.indexOf(t);
+  if (idx === -1) m.timing.push(t); else m.timing.splice(idx, 1);
+  if (btn) btn.classList.toggle('selected');
+}
+function rxSetTime(i, t){ ST.rxData.meds[i]._time = t; }
+function rxSetChannel(c){ ST.rxData.channel = c; renderRxStep(4); }
+
+function rxSaveReminders(){
+  if (ST.rxData.channel !== 'app' && !(ST.rxData.phone || '').trim()) {
+    showToast(ST.rxData.channel === 'voice' ? 'Phone number daalein' : 'WhatsApp number daalein');
+    return;
+  }
+  const rxId = 'rx_' + Date.now();
+  const rems = loadReminders();
+  ST.rxData.meds.forEach(m => {
+    if (!m.timing || !m.timing.length) return;
+    rems.push({
+      id: Date.now() + Math.random(),
+      rxId,
+      name: m.name,
+      strength: m.strength,
+      who: ST.rxData.memberLabel,
+      member: ST.rxData.member,
+      time: m._time || '08:00',
+      timing: (m.timing || []).join(', '),
+      dose: m.dose,
+      duration_days: m.duration,
+      channel: ST.rxData.channel,
+      phone: ST.rxData.phone || '',
+      notes: m.notes || ''
+    });
+  });
+  saveReminders(rems);
+  if (ST.rxData.channel === 'app') requestNotifPermission();
+  // schedule (only app channel actually fires; whatsapp/voice are placeholder mocks)
+  rems.slice(-ST.rxData.meds.length).forEach(rem => { if (rem.channel === 'app') scheduleReminder(rem); });
+  if (ST.rxData.channel === 'whatsapp') showToast('WhatsApp reminders scheduled — abhi prototype hai, real send nahi hoga');
+  if (ST.rxData.channel === 'voice') showToast('Voice call reminders scheduled — abhi prototype hai, real call nahi hoga');
+  bumpScore && bumpScore(2);
+  renderRxStep(5);
+}
+
+// ════ Order from RX → Sehat Bazaar ════
+function orderFromRx(){
+  ST.orderData = {
+    items: ST.rxData.meds.filter(m => MEDICINE_CATALOG[m.sku]).map(m => {
+      const cat = MEDICINE_CATALOG[m.sku];
+      const packsNeeded = Math.max(1, Math.ceil((m.duration || 7) * (m.timing||[]).length / 10));
+      return { sku: m.sku, name: cat.brand, generic: cat.generic, mfr: cat.mfr, mrp: cat.mrp, price: cat.price, pack: cat.pack, qty: packsNeeded, emoji: cat.emoji };
+    }),
+    forMember: ST.rxData.memberLabel,
+    rxId: 'rx_' + Date.now(),
+    addressId: 'home',
+    payment: 'cod'
+  };
+  if (!ST.orderData.items.length) {
+    // Manual prescriptions — synthesize a single line so the user has something to order
+    ST.orderData.items = ST.rxData.meds.map((m, i) => ({
+      sku: 'manual_' + i,
+      name: m.name + (m.strength ? ' ' + m.strength : ''),
+      generic: m.name,
+      mfr: 'Generic',
+      mrp: 80,
+      price: 65,
+      pack: m.duration ? (m.duration + ' din ka stock') : '1 strip',
+      qty: 1,
+      emoji: m.form === 'syrup' ? '🍼' : '💊'
+    }));
+  }
+  ST.orderStep = 0;
+  goTo('s-order');
+  renderOrderStep(0);
+}
+
+function startBazaar(){ goTo('s-bazaar'); renderBazaarList(); }
+function orderBack(){ if (ST.orderStep > 0) renderOrderStep(ST.orderStep - 1); else goBack(); }
+
+function renderOrderProgress(step, total){
+  const wrap = document.getElementById('order-progress-wrap');
+  if (!wrap) return;
+  let h = '<div class="rx-progress">';
+  for (let i = 0; i < total; i++) h += `<div class="rx-progress-dot${i<=step?' done':''}"></div>`;
+  h += '</div>';
+  wrap.innerHTML = h;
+}
+
+function renderOrderStep(step){
+  ST.orderStep = step;
+  const el = document.getElementById('order-body'); if (!el) return;
+  const titleEl = document.getElementById('order-hdr-title');
+  const subEl = document.getElementById('order-hdr-sub');
+  renderOrderProgress(step, 4);
+
+  if (step === 0) {
+    if (titleEl) titleEl.textContent = 'Sehat Bazaar';
+    if (subEl) subEl.textContent = 'Cart dekho';
+    const sub = ST.orderData.items.reduce((s, it) => s + it.price * it.qty, 0);
+    const mrp = ST.orderData.items.reduce((s, it) => s + it.mrp * it.qty, 0);
+    const ship = sub >= 199 ? 0 : 30;
+    const total = sub + ship;
+    const saved = mrp - sub;
+    let html = `<div class="rx-body">
+      <div class="bz-banner">
+        <div class="bz-banner-ic">🛒</div>
+        <div style="flex:1">
+          <div class="bz-banner-l">Reliance Netmeds<span class="small">Tier 2 + 3 delivery · COD available · 100% original</span></div>
+        </div>
+      </div>`;
+    ST.orderData.items.forEach((it, i) => {
+      const disc = Math.round((1 - it.price / it.mrp) * 100);
+      html += `<div class="bz-cart-card">
+        <div class="bz-cart-pic">${it.emoji||'💊'}</div>
+        <div class="bz-cart-info">
+          <div class="bz-cart-name">${it.name}</div>
+          <div class="bz-cart-meta">${it.generic||''} · ${it.pack}${it.mfr?' · '+it.mfr:''}</div>
+          <div class="bz-cart-pricing">
+            <div class="bz-cart-price">₹${it.price}</div>
+            <div class="bz-cart-mrp">₹${it.mrp}</div>
+            ${disc>0?`<div class="bz-cart-disc">${disc}% OFF</div>`:''}
+          </div>
+          <div class="bz-cart-qty">
+            <button onclick="orderQty(${i},-1)">−</button>
+            <span>${it.qty}</span>
+            <button onclick="orderQty(${i},1)">+</button>
+          </div>
+          ${it.sku && MEDICINE_CATALOG[it.sku] ? `<div class="bz-alt">💡 Generic available — <b>${it.generic||'same salt'}</b> ₹${Math.max(8,Math.round(it.price*0.55))}/pack</div>` : ''}
+        </div>
+      </div>`;
+    });
+    html += `<div class="bz-bill">
+      <div class="bz-bill-row"><span>Items (${ST.orderData.items.length})</span><span>₹${sub}</span></div>
+      <div class="bz-bill-row save"><span>You save</span><span>− ₹${saved}</span></div>
+      <div class="bz-bill-row"><span>Delivery${ship===0?' (FREE above ₹199)':''}</span><span>${ship===0?'FREE':'₹'+ship}</span></div>
+      <div class="bz-bill-row total"><span>Total</span><span>₹${total}</span></div>
+    </div>
+    <button class="rx-cta" onclick="renderOrderStep(1)">Address chunein →</button>
+    <button class="rx-cta secondary" onclick="goBack()">Cancel</button>
+    </div>`;
+    el.innerHTML = html;
+    return;
+  }
+
+  if (step === 1) {
+    if (titleEl) titleEl.textContent = 'Address';
+    if (subEl) subEl.textContent = 'Kahan delivery karein?';
+    const addrs = loadAddresses();
+    const sel = ST.orderData.addressId || addrs[0].id;
+    let html = `<div class="rx-body">
+      <div class="rx-step-title">Kahan deliver karein?</div>
+      <div class="rx-step-sub">${ST.orderData.forMember||'Aap'} ke liye dawai pohchani hai</div>`;
+    addrs.forEach(a => {
+      html += `<button class="bz-addr-card ${a.id===sel?'selected':''}" onclick="orderSelAddr('${a.id}')" style="border:1.5px solid ${a.id===sel?'var(--primary)':'rgba(255,255,255,.07)'}">
+        <div class="bz-addr-radio"></div>
+        <div style="flex:1;min-width:0">
+          <div class="bz-addr-tag">${a.tag}</div>
+          <div class="bz-addr-name">${a.name}</div>
+          <div class="bz-addr-line">${a.line}, ${a.city} − ${a.pin}</div>
+          <div class="bz-addr-line">📞 ${a.phone}</div>
+        </div>
+      </button>`;
+    });
+    html += `<button class="rx-med-add" onclick="orderAddAddr()">+ Naya address jodein</button>
+      <button class="rx-cta" onclick="renderOrderStep(2)">Payment chunein →</button>
+      <button class="rx-cta secondary" onclick="renderOrderStep(0)">Wapas cart</button>
+    </div>`;
+    el.innerHTML = html;
+    return;
+  }
+
+  if (step === 2) {
+    if (titleEl) titleEl.textContent = 'Payment';
+    if (subEl) subEl.textContent = 'Kaise pay karein?';
+    const sel = ST.orderData.payment || 'cod';
+    let html = `<div class="rx-body">
+      <div class="rx-step-title">Payment kaise karein?</div>
+      <div class="rx-step-sub">Tier 2/3 ke liye COD bhi available — saamne paise dein</div>
+      <div class="bz-pay-list">
+        <button class="bz-pay-opt ${sel==='upi'?'selected':''}" onclick="orderSelPay('upi')" style="font-family:inherit;color:inherit;width:100%;text-align:left">
+          <div class="bz-pay-opt-ic" style="background:rgba(57,0,173,.18);color:#a855f7">🟣</div>
+          <div style="flex:1"><div class="bz-pay-opt-name">UPI · GPay / PhonePe / Paytm</div><div class="bz-pay-opt-sub">Instant · No charges</div></div>
+          <div class="bz-pay-radio"></div>
+        </button>
+        <button class="bz-pay-opt ${sel==='cod'?'selected':''}" onclick="orderSelPay('cod')" style="font-family:inherit;color:inherit;width:100%;text-align:left">
+          <div class="bz-pay-opt-ic" style="background:rgba(34,197,94,.18);color:#22c55e">💵</div>
+          <div style="flex:1"><div class="bz-pay-opt-name">Cash on Delivery</div><div class="bz-pay-opt-sub">Saamne paise dein · ₹0 charges</div></div>
+          <div class="bz-pay-radio"></div>
+        </button>
+        <button class="bz-pay-opt ${sel==='jio'?'selected':''}" onclick="orderSelPay('jio')" style="font-family:inherit;color:inherit;width:100%;text-align:left">
+          <div class="bz-pay-opt-ic" style="background:rgba(168,85,247,.18);color:#a855f7">J</div>
+          <div style="flex:1"><div class="bz-pay-opt-name">Jio Wallet</div><div class="bz-pay-opt-sub">Linked to JioBharatIQ · 5% cashback</div></div>
+          <div class="bz-pay-radio"></div>
+        </button>
+      </div>
+      <button class="rx-cta" onclick="orderPlace()">Order confirm karein →</button>
+      <button class="rx-cta secondary" onclick="renderOrderStep(1)">Wapas address</button>
+    </div>`;
+    el.innerHTML = html;
+    return;
+  }
+
+  if (step === 3) {
+    // Success
+    if (titleEl) titleEl.textContent = 'Order ho gaya ✓';
+    if (subEl) subEl.textContent = 'ID: ' + (ST.orderData.orderId || '');
+    const o = ST.orderData;
+    const addrs = loadAddresses();
+    const addr = addrs.find(a => a.id === o.addressId) || addrs[0];
+    const total = o.items.reduce((s, it) => s + it.price * it.qty, 0) + (o.items.reduce((s, it) => s + it.price * it.qty, 0) >= 199 ? 0 : 30);
+    let html = `<div class="bz-success">
+      <div class="bz-tick">✓</div>
+      <h2>Order confirm ho gaya!</h2>
+      <p>${o.forMember||'Aap'} ke liye ${o.items.length} dawaiyaan pack ho rahi hain</p>
+      <div class="bz-success-id">${o.orderId}</div>
+      <div style="background:var(--surface);border-radius:14px;padding:14px;text-align:left;margin-bottom:14px">
+        <div style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px">Delivery</div>
+        <div style="font-size:13px;font-weight:700">${addr.name} · ${addr.tag}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px;line-height:1.45">${addr.line}, ${addr.city} − ${addr.pin}</div>
+        <div style="font-size:13px;color:#22c55e;font-weight:700;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.1)">⏱ Kal shaam tak pohchega · ₹${total} ${o.payment==='cod'?'(COD)':o.payment==='upi'?'(UPI)':'(Jio Wallet)'}</div>
+      </div>
+      <div style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:12px;padding:12px;text-align:left;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:#25d366;margin-bottom:3px">💬 WhatsApp pe tracking link bhej diya</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.45">${addr.phone} pe order updates milte rahenge — Hindi mein</div>
+      </div>
+      <button class="rx-cta" onclick="trackOrder('${o.orderId}')">Order track karein →</button>
+      <button class="rx-cta secondary" onclick="goTo('s-hub')">Wapas Sehat Saathi</button>
+    </div>`;
+    el.innerHTML = html;
+    return;
+  }
+}
+
+function orderQty(i, d){
+  const it = ST.orderData.items[i];
+  it.qty = Math.max(1, (it.qty || 1) + d);
+  renderOrderStep(0);
+}
+function orderSelAddr(id){ ST.orderData.addressId = id; renderOrderStep(1); }
+function orderSelPay(p){ ST.orderData.payment = p; renderOrderStep(2); }
+function orderAddAddr(){
+  const name = prompt('Naam (jaise: Maa-Papa)');
+  if (!name) return;
+  const line = prompt('Address line (House, area)');
+  if (!line) return;
+  const city = prompt('City');
+  if (!city) return;
+  const pin = prompt('PIN code');
+  if (!pin) return;
+  const phone = prompt('Phone (+91 ...)');
+  if (!phone) return;
+  const addrs = loadAddresses();
+  const id = 'a' + Date.now();
+  addrs.push({ id, tag:'Naya', name, line, city, pin, phone });
+  saveAddresses(addrs);
+  ST.orderData.addressId = id;
+  renderOrderStep(1);
+}
+function orderPlace(){
+  const addrs = loadAddresses();
+  const addr = addrs.find(a => a.id === ST.orderData.addressId) || addrs[0];
+  const sub = ST.orderData.items.reduce((s, it) => s + it.price * it.qty, 0);
+  const ship = sub >= 199 ? 0 : 30;
+  const orderId = 'NM' + Date.now().toString(36).slice(-6).toUpperCase();
+  const order = {
+    id: orderId,
+    items: ST.orderData.items,
+    forMember: ST.orderData.forMember || 'Aap',
+    addressId: ST.orderData.addressId,
+    addressSnapshot: addr,
+    payment: ST.orderData.payment || 'cod',
+    rxId: ST.orderData.rxId || null,
+    placedAt: Date.now(),
+    subtotal: sub,
+    shipping: ship,
+    total: sub + ship,
+    statusIdx: 0
+  };
+  const orders = loadOrders();
+  orders.unshift(order);
+  saveOrders(orders);
+  ST.orderData.orderId = orderId;
+  renderOrderStep(3);
+  bumpScore && bumpScore(3);
+  // Auto-progress for prototype demo: Placed → Confirmed → Packed → Shipped → Delivered every 6s
+  scheduleOrderProgress(orderId);
+}
+
+const ORDER_STAGES = [
+  { name:'Order placed', sub:'Reliance Netmeds ne aapka order receive kiya' },
+  { name:'Confirmed by pharmacy', sub:'Pharmacist ne prescription verify ki' },
+  { name:'Packed', sub:'Dawaiyaan thandi jagah pe pack ho gayi' },
+  { name:'Out for delivery', sub:'Delivery partner aapke ghar ki taraf nikla' },
+  { name:'Delivered', sub:'Order pohch gaya — dawai shuru karein' }
+];
+
+function scheduleOrderProgress(orderId){
+  // Demo timing: each stage in ~12s so the user can watch it move
+  for (let i = 1; i <= 4; i++) {
+    setTimeout(() => {
+      const orders = loadOrders();
+      const o = orders.find(x => x.id === orderId);
+      if (!o) return;
+      o.statusIdx = i;
+      saveOrders(orders);
+    }, i * 12000);
+  }
+}
+
+function trackOrder(orderId){
+  const orders = loadOrders();
+  const o = orders.find(x => x.id === orderId);
+  if (!o) { showToast('Order nahi mila'); return; }
+  goTo('s-track');
+  renderTrack(o);
+  // Live refresh while user is on the screen
+  if (ST._trackTimer) clearInterval(ST._trackTimer);
+  ST._trackTimer = setInterval(() => {
+    if (document.getElementById('s-track').classList.contains('active')) {
+      const fresh = loadOrders().find(x => x.id === orderId);
+      if (fresh) renderTrack(fresh);
+    } else {
+      clearInterval(ST._trackTimer);
+    }
+  }, 3000);
+}
+
+function renderTrack(o){
+  const el = document.getElementById('track-body'); if (!el) return;
+  const addr = o.addressSnapshot || { tag:'-', name:'-', line:'-', city:'-', pin:'-', phone:'-' };
+  const stage = ORDER_STAGES[o.statusIdx] || ORDER_STAGES[0];
+  const eta = o.statusIdx >= 4 ? 'Delivered ✓' : 'Kal shaam tak pohch jayegi';
+  let timeline = '<div class="bz-tl">';
+  ORDER_STAGES.forEach((s, i) => {
+    const cls = i < o.statusIdx ? 'done' : i === o.statusIdx ? 'active' : '';
+    const time = i <= o.statusIdx ? new Date(o.placedAt + i * 12000).toLocaleTimeString('en-IN', { hour:'numeric', minute:'2-digit' }) : '';
+    timeline += `<div class="bz-tl-step ${cls}">
+      <div class="bz-tl-name">${s.name}</div>
+      <div class="bz-tl-meta">${s.sub}${time?' · '+time:''}</div>
+    </div>`;
+  });
+  timeline += '</div>';
+  let itemsHtml = '<div style="margin-top:14px"><div class="bz-section-lbl" style="padding:0 0 8px">Order items</div>';
+  o.items.forEach(it => {
+    itemsHtml += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.06)">
+      <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:16px">${it.emoji||'💊'}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700">${it.name}</div><div style="font-size:10px;color:var(--text3)">${it.pack} × ${it.qty}</div></div>
+      <div style="font-size:13px;font-weight:700">₹${it.price * it.qty}</div>
+    </div>`;
+  });
+  itemsHtml += '</div>';
+
+  el.innerHTML = `<div class="bz-track">
+    <div class="bz-track-summary">
+      <div class="bz-track-id">ORDER ${o.id}</div>
+      <div class="bz-track-eta">${stage.name === 'Delivered' ? '✓ Delivered' : '<b>'+eta+'</b>'}</div>
+      <div class="bz-track-addr">📍 ${addr.tag} · ${addr.line}, ${addr.city} − ${addr.pin}</div>
+      <div class="bz-track-addr">📞 ${addr.phone}${o.payment==='cod'?' · COD ₹'+o.total:''}</div>
+    </div>
+    ${timeline}
+    ${itemsHtml}
+    <div style="margin-top:18px">
+      <button class="rx-cta secondary" onclick="goTo('s-hub')">Wapas Sehat Saathi</button>
+    </div>
+  </div>`;
+}
+
+// ════ Mera Sehat — reminders + orders + reports list ════
+function renderBazaarList(){
+  const el = document.getElementById('bazaar-body'); if (!el) return;
+  const rems = loadReminders();
+  const orders = loadOrders();
+  const labReports = loadLabReports();
+  const labCount = Object.values(labReports).reduce((s, arr) => s + (arr ? arr.length : 0), 0);
+
+  // ── Active reminders section ──
+  let html = '<div class="bz-section-lbl">Active reminders</div>';
+  if (!rems.length) {
+    html += `<div class="bz-empty">
+      <div class="bz-empty-emoji">⏰</div>
+      Abhi koi reminder nahi.<br>Parchi scan karein — auto-set ho jayega.
+      <div style="margin-top:12px"><button class="rx-cta" onclick="startFeature('rx')" style="display:inline-block;width:auto;padding:10px 20px">+ Parchi scan karein</button></div>
+    </div>`;
+  } else {
+    rems.forEach(r => {
+      const ch = r.channel || 'app';
+      const chLabel = { app:'App', whatsapp:'WhatsApp', voice:'Voice' }[ch] || 'App';
+      html += `<div class="bz-list-card">
+        <div class="bz-list-ic" style="background:rgba(168,85,247,.18);color:#a855f7">💊</div>
+        <div class="bz-list-info">
+          <div class="bz-list-name">${r.name}${r.strength?' · '+r.strength:''}</div>
+          <div class="bz-list-sub">${r.who} · ${r.timing||'-'} · ${r.time||'-'}<span class="rem-channel-pill ${ch}">${chLabel}</span></div>
+        </div>
+        <button onclick="deleteReminder('${r.id}')" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer">✕</button>
+      </div>`;
+    });
+    html += `<div style="padding:0 16px 4px"><button class="rx-cta secondary" onclick="startFeature('rx')">+ Naya reminder lagao</button></div>`;
+  }
+
+  // ── Orders section ──
+  html += '<div class="bz-section-lbl">Mere orders</div>';
+  if (!orders.length) {
+    html += `<div class="bz-empty">
+      <div class="bz-empty-emoji">🛒</div>
+      Abhi koi order nahi.<br>Parchi scan karke ghar mangao.
+    </div>`;
+  } else {
+    orders.forEach(o => {
+      const stIdx = o.statusIdx || 0;
+      const statusLabel = stIdx >= 4 ? 'Delivered' : stIdx >= 3 ? 'Out for Delivery' : stIdx >= 1 ? 'Packing' : 'Placed';
+      const cls = stIdx >= 4 ? 'delivered' : stIdx >= 3 ? 'shipped' : 'placed';
+      html += `<div class="bz-list-card" onclick="trackOrder('${o.id}')">
+        <div class="bz-list-ic" style="background:rgba(251,146,60,.18);color:#fb923c">🛒</div>
+        <div class="bz-list-info">
+          <div class="bz-list-name">${o.items.length} dawaiyaan · ₹${o.total}</div>
+          <div class="bz-list-sub">${o.forMember} · ${new Date(o.placedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</div>
+        </div>
+        <div class="bz-list-status ${cls}">${statusLabel}</div>
+      </div>`;
+    });
+  }
+
+  // ── Lab reports ──
+  html += '<div class="bz-section-lbl">Lab reports</div>';
+  if (labCount === 0) {
+    html += `<div class="bz-empty">
+      <div class="bz-empty-emoji">🧪</div>
+      Koi lab report save nahi.<br>Photo ya PDF se padhwao.
+      <div style="margin-top:12px"><button class="rx-cta" onclick="startFeature('lab')" style="display:inline-block;width:auto;padding:10px 20px">Lab report jodein</button></div>
+    </div>`;
+  } else {
+    Object.keys(labReports).forEach(memKey => {
+      (labReports[memKey] || []).forEach((r, idx) => {
+        const memLabel = memKey === 'self' ? 'Aap' : memKey.replace('fam_', '');
+        html += `<div class="bz-list-card" onclick="viewPastLabReport('${memKey}',${idx});goTo('s-lab')">
+          <div class="bz-list-ic" style="background:rgba(34,197,94,.18);color:#22c55e">🧪</div>
+          <div class="bz-list-info">
+            <div class="bz-list-name">${r.reportType||'Lab Report'} · ${memLabel}</div>
+            <div class="bz-list-sub">${r.date}${r.summary?' — '+r.summary.substring(0,60)+(r.summary.length>60?'...':''):''}</div>
+          </div>
+        </div>`;
+      });
+    });
+  }
+
+  el.innerHTML = html;
+}
+
+function deleteReminder(id){
+  const rems = loadReminders().filter(r => String(r.id) !== String(id));
+  saveReminders(rems);
+  showToast('Reminder hata diya');
+  renderBazaarList();
+}
+
+// — Update hub: prescription pill shows count if there are reminders —
+function updateHubBazaarSub(){
+  try {
+    const rems = loadReminders();
+    const orders = loadOrders();
+    const sub = document.getElementById('tri-rail-bazaar-sub');
+    if (sub) {
+      if (rems.length || orders.length) sub.textContent = `${rems.length} reminder · ${orders.length} order`;
+      else sub.textContent = 'Reminders · Orders';
+    }
+    const pill = document.getElementById('aham-rx-pill');
+    if (pill && rems.length) pill.textContent = rems.length + ' active';
+  } catch(e){}
 }
 
 // ── MEAL FLOW ──
