@@ -2,6 +2,33 @@
 
 ---
 
+## DEC-012 — Symptoms-triage as the primary path on the hub (Tier 2/3 reframe)
+**Date:** 2026-05-10 (Session 9)
+**Decision:** Replace the 3-zone mood-first hub with a symptoms-triage-first layout: 8-button `tri-grid` of common takleefs as the primary CTA, the 3 mood emojis collapsed into a single-line `tri-mood` strip, and other use cases (Story, Saans, Lab, Dawai, Meal, Parivaar) demoted to a subtle horizontal `tri-rail`. The header (greeting + `tri-hero`) frames the whole screen as "Kya takleef hai?".
+**Reason:** A tier-2/3 user with a sick child or back pain has a clear intent — get a remedy, fast. Asking them to first pick a mood ("Theek hoon / Kuch takleef / Bahut tension") is friction that buries the actual job-to-be-done. Direct-routing a symptom tap into the nushke chat means the very first AI turn IS the magical-moment answer.
+**Trade-offs:** The mood path still exists (small strip + chat chips) but is no longer dominant. Some users who liked picking a mood may need to re-orient.
+**Revisit if:** Engagement on the mood strip drops below 5% or symptom-grid taps don't dominate hub interactions.
+
+---
+
+## DEC-013 — In-app recipe step overlay replaces YouTube redirect for nushke
+**Date:** 2026-05-10 (Session 9)
+**Decision:** `injectVideoCard()` is now an alias for `injectRemedyCard()`, which opens an in-app `move-ov` overlay running the recipe steps with auto-advance + Sarvam TTS read-aloud. We keep 15 hand-crafted `REMEDY_KITS` (haldi-doodh, ajwain-bhaap, tulsi-kadha, etc.) covering every AYUSH ingredient already mentioned in our system prompt. The previous behavior — open YouTube search in a new tab — is removed from the user flow but `openVideoLink()` is kept as a back-compat function.
+**Reason:** The user-stated magical moment is "the answer". The follow-up should reinforce, not eject. Sending the user to YouTube on every remedy was a context switch that broke trust. An in-app step overlay with TTS keeps the warm-voice magical-moment intact and is fully usable on a 2G connection (no video stream needed).
+**Trade-offs:** New AYUSH ingredients require adding a kit; if the AI mentions one not in `REMEDY_KITS`, the user just gets the text answer (no card, no degradation).
+**Revisit if:** AI starts mentioning ingredients we don't have kits for >10% of nushke replies.
+
+---
+
+## DEC-014 — Voice = transparent, two-way, mirrored conversation (no opaque mic state)
+**Date:** 2026-05-10 (Session 9)
+**Decision:** The voice overlay is rebuilt with: a state pill (`Sun rahi hoon` / `Soch rahi hoon` / `Bata rahi hoon`), live 5-bar EQ driven from the existing Web Audio analyser, and a transcript area that shows `Aap ne kaha: <user>` + `Saathi: <bot>` bubbles in-place. `addMsg('bot', ...)` mirrors bot replies into the overlay automatically whenever the overlay is open.
+**Reason:** The user's exact words: "you don't know if it is listening or not... it should be high class, like how I'm talking to you on this machine via voice, and I can see my text are being written on the screen." Sarvam STT is POST-after-recording (no streaming), so we can't show interim word-by-word transcripts — but mic-level bars + transcript-on-arrival + bot-reply mirroring gives the same "I am being heard, this is a real conversation" affordance.
+**Trade-offs:** No streaming partials yet. The mic bars are a proxy signal, not actual phoneme display.
+**Revisit if:** Sarvam ships a streaming endpoint, or we add Bhashini for streaming partials.
+
+---
+
 ## DEC-001 — Single HTML file architecture
 **Date:** 2026-05-06  
 **Decision:** All code lives in one `index.html` — CSS in `<style>`, JS in `<script>`, no build step, no npm.  

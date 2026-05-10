@@ -1,5 +1,11 @@
 # Status — Sehat Saathi
-*Last updated: 2026-05-07 — Session 8 (v3 — 3-zone Home + Sarvam Voice)*
+*Last updated: 2026-05-10 — Session 9 (v4 — Tier 2/3 reframe: symptoms-first, recipe-steps, live voice)*
+
+## Session 9 highlights
+- **Hub re-anchored on symptoms triage** — 8-button `tri-grid` (Sir dard, Sardi-khansi, Pet, Neend, Ghutno, Bukhar, Tension, Saans/galay) is now the primary path. Mood is collapsed into a single-line pulse-check strip. Other use cases (Story, Saans, Lab, Dawai, Meal, Parivaar) live in a subtle `tri-rail`.
+- **Ghar-ka-nushka now ends in an animation, not a YouTube link** — `REMEDY_KITS` (15 recipes) + `injectRemedyCard()` produce an in-app step overlay (reuses `move-ov`) with ingredients, step-by-step, auto-advance, Sarvam TTS read-aloud, progress dots.
+- **Acupressure cards** — `ACUPRESSURE_POINTS` (6 points) with SVG body silhouettes + pulsing pin marker; keyword-triggered from AI replies.
+- **Voice = real conversation** — live mic-level bars (driven from analyser RMS), state pill, live transcript area (`Aap ne kaha:` + `Saathi:`), thinking line, mirrored bot replies. Works on both hub-target and chat-target Speak.
 
 ## Session 8 highlights
 - **Sehat hub fully redesigned** as 3-zone home (greeting / 3 moods / story+score). Tools moved to bottom-sheet behind 3-dot menu.
@@ -79,9 +85,13 @@ Last successful deploy: 2026-05-07 Session 7 (commit `f41068c`)
 | Profile tile re-edit | Working | Sehat Tools → Profile reopens onboarding |
 | localStorage | Working | `ss_profile` persists across sessions |
 
-### Sehat Hub
+### Sehat Hub (v4 — symptoms-first)
 | Feature | Status | Notes |
 |---|---|---|
+| `tri-hero` "Kya takleef hai?" | Working | Primary CTA replaces the mood greeting |
+| `tri-grid` 8 symptom buttons | Working | Direct route to nushke chat with magical-moment first turn |
+| `tri-mood` pulse-check strip | Working | Single-line, three small mood emoji buttons (collapsed mood path) |
+| `tri-rail` subtle "Aur kya kar sakte ho" | Working | 6 secondary use-case chips — Story, Saans, Lab, Dawai, Meal, Parivaar |
 | Header SS initials | Working | Replaces persona photo (Session 7) |
 | Persona toggle pill | Working | Cycles Saathi → Dadi → Maa with TTS greeting |
 | Score card | Working | Score, streak, level bar (Session 6) |
@@ -168,12 +178,31 @@ Last successful deploy: 2026-05-07 Session 7 (commit `f41068c`)
 |---|---|---|
 | Starter chips | Working — Session 7 | 8 common symptoms route through nushke ctx |
 
-### Voice Overlay
+### Voice Overlay (v4 — live conversation)
 | Feature | Status | Notes |
 |---|---|---|
-| HelloJio Listening MP4 | Working | Dark theme CDN |
-| Interim transcript | Working | |
-| Browser compatibility | Chrome/Safari | Firefox: Speak button auto-hidden |
+| HelloJio Listening MP4 | Working | Dark theme CDN, sized down to 140px so transcript area has room |
+| State pill | Working — Session 9 | `Sun rahi hoon` / `Soch rahi hoon` / `Bata rahi hoon` with color tint |
+| Live mic-level bars | Working — Session 9 | 5-bar EQ driven from existing analyser RMS via `_setBarsFromLevel()` |
+| Live transcript area | Working — Session 9 | `Aap ne kaha:` + `Saathi:` bubbles; thinking line removed when reply arrives |
+| Bot reply auto-mirror | Working — Session 9 | `addMsg('bot', ...)` mirrors into overlay whenever overlay is on |
+| Stop button | Working — Session 9 | Fixed bottom red `Band karein` |
+| Browser compatibility | Chrome/Safari | Firefox: Speak button works if mic permitted |
+
+### Ghar-ke-Nushke recipe overlay (v4)
+| Feature | Status | Notes |
+|---|---|---|
+| `REMEDY_KITS` (15 recipes) | Working — Session 9 | Haldi/Ajwain/Tulsi/Adrak/Jeera/Mulethi/Saunf/Methi/Namak/Nimbu/Anjeer/Arandi/Amla/Palak/Neem |
+| `injectRemedyCard()` | Working — Session 9 | Injected on AYUSH-keyword AI replies in nushke ctx |
+| In-app step overlay | Working — Session 9 | Reuses `move-ov` — auto-advance + Sarvam TTS + progress dots |
+
+### Acupressure overlay (v4)
+| Feature | Status | Notes |
+|---|---|---|
+| `ACUPRESSURE_POINTS` (6 points) | Working — Session 9 | LI-4, GB-20, PC-6, Yintang, ST-36, LU-7 |
+| SVG silhouettes (hand/wrist/forehead/leg/head_back) | Working — Session 9 | Inline, dark-theme tinted, 180×180 |
+| Pulsing `acu-pin` marker | Working — Session 9 | CSS keyframe pulse on the LI-4 hand point |
+| `injectAcupressureCard()` | Working — Session 9 | Keyword-triggered after AI replies in nushke ctx |
 
 ### Voice Personas (Session 7 v2)
 | Persona | Default | Voice tuning | Indian language support |
@@ -189,10 +218,12 @@ Last successful deploy: 2026-05-07 Session 7 (commit `f41068c`)
 2. **setTimeout reminders** don't fire if tab is closed
 3. **Voice: Chrome/Safari only** — Firefox hides Speak button
 4. **Web Speech voice quality varies** — iOS Safari has limited Indian language voices; Bhashini swap recommended for production (DEC-009)
-5. **File is ~3000 lines** — well past 800-line ideal (DEC-009, accepted for prototype)
+5. **File is ~4569 lines** — well past 800-line ideal (DEC-009, accepted for prototype)
 6. **Lab Vision spend** — ~$0.01–0.03 per report; capped at 5 pages
-7. **Nushke videos** open YouTube search in new tab — no embedded curated video IDs yet
-8. **Community peers** are AI roleplay only — no real users; required disclaimer enforces honesty
+7. **Nushke recipes are now in-app** (Session 9) — old YouTube fallback removed in favor of step overlays. AYUSH ingredients without a kit (rare) get no card.
+8. **Sarvam STT is post-recording**, not streaming — voice overlay's "live" feel comes from mic-level bars + transcript-on-arrival, not partial words. If/when Sarvam ships streaming, swap in `convListenOnce()`.
+9. **Community peers** are AI roleplay only — no real users; required disclaimer enforces honesty
+10. **Orphan CSS** — `.hub3-mood*`/`.hub3-carousel*`/`.hub3-qb*` rules remain (no DOM uses them); slated for cleanup next session.
 
 ---
 

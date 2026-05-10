@@ -2,6 +2,48 @@
 
 ---
 
+## 2026-05-10 — YouTube-link "video card" was a context switch, not a magical moment
+
+**What happened:** Session 7's `injectVideoCard()` opened `youtube.com/results?search_query=…` in a new tab whenever the AI mentioned an AYUSH ingredient. User feedback: "It's a video. It's a small animation that tells you press here for acupuncture. That are not laid out pretty well. It needs to be wired really well." Sending the user out of the app on every nushke reply broke the warming-voice magical moment that the rest of the product was built around.
+
+**Why it happened:** During Session 7 the goal was "no flow ends in a dead screen" and the YouTube link was the cheapest way to satisfy that. We treated the card as a placeholder for content we didn't yet have (curated YouTube IDs), but we shipped it as the actual product surface.
+
+**What was tried:** N/A — the issue surfaced from direct user testing, not internal review.
+
+**What fixed it:** Built `REMEDY_KITS` (15 in-app step-by-step recipes — haldi doodh, ajwain bhaap, tulsi kadha, etc.) and reused the existing `move-ov` overlay (already had auto-advance + Sarvam TTS + progress dots) to render them. `injectVideoCard()` is now an alias for `injectRemedyCard()`. Same call sites, in-app experience.
+
+**Rule going forward:** When wiring a "what to try" card, default to in-app step content. External-link cards are for cases where in-app isn't possible (e.g. doctor referral phone numbers), not to fill content gaps. The magical-moment question is "does this keep the user inside the warm conversation?" — if not, find another way.
+
+---
+
+## 2026-05-10 — Mood-first home buried the symptom-triage intent for tier 2/3
+
+**What happened:** Session 8's 3-zone hub put 3 large mood buttons (Theek/Takleef/Tension) as the primary CTA. User feedback: "I'm trying to solve it for tier two and tier three Bharat audience first… I want to start from symptoms triage." A user with a sick child wants to tap "Pet ki dikkat" and get a remedy, not pick an emoji to describe their feelings.
+
+**Why it happened:** The mood-first design was a Western-app-influenced pattern (gratitude/mood-tracking apps). For a tier-2/3 first-time user with a clear health complaint, that pattern adds a layer of self-categorization friction before the product can help.
+
+**What was tried:** N/A — surfaced from direct user feedback.
+
+**What fixed it:** Replaced the 3-mood grid with an 8-button symptom triage grid (`tri-grid`). Each button routes directly to nushke chat with the symptom pre-framed as a remedy ask, so the first AI turn IS the answer. Mood is collapsed into a single-line `tri-mood` strip — preserved but not dominant. Other features (Story, Saans, Lab, Dawai, Meal, Parivaar) live in a subtle `tri-rail` for low-cognitive-load discoverability.
+
+**Rule going forward:** For tier-2/3 health, lead with the user's verb ("I have X, fix it"), not their state ("I feel X"). When a feature wants to ask "how are you?", prove that mood adds value over directly asking what they want help with.
+
+---
+
+## 2026-05-10 — Voice overlay was opaque — user couldn't tell if it was listening
+
+**What happened:** User feedback: "The speak button does not give me a speech-to-transcript word that I can see. It is not a two-way conversation. If you press that, something happens. You don't know if it is listening or not. It should be high class — I can see my text are being written on the screen."
+
+**Why it happened:** Session 8's voice overlay had only a static `Sun rahi hoon... 🎤` text and the HelloJio looping MP4. No mic-level signal, no transcript display, no bot-reply mirror. The user had no proof the mic was working until the AI replied, several seconds later.
+
+**What was tried:** N/A — direct user feedback.
+
+**What fixed it:** Rebuilt the overlay with (a) a state pill that changes color/text per phase, (b) a 5-bar EQ driven from the existing Web Audio analyser RMS data via `_setBarsFromLevel()` — gives instant proof the mic is hearing voice, (c) a transcript area that shows `Aap ne kaha: <transcript>` as soon as Sarvam STT returns, then a `Soch rahi hoon...` thinking line, then `Saathi: <reply>` (mirrored from `addMsg('bot', ...)` automatically whenever the overlay is open). Sarvam STT doesn't stream so we can't show partial words during recording — but mic bars + transcript-on-arrival closes the trust gap.
+
+**Rule going forward:** A voice UI must show *something* that proves the mic is hot, the moment the user starts speaking. Text-only state ("Sun rahi hoon...") is not enough — it's a label, not a signal. Use analyser data even when the STT itself isn't streaming.
+
+---
+
 ## 2026-05-06 — sed injection failed on API key
 
 **What happened:** GitHub Actions workflow used `sed -i 's|REPLACE_WITH_YOUR_KEY|...|g'` to inject the OpenAI key, but the workflow failed silently — the key was not injected and the app showed the config error.

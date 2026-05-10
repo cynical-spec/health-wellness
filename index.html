@@ -203,13 +203,45 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .stretch-num{width:32px;height:32px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
 .stretch-text{font-size:14px;line-height:1.5}
 
-/* ── Voice overlay ── */
-#voice-ov{position:fixed;inset:0;background:var(--bg);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:48px 24px}
+/* ── Voice overlay (v4: live conversation mode) ── */
+#voice-ov{position:fixed;inset:0;background:var(--bg);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:max(48px,env(safe-area-inset-top)) 20px 24px}
 #voice-ov.on{display:flex}
-.voice-close{position:absolute;top:max(20px,env(safe-area-inset-top));right:20px;width:44px;height:44px;background:rgba(255,255,255,.1);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text)}
-.voice-vid{width:200px;height:200px;border-radius:50%;object-fit:cover}
-.voice-txt{font-size:17px;font-weight:500;text-align:center;min-height:56px;padding:0 20px;line-height:1.5}
-.voice-lbl{font-size:13px;color:var(--text2)}
+.voice-close{position:absolute;top:max(18px,env(safe-area-inset-top));right:18px;width:44px;height:44px;background:rgba(255,255,255,.1);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);z-index:2}
+.voice-state-pill{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:5px 12px;border-radius:var(--radius-pill);background:rgba(34,197,94,.16);color:#22c55e;border:1px solid rgba(34,197,94,.36);margin-bottom:14px}
+.voice-state-pill.thinking{background:rgba(107,33,168,.16);color:#a855f7;border-color:rgba(107,33,168,.4)}
+.voice-state-pill.speaking{background:rgba(251,146,60,.16);color:#fb923c;border-color:rgba(251,146,60,.4)}
+.voice-vid{width:140px;height:140px;border-radius:50%;object-fit:cover;margin-bottom:14px}
+/* Live mic level bars — shown during listening */
+.voice-bars{display:flex;align-items:flex-end;gap:5px;height:60px;margin-bottom:18px;min-width:160px;justify-content:center}
+.voice-bar{width:6px;background:linear-gradient(180deg,#22c55e,rgba(34,197,94,.45));border-radius:3px;height:8px;transition:height .08s ease-out}
+.voice-bars.idle .voice-bar{height:8px;background:rgba(255,255,255,.15);animation:none}
+.voice-bars.thinking .voice-bar{background:rgba(107,33,168,.6);animation:voiceThink 1.4s ease-in-out infinite}
+.voice-bars.thinking .voice-bar:nth-child(1){animation-delay:0s}
+.voice-bars.thinking .voice-bar:nth-child(2){animation-delay:.1s}
+.voice-bars.thinking .voice-bar:nth-child(3){animation-delay:.2s}
+.voice-bars.thinking .voice-bar:nth-child(4){animation-delay:.3s}
+.voice-bars.thinking .voice-bar:nth-child(5){animation-delay:.4s}
+@keyframes voiceThink{0%,100%{height:10px}50%{height:38px}}
+/* Transcript live area — what the user said + what bot is saying */
+.voice-transcript-area{width:100%;max-width:420px;display:flex;flex-direction:column;gap:8px;flex:1;overflow-y:auto;padding-bottom:140px}
+.voice-transcript-area::-webkit-scrollbar{display:none}
+.voice-line{padding:11px 14px;border-radius:14px;font-size:15px;line-height:1.5;animation:vtFade .25s ease-out}
+@keyframes vtFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.voice-line.user{background:rgba(255,255,255,.06);color:#fff;align-self:flex-end;max-width:85%;border-bottom-right-radius:6px}
+.voice-line.user .voice-line-lbl{color:#22c55e}
+.voice-line.bot{background:rgba(107,33,168,.18);color:#fff;align-self:flex-start;max-width:90%;border-bottom-left-radius:6px;border:1px solid rgba(107,33,168,.32)}
+.voice-line.bot .voice-line-lbl{color:#a855f7}
+.voice-line-lbl{display:block;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;opacity:.85}
+.voice-line.thinking{background:transparent;border:none;color:var(--text2);font-style:italic;align-self:center;font-size:13px}
+/* Hint text at bottom while listening */
+.voice-hint{position:absolute;bottom:max(72px,calc(env(safe-area-inset-bottom) + 64px));left:0;right:0;text-align:center;font-size:12px;color:var(--text2);padding:0 24px;pointer-events:none}
+/* Stop button — fixed bottom */
+.voice-stop{position:absolute;bottom:max(20px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:rgba(220,38,38,.18);border:1.5px solid rgba(220,38,38,.5);color:#fff;border-radius:var(--radius-pill);padding:12px 28px;font-family:'JioType',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px}
+.voice-stop:active{opacity:.85}
+.voice-stop-dot{width:10px;height:10px;border-radius:2px;background:#dc2626}
+/* Legacy classes kept for backward compat */
+.voice-txt{font-size:17px;font-weight:500;text-align:center;min-height:0;padding:0 20px;line-height:1.5;display:none}
+.voice-lbl{display:none}
 
 /* ── Full-screen reminder ── */
 #reminder-ov{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:40px 24px;backdrop-filter:blur(10px)}
@@ -289,6 +321,32 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .hub3-stat-chip .hsc-score{color:#22c55e}
 .hub3-stat-chip .hsc-streak{color:#fb923c}
 .hub3-stat-chip .hsc-sep{opacity:.35;font-weight:400}
+
+/* ── v4: symptom-first triage grid + subtle "more" rail ── */
+.tri-hero{padding:14px 16px 10px}
+.tri-hero h1{font-size:26px;font-weight:700;line-height:1.2;margin-bottom:4px}
+.tri-hero p{font-size:14px;color:var(--text2);line-height:1.5}
+.tri-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:6px 16px 14px}
+.tri-btn{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 12px;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);text-align:left;min-height:64px;transition:transform .12s,background .15s,border-color .15s}
+.tri-btn:active{transform:scale(.97);background:var(--bold-dim);border-color:var(--primary)}
+.tri-btn-emoji{width:38px;height:38px;border-radius:10px;background:rgba(107,33,168,.18);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.tri-btn-text{font-size:13px;font-weight:600;line-height:1.25;flex:1;min-width:0}
+.tri-btn-sub{font-size:11px;color:var(--text2);font-weight:500;margin-top:2px}
+/* Subtle "and more" rail — small chip-cards, deemphasized */
+.tri-rail-lbl{padding:14px 16px 8px;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.38)}
+.tri-rail{display:flex;gap:8px;padding:0 16px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tri-rail::-webkit-scrollbar{display:none}
+.tri-rail-card{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px 12px;min-width:108px;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);text-align:left}
+.tri-rail-card:active{background:rgba(255,255,255,.06);border-color:rgba(107,33,168,.4)}
+.tri-rail-emoji{font-size:18px;line-height:1}
+.tri-rail-name{font-size:12px;font-weight:600;line-height:1.2}
+.tri-rail-sub{font-size:10px;color:var(--text2);line-height:1.2}
+/* Tiny mood strip — collapsed at the bottom of triage */
+.tri-mood{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 16px 14px;padding:10px 12px;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.08);border-radius:12px}
+.tri-mood-q{font-size:11px;color:var(--text2);font-weight:500;flex:1}
+.tri-mood-btns{display:flex;gap:4px}
+.tri-mood-btn{background:transparent;border:none;font-size:18px;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.tri-mood-btn:active{background:rgba(107,33,168,.2)}
 /* Carousel — horizontal scroll */
 .hub3-carousel-lbl{padding:6px 16px 10px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.42)}
 .hub3-carousel{display:flex;gap:10px;padding:0 16px 14px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
@@ -454,6 +512,32 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .vc-title{font-size:13px;font-weight:700;line-height:1.3;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vc-meta{font-size:11px;color:var(--text2)}
 .vc-meta-tag{display:inline-block;background:rgba(30,204,176,.15);color:var(--sparkle);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px;margin-right:5px}
+
+/* v4: Recipe card (in-app step overlay) */
+.recipe-card{display:flex;gap:12px;align-items:center;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.32);border-radius:14px;padding:12px;cursor:pointer;text-align:left;font-family:'JioType',sans-serif;color:var(--text);width:100%;transition:transform .15s}
+.recipe-card:active{transform:scale(.98)}
+.recipe-card-thumb{width:56px;height:56px;border-radius:12px;background:rgba(34,197,94,.18);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;position:relative;border:1px solid rgba(34,197,94,.3)}
+.recipe-card-play{position:absolute;right:-4px;bottom:-4px;width:22px;height:22px;border-radius:50%;background:#22c55e;color:#000;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid var(--bg)}
+.recipe-card-info{flex:1;min-width:0}
+.recipe-card-title{font-size:14px;font-weight:700;line-height:1.25;margin-bottom:3px}
+.recipe-card-ing{font-size:11px;color:var(--text2);line-height:1.35;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.recipe-card-meta{font-size:10px;color:var(--text2)}
+.recipe-card-tag{display:inline-block;background:rgba(34,197,94,.18);color:#22c55e;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px;margin-right:5px}
+
+/* v4: Acupressure card */
+.acu-card{display:flex;gap:12px;align-items:center;background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.32);border-radius:14px;padding:12px;cursor:pointer;text-align:left;font-family:'JioType',sans-serif;color:var(--text);width:100%;transition:transform .15s}
+.acu-card:active{transform:scale(.98)}
+.acu-card-thumb{width:56px;height:56px;border-radius:50%;background:rgba(251,146,60,.18);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;position:relative;border:1px solid rgba(251,146,60,.32)}
+.acu-card-pulse{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(251,146,60,.6);animation:acuPulse 1.6s ease-out infinite}
+@keyframes acuPulse{0%{transform:scale(.9);opacity:.8}100%{transform:scale(1.35);opacity:0}}
+.acu-card-info{flex:1;min-width:0}
+.acu-card-title{font-size:14px;font-weight:700;line-height:1.25;margin-bottom:4px}
+.acu-card-meta{font-size:10px;color:var(--text2)}
+.acu-card-tag{display:inline-block;background:rgba(251,146,60,.2);color:#fb923c;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px;margin-right:5px}
+/* Pin marker on acupressure SVG */
+.acu-pin{position:absolute;width:18px;height:18px;border-radius:50%;background:#fb923c;border:3px solid #fff;transform:translate(-50%,-50%);box-shadow:0 0 0 6px rgba(251,146,60,.32);animation:acuPin 1.4s ease-in-out infinite}
+@keyframes acuPin{0%,100%{box-shadow:0 0 0 6px rgba(251,146,60,.32)}50%{box-shadow:0 0 0 14px rgba(251,146,60,0)}}
+#move-ov-anim{position:relative;overflow:visible}
 /* ══ Lab Interpreter ══ */
 .lab-body{padding:14px 16px}
 .lab-step-title{font-size:18px;font-weight:700;margin-bottom:6px;line-height:1.3}
@@ -688,39 +772,91 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
   </div>
 
   <div class="body">
-    <!-- Zone 1: Greeting -->
-    <div class="hub3-greet">
-      <h1>Namaste<span id="hub3-name"></span> 🙏<br>Aaj kaisa raha?</h1>
-      <p id="hub3-greet-sub">Batao — main sun rahi hoon</p>
+    <!-- v4: Symptoms-triage hero -->
+    <div class="tri-hero">
+      <h1>Kya takleef hai<span id="hub3-name"></span>?</h1>
+      <p>Bolein ya niche tap karein — Dadi ke ghar ke nushke milenge</p>
     </div>
 
-    <!-- Zone 2: 3 mood buttons -->
-    <div class="hub3-moods">
-      <button class="hub3-mood" onclick="moodTap('theek')">
-        <div class="hub3-mood-emoji">😌</div>
-        <div class="hub3-mood-lbl">Theek hoon</div>
+    <!-- v4: Symptom triage grid — primary path -->
+    <div class="tri-grid" id="tri-grid">
+      <button class="tri-btn" onclick="triSymptomTap('Sir dard ho raha hai','🤕 Sir dard kaise kam karein?')">
+        <div class="tri-btn-emoji">🤕</div>
+        <div class="tri-btn-text">Sir dard<div class="tri-btn-sub">Headache, migraine</div></div>
       </button>
-      <button class="hub3-mood" onclick="moodTap('takleef')">
-        <div class="hub3-mood-emoji">🤒</div>
-        <div class="hub3-mood-lbl">Kuch takleef</div>
+      <button class="tri-btn" onclick="triSymptomTap('Sardi-khansi hai','🤧 Sardi-khansi ke liye ghar ka nushka batao')">
+        <div class="tri-btn-emoji">🤧</div>
+        <div class="tri-btn-text">Sardi-khansi<div class="tri-btn-sub">Cold, cough</div></div>
       </button>
-      <button class="hub3-mood" onclick="moodTap('tension')">
-        <div class="hub3-mood-emoji">😰</div>
-        <div class="hub3-mood-lbl">Bahut tension</div>
+      <button class="tri-btn" onclick="triSymptomTap('Pet ki dikkat hai','🤢 Pet dard, gas, ya acidity ka ghar ka ilaj batao')">
+        <div class="tri-btn-emoji">🤢</div>
+        <div class="tri-btn-text">Pet ki dikkat<div class="tri-btn-sub">Acidity, gas, dard</div></div>
+      </button>
+      <button class="tri-btn" onclick="triSymptomTap('Neend nahi aati','😴 Raat ko neend nahi aati, kya karein?')">
+        <div class="tri-btn-emoji">😴</div>
+        <div class="tri-btn-text">Neend nahi<div class="tri-btn-sub">Sleep issues</div></div>
+      </button>
+      <button class="tri-btn" onclick="triSymptomTap('Ghutno/jodon mein dard','🦴 Ghutno aur jodon mein dard ka ghar ka nushka batao')">
+        <div class="tri-btn-emoji">🦴</div>
+        <div class="tri-btn-text">Ghutno/jodon dard<div class="tri-btn-sub">Joints, knees</div></div>
+      </button>
+      <button class="tri-btn" onclick="triSymptomTap('Bukhar hai','🌡 Halka bukhar hai, ghar ka nushka batao')">
+        <div class="tri-btn-emoji">🌡</div>
+        <div class="tri-btn-text">Bukhar<div class="tri-btn-sub">Fever</div></div>
+      </button>
+      <button class="tri-btn" onclick="triSymptomTap('Tension/chinta','😰 Tension aur chinta lagi hai, kya karein?')">
+        <div class="tri-btn-emoji">😰</div>
+        <div class="tri-btn-text">Tension<div class="tri-btn-sub">Anxiety, stress</div></div>
+      </button>
+      <button class="tri-btn" onclick="triSymptomTap('Saans/galay ki dikkat','🌬 Galay mein khich-khich, saans bhaari — nushka batao')">
+        <div class="tri-btn-emoji">🌬</div>
+        <div class="tri-btn-text">Saans/galay<div class="tri-btn-sub">Throat, breath</div></div>
       </button>
     </div>
 
-    <!-- Zone 3a: Aaj ki kahani — scrollable carousel of TOD-specific cards -->
-    <div class="hub3-carousel-lbl">Aaj ke liye</div>
-    <div class="hub3-carousel" id="hub3-carousel"><!-- JS renders TOD cards --></div>
+    <!-- v4: Subtle mood pulse-check — single line, no commitment -->
+    <div class="tri-mood" id="tri-mood-strip">
+      <div class="tri-mood-q">Aap kaisa feel kar rahe ho?</div>
+      <div class="tri-mood-btns">
+        <button class="tri-mood-btn" onclick="moodTap('theek')" aria-label="Theek hoon">😌</button>
+        <button class="tri-mood-btn" onclick="moodTap('takleef')" aria-label="Kuch takleef">🤒</button>
+        <button class="tri-mood-btn" onclick="moodTap('tension')" aria-label="Tension">😰</button>
+      </div>
+    </div>
 
-    <!-- Zone 3b: Aksar log poochhte hain — 4 quick question bubbles -->
-    <div class="hub3-qs-lbl">Aksar log poochhte hain</div>
-    <div class="hub3-qs" id="hub3-qs">
-      <button class="hub3-qb" onclick="askCommonQ('🤕 Sir dard kaise kam karein?')"><span class="hub3-qb-emoji">🤕</span><span class="hub3-qb-text">Sir dard ho raha hai</span></button>
-      <button class="hub3-qb" onclick="askCommonQ('😴 Neend nahi aati raat ko, kya karein?')"><span class="hub3-qb-emoji">😴</span><span class="hub3-qb-text">Neend nahi aati</span></button>
-      <button class="hub3-qb" onclick="askCommonQ('⚖️ Vajan kaise kam karein, ghar ke nuskhe se?')"><span class="hub3-qb-emoji">⚖️</span><span class="hub3-qb-text">Vajan kam karein</span></button>
-      <button class="hub3-qb" onclick="askCommonQ('🦴 Ghutno mein dard hai, kya nuskha hai?')"><span class="hub3-qb-emoji">🦴</span><span class="hub3-qb-text">Ghutno mein dard</span></button>
+    <!-- v4: Aur kya kar sakte ho — subtle horizontal rail of secondary use cases -->
+    <div class="tri-rail-lbl">Aur kya kar sakte ho</div>
+    <div class="tri-rail" id="tri-rail">
+      <button class="tri-rail-card" onclick="playStory('general')">
+        <span class="tri-rail-emoji">📖</span>
+        <span class="tri-rail-name">Dadi ki kahani</span>
+        <span class="tri-rail-sub">2 min · Suno</span>
+      </button>
+      <button class="tri-rail-card" onclick="goTo('s-breathwork')">
+        <span class="tri-rail-emoji">🌬</span>
+        <span class="tri-rail-name">Saans karein</span>
+        <span class="tri-rail-sub">2 min · Try</span>
+      </button>
+      <button class="tri-rail-card" onclick="startFeature('lab')">
+        <span class="tri-rail-emoji">🧪</span>
+        <span class="tri-rail-name">Lab report</span>
+        <span class="tri-rail-sub">Padhke samjhao</span>
+      </button>
+      <button class="tri-rail-card" onclick="startFeature('medicine')">
+        <span class="tri-rail-emoji">💊</span>
+        <span class="tri-rail-name">Dawai yaad</span>
+        <span class="tri-rail-sub">Reminder</span>
+      </button>
+      <button class="tri-rail-card" onclick="startFeature('meal')">
+        <span class="tri-rail-emoji">🍽</span>
+        <span class="tri-rail-name">Meal plan</span>
+        <span class="tri-rail-sub">3-din ka</span>
+      </button>
+      <button class="tri-rail-card" onclick="startFeature('family')">
+        <span class="tri-rail-emoji">👨‍👩‍👧</span>
+        <span class="tri-rail-name">Parivaar</span>
+        <span class="tri-rail-sub">Sab ek jagah</span>
+      </button>
     </div>
   </div>
 
@@ -941,14 +1077,22 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
   </div>
 </div>
 
-<!-- ══════════════ VOICE OVERLAY ══════════════ -->
+<!-- ══════════════ VOICE OVERLAY (v4: live conversation) ══════════════ -->
 <div id="voice-ov">
-  <button class="voice-close" onclick="stopVoice()">
+  <button class="voice-close" onclick="stopVoice()" aria-label="Band karein">
     <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
   </button>
+  <div class="voice-state-pill" id="voice-state-pill">Sun rahi hoon</div>
   <video class="voice-vid" id="voice-vid" autoplay loop muted playsinline src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/states/Dark/HelloJio_Listening_242.mp4"></video>
-  <p class="voice-txt" id="voice-txt">...</p>
-  <p class="voice-lbl">Bol rahe hain...</p>
+  <div class="voice-bars" id="voice-bars">
+    <div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div>
+  </div>
+  <div class="voice-transcript-area" id="voice-transcript-area"></div>
+  <div class="voice-hint" id="voice-hint">Bolein... ya rukne ke liye band karein</div>
+  <button class="voice-stop" onclick="stopVoice()"><span class="voice-stop-dot"></span>Band karein</button>
+  <!-- Legacy refs kept so other code that touches them doesn't break -->
+  <p class="voice-txt" id="voice-txt"></p>
+  <p class="voice-lbl" id="voice-lbl"></p>
 </div>
 
 <!-- ══════════════ REMINDER OVERLAY ══════════════ -->
@@ -1976,7 +2120,7 @@ const TIP_CONTENTS = {
 
 function renderTODCarousel() {
   const wrap = document.getElementById('hub3-carousel');
-  if (!wrap) return;
+  if (!wrap) return; // v4: TOD carousel removed from hub; keep helper for backward compat
   const tod = getTimeOfDay();
   const cards = TOD_CARDS[tod.slot] || TOD_CARDS.morning;
   wrap.innerHTML = cards.map((c, i) => `
@@ -2028,6 +2172,22 @@ function askCommonQ(question) {
     document.getElementById('chat-msgs').innerHTML = '';
     addMsg('user', question, false);
     callAI(question, getSystemPromptFor('nushke'));
+  }, 100);
+}
+
+// v4: Symptoms-triage tap — show the user's plain phrase, ask AI for a remedy
+function triSymptomTap(displayText, aiPrompt) {
+  ST.chatCtx = 'nushke';
+  ST.chatHistory = [];
+  ST.isFirstMsg = true;
+  trackFeature('nushke');
+  goTo('s-chat');
+  const lbl = document.getElementById('chat-ctx-label');
+  if (lbl) lbl.textContent = 'Ghar ke Nushke';
+  setTimeout(() => {
+    document.getElementById('chat-msgs').innerHTML = '';
+    addMsg('user', displayText, false);
+    callAI(aiPrompt, getSystemPromptFor('nushke'));
   }, 100);
 }
 
@@ -2275,6 +2435,11 @@ function renderSkillCard(type, container) {
 // ── Chat rendering ──
 function addMsg(role, text, showBadge) {
   const msgs = document.getElementById('chat-msgs');
+  // v4: mirror bot replies into the live voice overlay if it's open
+  const ov = document.getElementById('voice-ov');
+  if (ov && ov.classList.contains('on') && role === 'bot' && typeof appendVoiceLine === 'function') {
+    try { removeVoiceThinkingLine(); appendVoiceLine('bot', text); } catch(e){}
+  }
   const row = document.createElement('div');
   row.className = `msg-row ${role === 'user' ? 'user' : 'bot'}`;
   const bub = document.createElement('div');
@@ -2297,8 +2462,11 @@ function addMsg(role, text, showBadge) {
     // skill check
     const skill = detectSkill(text);
     if (skill) setTimeout(() => { const skRow = document.createElement('div'); skRow.className = 'msg-row bot'; renderSkillCard(skill, skRow); msgs.appendChild(skRow); msgs.scrollTop = msgs.scrollHeight; }, 600);
-    // nushke video card injection
-    if (ST.chatCtx === 'nushke') setTimeout(() => injectVideoCard(text, msgs), 800);
+    // v4: nushke recipe card (in-app step overlay) + acupressure card
+    if (ST.chatCtx === 'nushke') {
+      setTimeout(() => injectRemedyCard(text, msgs), 800);
+      setTimeout(() => injectAcupressureCard(text, msgs), 950);
+    }
     // v3.7: movement skill card if reply mentions a known movement
     setTimeout(() => injectMovementCard(text, msgs), 900);
     // v3.2: Follow-up CTA chips (after a beat, only on AI replies — not template ones)
@@ -3458,9 +3626,66 @@ async function toggleVoice(target) {
   }
   _convActive = true;
   ST.isListening = true;
+  // v4: clear transcript area each time the conversation starts
+  const ta = document.getElementById('voice-transcript-area');
+  if (ta) ta.innerHTML = '';
   showVoiceOverlay(target);
   setVoiceState('listening');
   await convListenOnce();
+}
+
+// v4: Append a line to the in-overlay live transcript area
+function appendVoiceLine(role, text, opts) {
+  const ta = document.getElementById('voice-transcript-area');
+  if (!ta) return null;
+  const line = document.createElement('div');
+  line.className = 'voice-line ' + role + (opts && opts.thinking ? ' thinking' : '');
+  if (role === 'thinking') {
+    line.className = 'voice-line thinking';
+    line.textContent = text;
+  } else {
+    const lbl = document.createElement('span');
+    lbl.className = 'voice-line-lbl';
+    lbl.textContent = role === 'user' ? 'Aap ne kaha' : 'Saathi';
+    const body = document.createElement('div');
+    body.textContent = text;
+    line.appendChild(lbl);
+    line.appendChild(body);
+  }
+  ta.appendChild(line);
+  ta.scrollTop = ta.scrollHeight;
+  return line;
+}
+function removeVoiceThinkingLine() {
+  document.querySelectorAll('#voice-transcript-area .voice-line.thinking').forEach(n => n.remove());
+}
+// v4: Animate bars from analyser data
+function _setBarsFromLevel(avg) {
+  const bars = document.querySelectorAll('#voice-bars .voice-bar');
+  if (!bars.length) return;
+  // avg is 0-255; map to 8-58 px height with simple per-bar variation
+  const base = Math.min(58, Math.max(8, (avg - 6) * 1.2));
+  bars.forEach((b, i) => {
+    const variance = (Math.sin(Date.now() / 90 + i) + 1) * 0.5; // 0..1
+    b.style.height = Math.round(8 + (base - 8) * (0.55 + 0.45 * variance)) + 'px';
+  });
+}
+function _setBarsIdle() {
+  const wrap = document.getElementById('voice-bars');
+  if (wrap) wrap.classList.add('idle');
+  document.querySelectorAll('#voice-bars .voice-bar').forEach(b => { b.style.height = '8px'; });
+}
+function _setBarsThinking() {
+  const wrap = document.getElementById('voice-bars');
+  if (!wrap) return;
+  wrap.classList.remove('idle');
+  wrap.classList.add('thinking');
+  document.querySelectorAll('#voice-bars .voice-bar').forEach(b => { b.style.height = ''; });
+}
+function _setBarsListening() {
+  const wrap = document.getElementById('voice-bars');
+  if (!wrap) return;
+  wrap.classList.remove('idle','thinking');
 }
 
 async function convListenOnce() {
@@ -3518,6 +3743,8 @@ async function convListenOnce() {
         let sum = 0;
         for (let i = 0; i < data.length; i++) sum += data[i];
         const avg = sum / data.length;
+        // v4: drive live mic-level bars in the overlay
+        _setBarsFromLevel(avg);
         elapsed += 100;
         if (avg > SILENCE_THRESHOLD) {
           speechSeen = true;
@@ -3551,9 +3778,12 @@ async function convListenOnce() {
 
 async function convHandleTranscript(transcript) {
   const target = ST.voiceTarget || 'chat';
+  // v4: Show user's spoken text in the overlay BEFORE sending to AI
+  appendVoiceLine('user', transcript);
   if (target === 'chat') {
     addMsg('user', transcript, false);
     setVoiceState('thinking');
+    appendVoiceLine('thinking', 'Soch rahi hoon...');
     // Wrap callAI so we know when it's done speaking (roughly when audio finishes)
     await new Promise(resolve => {
       const _origSpeak = window.speak;
@@ -3575,7 +3805,7 @@ async function convHandleTranscript(transcript) {
           setTimeout(checkDone, 1500); // give TTS time to start
         }
       };
-      // Patch addMsg to detect bot reply
+      // Patch addMsg only to detect when bot reply lands (mirror is handled inside addMsg itself)
       const origAddMsg = window.addMsg;
       window.addMsg = function(role, text, showBadge) {
         const r = origAddMsg.apply(this, arguments);
@@ -3591,37 +3821,42 @@ async function convHandleTranscript(transcript) {
     });
   } else {
     // Hub: route the transcript through the hub flow → opens chat → AI replies
+    setVoiceState('thinking');
+    appendVoiceLine('thinking', 'Soch rahi hoon...');
     const inp = document.getElementById('hub-input');
     if (inp) { inp.value = transcript; }
     // Switch to chat target after first turn so subsequent turns continue in chat
     ST.voiceTarget = 'chat';
     hubSend();
-    // Wait briefly so chat opens & first reply lands
-    await new Promise(r => setTimeout(r, 4000));
+    // Wait briefly so chat opens & first reply lands; addMsg will mirror bot reply
+    await new Promise(r => setTimeout(r, 4500));
+    setVoiceState('speaking');
   }
 }
 
 function setVoiceState(state) {
   // state: 'listening' | 'thinking' | 'speaking'
-  const txt = document.getElementById('voice-txt');
-  const lbl = document.getElementById('voice-lbl');
-  if (state === 'listening') {
-    if (txt) txt.textContent = 'Sun rahi hoon... 🎤';
-    if (lbl) lbl.textContent = 'Bolo';
-  } else if (state === 'thinking') {
-    if (txt) txt.textContent = 'Soch rahi hoon... 💭';
-    if (lbl) lbl.textContent = 'Saath hoon';
-  } else if (state === 'speaking') {
-    if (txt) txt.textContent = 'Bata rahi hoon... 🗣️';
-    if (lbl) lbl.textContent = '';
+  const pill = document.getElementById('voice-state-pill');
+  const hint = document.getElementById('voice-hint');
+  if (pill) {
+    pill.classList.remove('thinking','speaking');
+    if (state === 'listening')      { pill.textContent = 'Sun rahi hoon'; }
+    else if (state === 'thinking')  { pill.textContent = 'Soch rahi hoon'; pill.classList.add('thinking'); }
+    else if (state === 'speaking')  { pill.textContent = 'Bata rahi hoon'; pill.classList.add('speaking'); }
   }
+  if (hint) {
+    if (state === 'listening')      hint.textContent = 'Bolein... ya rukne ke liye band karein';
+    else if (state === 'thinking')  hint.textContent = 'Aapki baat samjh rahi hoon';
+    else if (state === 'speaking')  hint.textContent = 'Suno... aap baad mein bhi bol sakte ho';
+  }
+  if (state === 'listening')      _setBarsListening();
+  else if (state === 'thinking')  _setBarsThinking();
+  else if (state === 'speaking')  _setBarsThinking();
 }
 
 function showVoiceOverlay(target) {
   const ov = document.getElementById('voice-ov');
-  const txt = document.getElementById('voice-txt');
   if (ov) ov.classList.add('on');
-  if (txt) txt.textContent = 'Bolein...';
   const btn = document.getElementById(target === 'chat' ? 'chat-speak' : 'hub-speak');
   const lbl = document.getElementById(target === 'chat' ? 'chat-speak-lbl' : 'hub-speak-lbl');
   if (btn) btn.classList.add('listening');
@@ -3890,48 +4125,285 @@ window.addEventListener('load', () => {
   }
 });
 
-// ── v3.7: Nushke video card + movement skill card injection ──
-const NUSHKE_VIDEOS = [
-  { kw: ['ajwain'],  emoji: '🌾', title: 'Ajwain ki bhaap', dur: '1:20', q: 'ajwain steam home remedy ayurveda hindi' },
-  { kw: ['haldi','turmeric','golden milk'], emoji: '🟡', title: 'Haldi wala doodh', dur: '0:58', q: 'haldi doodh recipe ayurveda' },
-  { kw: ['tulsi','tulasi'], emoji: '🌿', title: 'Tulsi kadha', dur: '1:45', q: 'tulsi kadha recipe immunity ayurveda hindi' },
-  { kw: ['adrak','ginger'], emoji: '🫚', title: 'Adrak ki chai', dur: '1:10', q: 'adrak chai ginger tea ayurveda hindi' },
-  { kw: ['jeera','cumin'], emoji: '🟤', title: 'Jeera paani', dur: '0:48', q: 'jeera paani digestion ayurveda hindi' },
-  { kw: ['mulethi','licorice'], emoji: '🪵', title: 'Mulethi kadha', dur: '1:30', q: 'mulethi kadha cough remedy hindi' },
-  { kw: ['saunf','fennel'], emoji: '🌱', title: 'Saunf paani', dur: '0:55', q: 'saunf fennel water acidity remedy' },
-  { kw: ['methi','fenugreek'], emoji: '🌾', title: 'Methi paani', dur: '1:15', q: 'methi seeds water diabetes ayurveda hindi' },
-  { kw: ['neem'], emoji: '🌳', title: 'Neem ke fayde', dur: '2:00', q: 'neem benefits home remedy hindi' },
-  { kw: ['amla'], emoji: '🟢', title: 'Amla murabba', dur: '1:20', q: 'amla murabba juice ayurveda recipe' },
-  { kw: ['nimbu','lemon','shahad','honey'], emoji: '🍋', title: 'Nimbu-shahad paani', dur: '0:40', q: 'nimbu shahad pani detox ayurveda' },
-  { kw: ['anjeer','fig'], emoji: '🟣', title: 'Anjeer doodh', dur: '1:00', q: 'anjeer doodh kabz remedy hindi' },
-  { kw: ['arandi','castor'], emoji: '💧', title: 'Arandi tel kabz', dur: '0:50', q: 'castor oil constipation home remedy' },
-  { kw: ['namak','salt water','gargle'], emoji: '🧂', title: 'Namak paani gargle', dur: '0:35', q: 'salt water gargle home remedy' },
-  { kw: ['palak','spinach'], emoji: '🥬', title: 'Palak juice kabz', dur: '0:50', q: 'palak juice constipation home remedy hindi' }
-];
-function detectVideo(text) {
+// ── v4: Nushke recipe kits — in-app step-by-step animation (no external video) ──
+const REMEDY_KITS = {
+  'haldi-doodh': { kw:['haldi','turmeric','golden milk'], emoji:'🥛', title:'Haldi wala doodh', durSec:180, ingredients:'1 cup doodh · ¼ chamach haldi · pinch kali mirch · ½ chamach gud',
+    steps:[
+      'Ek cup doodh halki aanch par garam karo.',
+      '¼ chamach haldi + chutki bhar kali mirch daalo.',
+      '2-3 minute dheere chalate raho — ubaal nahi.',
+      'Aanch band karo. Halka thanda hone do.',
+      'Gud ya shahad mila lo. Sone se 30 min pehle piyo.'
+    ] },
+  'ajwain-bhaap': { kw:['ajwain'], emoji:'🌾', title:'Ajwain ki bhaap', durSec:240, ingredients:'1 chamach ajwain · 1 patila paani · towel',
+    steps:[
+      'Patile mein 2 cup paani ubalo.',
+      'Ek chamach ajwain daalo. 1 minute aur ubaalo.',
+      'Aanch band. Sir par towel daalke patile ke upar jhuko.',
+      '5 min bhaap lo — naak aur muh dono se saans.',
+      'Bhaap ke baad 30 min thande mein mat jao.'
+    ] },
+  'tulsi-kadha': { kw:['tulsi','tulasi','kadha'], emoji:'🌿', title:'Tulsi kadha', durSec:300, ingredients:'8-10 tulsi patte · ½ inch adrak · 4-5 kali mirch · 1 elaichi · 1 cup paani',
+    steps:[
+      'Cup paani patile mein daalo.',
+      'Tulsi, kuti adrak, kali mirch, elaichi daal do.',
+      '5 min madhyam aanch par ubaalo (paani aadha ho).',
+      'Chhan lo. Thoda gud ya shahad mila lo.',
+      'Garam-garam piyo. Din mein 1-2 baar.'
+    ] },
+  'adrak-chai': { kw:['adrak','ginger'], emoji:'🫚', title:'Adrak ki chai', durSec:240, ingredients:'1 inch adrak · ½ cup paani · ½ cup doodh · chai patti · gud',
+    steps:[
+      'Adrak chhote tukde karo, kuto.',
+      'Paani mein adrak + chai patti daalke ubaalo.',
+      'Doodh daalo. 3-4 min ubaalo aur.',
+      'Chhan lo. Gud mila lo.',
+      'Sardi-khansi mein subah-shaam piyo.'
+    ] },
+  'jeera-paani': { kw:['jeera','cumin'], emoji:'🟤', title:'Jeera paani', durSec:120, ingredients:'1 chamach jeera · 1 glass paani',
+    steps:[
+      'Raat ko 1 chamach jeera 1 glass paani mein bhigo do.',
+      'Subah uthke paani ko ubalo — 2-3 min.',
+      'Halka thanda kar lo.',
+      'Khali pet piyo.',
+      'Pet phulta hai, gas hai — roz piyo.'
+    ] },
+  'mulethi-kadha': { kw:['mulethi','licorice'], emoji:'🪵', title:'Mulethi kadha', durSec:300, ingredients:'1 inch mulethi stick · 1 cup paani · shahad',
+    steps:[
+      'Mulethi ko chhote tukdo mein todo.',
+      '1 cup paani mein ubaalo — aadha ho jaaye.',
+      'Chhan lo, halka garam.',
+      '½ chamach shahad mila lo (jab thoda thanda).',
+      'Khansi-galay khich-khich mein 2 baar piyo.'
+    ] },
+  'saunf-paani': { kw:['saunf','fennel'], emoji:'🌱', title:'Saunf paani', durSec:120, ingredients:'1 chamach saunf · 1 cup paani',
+    steps:[
+      'Cup paani mein 1 chamach saunf bhigo do (raat ko).',
+      'Subah paani ko halka garam karo.',
+      'Khali pet piyo.',
+      'Acidity-jalan mein turant aaram.',
+      'Khaane ke baad bhi le sakte ho.'
+    ] },
+  'methi-paani': { kw:['methi','fenugreek'], emoji:'🌾', title:'Methi paani', durSec:120, ingredients:'1 chamach methi dane · 1 glass paani',
+    steps:[
+      'Raat ko 1 chamach methi 1 glass paani mein bhigo do.',
+      'Subah paani chhan lo. Methi ke daane chaba sakte ho.',
+      'Khali pet piyo.',
+      'Sugar control aur kabz ke liye.',
+      'Roz 2 mahine — fark dikhega.'
+    ] },
+  'namak-gargle': { kw:['namak','salt water','gargle','garara'], emoji:'🧂', title:'Namak paani garara', durSec:120, ingredients:'½ chamach namak · 1 glass garam paani',
+    steps:[
+      'Glass paani halka garam karo (jala na de).',
+      '½ chamach namak ghol lo.',
+      'Mooh mein paani lo, gala upar — "aaa" awaaz.',
+      '20-30 sec garara karo, thuk do.',
+      'Aise 4-5 baar. Din mein 3 baar.'
+    ] },
+  'nimbu-shahad': { kw:['nimbu','lemon','shahad','honey'], emoji:'🍋', title:'Nimbu-shahad paani', durSec:90, ingredients:'½ nimbu · 1 chamach shahad · 1 glass garam paani',
+    steps:[
+      'Glass paani halka garam (jaise chai pee sako).',
+      'Aadha nimbu nichod do.',
+      '1 chamach shahad mila lo.',
+      'Sub achhi tarah ghol lo.',
+      'Khali pet piyo. Roz subah.'
+    ] },
+  'anjeer-doodh': { kw:['anjeer','fig'], emoji:'🟣', title:'Anjeer doodh', durSec:480, ingredients:'2 sukhe anjeer · 1 cup doodh',
+    steps:[
+      'Raat ko 2 anjeer paani mein bhigo do.',
+      'Subah doodh ubaalo, anjeer kaat ke daal do.',
+      '5 min ubaalo. Halka thanda hone do.',
+      'Anjeer + doodh dono lo.',
+      'Kabz-weakness mein roz raat ko.'
+    ] },
+  'arandi-kabz': { kw:['arandi','castor'], emoji:'💧', title:'Arandi tel — kabz', durSec:120, ingredients:'1 chamach arandi tel · halka garam doodh ya paani',
+    steps:[
+      'Sone se pehle 1 chamach arandi tel.',
+      'Halka garam doodh ya paani ke saath lo.',
+      'Subah pet saaf hoga.',
+      'Hafte mein 1 baar — roz nahi.',
+      'Pregnancy mein bilkul mat lein.'
+    ] },
+  'amla-murabba': { kw:['amla'], emoji:'🟢', title:'Amla — roz ka', durSec:90, ingredients:'1 amla (taza ya murabba)',
+    steps:[
+      '1 taza amla kaat lo (ya 1 piece murabba).',
+      'Khali pet khao subah.',
+      'Vitamin C bhar ke. Immunity strong.',
+      'Roz lena hai — fark 1 mahine mein.',
+      'Acidity ho to khaane ke baad lein.'
+    ] },
+  'palak-juice': { kw:['palak','spinach'], emoji:'🥬', title:'Palak juice', durSec:180, ingredients:'1 cup palak patte · ½ cup paani · nimbu · namak',
+    steps:[
+      'Palak patte achhi tarah dho lo.',
+      'Mixie mein paani ke saath peeso.',
+      'Chhan lo. Nimbu + chutki namak.',
+      'Khali pet piyo subah.',
+      'Khoon banta hai, kabz door.'
+    ] },
+  'neem-paani': { kw:['neem'], emoji:'🌳', title:'Neem paani', durSec:300, ingredients:'8-10 neem patte · 2 cup paani',
+    steps:[
+      '2 cup paani mein neem patte daalo.',
+      'Madhyam aanch par 5 min ubaalo.',
+      'Chhan lo. Halka thanda hone do.',
+      'Kulla karo ya skin par lagao.',
+      'Daane-mooh ke chhale, skin issues mein.'
+    ] }
+};
+function detectRemedy(text) {
   if (!text) return null;
   const t = text.toLowerCase();
-  for (const v of NUSHKE_VIDEOS) for (const k of v.kw) if (t.includes(k)) return v;
+  for (const key in REMEDY_KITS) {
+    const kit = REMEDY_KITS[key];
+    for (const k of kit.kw) if (t.includes(k)) return [key, kit];
+  }
   return null;
 }
-function injectVideoCard(text, msgsContainer) {
-  const v = detectVideo(text);
-  if (!v) return;
+function injectRemedyCard(text, msgsContainer) {
+  const r = detectRemedy(text);
+  if (!r) return;
+  const [key, kit] = r;
   const row = document.createElement('div');
   row.className = 'msg-row bot video-card-row';
   row.innerHTML = `
-    <button class="video-card" onclick="openVideoLink('${v.q.replace(/'/g, "\\'")}')">
-      <div class="vc-thumb"><span>${v.emoji}</span><div class="vc-play-icon">▶</div></div>
-      <div class="vc-info">
-        <div class="vc-title">${v.title}</div>
-        <div class="vc-meta"><span class="vc-meta-tag">AYUSH</span>${v.dur} · Tap to watch</div>
+    <button class="recipe-card" onclick="openRemedy('${key}')">
+      <div class="recipe-card-thumb"><span>${kit.emoji}</span><div class="recipe-card-play">▶</div></div>
+      <div class="recipe-card-info">
+        <div class="recipe-card-title">${kit.title}</div>
+        <div class="recipe-card-ing">${kit.ingredients}</div>
+        <div class="recipe-card-meta"><span class="recipe-card-tag">AYUSH</span>${kit.steps.length} steps · ${Math.round(kit.durSec/60)} min</div>
       </div>
     </button>`;
   msgsContainer.appendChild(row);
   msgsContainer.scrollTop = msgsContainer.scrollHeight;
 }
+function openRemedy(key) {
+  const kit = REMEDY_KITS[key];
+  if (!kit) return;
+  // Reuse the move-ov player — it already supports steps + auto-advance + speak
+  _moveSkill = kit;
+  _moveStepIdx = 0;
+  document.getElementById('move-ov').classList.add('on');
+  document.getElementById('move-ov-title').textContent = kit.title;
+  document.getElementById('move-ov-anim').innerHTML = kit.emoji;
+  document.getElementById('move-ov-progress').innerHTML = kit.steps.map(() => '<div class="move-ov-progress-dot"></div>').join('');
+  document.getElementById('move-ov-next').textContent = 'Aage badho';
+  showMoveStep(0);
+}
+// Back-compat: some flows still call injectVideoCard / openVideoLink
+function injectVideoCard(text, msgsContainer) { return injectRemedyCard(text, msgsContainer); }
 function openVideoLink(query) {
   window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(query), '_blank', 'noopener');
+}
+
+// ── v4: Acupressure points — in-app card with SVG body silhouette + pulsing point ──
+const ACUPRESSURE_POINTS = {
+  'li4-headache': { kw:['headache','sir dard','sirdard','migraine','sar dard','sar mein','head'],
+    emoji:'✋', title:'LI-4 (Hegu) — sir dard', dur:'30 sec × 3', body:'haath',
+    cx:50, cy:42, // SVG center on hand silhouette
+    svgKey:'hand',
+    instr:[
+      'Apna baayan haath dekho — angootha aur tarjani ke beech V-shape.',
+      'Doosre haath ke angoothe se us V ke center par dabao.',
+      '30 sec tak halka dabav — saans dheere.',
+      'Choddo. Doosre haath par bhi karo.',
+      '3 round — sir dard mein kaafi aaram.'
+    ] },
+  'gb20-neck': { kw:['gardan','neck','back of head','neck pain'],
+    emoji:'👤', title:'GB-20 — gardan/sir', dur:'1 min',
+    svgKey:'head_back',
+    instr:[
+      'Sir ke peeche, kaano ke peeche ki taraf 2 hollows hain.',
+      'Dono haatho ke angoothe wahaan rakho.',
+      'Sir ko aage halka jhukao. Saans gehri.',
+      '1 min tak madhyam dabav.',
+      'Tension headache + gardan akadan mein.'
+    ] },
+  'pc6-nausea': { kw:['nausea','ulti','vomiting','jee michlana','motion sickness','ji ghabraana'],
+    emoji:'🫳', title:'PC-6 (Neiguan) — jee michlana', dur:'30 sec × 2',
+    svgKey:'wrist',
+    instr:[
+      'Kalai par 3 ungli neeche — beech mein 2 tendons hain.',
+      'Doosre haath ke angoothe se beech mein dabao.',
+      '30 sec firm dabao — ek hi point.',
+      'Choddo. Doosre haath par karo.',
+      'Ulti, motion sickness, pregnancy nausea mein.'
+    ] },
+  'yintang-stress': { kw:['anxiety','tension','chinta','stress','ghabrahat','stress headache','frontal headache'],
+    emoji:'🧘', title:'Yintang — chinta/tension', dur:'1 min',
+    svgKey:'forehead',
+    instr:[
+      'Donon bhauon ke beech ka point.',
+      'Tarjani (index finger) wahaan rakho.',
+      'Halka circular massage — clockwise.',
+      '1 min, saans dheere ke saath.',
+      'Mann shant, neend acchi, chinta kam.'
+    ] },
+  'st36-fatigue': { kw:['thakaan','fatigue','weakness','energy','kamzori'],
+    emoji:'🦵', title:'ST-36 (Zusanli) — energy', dur:'1 min × 2',
+    svgKey:'leg',
+    instr:[
+      'Ghutne se 4 ungli neeche — pindli ki haddi se 1 ungli baahar.',
+      'Angoothe se firm dabao.',
+      '1 min — saans gehri.',
+      'Doosre paav par bhi karo.',
+      'Thakaan, kamzori — roz subah karein.'
+    ] },
+  'lu7-cough': { kw:['khansi','cough','galay','sore throat','throat'],
+    emoji:'👋', title:'LU-7 — khansi/galay', dur:'30 sec × 2',
+    svgKey:'wrist',
+    instr:[
+      'Kalai ke shuru mein, angoothe ki taraf — chhota notch.',
+      'Doosre haath ki tarjani se halka dabao.',
+      '30 sec halki gol gati mein.',
+      'Doosre haath par karo.',
+      'Khansi, galay khich-khich, sardi mein.'
+    ] }
+};
+const ACU_SVGS = {
+  hand: '<svg viewBox="0 0 100 100" width="180" height="180"><path d="M30 80 Q22 50 30 30 Q34 18 42 22 L44 50 L48 22 Q50 14 56 16 Q62 18 60 30 L60 50 L66 26 Q72 22 74 30 L70 56 L78 38 Q82 38 80 48 L72 70 Q68 88 50 90 Q35 90 30 80 Z" fill="rgba(34,197,94,.18)" stroke="rgba(34,197,94,.6)" stroke-width="1.5"/></svg>',
+  wrist:'<svg viewBox="0 0 100 100" width="180" height="180"><rect x="20" y="35" width="60" height="35" rx="10" fill="rgba(34,197,94,.18)" stroke="rgba(34,197,94,.6)" stroke-width="1.5"/><path d="M30 35 L30 18 M50 35 L50 16 M70 35 L70 18" stroke="rgba(34,197,94,.6)" stroke-width="1.5" fill="none"/></svg>',
+  head_back:'<svg viewBox="0 0 100 100" width="180" height="180"><circle cx="50" cy="50" r="32" fill="rgba(34,197,94,.18)" stroke="rgba(34,197,94,.6)" stroke-width="1.5"/><path d="M30 60 Q50 78 70 60" stroke="rgba(34,197,94,.4)" stroke-width="1.5" fill="none"/></svg>',
+  forehead:'<svg viewBox="0 0 100 100" width="180" height="180"><ellipse cx="50" cy="55" rx="28" ry="36" fill="rgba(34,197,94,.18)" stroke="rgba(34,197,94,.6)" stroke-width="1.5"/><path d="M36 50 Q44 46 48 50 M52 50 Q56 46 64 50" stroke="rgba(34,197,94,.6)" stroke-width="1.5" fill="none"/></svg>',
+  leg:'<svg viewBox="0 0 100 100" width="180" height="180"><path d="M40 12 L40 88 Q44 92 50 92 Q56 92 60 88 L60 12 Z" fill="rgba(34,197,94,.18)" stroke="rgba(34,197,94,.6)" stroke-width="1.5"/><line x1="50" y1="30" x2="50" y2="50" stroke="rgba(34,197,94,.4)" stroke-width="1" stroke-dasharray="2,2"/></svg>'
+};
+function detectAcupressure(text) {
+  if (!text) return null;
+  const t = text.toLowerCase();
+  for (const key in ACUPRESSURE_POINTS) {
+    const p = ACUPRESSURE_POINTS[key];
+    for (const k of p.kw) if (t.includes(k)) return [key, p];
+  }
+  return null;
+}
+function injectAcupressureCard(text, msgsContainer) {
+  const a = detectAcupressure(text);
+  if (!a) return;
+  const [key, p] = a;
+  const row = document.createElement('div');
+  row.className = 'msg-row bot video-card-row';
+  row.innerHTML = `
+    <button class="acu-card" onclick="openAcupressure('${key}')">
+      <div class="acu-card-thumb"><span>${p.emoji}</span><div class="acu-card-pulse"></div></div>
+      <div class="acu-card-info">
+        <div class="acu-card-title">${p.title}</div>
+        <div class="acu-card-meta"><span class="acu-card-tag">Acupressure</span>${p.dur} · Step-by-step</div>
+      </div>
+    </button>`;
+  msgsContainer.appendChild(row);
+  msgsContainer.scrollTop = msgsContainer.scrollHeight;
+}
+function openAcupressure(key) {
+  const p = ACUPRESSURE_POINTS[key];
+  if (!p) return;
+  // Reuse move-ov player; render an SVG silhouette in the anim slot
+  _moveSkill = { emoji:p.emoji, title:p.title, durSec:60, steps:p.instr };
+  _moveStepIdx = 0;
+  document.getElementById('move-ov').classList.add('on');
+  document.getElementById('move-ov-title').textContent = p.title;
+  const anim = document.getElementById('move-ov-anim');
+  anim.innerHTML = (ACU_SVGS[p.svgKey] || '') + (typeof p.cx === 'number' ? `<div class="acu-pin" style="left:${p.cx}%;top:${p.cy}%"></div>` : '');
+  document.getElementById('move-ov-progress').innerHTML = p.instr.map(() => '<div class="move-ov-progress-dot"></div>').join('');
+  document.getElementById('move-ov-next').textContent = 'Aage badho';
+  showMoveStep(0);
 }
 
 // ── Movement skills (animated step-by-step overlay) ──
