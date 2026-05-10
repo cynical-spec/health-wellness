@@ -2,6 +2,49 @@
 
 ---
 
+## 2026-05-10 — Session 9: v4 — Tier 2/3 reframe (symptoms-first, recipe-steps, live voice)
+
+This session re-anchored the home around the tier-2/3 user's actual intent ("kya takleef hai, fix it") and rebuilt three weak points raised by the user: (a) the home was mood-first instead of symptom-first; (b) ghar-ka-nushka left the user with a YouTube link instead of a magical, in-app step-by-step animation; (c) the Speak button was opaque — no transcript, no listening signal, no visible turn-taking.
+
+### Added
+- **Symptoms-first hub layout** (`tri-hero` + `tri-grid`) — 8 large symptom buttons (Sir dard, Sardi-khansi, Pet ki dikkat, Neend nahi, Ghutno/jodon dard, Bukhar, Tension, Saans/galay) replace the 3-zone mood layout as the primary path. Each button has emoji + Hindi name + English subtitle for discoverability.
+- **`triSymptomTap(displayText, aiPrompt)`** — routes a symptom tap directly to `s-chat` in `nushke` ctx with the user's intent already framed as a remedy ask, so the first AI turn IS the magical-moment answer.
+- **`tri-mood` strip** — collapsed pulse-check (single line, three small mood emoji buttons) that preserves the mood path without dominating the screen.
+- **`tri-rail`** — subtle horizontal "Aur kya kar sakte ho" rail with secondary use cases (Dadi ki kahani, Saans karein, Lab report, Dawai yaad, Meal plan, Parivaar) for low-cognitive-load discoverability.
+- **`REMEDY_KITS`** (15 in-app recipes) — Haldi doodh, Ajwain bhaap, Tulsi kadha, Adrak chai, Jeera paani, Mulethi kadha, Saunf paani, Methi paani, Namak gargle, Nimbu-shahad, Anjeer doodh, Arandi tel, Amla, Palak juice, Neem paani. Each has `kw[]`, `emoji`, `title`, `ingredients`, `durSec`, `steps[]`.
+- **`injectRemedyCard()`** + **`openRemedy(key)`** — when the AI mentions an AYUSH ingredient in nushke ctx, an in-app recipe card appears with thumbnail + ingredients + step count. Tap → opens the existing `move-ov` overlay running the recipe steps with auto-advance + Sarvam TTS read-aloud + per-step progress dots. No more YouTube redirects for the magical moment.
+- **`ACUPRESSURE_POINTS`** (6 points) — LI-4 (sir dard), GB-20 (gardan), PC-6 (jee michlana), Yintang (chinta), ST-36 (thakaan), LU-7 (khansi). Each has `kw[]`, location text, and an SVG silhouette (hand / wrist / forehead / leg / head_back) drawn inline.
+- **`injectAcupressureCard()`** + **`openAcupressure(key)`** — keyword-triggered card with an animated pulsing dot. Opens the step overlay with the SVG silhouette + an `acu-pin` marker (CSS pulse animation) overlaid on the body part.
+- **Voice overlay v4** — full live-conversation UI:
+  - State pill (`Sun rahi hoon` / `Soch rahi hoon` / `Bata rahi hoon`) with color tinting.
+  - **Live mic-level bars** (5-bar EQ) driven from the existing Web Audio analyser data via `_setBarsFromLevel()`.
+  - **Live transcript area** (`#voice-transcript-area`) showing `Aap ne kaha:` (user transcript) and `Saathi:` (bot reply) bubbles, plus an italic `Soch rahi hoon...` thinking line that's removed when the bot replies.
+  - **Hint text** that updates with state + `Band karein` stop button at the bottom.
+  - `addMsg()` now mirrors bot replies into the overlay automatically whenever the overlay is open — works for both hub-target and chat-target voice paths.
+
+### Changed
+- Hub greeting/CTA copy: `Namaste 🙏 / Aaj kaisa raha?` → `Kya takleef hai? / Bolein ya niche tap karein — Dadi ke ghar ke nushke milenge`. Direct intent over mood-checking.
+- `injectVideoCard()` is now an alias for `injectRemedyCard()` (back-compat, same call sites).
+- `setVoiceState()` rewritten to drive the new state pill + bars + hint instead of the legacy `voice-txt`/`voice-lbl` paragraphs (those are kept hidden for back-compat).
+- `convHandleTranscript()` now appends the user's transcript to the overlay before sending to AI, and inserts a thinking line that the bot reply replaces.
+
+### Fixed
+- Voice overlay no longer feels like a black box — the user can now read what was heard before the AI responds, see the bot's reply text in the overlay, and watch the mic level confirm that the mic is live.
+
+### Broken / Known issues
+- Sarvam STT is still POST-after-recording (no streaming partials). The "live" feel comes from the mic-level bars + transcript-on-arrival, not interim word-by-word. If/when Sarvam ships a streaming endpoint, swap in `convListenOnce()`.
+- The orphan CSS for `.hub3-mood`/`.hub3-carousel`/`.hub3-qb` is left in the file (no DOM uses it) — slated for removal next session.
+- `move-ov` is reused for both movement skills and recipes/acupressure. The auto-advance timer is fixed at 9s/step which is fine for short recipes but a bit fast for the 5-min anjeer-doodh soak step; user can tap "Aage badho" to skip.
+- File grew to ~4569 lines.
+
+### Next session should start with
+- **Live URL smoke test** — symptom button → AI remedy → recipe card → overlay step animation; voice overlay → bars animate → transcript appears → bot reply mirrors in overlay → TTS plays.
+- Validate the SVG acupressure silhouettes look right on actual mobile (390px) — they were sized at 180×180 inside a 200×200 circle; may need a touch-up.
+- Consider promoting the `tri-rail` story card to auto-play its preview when the user lands on the hub (warming-voice magical moment).
+- Remove the now-orphan `.hub3-mood*`/`.hub3-carousel*`/`.hub3-qb*` CSS.
+
+---
+
 ## 2026-05-07 — Session 8: v3 — 3-zone Home, Sarvam Voice, Dynamic Story
 
 This session was a major UX rewire — the Sehat hub was reimagined as a clean 3-zone home (greeting / mood / story+score) instead of a tool list. Voice fully migrated from Web Speech API to Sarvam (Saarika STT + Bulbul TTS). The story card now generates fresh content per persona + season + language. Tools moved to a bottom-sheet behind a 3-dot menu.
