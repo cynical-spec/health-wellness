@@ -2,6 +2,52 @@
 
 ---
 
+## 2026-05-10 — Wellness mode said "Bhai" — broke the Maa/Dadi magical-voice promise
+
+**What happened:** v4.1 shipped a wellness-goals grid on the hub. Tapping ⚖ Vajan → AI opened with `Bhai, sustainable healthy weight ke liye...`. User feedback: "the wellness speaks as bhai — can't do that — it should have that mom or dadi warmness always". The Mom-Dadi voice IS the magical moment of this product; using a buddy register breaks the trust the rest of the app earns.
+
+**Why it happened:** The original `WELLNESS_SYSTEM_PROMPT` (Session 7) was written with the line `TONE: ... Like "bhai try this" not "you should consider".` That was an explicit instruction to the model to use buddy register. Made sense in isolation for a 18–35 audience, but conflicted with the global Maa/Dadi warmth the rest of the product (and the TTS persona — Manisha-Dadi / Anushka-Maa / Pavithra) is built around.
+
+**What was tried:** N/A — direct user feedback after live deploy.
+
+**What fixed it:** Rewrote `WELLNESS_SYSTEM_PROMPT` with strict tone rules: required words ("beta", "bachha", "suno beta", "haan beta"); explicitly forbidden words ("bhai", "yaar", "buddy", "guys", "dude", "mate", "bro"); enforced Female-voiced. Modern context (gym, hostel, WFH, screen, lab, exam) is preserved but spoken in the warm-elder register.
+
+**Rule going forward:** Tone consistency is product policy, not a per-context decision. Every system prompt — nushke, wellness, tension, community peers, story — must be auditable for tone-conformance with the Maa/Dadi/female-elder register. The TTS speaker is female; the persona toggle is Saathi → Dadi → Maa; the magical moment is warm voice. Any prompt that drifts toward buddy/peer is a regression.
+
+---
+
+## 2026-05-10 — Roman-Hindi "choddo" was read as a vulgar word by TTS
+
+**What happened:** User tested the LI-4 acupressure overlay (`Sir dard` → tap card → step 4/5). The on-screen text read `Choddo. Doosre haath par bhi karo.` and Sarvam Bulbul TTS read it aloud with stress/pronunciation that **sounded vulgar in Hindi** ("छोड़ो" — release/leave — and a phonetically near vulgar word differ by stress; the auto-transliteration didn't disambiguate). User reported: "she choddoo with dot ( sounds funny for what i means in hindi )".
+
+**Why it happened:** Roman-script Hindi is fundamentally ambiguous for several common words; "chhoddo / choddo / chodo" all render to overlapping IPA approximations and the model picks whichever matches its training prior. The Sehat Saathi pipeline (Session v3.3) auto-transliterates Roman → Devanagari before TTS, but for ambiguous spellings the disambiguation isn't perfect. We had `choddo` in 6 step strings (acupressure release × 2, breathwork × 4) and a breath-phase name.
+
+**What was tried:** N/A — user-reported on first listen.
+
+**What fixed it:** Two changes, layered:
+1. **Replaced the ambiguous Roman word** in every step string. Acupressure release: `Choddo` → `Haath hata lo` (remove your hand). Breathwork release: `saans choddo` → `saans bahar nikalo`. Bhramari: `Saans choddte hue` → `Saans bahar nikalte hue`. Box-breathing phase name: `Choddo` → `Saans Bahar`. The new phrasings are unambiguous in both Roman and Devanagari.
+2. **Added per-step Devanagari `tts[]` arrays** to all acupressure points, breathwork/yoga kits, and the new habit kits. `showMoveStep()` now passes `tts[idx]` via `speak(..., { ttsText })`, which the existing speak path uses verbatim (skipping the auto-transliteration step that introduced the ambiguity).
+
+**Rule going forward:** Anywhere step-by-step text is read aloud by TTS, ship a hand-written Devanagari `tts[]` alongside the on-screen Roman `steps[]`. Don't trust auto-transliteration for the Hindi words that are phonetically close to vulgar/colloquial words: `choddo`, `khoodd`, `lund`, `gandh*`, `chuth*`, etc. — when in doubt, rephrase OR provide explicit Devanagari.
+
+---
+
+## 2026-05-10 — Wellness AI gave practical advice but no animation card to act on it
+
+**What happened:** User tapped ⚖ Vajan → AI replied with two excellent practical tips: "pani peene ka routine" and "daily 30-minute brisk walking" — but **no card** appeared under the bubble. Compare with the `Sir dard` flow where AYUSH-ingredient mention triggers a recipe card with a step animation. User noted: "health and wellness cards don't have animation cards for whatever recommendation she gave." The wellness magical-moment was the answer; the **second magical moment should be a tappable, animated step guide** — and it was missing.
+
+**Why it happened:** v4 added `injectRemedyCard` + `injectAcupressureCard` only to the `nushke` ctx, on the assumption that wellness advice would be "soft" lifestyle text without specific actionables. Wrong — the wellness AI does name concrete habits (walking, hydration, screen breaks, journaling, meditation), and those deserve the same step-animation surface as a haldi-doodh recipe.
+
+**What was tried:** N/A — user-reported.
+
+**What fixed it:**
+1. Card injection in `addMsg()` now fires for **both `nushke` and `wellness` ctxs** (recipe + acupressure cards). Wellness replies that mention haldi-doodh, tulsi, jeera-paani, sir-dard pressure points, etc. now also surface the in-app step card.
+2. Added 5 `HABIT_KITS` to `MOVEMENT_SKILLS` (same overlay player): `daily-walk`, `hydration`, `screen-break`, `journaling`, `meditation`. Each has 5 steps with Devanagari `tts[]`. `detectMovement()` extended with keyword regexes (`brisk walk`, `pani peena`, `20-20-20`, `journal`, `dhyan`, etc.) so the wellness AI's natural phrasing triggers the right card.
+
+**Rule going forward:** Every advice-giving ctx (nushke, wellness, tension de-escalation, community) needs a corresponding bank of step-animation kits. Whenever the AI is allowed to recommend a concrete actionable, that actionable should have an in-app overlay it can be linked to via keyword detection. No more "just a chat reply" for things that are genuinely doable.
+
+---
+
 ## 2026-05-10 — YouTube-link "video card" was a context switch, not a magical moment
 
 **What happened:** Session 7's `injectVideoCard()` opened `youtube.com/results?search_query=…` in a new tab whenever the AI mentioned an AYUSH ingredient. User feedback: "It's a video. It's a small animation that tells you press here for acupuncture. That are not laid out pretty well. It needs to be wired really well." Sending the user out of the app on every nushke reply broke the warming-voice magical moment that the rest of the product was built around.

@@ -1,5 +1,11 @@
 # Status — Sehat Saathi
-*Last updated: 2026-05-10 — Session 9b (v4.1 — Wellness goals on the hub for broader audience)*
+*Last updated: 2026-05-10 — Session 9c (v4.2 — Maa/Dadi tone for wellness, habit-cards, TTS pronunciation fix)*
+
+## Session 9c highlights
+- **Wellness mode now speaks as Maa/Dadi** — `WELLNESS_SYSTEM_PROMPT` rewritten with strict tone rules: "beta/bachha" required; "bhai/yaar/buddy/guys/dude/mate/bro" forbidden. Female-voiced. Modern context preserved (gym, hostel, WFH, screen) in warm-elder register.
+- **TTS pronunciation fixed** — every "choddo / Choddo" replaced with safer phrasing (`Haath hata lo`, `saans bahar nikalo`, `Saans Bahar`). Hand-written Devanagari `tts[]` arrays added for all acupressure points + breathwork/yoga + new habit kits. `showMoveStep` passes `tts[idx]` via `speak(..., { ttsText })` so Sarvam Bulbul reads natural unambiguous Hindi.
+- **5 wellness habit kits** added inline into `MOVEMENT_SKILLS`: 🚶 daily-walk, 💧 hydration, 👁 screen-break (20-20-20), 📔 journaling, 🧘‍♀️ meditation. Each has 5 steps + Devanagari `tts[]`.
+- **Recipe + acupressure card injection** now fires in **both `nushke` and `wellness` ctxs** (was nushke-only). Wellness replies that mention haldi-doodh, tulsi, jeera-paani, brisk walk, pani peene, dhyan etc. now surface their step-animation cards.
 
 ## Session 9b highlights
 - **Wellness goals grid** added above the symptom grid (`tri-well-grid`, 8 buttons: Energy, Achi neend, Pachhan, Mann shanti, Skin glow, Vajan, Focus, Immunity). Each routes via new `triWellnessTap()` to `wellness` ctx with a magical-moment first-turn prompt.
@@ -195,6 +201,15 @@ Last successful deploy: 2026-05-07 Session 7 (commit `f41068c`)
 | Bot reply auto-mirror | Working — Session 9 | `addMsg('bot', ...)` mirrors into overlay whenever overlay is on |
 | Stop button | Working — Session 9 | Fixed bottom red `Band karein` |
 | Browser compatibility | Chrome/Safari | Firefox: Speak button works if mic permitted |
+
+### Wellness habit kits (v4.2 — same overlay player)
+| Habit | Trigger keywords | Notes |
+|---|---|---|
+| 🚶 daily-walk | `brisk walk` / `chalna` / `30 minute walk` / `metabolism` | 5 steps, Devanagari `tts[]` |
+| 💧 hydration | `pani peena` / `2-3 glass pani` / `hydration` / `glasses water` | 5 steps, Devanagari `tts[]` |
+| 👁 screen-break | `20-20-20` / `screen break` / `aankho ka aaram` / `eye strain` | 5 steps, Devanagari `tts[]` |
+| 📔 journaling | `journal` / `diary` / `likh lo` / `gratitude` | 5 steps, Devanagari `tts[]` |
+| 🧘‍♀️ meditation | `meditation` / `dhyan` / `mindful` / `5 minute shanti` | 5 steps, Devanagari `tts[]` |
 
 ### Ghar-ke-Nushke recipe overlay (v4)
 | Feature | Status | Notes |
