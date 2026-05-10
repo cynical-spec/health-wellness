@@ -323,9 +323,9 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .hub3-stat-chip .hsc-sep{opacity:.35;font-weight:400}
 
 /* ── v4: symptom-first triage grid + subtle "more" rail ── */
-.tri-hero{padding:14px 16px 10px}
-.tri-hero h1{font-size:26px;font-weight:700;line-height:1.2;margin-bottom:4px}
-.tri-hero p{font-size:14px;color:var(--text2);line-height:1.5}
+.tri-hero{padding:6px 16px 8px}
+.tri-hero h1{font-size:22px;font-weight:700;line-height:1.2;margin-bottom:2px}
+.tri-hero p{font-size:13px;color:var(--text2);line-height:1.45}
 .tri-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:6px 16px 14px}
 .tri-btn{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 12px;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);text-align:left;min-height:64px;transition:transform .12s,background .15s,border-color .15s}
 .tri-btn:active{transform:scale(.97);background:var(--bold-dim);border-color:var(--primary)}
@@ -630,6 +630,23 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
 /* Persona mini pill in header */
 .persona-mini{background:var(--bold-dim);border:1px solid rgba(53,53,243,.35);border-radius:var(--radius-pill);padding:5px 10px;font-family:'JioType',sans-serif;font-size:11px;font-weight:700;color:var(--text);cursor:pointer;white-space:nowrap}
 
+/* ══ v5.1: Aaj ki Sehat — stories rail (Instagram-style daily content) ══ */
+.hub-stories{display:flex;gap:14px;padding:10px 16px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.hub-stories::-webkit-scrollbar{display:none}
+.hs-circle{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);padding:0;width:64px}
+.hs-ring{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bg);position:relative;font-size:24px;border:2.5px solid transparent;background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,#fb923c,#a855f7);background-origin:border-box;background-clip:content-box,border-box;transition:transform .12s}
+.hs-circle:active .hs-ring{transform:scale(.92)}
+.hs-ring.green{background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,#22c55e,#1eccb0)}
+.hs-ring.purple{background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,#a855f7,#6B21A8)}
+.hs-ring.warm{background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,#fb923c,#f97316)}
+.hs-ring.streak{background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,#f7ab20,#fb923c)}
+.hs-ring.muted{background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.06))}
+.hs-ring.done{background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,#22c55e,#22c55e);opacity:.6}
+.hs-ring.due{background-image:linear-gradient(var(--bg),var(--bg)),linear-gradient(135deg,#dc2626,#fb923c);animation:reminderPulse 2.4s ease infinite}
+.hs-ring-num{position:absolute;bottom:-3px;right:-3px;background:var(--bg);border-radius:var(--radius-pill);font-size:9px;font-weight:700;padding:1px 5px;border:1.5px solid var(--primary);color:#fff;line-height:1.4}
+.hs-name{font-size:10px;font-weight:600;color:var(--text2);text-align:center;line-height:1.2;max-width:64px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hs-circle.done .hs-name{color:#22c55e}
+
 /* ══ v5: Aham kaam — hero action cards on hub ══ */
 .aham-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:6px 16px 4px}
 .aham-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:linear-gradient(135deg,rgba(57,0,173,.42),rgba(107,33,168,.20));border:1px solid rgba(168,85,247,.32);border-radius:16px;padding:14px 13px;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);text-align:left;min-height:104px;overflow:hidden;transition:transform .12s}
@@ -642,7 +659,8 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
 .aham-card.warm .aham-card-pill{background:rgba(251,146,60,.18);color:#fb923c;border-color:rgba(251,146,60,.34)}
 
 /* ══ v5: Prescription / OCR / Bazaar / Order flow shared shell ══ */
-.rx-body{padding:14px 16px 28px}
+#rx-body,#order-body,#track-body,#bazaar-body{flex:1 1 auto;min-height:0;padding:0;display:block}
+.rx-body{display:block;padding:14px 16px 28px;min-height:60vh}
 .rx-step-title{font-size:18px;font-weight:700;margin-bottom:6px;line-height:1.3}
 .rx-step-sub{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:18px}
 .rx-progress{display:flex;gap:6px;padding:0 16px 14px}
@@ -980,10 +998,13 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
   </div>
 
   <div class="body">
-    <!-- v4.1: Open hero — works for sick + well + caretaker -->
+    <!-- v5.1: Aaj ki Sehat — Instagram-style daily stories rail (top of hub) -->
+    <div class="hub-stories" id="hub-stories"><!-- JS renders --></div>
+
+    <!-- v5.1: Compact warm hero -->
     <div class="tri-hero">
-      <h1>Namaste<span id="hub3-name"></span> 🙏<br>Aaj kaisi sehat banayein?</h1>
-      <p>Bolein ya niche se chunein — sehat banao ya koi takleef ho</p>
+      <h1>Namaste<span id="hub3-name"></span> 🙏</h1>
+      <p>Aaj kaisi sehat banayein?</p>
     </div>
 
     <!-- v5: Aham kaam — prescription + lab as first-class entry points (no longer buried in rail) -->
@@ -1076,15 +1097,7 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
       </button>
     </div>
 
-    <!-- v4: Subtle mood pulse-check — single line, no commitment -->
-    <div class="tri-mood" id="tri-mood-strip">
-      <div class="tri-mood-q">Aap kaisa feel kar rahe ho?</div>
-      <div class="tri-mood-btns">
-        <button class="tri-mood-btn" onclick="moodTap('theek')" aria-label="Theek hoon">😌</button>
-        <button class="tri-mood-btn" onclick="moodTap('takleef')" aria-label="Kuch takleef">🤒</button>
-        <button class="tri-mood-btn" onclick="moodTap('tension')" aria-label="Tension">😰</button>
-      </div>
-    </div>
+    <!-- v5.1: Mood pulse strip removed for de-cluttering — wellness goals + symptoms grid cover both intents -->
 
     <!-- v4: Aur kya kar sakte ho — subtle horizontal rail of secondary use cases -->
     <div class="tri-rail-lbl">Aur kya kar sakte ho</div>
@@ -2122,6 +2135,93 @@ function initHubDynamic() {
   refreshStoryCard();
   // v5: Mera Sehat tile counts + RX pill badge
   if (typeof updateHubBazaarSub === 'function') updateHubBazaarSub();
+  // v5.1: Aaj ki Sehat stories rail
+  if (typeof renderHubStories === 'function') renderHubStories();
+}
+
+// ── v5.1: Aaj ki Sehat stories rail (Instagram-style daily content) ──
+// Surfaces what's "alive" today: streak, score, story, habit, paani check,
+// upcoming reminder, active order. Tier 2/3 users open the app once a day —
+// this rail is the "lure-back" magical moment that v3.x had and v4 lost.
+function renderHubStories(){
+  const el = document.getElementById('hub-stories'); if (!el) return;
+  const score = (typeof getScore === 'function') ? getScore() : 50;
+  const streak = (typeof getStreak === 'function') ? getStreak() : 0;
+  const today = new Date().toDateString();
+  const dots = {
+    paani: !!localStorage.getItem('daily_paani_' + today),
+    swas:  !!localStorage.getItem('daily_swas_' + today),
+    khana: !!localStorage.getItem('daily_khana_' + today)
+  };
+  const rems = (typeof loadReminders === 'function') ? loadReminders() : [];
+  const orders = (typeof loadOrders === 'function') ? loadOrders() : [];
+  const activeOrder = orders.find(o => (o.statusIdx || 0) < 4);
+  // Time-of-day habit slot
+  const hour = new Date().getHours();
+  const habitSlot = hour < 11 ? { emoji:'🌅', name:'Subah ka rasm', cmd:'startFeature(\'breathe\')' }
+                   : hour < 17 ? { emoji:'💧', name:dots.paani?'Paani done':'Paani peeyo', cmd:'storiesTapDot(\'paani\')', done: !!dots.paani }
+                   : hour < 21 ? { emoji:'🌬', name:'Saans karo',  cmd:'startFeature(\'breathe\')' }
+                                : { emoji:'🌙', name:'Raat ki dua', cmd:'playStory(\'general\')' };
+
+  let html = '';
+
+  // 1) Streak
+  if (streak > 0) {
+    html += `<button class="hs-circle" onclick="showToast('${streak} din ka streak \\u{1F525}')">
+      <div class="hs-ring streak"><span>🔥</span><span class="hs-ring-num" style="border-color:#fb923c;color:#fb923c">${streak}</span></div>
+      <div class="hs-name">${streak}-din streak</div>
+    </button>`;
+  } else {
+    html += `<button class="hs-circle" onclick="showToast('Aaj se streak shuru karein')">
+      <div class="hs-ring muted"><span>🔥</span></div>
+      <div class="hs-name">Streak shuru</div>
+    </button>`;
+  }
+
+  // 2) Score
+  html += `<button class="hs-circle" onclick="showToast('Sehat Score: ${score} / 100')">
+    <div class="hs-ring green"><span>💚</span></div>
+    <div class="hs-name">Score ${score}</div>
+  </button>`;
+
+  // 3) Aaj ki Kahani (Dadi's story)
+  html += `<button class="hs-circle" onclick="playStory('general')">
+    <div class="hs-ring purple"><span>📖</span></div>
+    <div class="hs-name">Aaj ki kahani</div>
+  </button>`;
+
+  // 4) Time-of-day habit
+  html += `<button class="hs-circle ${habitSlot.done?'done':''}" onclick="${habitSlot.cmd}">
+    <div class="hs-ring ${habitSlot.done?'done':'warm'}"><span>${habitSlot.emoji}</span></div>
+    <div class="hs-name">${habitSlot.name}</div>
+  </button>`;
+
+  // 5) Due reminder (next one within 8 hours)
+  const next = rems.length ? rems.slice().sort((a,b) => (a.time||'24:00').localeCompare(b.time||'24:00'))[0] : null;
+  if (next) {
+    html += `<button class="hs-circle" onclick="startFeature('bazaar')">
+      <div class="hs-ring due"><span>⏰</span></div>
+      <div class="hs-name">${next.name||'Dawai'} ${next.time||''}</div>
+    </button>`;
+  }
+
+  // 6) Active order tracking
+  if (activeOrder) {
+    const stageNames = ['Placed','Confirmed','Packing','Out for delivery','Delivered'];
+    const st = stageNames[activeOrder.statusIdx || 0] || 'Placed';
+    html += `<button class="hs-circle" onclick="trackOrder('${activeOrder.id}')">
+      <div class="hs-ring warm"><span>🛒</span></div>
+      <div class="hs-name">${st}</div>
+    </button>`;
+  }
+
+  // 7) Aaj ki AYUSH practice (always shows)
+  html += `<button class="hs-circle" onclick="goTo('s-breathwork')">
+    <div class="hs-ring muted"><span>🪴</span></div>
+    <div class="hs-name">AYUSH aadat</div>
+  </button>`;
+
+  el.innerHTML = html;
 }
 
 function refreshStreak() {
@@ -3847,6 +3947,14 @@ function renderRxProgress(step, total){
 }
 
 function renderRxStep(step){
+  try { _renderRxStepInner(step); }
+  catch(err) {
+    console.error('[renderRxStep]', err);
+    const el = document.getElementById('rx-body');
+    if (el) el.innerHTML = `<div class="rx-body"><div class="rx-step-title">Kuch dikkat hui</div><div class="rx-step-sub">${(err && err.message) || 'Render fail'}. Wapas jaakar phir try karein.</div><button class="rx-cta secondary" onclick="goBack()">Wapas jao</button></div>`;
+  }
+}
+function _renderRxStepInner(step){
   ST.rxStep = step;
   const el = document.getElementById('rx-body'); if (!el) return;
   const titleEl = document.getElementById('rx-hdr-title');
@@ -4605,6 +4713,18 @@ function renderBazaarList(){
   }
 
   el.innerHTML = html;
+}
+
+// — Stories rail: tap a daily dot to mark done & bump score —
+function storiesTapDot(type){
+  const today = new Date().toDateString();
+  const key = 'daily_' + type + '_' + today;
+  if (localStorage.getItem(key)) { showToast('Pehle hi ho gaya 💚'); return; }
+  localStorage.setItem(key, '1');
+  if (typeof bumpScore === 'function') bumpScore(2);
+  if (typeof refreshDailyDots === 'function') refreshDailyDots();
+  if (typeof renderHubStories === 'function') renderHubStories();
+  showToast({ paani:'Paani done — +2 score', swas:'Saans done — +2 score', khana:'Khana done — +2 score' }[type] || 'Done');
 }
 
 function deleteReminder(id){

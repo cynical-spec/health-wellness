@@ -2,6 +2,36 @@
 
 ---
 
+## 2026-05-10 — RX flow step 0 rendered an empty body (no member buttons visible)
+
+**What happened:** User tapped the new "Dawai parchi" hero card on the live URL right after v5 merged. The s-rx screen transitioned in correctly — header rendered with "Yeh dawai kiske liye? / Member chunein", progress bar showed step 0 active. But the body below was completely blank. The buttons (Aap / family / + Naya member) were nowhere visible.
+
+**Why it happened:** The screen layout was hdr → progress-wrap → body. `.body{flex:1;overflow-y:auto}` was supposed to fill remaining height, and `renderRxStep(0)` did set `el.innerHTML` correctly (verified by reproducing in a stubbed-DOM Node test — the HTML string with all the buttons was being assigned). The most likely culprit: on certain viewports, the inner `<div class="rx-body">` had only `padding:14px 16px 28px` with no explicit height or display rule, and combined with the flex parent + new `<div id="rx-progress-wrap">` sibling, it could collapse to zero visible height despite having content. Hard to repro in a Node test.
+
+**What was tried:** Reproduced rendering in a Node + stubbed DOM — html was correctly being assigned to `el.innerHTML` (verified). Static analysis of CSS — `.body` was `flex:1` and the inner had only padding. Confirmed deployed file matched committed code.
+
+**What fixed it:** Two layers:
+1. **CSS fix** — Added `#rx-body,#order-body,#track-body,#bazaar-body{flex:1 1 auto;min-height:0;display:block}` and `.rx-body{display:block;padding:14px 16px 28px;min-height:60vh}`. The `min-height:60vh` on the inner ensures content has visible height regardless of how flex sizing resolves.
+2. **JS belt-and-braces** — Wrapped `renderRxStep()` in a try/catch wrapper that catches any rendering error and renders a visible error message + "Wapas jao" button into the body, rather than leaving a blank screen. Renamed the implementation to `_renderRxStepInner()`.
+
+**Rule going forward:** When a flow has a multi-element header (hdr + progress-wrap + body in our case), don't rely on cascading flex defaults to size the body. Either set explicit `flex:1 1 0;min-height:0` on the body, OR set `min-height: <reasonable value>` on the inner content wrapper. And: any non-trivial render function that sets innerHTML should be wrapped in try/catch with a visible fallback — silent blank screens are the worst class of bug because users have no signal that anything went wrong.
+
+---
+
+## 2026-05-10 — Home lost the "today's activity / story" lure that brought users back
+
+**What happened:** User feedback right after v5 ship: "the landing screen right lost its today's activities or story that lure people to come back — something like story of instagram or today's task, way to make screen less cluttered and more warming?" Sessions 8→9c had progressively replaced the v3 3-zone home (greeting / mood / story+score) with a denser symptoms-first + wellness-first layout. The score, streak, story card, and aaj-ki-aadat content all got pushed out — the home was full of action grids but felt cold and one-shot.
+
+**Why it happened:** Each session optimized for a single intent (symptom triage, wellness goals, lab/dawai promotion) without holding space for the daily-return content. Each session's home felt right for first-visit, but boring on repeat visits — there was no "what's new today" surface.
+
+**What was tried:** N/A — surfaced from direct user feedback after v5.
+
+**What fixed it:** Added an Instagram-stories-style `hub-stories` rail right under the header, before the hero. 5–7 gradient-bordered circles surface what's "alive" today: streak (with badge count), Sehat Score, Aaj ki kahani (Dadi's daily story), time-of-day habit (morning/afternoon/evening/night auto-switches), due reminder (pulses if any), active order (if any), AYUSH aadat. Tapping a circle either opens a flow (story, breathe, tracking) or marks a daily dot done with score bump. Also de-cluttered: dropped the mood pulse strip (redundant with wellness grid + symptom grid) and shrunk the hero from 26px → 22px font / 14px → 6px top padding so the rail and aham-row fit above the fold on a 390px viewport.
+
+**Rule going forward:** A home screen for a daily-use app needs at least one surface that visibly changes day-to-day. Action grids alone don't lure users back. The "stories rail" pattern (Instagram, WhatsApp, Slack) works because each circle is a small daily promise — minimal cognitive load, high signal that the app has something new for them. When optimizing for first-visit clarity, set aside vertical space for daily-return content.
+
+---
+
 ## 2026-05-10 — Lab & Dawai were buried in the rail — second/third magical moments never landed
 
 **What happened:** Through Sessions 7→9c, every UX change anchored on "make symptom triage feel magical". Lab Report and Dawai Reminder existed as tools, but they were stuffed into the bottom `tri-rail` (a 6-card horizontal scroller below the symptoms grid). User feedback for v5 planning: *"Right now symptoms triage has overtaken the entire experience and I understand that's the entry point but we should be able to add and tie other experiences neatly too."* The product was claiming three magical moments — symptoms triage, lab interpretation, prescription-to-doorstep — but only one was being designed for.
