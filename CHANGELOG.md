@@ -2,6 +2,41 @@
 
 ---
 
+## 2026-05-10 — Session 10b: v5.1 — Aaj ki Sehat stories rail + de-clutter + RX render fix
+
+User feedback after v5 shipped: (a) tapped "Dawai parchi" hero card → header rendered ("Yeh dawai kiske liye? / Member chunein") and the progress bar showed step 0 done, but the body below was completely blank — no member buttons. (b) "the landing screen right lost its today's activities or story that lure people to come back — something like story of instagram or today's task, way to make screen less cluttered and more warming?"
+
+### Fixed
+- **RX flow step 0 empty body** — added explicit `min-height:60vh` and `display:block` to `.rx-body`, plus `flex:1 1 auto;min-height:0` on the `#rx-body` / `#order-body` / `#track-body` / `#bazaar-body` outer containers. The screen `.body` was relying on cascading flex sizing alone, which can collapse under unusual viewport conditions (large viewport, no explicit minimum). Belt-and-braces: wrapped `renderRxStep()` in a try/catch that surfaces any rendering error visibly to the user instead of leaving a blank screen — `_renderRxStepInner()` is the renamed implementation.
+
+### Added — `v5.1` warm home
+- **`hub-stories` rail** — Instagram-stories-style horizontal pills directly under the header, gradient-bordered circles 60×60px:
+  - 🔥 **Streak** (with day count badge in lower-right corner; muted state if streak = 0)
+  - 💚 **Sehat Score**
+  - 📖 **Aaj ki kahani** (Dadi's daily story — taps `playStory('general')`)
+  - 🌅 / 💧 / 🌬 / 🌙 **Time-of-day habit** — auto-switches by clock: morning ritual → "Paani peeyo" (with done-state when tapped) → "Saans karo" → "Raat ki dua"
+  - ⏰ **Due reminder** (only shows if next reminder exists; pulses red-orange to grab attention)
+  - 🛒 **Active order** (only shows if any order is mid-flight; tap → tracking timeline)
+  - 🪴 **AYUSH aadat** — always-on entry to breathwork
+
+  Six gradient styles wired (`green`, `purple`, `warm`, `streak`, `muted`, `done`, `due` with pulse animation). Re-renders on `initHubDynamic` so it always reflects current state when the user returns to the hub.
+
+- **`storiesTapDot(type)`** — tapping the paani circle in the rail marks the daily dot done, bumps Sehat Score by 2, refreshes the rail, and toasts a "+2 score" confirmation. Reuses the existing `daily_<type>_<date>` localStorage keys.
+
+### Changed
+- **Compact hero** — hero font dropped from 26px → 22px, padding 14px 16px 10px → 6px 16px 8px, sub-copy reduced from 2 lines to 1. The greeting still says "Namaste 🙏 / Aaj kaisi sehat banayein?" but takes ~40% less vertical space.
+- **Removed mood pulse strip** (`.tri-mood`) — the wellness goals grid (Energy / Mann shanti / Skin glow / Vajan / Focus / Immunity) and symptoms triage grid already cover the "how do I feel today" intent. The strip was a vestige from the v3 mood-first home and added clutter.
+
+### Broken / Known issues
+- The streak/score circles in the rail tap-toast info; they don't yet open a dedicated detail screen. Worth building if engagement on the rail is high.
+- Time-of-day habit slot is heuristic (4 windows). For diabetics or shift-workers we could read profile's `tods` array if the user sets it.
+
+### Next session should start with
+- Live URL test on a 390px viewport: confirm the stories rail renders, the rx-body issue is gone (tap "Dawai parchi" → see member buttons immediately).
+- Add a subtle dot-pulse on the rail when a circle has unread/new content (e.g., "new story for today").
+
+---
+
 ## 2026-05-10 — Session 10: v5 — End-to-end Dawai parchi: scan → reminder → Sehat Bazaar order → tracking
 
 User feedback after v4.2: "Right now symptoms triage has overtaken the entire experience" — Lab Report and Dawai Reminder were buried in a small `tri-rail` underneath the wellness + symptoms grids. The product had three magical moments queued (symptoms triage, lab interpretation, prescription-to-doorstep) but only one had been built into a real surface. The user explicitly asked for the second and third experiences (lab + prescription→reminder→fulfilment) to be nailed end-to-end, with Reliance Netmeds (acquired by Reliance, serves tier 2/3) as the fulfilment partner. Vision API is unavailable in the prototype, so OCR is template-driven for now.
