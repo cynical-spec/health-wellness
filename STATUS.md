@@ -1,5 +1,15 @@
 # Status — Sehat Saathi
-*Last updated: 2026-05-10 — Session 9c (v4.2 — Maa/Dadi tone for wellness, habit-cards, TTS pronunciation fix)*
+*Last updated: 2026-05-10 — Session 10 (v5 — End-to-end Dawai parchi: scan → reminder → order → tracking)*
+
+## Session 10 highlights (v5)
+- **Hub re-balanced** — `aham-row` (2-card gradient row) under hero promotes Dawai parchi + Lab report to first-class entry points alongside symptoms triage. Live "N active" pill on Dawai when reminders exist.
+- **End-to-end prescription flow** (`s-rx`, 5 steps) — Member → Photo/PDF/Manual → Scan animation → Editable extracted medicines → Reminder timing + delivery channel (App/WhatsApp/Voice) → Confirmation with cross-sell.
+- **Sehat Bazaar order flow** (`s-order`, 4 steps) — Cart with brand+generic+MRP+discount → Address picker (Lucknow/Varanasi seeds) → UPI/COD/Jio Wallet → Animated success with WhatsApp tracking confirmation. Order IDs `NM<base36>`. Reliance Netmeds branded.
+- **Order tracking** (`s-track`) — 5-stage vertical timeline (Placed → Confirmed → Packed → Out for delivery → Delivered) with auto-progress every 12s for prototype demo. Live re-render every 3s while screen is open.
+- **Mera Sehat unified hub** (`s-bazaar`) — Active reminders + Mere orders + Lab reports. Channel pills (App/WhatsApp/Voice color-coded). Replaces disabled Sehat Charcha row in tools sheet.
+- **Lab Interpreter upgrades** — Added Photo capture path (camera on mobile), template-based fallback for both Photo and PDF when Vision API unavailable, new "Doctor ne dawai likhi hai? Reminder lagao →" CTA on result that pre-seeds the RX flow with the same member.
+- **Template OCR (DEC-016)** — `RX_TEMPLATES` (3 prescriptions), `LAB_PHOTO_TEMPLATES` (3 reports), `MEDICINE_CATALOG` (9 medicines with brand/generic/MRP). Tagged `[Sample analysis — prototype mode]` so users know.
+- **PR Preview workflow** (`.github/workflows/pr-preview.yml`) — auto-comments preview URLs (raw.githack.com + jsDelivr) and a key-injected artifact link on every PR. Updates the comment in-place on push.
 
 ## Session 9c highlights
 - **Wellness mode now speaks as Maa/Dadi** — `WELLNESS_SYSTEM_PROMPT` rewritten with strict tone rules: "beta/bachha" required; "bhai/yaar/buddy/guys/dude/mate/bro" forbidden. Female-voiced. Modern context preserved (gym, hostel, WFH, screen) in warm-elder register.
@@ -265,3 +275,6 @@ Last successful deploy: 2026-05-07 Session 7 (commit `f41068c`)
 | `ss_profile` | Session 7 | User profile + onboarding state |
 | `ss_recent` | Session 7 | Recent feature LRU (max 6) |
 | `ss_lab_reports` | Session 7 | Per-member lab report memory |
+| `ss_orders` | Session 10 | Sehat Bazaar order history (full snapshot incl. address, payment, status) |
+| `ss_addresses` | Session 10 | Saved delivery addresses (Ghar/Maa-Papa seeded) |
+| `ss_rems` (extended) | Session 10 | Now stores `channel`, `phone`, `dose`, `duration_days`, `rxId`, `member`, `strength`, `notes` |

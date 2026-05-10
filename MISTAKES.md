@@ -2,6 +2,37 @@
 
 ---
 
+## 2026-05-10 — Lab & Dawai were buried in the rail — second/third magical moments never landed
+
+**What happened:** Through Sessions 7→9c, every UX change anchored on "make symptom triage feel magical". Lab Report and Dawai Reminder existed as tools, but they were stuffed into the bottom `tri-rail` (a 6-card horizontal scroller below the symptoms grid). User feedback for v5 planning: *"Right now symptoms triage has overtaken the entire experience and I understand that's the entry point but we should be able to add and tie other experiences neatly too."* The product was claiming three magical moments — symptoms triage, lab interpretation, prescription-to-doorstep — but only one was being designed for.
+
+**Why it happened:** Each session optimized the moment we were testing in isolation. Symptoms got the hero, then wellness got a grid above symptoms, and Lab/Dawai stayed where they were because nobody was tapping them in flow tests. Visibility decisions shouldn't be set by current tap rate when the underlying flow is incomplete — Lab Report had no Photo OCR, no follow-up to "now what dawai do you have?", no fulfilment surface. People weren't tapping it because the flow ended in a dead-end summary.
+
+**What was tried:** N/A — surfaced from explicit user direction for v5.
+
+**What fixed it:** v5 introduces three connected interventions:
+1. Promoted Lab + Dawai to a 2-card `aham-row` directly under the hero, gradient-styled, with a live "N active" pill on Dawai. Symptom triage stays where it is — neither dominates.
+2. Built the **second moment** end-to-end: Lab → photo/PDF/manual → AI summary → "Doctor ne dawai likhi hai? Reminder lagao →" warm-gradient CTA that pre-seeds the prescription flow with the same member.
+3. Built the **third moment** end-to-end: Prescription → OCR (template) → reminder set → "Sehat Bazaar (Reliance Netmeds) se ghar mangao" → cart → address → COD/UPI → tracking timeline → delivered. Each step has its own animation/affordance so the path *feels* magical even though OCR is template-driven in prototype.
+
+**Rule going forward:** A magical moment isn't one screen — it's a path with no dead ends. When promising "X is one of our three magical moments", every step from intent to outcome must have a tested affordance. Don't promote a feature on the home until its full flow is shippable. And conversely: when a flow is complete, give it primary real estate, even if the current home is already full.
+
+---
+
+## 2026-05-10 — Tied OCR-dependent flows to a Vision API that isn't reliably available
+
+**What happened:** Session 7 built Lab Interpreter assuming OpenAI GPT-4o Vision was available. v5 was about to repeat the same mistake by building prescription scan against the same path. In prototype the Vision key is often blocked on Indian ISPs (DEC-004), or simply not provisioned for new dev environments. Without a fallback, the entire RX/Lab flow becomes a dead error toast.
+
+**Why it happened:** "Vision is the cool way to do this" is a tempting framing, but a prototype's first user-facing job is *to demo the experience*, not to validate the AI integration. The Vision integration is the second job.
+
+**What was tried:** N/A — designed the v5 build to avoid this from day one.
+
+**What fixed it:** Both Lab and Rx flows have **template fallbacks** that look identical to real OCR output. Photo capture + PDF upload both run through a 2.5s scan animation and then return one of 3 hand-written sample prescriptions or 3 hand-written sample lab reports. Templates are explicitly tagged `[Sample analysis — prototype mode bina Vision API ke]` in the summary so the user knows. When the real Vision key is wired up, swap the template return with the real `interpretLabPDF()` / new `interpretRx()` — call sites stay identical.
+
+**Rule going forward:** For every AI-dependent feature, ship a template fallback at the same time as the AI path. Templates aren't placeholder content — they're a permanent feature for ISP-blocked users, demo environments, and CI. The template should be hand-written, on-tone, and clearly labeled — not lorem ipsum.
+
+---
+
 ## 2026-05-10 — Wellness mode said "Bhai" — broke the Maa/Dadi magical-voice promise
 
 **What happened:** v4.1 shipped a wellness-goals grid on the hub. Tapping ⚖ Vajan → AI opened with `Bhai, sustainable healthy weight ke liye...`. User feedback: "the wellness speaks as bhai — can't do that — it should have that mom or dadi warmness always". The Mom-Dadi voice IS the magical moment of this product; using a buddy register breaks the trust the rest of the app earns.

@@ -1,0 +1,103 @@
+name: PR Preview — Sehat Saathi
+
+# Posts a clickable, branch-specific preview URL on every PR so the user can
+# QA the changes before merging to main. Two preview surfaces:
+#
+#   1. raw.githack.com URL — instant, zero-setup, works for static single-file
+#      apps. API key injection is NOT performed here, so chat/voice features
+#      stay locked but the symptoms grid, RX flow, lab interpreter (template
+#      mode), bazaar order flow, and tracking screens all work standalone.
+#
+#   2. workflow artifact `index-preview-<sha>.zip` — contains index.html with
+#      OPENAI_API_KEY / GROQ_API_KEY / SARVAM_KEY injected, so the reviewer can
+#      download, unzip, and `python3 -m http.server` to test full chat + voice.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Inject API keys (for full-feature artifact)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SARVAM_KEY: ${{ secrets.SARVAM_KEY }}
+        run: |
+          python3 - <<'PYEOF'
+          import os
+          oai    = os.environ.get("OPENAI_API_KEY","").strip()
+          groq   = os.environ.get("GROQ_API_KEY","").strip()
+          sarvam = os.environ.get("SARVAM_KEY","").strip()
+          with open("index.html","r") as f:
+              html = f.read()
+          html = html.replace("REPLACE_WITH_YOUR_KEY", oai)
+          html = html.replace("REPLACE_WITH_GROQ_KEY", groq)
+          html = html.replace("REPLACE_WITH_SARVAM_KEY", sarvam)
+          with open("index.html","w") as f:
+              f.write(html)
+          print("Injected. OpenAI:", bool(oai), "Groq:", bool(groq), "Sarvam:", bool(sarvam))
+          PYEOF
+
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: index-preview-${{ github.event.pull_request.head.sha }}
+          path: index.html
+          retention-days: 14
+
+      - name: Comment preview URLs on the PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = context.payload.pull_request.head.ref;
+            const repo = context.payload.pull_request.head.repo.full_name;
+            const sha = context.payload.pull_request.head.sha;
+            const githack = `https://raw.githack.com/${repo}/${branch}/index.html`;
+            const cdnjsdelivr = `https://cdn.jsdelivr.net/gh/${repo}@${branch}/index.html`;
+            const artifactUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `### 🔍 Preview ready for \`${branch}\``,
+              ``,
+              `| Surface | URL | Notes |`,
+              `|---|---|---|`,
+              `| **Live preview (no API keys)** | [${githack}](${githack}) | Symptoms grid, RX flow, Lab (template mode), Bazaar — all work. Chat/voice locked. |`,
+              `| **jsDelivr mirror** | [${cdnjsdelivr}](${cdnjsdelivr}) | Cached, may lag a few minutes behind. |`,
+              `| **Full-feature artifact** | [Run #${context.runId}](${artifactUrl}) | Download \`index-preview-${sha.substring(0,7)}.zip\`, unzip, \`python3 -m http.server 8080\`, open \`http://localhost:8080\`. Has API keys baked in — chat + voice work. |`,
+              ``,
+              `**Mobile QA tip:** Open the live preview link on your phone, or use Chrome DevTools → toolbar → toggle device toolbar (Cmd+Shift+M) → "iPhone 14 Pro" (390px wide) — that's our target frame.`,
+              ``,
+              `_Updated automatically on each push to this PR._`
+            ].join('\n');
+            // Find existing preview comment (if any) and update; else create.
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              per_page: 100
+            });
+            const existing = comments.find(c => c.user.type === 'Bot' && c.body && c.body.startsWith('### 🔍 Preview ready'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body
+              });
+            }
