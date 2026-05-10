@@ -2,6 +2,44 @@
 
 ---
 
+## 2026-05-10 — Session 9c: v4.2 — Maa/Dadi tone for wellness, habit-cards, TTS pronunciation fix
+
+User feedback after v4.1 shipped, with screenshots: (a) Wellness mode opened with `Bhai, sustainable healthy weight ke liye...` — wrong register; the magical-moment is the Maa/Dadi warm voice and "bhai/yaar/buddy" breaks it; (b) Wellness-mode replies showed only follow-up chips (`Aur tips / Saans karein / Plan banao`) — no recipe/animation card for the practical "30-min walk + pani peena" advice the AI was giving; (c) Acupressure step 4/5 read "Choddo. Doosre haath par bhi karo." — Roman "choddo" gets read by Sarvam Bulbul TTS with the wrong Hindi stress and **sounds vulgar** to the listener.
+
+### Fixed
+- **TONE — wellness now speaks as Maa/Dadi, not bhai.** `WELLNESS_SYSTEM_PROMPT` rewritten to require strict Maa/Dadi warmth: words like "beta", "bachha", "suno beta", "haan beta" are mandatory; "bhai", "yaar", "buddy", "guys", "dude", "mate", "bro" are explicitly forbidden. Female-voiced. The new prompt keeps the modern context (gym, hostel, WFH, screen, lab, exam) but in the warm-elder register.
+- **TTS pronunciation — every "choddo / chhoddo / Choddo" replaced**:
+  - Acupressure release step (LI-4, PC-6): `Choddo. Doosre haath par bhi karo.` → `Haath hata lo. Doosre haath par bhi karo.`
+  - Anulom-Vilom & Surya Namaskar: `saans choddo` → `saans bahar nikalo`
+  - Bhramari: `Saans choddte hue "Mmm..."` → `Saans bahar nikalte hue "Mmm..."`
+  - Box-breathing phase name `Choddo` → `Saans Bahar`
+- **Devanagari `tts[]` per step.** Every acupressure point + breath/yoga skill + new wellness habit now has a hand-written Devanagari `tts[]` array parallel to `steps[]`. `showMoveStep()` prefers `_moveSkill.tts[idx]` (passed via `speak(..., { ttsText })`) so Sarvam Bulbul reads natural, unambiguous Hindi with female Maa-voice register, instead of transliterating Roman input where ambiguous spellings can land on vulgar phonemes.
+- **`openAcupressure()` passes `p.tts` through** to the `move-ov` player so the same TTS-quality fix applies to acupressure overlay reads.
+
+### Added
+- **`HABIT_KITS` (5 wellness habits) added inline into `MOVEMENT_SKILLS`** — same overlay player, lifestyle steps:
+  - 🚶 `daily-walk` — 30-min brisk walk routine (5 steps)
+  - 💧 `hydration` — pani-peene-ka-routine (5 steps)
+  - 👁 `screen-break` — 20-20-20 aankho ka aaram (5 steps)
+  - 📔 `journaling` — 5-min raat ki diary (5 steps)
+  - 🧘‍♀️ `meditation` — 5-min mindful saans (5 steps)
+
+  Each kit has a Devanagari `tts[]` for clean read-aloud. Triggers on AI keywords like `brisk walk / chalna / 30 minute walk / metabolism / hydration / pani peena / 2-3 glass / 20-20-20 / screen break / journal / diary / dhyan / meditation`.
+- **`detectMovement()` extended** with regex matchers for the 5 new habit kits.
+
+### Changed
+- **`addMsg()` card-injection** — `injectRemedyCard` and `injectAcupressureCard` now fire in **`nushke` AND `wellness` ctxs** (previously nushke-only). Wellness AI replies that mention haldi-doodh, ajwain, tulsi, etc. or sir-dard / nausea / stress points now also surface their respective in-app step cards.
+
+### Broken / Known issues
+- Other Roman-Hindi step strings (recipe kits) don't yet have `tts[]` arrays; Sarvam transliteration handles them and they don't contain ambiguous-vulgar words. We'll add Devanagari `tts[]` to recipe kits in the next pass.
+- Habit detection is regex-based on the AI's reply text; if the AI uses synonyms outside the keyword list (e.g. "sair karna" instead of "walk"), the card won't appear. Easy to extend.
+
+### Next session should start with
+- Live URL test: tap a wellness goal (e.g. ⚖ Vajan) → confirm the AI now opens with "Suno beta..." not "Bhai..."; confirm the reply triggers the `daily-walk` and/or `hydration` step card; tap → step overlay reads each step in clean female Maa-voice Devanagari.
+- Tap acupressure card from a `Sir dard` symptom answer → confirm step 4/5 reads "हाथ हटा लो" (haath hata lo) and the Hindi stress/pronunciation is natural.
+
+---
+
 ## 2026-05-10 — Session 9b: v4.1 — Wellness goals on the home (broaden audience beyond "the unwell")
 
 User feedback after v4 shipped: "Does it feel like a page where any ill people will go and not younger audience who wants general health and wellness advice?" Correct read — the v4 hub greeted every visitor with `Kya takleef hai?` and 8 ailment buttons, which excluded the 65%-of-population, under-35, proactive-wellness audience that tier 2/3 actually skews toward. (India median age 28; 24% YoY adoption among 20-39 year olds in wellness apps.)

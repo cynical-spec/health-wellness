@@ -1336,19 +1336,25 @@ First line: LANG:<code>  where <code> is one of hi, mr, bn, ta, te, kn, ml, gu, 
 Second line onward: your warm reply.`;
 
 // ── v2: Wellness + Community system prompts ──
-const WELLNESS_SYSTEM_PROMPT = `You are Sehat Saathi — Wellness mode. You're a warm, modern wellness companion for young Indians (18–35) on JioBharatIQ.
+const WELLNESS_SYSTEM_PROMPT = `You are Sehat Saathi — Wellness mode. You speak with the WARM, CARING VOICE of an Indian mother or grandmother (Maa / Dadi) — talking to a young adult (18–35) about everyday wellness on JioBharatIQ.
 
-LANGUAGE: Detect the user's language and reply in code-mixed Hindi-English (Hinglish) if they write in Roman, or in pure script if they use Hindi/Tamil/Bengali/etc. Be casual and modern — like a fitness buddy or older cousin.
+LANGUAGE: Detect the user's language. Reply in code-mixed Hindi-English (Hinglish) if they wrote in Roman; otherwise in their script. Words you naturally use: "beta", "bachha", "suno beta", "haan beta", "aaram se", "khayal rakhna", "main batati hoon".
 
-SCOPE: General wellness, fitness, sleep, mental health basics, nutrition, screen time, stress, gym basics, productivity, habit formation, lifestyle.
+SCOPE: General wellness — fitness, sleep, mental health basics, nutrition, screen time, stress, gym basics, productivity, habit formation, lifestyle. Lean on AYUSH-rooted suggestions where natural (haldi-doodh, ajwain, tulsi, jeera-paani, brisk walk, pranayama, meditation).
 
 HARD RULES:
 - NEVER diagnose. NEVER suggest medications. NEVER name specific conditions.
-- For any symptom or pain question: respond warmly, then redirect: "Iske liye Ghar ke Nushke section mein Dadi se baat karo, ya doctor se milein."
-- For mental health crisis (suicide, self-harm): respond with care, give iCall helpline (9152987821) and urge talking to someone trusted.
+- For any pain / symptom question: respond warmly, then redirect: "Iske liye Ghar ke Nushke section mein Dadi ke nushke try karo, beta. Ya doctor se mil lo."
+- For mental health crisis (suicide, self-harm): respond with deep care, share iCall helpline 9152987821, urge talking to someone trusted.
 - Keep replies under 5 sentences. Practical, specific, actionable.
 
-TONE: Energetic, non-preachy, real. Like "bhai try this" not "you should consider". Mix Hinglish naturally. Use modern references (gym, hostel, WFH, screen time).`;
+TONE — STRICTLY MAA / DADI WARMTH (NEVER buddy or peer):
+- Use "beta", "bachha", "suno", "haan beta", "main keh rahi thi", "thoda dhyan rakhna".
+- NEVER use "bhai", "yaar", "buddy", "guys", "dude", "mate", "bro".
+- Speak like the wisest, kindest elder — gentle, direct, never preachy, never aggressive.
+- Acknowledge modern context (gym, hostel, WFH, screen, lab, exam, college) but keep the Maa-Dadi register intact.
+- Open with warmth ("Suno beta...", "Haan beta..."), not commands ("Bhai try..." / "You should...").
+- Female-voiced. Always.`;
 
 const COMMUNITY_BASE_PROMPT = `You are NOT an AI assistant. You are roleplaying as a fellow JioBharatIQ user — a real person sharing your own lived experience with health.
 
@@ -2516,12 +2522,13 @@ function addMsg(role, text, showBadge) {
     // skill check
     const skill = detectSkill(text);
     if (skill) setTimeout(() => { const skRow = document.createElement('div'); skRow.className = 'msg-row bot'; renderSkillCard(skill, skRow); msgs.appendChild(skRow); msgs.scrollTop = msgs.scrollHeight; }, 600);
-    // v4: nushke recipe card (in-app step overlay) + acupressure card
-    if (ST.chatCtx === 'nushke') {
+    // v4.2: recipe + acupressure cards now fire in nushke AND wellness ctxs
+    // (wellness AI often suggests haldi-doodh / pressure points / etc. too)
+    if (ST.chatCtx === 'nushke' || ST.chatCtx === 'wellness') {
       setTimeout(() => injectRemedyCard(text, msgs), 800);
       setTimeout(() => injectAcupressureCard(text, msgs), 950);
     }
-    // v3.7: movement skill card if reply mentions a known movement
+    // movement skill / wellness habit card — fires in all ctxs when keyword matches
     setTimeout(() => injectMovementCard(text, msgs), 900);
     // v3.2: Follow-up CTA chips (after a beat, only on AI replies — not template ones)
     if (showBadge !== undefined && typeof injectFollowups === 'function') {
@@ -3560,7 +3567,7 @@ function saveFamilyMember() {
 const BREATH_PHASES = [
   { name:'Saans Lo', instr:'Naak se dheere saans andar lo...', color:'#1eccb0', scale:1.4 },
   { name:'Rokho', instr:'Andar rokho — bilkul shaant...', color:'#f7ab20', scale:1.4 },
-  { name:'Choddo', instr:'Muh se dheere saans bahar nikalo...', color:'#3535f3', scale:0.82 },
+  { name:'Saans Bahar', instr:'Muh se dheere saans bahar nikalo...', color:'#3535f3', scale:0.82 },
   { name:'Rokho', instr:'Bahar rokho — ek baar aur...', color:'#f7ab20', scale:0.82 }
 ];
 
@@ -4358,8 +4365,15 @@ const ACUPRESSURE_POINTS = {
       'Apna baayan haath dekho — angootha aur tarjani ke beech V-shape.',
       'Doosre haath ke angoothe se us V ke center par dabao.',
       '30 sec tak halka dabav — saans dheere.',
-      'Choddo. Doosre haath par bhi karo.',
+      'Haath hata lo. Doosre haath par bhi karo.',
       '3 round — sir dard mein kaafi aaram.'
+    ],
+    tts:[
+      'अपना बायाँ हाथ देखो — अंगूठा और तर्जनी के बीच V शेप बनाओ।',
+      'दूसरे हाथ के अंगूठे से उस V के center पर दबाओ।',
+      'तीस सेकंड तक हलका दबाव रखो — साँस धीरे।',
+      'अब हाथ हटा लो। दूसरे हाथ पर भी ऐसा ही करो।',
+      'तीन round करो — सिर दर्द में काफ़ी आराम मिलेगा।'
     ] },
   'gb20-neck': { kw:['gardan','neck','back of head','neck pain'],
     emoji:'👤', title:'GB-20 — gardan/sir', dur:'1 min',
@@ -4370,6 +4384,13 @@ const ACUPRESSURE_POINTS = {
       'Sir ko aage halka jhukao. Saans gehri.',
       '1 min tak madhyam dabav.',
       'Tension headache + gardan akadan mein.'
+    ],
+    tts:[
+      'सिर के पीछे, कानों के पीछे की तरफ़ दो छोटे gaps हैं।',
+      'दोनों हाथों के अंगूठे वहाँ रखो।',
+      'सिर को आगे हलका झुकाओ। साँस गहरी।',
+      'एक मिनट तक मध्यम दबाव।',
+      'Tension headache और गर्दन की अकड़न में।'
     ] },
   'pc6-nausea': { kw:['nausea','ulti','vomiting','jee michlana','motion sickness','ji ghabraana'],
     emoji:'🫳', title:'PC-6 (Neiguan) — jee michlana', dur:'30 sec × 2',
@@ -4378,8 +4399,15 @@ const ACUPRESSURE_POINTS = {
       'Kalai par 3 ungli neeche — beech mein 2 tendons hain.',
       'Doosre haath ke angoothe se beech mein dabao.',
       '30 sec firm dabao — ek hi point.',
-      'Choddo. Doosre haath par karo.',
+      'Haath hata lo. Doosre haath par karo.',
       'Ulti, motion sickness, pregnancy nausea mein.'
+    ],
+    tts:[
+      'कलाई पर तीन उंगली नीचे — बीच में दो tendons हैं।',
+      'दूसरे हाथ के अंगूठे से बीच में दबाओ।',
+      'तीस सेकंड firm दबाव — एक ही point पर।',
+      'अब हाथ हटा लो। दूसरे हाथ पर करो।',
+      'उल्टी, motion sickness, pregnancy की मतली में आराम।'
     ] },
   'yintang-stress': { kw:['anxiety','tension','chinta','stress','ghabrahat','stress headache','frontal headache'],
     emoji:'🧘', title:'Yintang — chinta/tension', dur:'1 min',
@@ -4390,6 +4418,13 @@ const ACUPRESSURE_POINTS = {
       'Halka circular massage — clockwise.',
       '1 min, saans dheere ke saath.',
       'Mann shant, neend acchi, chinta kam.'
+    ],
+    tts:[
+      'दोनों भौहों के बीच का point।',
+      'तर्जनी (index finger) वहाँ रखो।',
+      'हलका circular massage — clockwise।',
+      'एक मिनट, साँस धीरे के साथ।',
+      'मन शांत, नींद अच्छी, चिंता कम।'
     ] },
   'st36-fatigue': { kw:['thakaan','fatigue','weakness','energy','kamzori'],
     emoji:'🦵', title:'ST-36 (Zusanli) — energy', dur:'1 min × 2',
@@ -4400,6 +4435,13 @@ const ACUPRESSURE_POINTS = {
       '1 min — saans gehri.',
       'Doosre paav par bhi karo.',
       'Thakaan, kamzori — roz subah karein.'
+    ],
+    tts:[
+      'घुटने से चार उंगली नीचे — पिंडली की हड्डी से एक उंगली बाहर।',
+      'अंगूठे से firm दबाव।',
+      'एक मिनट — साँस गहरी।',
+      'दूसरे पाँव पर भी करो।',
+      'थकान, कमज़ोरी में — रोज़ सुबह करो।'
     ] },
   'lu7-cough': { kw:['khansi','cough','galay','sore throat','throat'],
     emoji:'👋', title:'LU-7 — khansi/galay', dur:'30 sec × 2',
@@ -4410,6 +4452,13 @@ const ACUPRESSURE_POINTS = {
       '30 sec halki gol gati mein.',
       'Doosre haath par karo.',
       'Khansi, galay khich-khich, sardi mein.'
+    ],
+    tts:[
+      'कलाई के शुरू में, अंगूठे की तरफ़ — एक छोटा notch।',
+      'दूसरे हाथ की तर्जनी से हलका दबाव।',
+      'तीस सेकंड हलकी गोल गति में।',
+      'दूसरे हाथ पर करो।',
+      'खांसी, गले की खिच-खिच, सर्दी में।'
     ] }
 };
 const ACU_SVGS = {
@@ -4449,7 +4498,8 @@ function openAcupressure(key) {
   const p = ACUPRESSURE_POINTS[key];
   if (!p) return;
   // Reuse move-ov player; render an SVG silhouette in the anim slot
-  _moveSkill = { emoji:p.emoji, title:p.title, durSec:60, steps:p.instr };
+  // v4.2: pass tts[] through so TTS reads clean Devanagari (not ambiguous Roman)
+  _moveSkill = { emoji:p.emoji, title:p.title, durSec:60, steps:p.instr, tts:p.tts };
   _moveStepIdx = 0;
   document.getElementById('move-ov').classList.add('on');
   document.getElementById('move-ov-title').textContent = p.title;
@@ -4467,9 +4517,16 @@ const MOVEMENT_SKILLS = {
     steps: [
       'Aaram se baitho. Reedh ki haddi seedhi.',
       'Daahini naak band karo angoothe se. Baayi se saans lo (4 sec).',
-      'Baayi naak band karo. Daahini se saans choddo (4 sec).',
-      'Phir daahini se saans lo. Baayi se choddo. Yeh ek round hai.',
+      'Baayi naak band karo. Daahini se saans bahar nikalo (4 sec).',
+      'Phir daahini se saans lo. Baayi se saans bahar nikalo. Yeh ek round hai.',
       'Aise 8-10 round karo. Saans dheere, gehri.'
+    ],
+    tts:[
+      'आराम से बैठो। रीढ़ की हड्डी सीधी।',
+      'दाहिनी नाक बंद करो अंगूठे से। बायीं से साँस लो — चार सेकंड।',
+      'अब बायीं नाक बंद करो। दाहिनी से साँस बाहर निकालो — चार सेकंड।',
+      'फिर दाहिनी से साँस लो। बायीं से बाहर निकालो। यह एक round हुआ।',
+      'ऐसे आठ से दस round करो। साँस धीरे, गहरी।'
     ]
   },
   'kapalbhati': {
@@ -4480,6 +4537,13 @@ const MOVEMENT_SKILLS = {
       'Pet andar khench ke saans bahar nikaalo — short, sharp.',
       'Saans bahar ACTIVE, andar AUTO. Aise 30 baar.',
       'Ek minute aaram. Phir 2 round aur.'
+    ],
+    tts:[
+      'वज्रासन में बैठो या कुर्सी पर सीधे।',
+      'नाक से हलकी साँस अंदर लो।',
+      'पेट अंदर खेंच के साँस बाहर निकालो — short, sharp।',
+      'साँस बाहर ACTIVE, अंदर AUTO। ऐसे तीस बार।',
+      'एक मिनट आराम। फिर दो round और।'
     ]
   },
   'bhramari': {
@@ -4487,9 +4551,16 @@ const MOVEMENT_SKILLS = {
     steps: [
       'Aankhein band, kaano mein angoothe se daba lo.',
       'Naak se gehri saans lo.',
-      'Saans choddte hue "Mmm..." ki bhinbhinaahat (bee sound) karo.',
+      'Saans bahar nikalte hue "Mmm..." ki bhinbhinaahat (bee sound) karo.',
       'Aise 5-7 baar. Saans aur awaaz dono lambi.',
       'Mann ekdum shaant ho jaayega.'
+    ],
+    tts:[
+      'आँखें बंद, कानों में अंगूठे से दबा लो।',
+      'नाक से गहरी साँस लो।',
+      'साँस बाहर निकालते हुए "ममम..." की भिनभिनाहट करो — bee sound।',
+      'ऐसे पाँच से सात बार। साँस और आवाज़ दोनों लंबी।',
+      'मन एकदम शांत हो जाएगा।'
     ]
   },
   'vajrasana': {
@@ -4500,6 +4571,13 @@ const MOVEMENT_SKILLS = {
       'Reedh seedhi, haath jaangh par.',
       'Aaram se 5 minute baitho — paachan ke liye sabse accha.',
       'Khaane ke turant baad bhi kar sakte ho.'
+    ],
+    tts:[
+      'घुटनों के बल बैठो — पाँव पीछे।',
+      'एड़ी पर बैठ जाओ, पाँव एक दूसरे से सटा के।',
+      'रीढ़ सीधी, हाथ जाँघ पर।',
+      'आराम से पाँच मिनट बैठो — पाचन के लिए सबसे अच्छा।',
+      'खाने के तुरंत बाद भी कर सकते हो।'
     ]
   },
   'surya-namaskar': {
@@ -4507,7 +4585,7 @@ const MOVEMENT_SKILLS = {
     steps: [
       'Pranamasana — haath jodke khade ho.',
       'Hasta Uttanasana — saans lete hue haath upar.',
-      'Padahastasana — saans choddte hue jhuk ke pair chhuo.',
+      'Padahastasana — saans bahar nikalte hue jhuk ke pair chhuo.',
       'Ashwa Sanchalanasana — daahina paav peeche, baayi mod do.',
       'Dandasana → Ashtanga → Bhujangasana → wapas. Yeh 1 round.',
       '5-10 round ek saath. Hafte mein tezi se fark.'
@@ -4541,6 +4619,99 @@ const MOVEMENT_SKILLS = {
       'Pure body ko dheela chhod do.',
       'Saans pe dhyan — andar, bahar.',
       'Aise 5-10 minute. Stress turant kam.'
+    ],
+    tts:[
+      'पीठ के बल लेट जाओ। आँखें बंद।',
+      'पैर थोड़े खुले। हाथ body से थोड़ा दूर।',
+      'पूरी body को ढीला छोड़ दो।',
+      'साँस पे ध्यान — अंदर, बाहर।',
+      'ऐसे पाँच से दस मिनट। Stress तुरंत कम।'
+    ]
+  },
+  // ── v4.2: Wellness habits — same overlay player, lifestyle steps ──
+  'daily-walk': {
+    emoji: '🚶', title: 'Roz ki 30-min walk', durSec: 1800,
+    steps: [
+      'Comfortable shoes pehno. Subah ya sham — jab time mile.',
+      'Pehle 5 min dheere chalo — body warm-up.',
+      'Phir 20 min brisk pace — saans halki tez ho jaaye.',
+      'Aakhri 5 min dheere — body ko cool down.',
+      'Roz karna — metabolism dheere-dheere strong hota hai.'
+    ],
+    tts:[
+      'Comfortable जूते पहनो, बेटा। सुबह या शाम — जब time मिले।',
+      'पहले पाँच मिनट धीरे चलो — body warm-up।',
+      'फिर बीस मिनट तेज़ चलो — साँस हलकी तेज़ हो जाए।',
+      'आख़िरी पाँच मिनट धीरे — body को cool down।',
+      'रोज़ करना है, बेटा। Metabolism धीरे-धीरे strong होता है।'
+    ]
+  },
+  'hydration': {
+    emoji: '💧', title: 'Pani peene ka routine', durSec: 60,
+    steps: [
+      'Subah uthke 2 glass paani peelo — khali pet.',
+      'Naashte ke 30 min pehle 1 glass.',
+      'Lunch ke 1 ghante baad 1-2 glass.',
+      'Sham 4 baje 1 glass — energy maintain.',
+      'Sone se 1 ghanta pehle aakhri ghoont — pura din 8 glass.'
+    ],
+    tts:[
+      'सुबह उठके दो गिलास पानी पीओ — खाली पेट।',
+      'नाश्ते के तीस मिनट पहले एक गिलास।',
+      'Lunch के एक घंटे बाद एक से दो गिलास।',
+      'शाम चार बजे एक गिलास — energy maintain।',
+      'सोने से एक घंटा पहले आख़िरी घूँट। पूरा दिन आठ गिलास, बेटा।'
+    ]
+  },
+  'screen-break': {
+    emoji: '👁', title: '20-20-20 Aankho ka aaram', durSec: 60,
+    steps: [
+      'Har 20 minute screen ke baad — break lo.',
+      '20 sec ke liye dur dekho — 20 feet.',
+      'Khidki ke baahar, ya door ki deewar.',
+      'Aankhein 3-4 baar blink karo.',
+      'Roz karna — laptop wala beta-beti zaroor.'
+    ],
+    tts:[
+      'हर बीस मिनट screen के बाद — break लो, बेटा।',
+      'बीस सेकंड के लिए दूर देखो — बीस feet दूर।',
+      'खिड़की के बाहर, या दूर की दीवार।',
+      'आँखें तीन-चार बार blink करो।',
+      'रोज़ करना। Laptop वाले बेटे-बेटी ज़रूर करना।'
+    ]
+  },
+  'journaling': {
+    emoji: '📔', title: '5-min raat ki diary', durSec: 300,
+    steps: [
+      'Sone se pehle ek copy aur pen lo.',
+      '3 cheezein likho — aaj kya accha hua.',
+      '1 cheez likho — kal kya behtar karunga/karungi.',
+      'Agar koi tension hai — wo bhi likh do, mann halka hoga.',
+      'Roz raat — neend acchi aur stress kam.'
+    ],
+    tts:[
+      'सोने से पहले एक copy और pen लो, बेटा।',
+      'तीन चीज़ें लिखो — आज क्या अच्छा हुआ।',
+      'एक चीज़ लिखो — कल क्या बेहतर करूँगा/करूँगी।',
+      'अगर कोई tension है — वो भी लिख दो, मन हलका हो जाएगा।',
+      'रोज़ रात। नींद अच्छी और stress कम।'
+    ]
+  },
+  'meditation': {
+    emoji: '🧘‍♀️', title: '5-min mindful saans', durSec: 300,
+    steps: [
+      'Aaram se baitho. Reedh seedhi. Aankhein band.',
+      'Saans pe dhyan lo — andar aati hai, bahar jaati hai.',
+      'Mann mein vichar aaye — koi baat nahi, wapas saans pe.',
+      'Aise 5 min — bina judge kiye.',
+      'Roz subah ya raat — mann shanti, focus tez.'
+    ],
+    tts:[
+      'आराम से बैठो, बेटा। रीढ़ सीधी। आँखें बंद।',
+      'साँस पे ध्यान लो — अंदर आती है, बाहर जाती है।',
+      'मन में विचार आए — कोई बात नहीं, वापस साँस पे लाओ।',
+      'ऐसे पाँच मिनट — बिना judge किए।',
+      'रोज़ सुबह या रात। मन शांत, focus तेज़।'
     ]
   }
 };
@@ -4555,6 +4726,12 @@ function detectMovement(text) {
   if (/(gardan|neck)\s*(rotation|exercise|ghumao|hila)/.test(t)) return ['gardan', MOVEMENT_SKILLS.gardan];
   if (/malasana|squat/.test(t)) return ['malasana', MOVEMENT_SKILLS.malasana];
   if (/shavasana|relaxation\s*pose/.test(t)) return ['shavasana', MOVEMENT_SKILLS.shavasana];
+  // v4.2: wellness habit detection — common lifestyle terms that fire a step card
+  if (/(brisk\s*walk|daily\s*walk|tehlna|tehlne|chalna|walking|walk\s*karo|30\s*minute\s*walk|metabolism)/.test(t)) return ['daily-walk', MOVEMENT_SKILLS['daily-walk']];
+  if (/(hydration|pani\s*peena|pani\s*piye|water\s*routine|2-3\s*glass\s*pani|glass\s*paani|glasses?\s*water)/.test(t)) return ['hydration', MOVEMENT_SKILLS.hydration];
+  if (/(20[\s-]?20[\s-]?20|screen\s*break|aankho\s*ka\s*aaram|eye\s*strain|laptop\s*break)/.test(t)) return ['screen-break', MOVEMENT_SKILLS['screen-break']];
+  if (/(journal|diary|likh\s*lo|raat\s*ko\s*likh|gratitude)/.test(t)) return ['journaling', MOVEMENT_SKILLS.journaling];
+  if (/(meditation|dhyan|mindful|5\s*minute\s*shanti|saans\s*pe\s*dhyan)/.test(t)) return ['meditation', MOVEMENT_SKILLS.meditation];
   return null;
 }
 function injectMovementCard(text, msgsContainer) {
@@ -4594,7 +4771,10 @@ function showMoveStep(idx) {
   const dots = document.querySelectorAll('#move-ov-progress .move-ov-progress-dot');
   dots.forEach((d, i) => d.classList.toggle('done', i <= idx));
   document.getElementById('move-ov-counter').textContent = (idx + 1) + ' / ' + _moveSkill.steps.length;
-  speak(_moveSkill.steps[idx], { quiet: true });
+  // v4.2: prefer pre-translated Devanagari tts[] for clean read-aloud (avoids
+  // ambiguous Roman words like "choddo" being pronounced incorrectly).
+  const sayText = (_moveSkill.tts && _moveSkill.tts[idx]) || _moveSkill.steps[idx];
+  speak(_moveSkill.steps[idx], { quiet: true, ttsText: sayText });
   if (_moveTimer) clearTimeout(_moveTimer);
   _moveTimer = setTimeout(() => {
     if (idx < _moveSkill.steps.length - 1) showMoveStep(idx + 1);
