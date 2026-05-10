@@ -2,6 +2,34 @@
 
 ---
 
+## 2026-05-10 — Session 9b: v4.1 — Wellness goals on the home (broaden audience beyond "the unwell")
+
+User feedback after v4 shipped: "Does it feel like a page where any ill people will go and not younger audience who wants general health and wellness advice?" Correct read — the v4 hub greeted every visitor with `Kya takleef hai?` and 8 ailment buttons, which excluded the 65%-of-population, under-35, proactive-wellness audience that tier 2/3 actually skews toward. (India median age 28; 24% YoY adoption among 20-39 year olds in wellness apps.)
+
+### Added
+- **Wellness goals grid** (`tri-well-grid`) above the symptom grid — 8 buttons: Energy, Achi neend, Pachhan, Mann shanti, Skin glow, Vajan, Focus, Immunity. Each has a tailored AI prompt that produces a magical-moment first turn (no clarifying-question loop) routed through the existing `wellness` ctx (younger Hinglish persona).
+- **`triWellnessTap(displayText, aiPrompt)`** — sets ctx='wellness', tracks feature, opens chat with the goal already framed.
+- Section labels "Aaj behtar feel karo" (above) and "Koi takleef hai?" (below) using the existing `tri-rail-lbl` style.
+
+### Changed
+- Hero: `Kya takleef hai?` → `Namaste 🙏 / Aaj kaisi sehat banayein?`. Sub-copy: `Bolein ya niche se chunein — sehat banao ya koi takleef ho`. The home now welcomes both the well and the unwell without forcing one identity.
+- Layout becomes: hero → wellness-goals grid (8) → mood pulse-strip → symptoms grid (8) → "Aur kya kar sakte ho" rail. Both audiences served on a single scroll, no tabs/toggles, no profile schema change.
+
+### Decisions made this session
+- **Skipped women's health (PCOS / Periods)** — explicitly held back by user as "another vertical worth its own product surface." Will be slotted in when that vertical lands.
+- Routed wellness goals to `wellness` ctx, not `nushke`, because the existing `WELLNESS_SYSTEM_PROMPT` is already calibrated for 18–35 Hinglish, no diagnosis, ≤5 sentences, "bhai try this" tone.
+
+### Broken / Known issues
+- The mood pulse-strip + the rail are now separated by the symptoms grid; visually still coherent but worth testing on 390px.
+- 16 large symptom-and-wellness buttons + a strip + a rail makes the home page noticeably longer than v4. Above-the-fold content is wellness goals, which matches the broader-audience goal.
+
+### Next session should start with
+- Live URL smoke test on a mobile (390px) — does the full hub feel coherent? Does the wellness grid get tapped or do users still scroll past to takleef?
+- If wellness gets ≥30% of taps, consider promoting one wellness goal into the daily story rail (auto-suggest based on time-of-day).
+- Plan the women's-health vertical surface (PCOS, periods, prenatal) as a separate entry, not mixed into the wellness grid.
+
+---
+
 ## 2026-05-10 — Session 9: v4 — Tier 2/3 reframe (symptoms-first, recipe-steps, live voice)
 
 This session re-anchored the home around the tier-2/3 user's actual intent ("kya takleef hai, fix it") and rebuilt three weak points raised by the user: (a) the home was mood-first instead of symptom-first; (b) ghar-ka-nushka left the user with a YouTube link instead of a magical, in-app step-by-step animation; (c) the Speak button was opaque — no transcript, no listening signal, no visible turn-taking.

@@ -1,5 +1,11 @@
 # Status — Sehat Saathi
-*Last updated: 2026-05-10 — Session 9 (v4 — Tier 2/3 reframe: symptoms-first, recipe-steps, live voice)*
+*Last updated: 2026-05-10 — Session 9b (v4.1 — Wellness goals on the hub for broader audience)*
+
+## Session 9b highlights
+- **Wellness goals grid** added above the symptom grid (`tri-well-grid`, 8 buttons: Energy, Achi neend, Pachhan, Mann shanti, Skin glow, Vajan, Focus, Immunity). Each routes via new `triWellnessTap()` to `wellness` ctx with a magical-moment first-turn prompt.
+- **Hero re-framed** from `Kya takleef hai?` to `Namaste 🙏 / Aaj kaisi sehat banayein?`. Welcomes both the well and the unwell.
+- Section labels: "Aaj behtar feel karo" (wellness) above, "Koi takleef hai?" (symptoms) below. Both grids on one scroll, no tabs.
+- **Held off women's health** (PCOS, periods, prenatal) — explicitly slated for its own vertical, not mixed into the wellness grid.
 
 ## Session 9 highlights
 - **Hub re-anchored on symptoms triage** — 8-button `tri-grid` (Sir dard, Sardi-khansi, Pet, Neend, Ghutno, Bukhar, Tension, Saans/galay) is now the primary path. Mood is collapsed into a single-line pulse-check strip. Other use cases (Story, Saans, Lab, Dawai, Meal, Parivaar) live in a subtle `tri-rail`.
@@ -85,10 +91,11 @@ Last successful deploy: 2026-05-07 Session 7 (commit `f41068c`)
 | Profile tile re-edit | Working | Sehat Tools → Profile reopens onboarding |
 | localStorage | Working | `ss_profile` persists across sessions |
 
-### Sehat Hub (v4 — symptoms-first)
+### Sehat Hub (v4.1 — wellness + takleef on one screen)
 | Feature | Status | Notes |
 |---|---|---|
-| `tri-hero` "Kya takleef hai?" | Working | Primary CTA replaces the mood greeting |
+| `tri-hero` "Aaj kaisi sehat banayein?" | Working — Session 9b | Open hero, neither sick-only nor wellness-only |
+| `tri-well-grid` 8 wellness goals | Working — Session 9b | Energy, Achi neend, Pachhan, Mann shanti, Skin glow, Vajan, Focus, Immunity → `triWellnessTap()` → wellness ctx |
 | `tri-grid` 8 symptom buttons | Working | Direct route to nushke chat with magical-moment first turn |
 | `tri-mood` pulse-check strip | Working | Single-line, three small mood emoji buttons (collapsed mood path) |
 | `tri-rail` subtle "Aur kya kar sakte ho" | Working | 6 secondary use-case chips — Story, Saans, Lab, Dawai, Meal, Parivaar |
