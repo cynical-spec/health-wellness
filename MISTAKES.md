@@ -2,6 +2,20 @@
 
 ---
 
+## 2026-05-10 — RX step 0 crashed because `m.conditions` is a string, not an array
+
+**What happened:** v5.1's defensive try/catch around `renderRxStep` finally surfaced the *real* root cause of the empty-body bug from earlier today: the family member-card render in step 0 was calling `(m.conditions||[]).join(', ')` — but `m.conditions` is stored as a comma-joined **string** (e.g., `"Diabetes, BP"`), not an array. So `(m.conditions||[]).join` was `undefined`, which threw a TypeError. Without the try/catch, the whole `renderRxStep(0)` would silently abort midway through building the html string, leaving `el.innerHTML = html` never called → blank body.
+
+**Why it happened:** I copied the family-member iteration pattern from elsewhere (lab interpreter step 0 has the same shape) and assumed `conditions` would be the same shape as the multi-select Set in the chip flow. But `saveFamilyMember()` (line 4911) explicitly does `[...ST.condSelected].filter(...).join(', ')` to flatten the Set into a string before storing — so what's on disk is `"Diabetes, BP"` not `["Diabetes", "BP"]`.
+
+**What was tried:** v5.1 added the empty-body CSS fix and the try/catch wrapper. The try/catch was the *actual* fix — it surfaced `(m.conditions||[]).join is not a function` to the user. The CSS min-height bandaid was unnecessary but harmless.
+
+**What fixed it:** Changed the line to `Array.isArray(m.conditions) ? m.conditions.join(', ') : (m.conditions || '')` — handles both shapes, future-proof if someone re-shapes conditions later.
+
+**Rule going forward:** When iterating saved data shapes (especially multi-select fields), don't assume the in-memory shape matches the on-disk shape. Multi-select chips often live as Sets in flight and as joined strings on disk. Always code defensively at the read boundary: `Array.isArray(x) ? x.join(...) : x`. And: try/catch wrappers around render functions are not optional — they're the difference between a useful error message and a screen the user can't recover from.
+
+---
+
 ## 2026-05-10 — RX flow step 0 rendered an empty body (no member buttons visible)
 
 **What happened:** User tapped the new "Dawai parchi" hero card on the live URL right after v5 merged. The s-rx screen transitioned in correctly — header rendered with "Yeh dawai kiske liye? / Member chunein", progress bar showed step 0 active. But the body below was completely blank. The buttons (Aap / family / + Naya member) were nowhere visible.
