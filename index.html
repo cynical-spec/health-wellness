@@ -772,13 +772,51 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
   </div>
 
   <div class="body">
-    <!-- v4: Symptoms-triage hero -->
+    <!-- v4.1: Open hero — works for sick + well + caretaker -->
     <div class="tri-hero">
-      <h1>Kya takleef hai<span id="hub3-name"></span>?</h1>
-      <p>Bolein ya niche tap karein — Dadi ke ghar ke nushke milenge</p>
+      <h1>Namaste<span id="hub3-name"></span> 🙏<br>Aaj kaisi sehat banayein?</h1>
+      <p>Bolein ya niche se chunein — sehat banao ya koi takleef ho</p>
     </div>
 
-    <!-- v4: Symptom triage grid — primary path -->
+    <!-- v4.1: Wellness goals — proactive path for younger / general audience -->
+    <div class="tri-rail-lbl">Aaj behtar feel karo</div>
+    <div class="tri-grid" id="tri-well-grid">
+      <button class="tri-btn" onclick="triWellnessTap('Energy chahiye, thakaan kam','⚡ Mujhe din bhar thakaan rehti hai. Energy badhane ka 1 AYUSH nuska + 1 habit batao — short, practical, Hinglish.')">
+        <div class="tri-btn-emoji">⚡</div>
+        <div class="tri-btn-text">Energy<div class="tri-btn-sub">Thakaan kam</div></div>
+      </button>
+      <button class="tri-btn" onclick="triWellnessTap('Achi neend chahiye','😴 Achi gehri neend ke liye aaj raat ka ek ritual + 1 ghar ka nuska batao — short, Hinglish.')">
+        <div class="tri-btn-emoji">😴</div>
+        <div class="tri-btn-text">Achi neend<div class="tri-btn-sub">Gehri, sukoon</div></div>
+      </button>
+      <button class="tri-btn" onclick="triWellnessTap('Pachhan strong, pet halka','🌱 Pachhan strong, pet halka rakhne ke liye 1 ghar ka tarika + 1 daily habit batao — Hinglish, short.')">
+        <div class="tri-btn-emoji">🌱</div>
+        <div class="tri-btn-text">Pachhan<div class="tri-btn-sub">Pet halka</div></div>
+      </button>
+      <button class="tri-btn" onclick="triWellnessTap('Mann shanti, stress kam','🧠 Stress kam karke mann shanti ke liye 1 saans technique + 1 lifestyle tip do — short, Hinglish.')">
+        <div class="tri-btn-emoji">🧠</div>
+        <div class="tri-btn-text">Mann shanti<div class="tri-btn-sub">Stress kam</div></div>
+      </button>
+      <button class="tri-btn" onclick="triWellnessTap('Skin glow chahiye','✨ Skin glow ke liye Indian kitchen se 1 daily nuska + 1 habit batao — Hinglish, no chemicals talk.')">
+        <div class="tri-btn-emoji">✨</div>
+        <div class="tri-btn-text">Skin glow<div class="tri-btn-sub">Roz nikhar</div></div>
+      </button>
+      <button class="tri-btn" onclick="triWellnessTap('Healthy weight chahiye','⚖ Sustainable healthy weight ke liye 1 ghar ka tarika + 1 movement habit — no crash diet, Hinglish.')">
+        <div class="tri-btn-emoji">⚖</div>
+        <div class="tri-btn-text">Vajan<div class="tri-btn-sub">Healthy way</div></div>
+      </button>
+      <button class="tri-btn" onclick="triWellnessTap('Focus chahiye padhai/kaam mein','🎯 Padhai/kaam mein focus badhane ke 2 practical wellness tips — Hinglish, short, actionable.')">
+        <div class="tri-btn-emoji">🎯</div>
+        <div class="tri-btn-text">Focus<div class="tri-btn-sub">Padhai/kaam</div></div>
+      </button>
+      <button class="tri-btn" onclick="triWellnessTap('Immunity strong banao','💪 Immunity strong banane ke liye 1 daily AYUSH nuska + 1 habit — Hinglish, short.')">
+        <div class="tri-btn-emoji">💪</div>
+        <div class="tri-btn-text">Immunity<div class="tri-btn-sub">Strong rahein</div></div>
+      </button>
+    </div>
+
+    <!-- v4: Symptom triage grid — for the unwell -->
+    <div class="tri-rail-lbl">Koi takleef hai?</div>
     <div class="tri-grid" id="tri-grid">
       <button class="tri-btn" onclick="triSymptomTap('Sir dard ho raha hai','🤕 Sir dard kaise kam karein?')">
         <div class="tri-btn-emoji">🤕</div>
@@ -2188,6 +2226,22 @@ function triSymptomTap(displayText, aiPrompt) {
     document.getElementById('chat-msgs').innerHTML = '';
     addMsg('user', displayText, false);
     callAI(aiPrompt, getSystemPromptFor('nushke'));
+  }, 100);
+}
+
+// v4.1: Wellness-goal tap — routes to wellness ctx (younger Hinglish persona)
+function triWellnessTap(displayText, aiPrompt) {
+  ST.chatCtx = 'wellness';
+  ST.chatHistory = [];
+  ST.isFirstMsg = true;
+  trackFeature('wellness');
+  goTo('s-chat');
+  const lbl = document.getElementById('chat-ctx-label');
+  if (lbl) lbl.textContent = 'Sehat banao';
+  setTimeout(() => {
+    document.getElementById('chat-msgs').innerHTML = '';
+    addMsg('user', displayText, false);
+    callAI(aiPrompt, getSystemPromptFor('wellness'));
   }, 100);
 }
 
