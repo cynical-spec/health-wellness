@@ -702,6 +702,87 @@ body:not(.sunita) .sunita-home{display:none}
 .dr-btn-sub{font-size:11px;color:var(--text2);font-weight:500;margin-top:2px;line-height:1.35}
 .dr-close{background:none;border:none;color:var(--text3);font-family:'JioType',sans-serif;font-size:13px;cursor:pointer;padding:10px;margin-top:4px}
 
+/* ══ v5.3: Symptom Focus Mode — clarifying Q&A + healing-path hub takeover ══ */
+/* Q&A screen — full-screen, one question at a time, 4-chip grid */
+.fq-body{padding:20px 20px 28px;display:flex;flex-direction:column;gap:14px}
+.fq-opener{font-size:14px;color:var(--text2);line-height:1.6;font-style:italic;background:rgba(168,85,247,.1);border-left:3px solid #a855f7;padding:12px 14px;border-radius:8px}
+.fq-progress{display:flex;gap:6px;padding:4px 0 8px}
+.fq-dot{height:5px;border-radius:2.5px;background:rgba(255,255,255,.12);flex:1;transition:background .3s}
+.fq-dot.done{background:#a855f7}
+.fq-dot.current{background:linear-gradient(90deg,#a855f7,rgba(168,85,247,.3))}
+.fq-q{font-size:20px;font-weight:700;line-height:1.3;margin-top:6px}
+.fq-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.fq-opt{display:flex;align-items:center;justify-content:center;text-align:center;background:var(--surface);border:1.5px solid rgba(255,255,255,.1);border-radius:14px;padding:18px 12px;font-family:'JioType',sans-serif;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;min-height:72px;line-height:1.3;transition:transform .12s,border-color .15s,background .15s}
+.fq-opt:active{transform:scale(.96);border-color:var(--primary);background:rgba(57,0,173,.18)}
+.fq-skip{background:none;border:none;color:var(--text3);font-family:'JioType',sans-serif;font-size:13px;cursor:pointer;padding:14px;margin-top:auto;text-align:center}
+.fq-skip:hover{color:var(--text)}
+
+/* Hub takeover — hide non-focus surfaces, reveal focus-home */
+body.focus .tri-hero,
+body.focus .aham-row,
+body.focus .tri-grid.dense-only,
+body.focus .tri-rail-lbl.dense-only,
+body.focus .sunita-home,
+body.focus .tri-rail-lbl[data-rail="secondary"],
+body.focus .tri-rail{display:none}
+body:not(.focus) .focus-home{display:none}
+
+.focus-home{padding:6px 16px 18px}
+.focus-banner{background:linear-gradient(135deg,rgba(168,85,247,.32),rgba(107,33,168,.16));border:1px solid rgba(168,85,247,.32);border-radius:16px;padding:16px 16px;margin-bottom:14px;position:relative}
+.focus-banner-row{display:flex;align-items:center;gap:12px}
+.focus-banner-emoji{font-size:30px;line-height:1}
+.focus-banner-title{font-size:18px;font-weight:700;line-height:1.25}
+.focus-banner-progress{font-size:11px;font-weight:700;color:#a855f7;letter-spacing:.4px;text-transform:uppercase;margin-top:2px}
+.focus-banner-pause{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.08);border:none;color:var(--text2);width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px}
+.focus-banner-pause:active{background:rgba(255,255,255,.16)}
+.focus-dadi-quote{font-size:13px;color:var(--text2);line-height:1.5;margin-top:10px;font-style:italic}
+
+.focus-stepper{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.focus-step-card{display:flex;align-items:center;gap:14px;background:var(--surface);border:1.5px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 14px;font-family:'JioType',sans-serif;color:var(--text);cursor:pointer;width:100%;text-align:left;min-height:80px;transition:transform .12s,border-color .15s}
+.focus-step-card:active{transform:scale(.985)}
+.focus-step-card.current{border-color:rgba(168,85,247,.5);background:linear-gradient(135deg,rgba(57,0,173,.18),rgba(168,85,247,.06));box-shadow:0 0 0 3px rgba(168,85,247,.18)}
+.focus-step-card.done{opacity:.65}
+.focus-step-card.done .focus-step-name{text-decoration:line-through;text-decoration-color:rgba(255,255,255,.3)}
+.focus-step-num{width:34px;height:34px;border-radius:50%;background:rgba(168,85,247,.18);color:#a855f7;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.focus-step-card.current .focus-step-num{background:#a855f7;color:#fff}
+.focus-step-card.done .focus-step-num{background:rgba(34,197,94,.18);color:#22c55e}
+.focus-step-info{flex:1;min-width:0}
+.focus-step-name{font-size:14px;font-weight:700;line-height:1.25}
+.focus-step-sub{font-size:11px;color:var(--text3);margin-top:2px;line-height:1.4}
+.focus-step-status{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:4px 10px;border-radius:var(--radius-pill);flex-shrink:0}
+.focus-step-status.pending{background:rgba(255,255,255,.06);color:var(--text3)}
+.focus-step-status.current{background:rgba(168,85,247,.22);color:#a855f7}
+.focus-step-status.done{background:rgba(34,197,94,.16);color:#22c55e}
+
+.focus-doctor-link{background:none;border:1.5px solid rgba(220,38,38,.32);color:#fb923c;font-family:'JioType',sans-serif;font-size:13px;font-weight:600;padding:14px;width:100%;border-radius:12px;cursor:pointer;text-align:center;margin-top:6px}
+.focus-doctor-link:active{background:rgba(220,38,38,.1)}
+
+/* All steps done — celebratory waiting state */
+.focus-allset{background:linear-gradient(135deg,rgba(34,197,94,.18),rgba(30,204,176,.08));border:1px solid rgba(34,197,94,.34);border-radius:14px;padding:14px;margin-top:10px;text-align:center;font-size:13px;color:var(--text);line-height:1.55}
+.focus-allset b{display:block;font-size:14px;margin-bottom:4px;color:#22c55e}
+
+/* Validation overlay — copy of checkin-ov shape */
+#focus-validate-ov{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:301;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px 24px;backdrop-filter:blur(10px)}
+#focus-validate-ov.on{display:flex}
+.fv-glow{width:96px;height:96px;border-radius:50%;background:rgba(168,85,247,.18);border:3px solid #a855f7;display:flex;align-items:center;justify-content:center;font-size:42px;margin-bottom:6px;animation:reminderPulse 2.4s ease infinite}
+.fv-title{font-size:22px;font-weight:700;text-align:center;max-width:340px;line-height:1.3}
+.fv-sub{font-size:14px;color:var(--text2);text-align:center;line-height:1.55;margin-bottom:6px}
+.fv-actions{display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px}
+
+/* Ayurvedic upsell card — slides in inside bless-ov */
+.ayur-upsell{margin-top:14px;background:linear-gradient(135deg,rgba(34,197,94,.18),rgba(30,204,176,.08));border:1.5px solid rgba(34,197,94,.32);border-radius:16px;padding:16px;text-align:left;animation:tickPop .6s cubic-bezier(.2,1.6,.5,1) .4s both}
+.ayur-upsell-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.ayur-upsell-emoji{font-size:28px}
+.ayur-upsell-brand{font-size:14px;font-weight:700;line-height:1.2}
+.ayur-upsell-brand .ayur-tag{font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#22c55e;background:rgba(34,197,94,.16);border:1px solid rgba(34,197,94,.3);border-radius:var(--radius-pill);padding:1px 7px;margin-left:6px;vertical-align:middle}
+.ayur-upsell-copy{font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:10px}
+.ayur-upsell-pricing{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.ayur-upsell-mrp{font-size:11px;color:var(--text3);text-decoration:line-through}
+.ayur-upsell-price{font-size:15px;font-weight:700;color:#22c55e}
+.ayur-upsell-actions{display:flex;gap:8px}
+.ayur-upsell-btn{flex:1;background:linear-gradient(135deg,#fb923c,#f97316);color:#fff;border:none;border-radius:var(--radius-pill);padding:12px;font-family:'JioType',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+.ayur-upsell-btn.secondary{background:rgba(255,255,255,.06);color:var(--text2);border:1px solid rgba(255,255,255,.1)}
+
 /* ══ v5.1: Aaj ki Sehat — stories rail (Instagram-style daily content) ══ */
 .hub-stories{display:flex;gap:14px;padding:10px 16px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .hub-stories::-webkit-scrollbar{display:none}
@@ -1073,6 +1154,9 @@ body:not(.sunita) .sunita-home{display:none}
     <!-- v5.1: Aaj ki Sehat — Instagram-style daily stories rail (top of hub) -->
     <div class="hub-stories" id="hub-stories"><!-- JS renders --></div>
 
+    <!-- v5.3: Focus Mode home — shown when body.focus is set (active healing path) -->
+    <div class="focus-home" id="focus-home"><!-- JS renders renderFocusHome() --></div>
+
     <!-- v5.1: Compact warm hero -->
     <div class="tri-hero">
       <h1>Namaste<span id="hub3-name"></span> 🙏</h1>
@@ -1124,22 +1208,22 @@ body:not(.sunita) .sunita-home{display:none}
 
       <div class="sun-lbl">Aaj kya takleef hai?</div>
       <div class="sun-grid">
-        <button class="sun-tak-tile" onclick="triSymptomTap('Sir dard ho raha hai','🤕 Sir dard kaise kam karein?')">
+        <button class="sun-tak-tile" onclick="startFocus('sir-dard')">
           <div class="sun-tak-emoji">🤕</div>
           <div class="sun-tak-name">Sir dard</div>
           <div class="sun-tak-sub">Headache</div>
         </button>
-        <button class="sun-tak-tile" onclick="triSymptomTap('Sardi-khansi hai','🤧 Sardi-khansi ke liye ghar ka nushka batao')">
+        <button class="sun-tak-tile" onclick="startFocus('sardi-khansi')">
           <div class="sun-tak-emoji">🤧</div>
           <div class="sun-tak-name">Sardi-khansi</div>
           <div class="sun-tak-sub">Cold, cough</div>
         </button>
-        <button class="sun-tak-tile" onclick="triSymptomTap('Pet ki dikkat hai','🤢 Pet dard, gas, ya acidity ka ghar ka ilaj batao')">
+        <button class="sun-tak-tile" onclick="startFocus('pet')">
           <div class="sun-tak-emoji">🤢</div>
           <div class="sun-tak-name">Pet ki dikkat</div>
           <div class="sun-tak-sub">Acidity, gas</div>
         </button>
-        <button class="sun-tak-tile" onclick="triSymptomTap('Neend nahi aati','😴 Raat ko neend nahi aati, kya karein?')">
+        <button class="sun-tak-tile" onclick="startFocus('neend')">
           <div class="sun-tak-emoji">😴</div>
           <div class="sun-tak-name">Neend nahi</div>
           <div class="sun-tak-sub">Sleep issues</div>
@@ -1207,19 +1291,19 @@ body:not(.sunita) .sunita-home{display:none}
     <!-- v4: Symptom triage grid — for the unwell -->
     <div class="tri-rail-lbl dense-only">Koi takleef hai?</div>
     <div class="tri-grid dense-only" id="tri-grid">
-      <button class="tri-btn" onclick="triSymptomTap('Sir dard ho raha hai','🤕 Sir dard kaise kam karein?')">
+      <button class="tri-btn" onclick="startFocus('sir-dard')">
         <div class="tri-btn-emoji">🤕</div>
         <div class="tri-btn-text">Sir dard<div class="tri-btn-sub">Headache, migraine</div></div>
       </button>
-      <button class="tri-btn" onclick="triSymptomTap('Sardi-khansi hai','🤧 Sardi-khansi ke liye ghar ka nushka batao')">
+      <button class="tri-btn" onclick="startFocus('sardi-khansi')">
         <div class="tri-btn-emoji">🤧</div>
         <div class="tri-btn-text">Sardi-khansi<div class="tri-btn-sub">Cold, cough</div></div>
       </button>
-      <button class="tri-btn" onclick="triSymptomTap('Pet ki dikkat hai','🤢 Pet dard, gas, ya acidity ka ghar ka ilaj batao')">
+      <button class="tri-btn" onclick="startFocus('pet')">
         <div class="tri-btn-emoji">🤢</div>
         <div class="tri-btn-text">Pet ki dikkat<div class="tri-btn-sub">Acidity, gas, dard</div></div>
       </button>
-      <button class="tri-btn" onclick="triSymptomTap('Neend nahi aati','😴 Raat ko neend nahi aati, kya karein?')">
+      <button class="tri-btn" onclick="startFocus('neend')">
         <div class="tri-btn-emoji">😴</div>
         <div class="tri-btn-text">Neend nahi<div class="tri-btn-sub">Sleep issues</div></div>
       </button>
@@ -1514,6 +1598,17 @@ body:not(.sunita) .sunita-home{display:none}
   <div class="body" id="bazaar-body" style="overflow-y:auto"></div>
 </div>
 
+<!-- v5.3: Clarifying Q&A screen — fires before Focus Mode takes over the hub -->
+<div class="screen" id="s-focus-qa">
+  <div class="hdr">
+    <button class="hdr-btn" onclick="cancelFocusQA()" aria-label="Cancel">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M15 20a1 1 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a1 1 0 01-.71 1.71z" fill="currentColor"/></svg>
+    </button>
+    <div class="hdr-center"><div class="hdr-text"><h2 id="fq-hdr-title">Takleef ke baare mein</h2><p style="color:var(--text2)" id="fq-hdr-sub">3 chote sawaal</p></div></div>
+  </div>
+  <div class="body" id="fq-body" style="overflow-y:auto"><!-- JS renders --></div>
+</div>
+
 <!-- v3.7: Movement skill player overlay -->
 <div id="move-ov" role="dialog" aria-label="Movement player">
   <button class="move-ov-close" onclick="closeMovement()" aria-label="Close">✕</button>
@@ -1597,8 +1692,32 @@ body:not(.sunita) .sunita-home{display:none}
 <div id="bless-ov" role="dialog" aria-modal="true" aria-labelledby="bless-title">
   <div class="bless-flower">🌸</div>
   <div class="bless-title" id="bless-title">Bahut accha beta 🙏</div>
-  <div class="bless-sub">Saathi proud hai tum par.<br>Sehat banaye rakho.</div>
-  <div class="bless-score">+5 Sehat Score</div>
+  <div class="bless-sub" id="bless-sub">Saathi proud hai tum par.<br>Sehat banaye rakho.</div>
+  <div class="bless-score" id="bless-score">+5 Sehat Score</div>
+  <!-- v5.3: Ayurvedic long-term upsell — appended dynamically by showAyurUpsell(sku) -->
+  <div id="bless-ayur-slot"></div>
+</div>
+
+<!-- v5.3: Focus-mode "kaisa hai ab?" validation modal — same pattern as #checkin-ov -->
+<div id="focus-validate-ov" role="dialog" aria-modal="true" aria-labelledby="fv-title">
+  <div class="fv-glow" id="fv-emoji">🤕</div>
+  <div class="fv-title" id="fv-title">Beta, sir kaisa hai ab?</div>
+  <div class="fv-sub">Saathi ka rasta theek se chal raha hai ya nahi?</div>
+  <div class="fv-actions">
+    <button class="ci-btn better" onclick="onFocusBetter()">
+      <span class="ci-btn-emoji">💚</span>
+      <span class="ci-btn-text"><span class="ci-btn-name">Bahut behtar</span><span class="ci-btn-sub">Saathi ke nuske ne kaam kiya</span></span>
+    </button>
+    <button class="ci-btn same" onclick="onFocusSame()">
+      <span class="ci-btn-emoji">🤔</span>
+      <span class="ci-btn-text"><span class="ci-btn-name">Aisa hi hai</span><span class="ci-btn-sub">Ek aur upay try karein</span></span>
+    </button>
+    <button class="ci-btn worse" onclick="onFocusWorse()">
+      <span class="ci-btn-emoji">😔</span>
+      <span class="ci-btn-text"><span class="ci-btn-name">Aur kharaab</span><span class="ci-btn-sub">Doctor se baat karein</span></span>
+    </button>
+  </div>
+  <button class="ci-skip" onclick="closeFocusValidate()">Baad mein puchho</button>
 </div>
 
 <!-- v5.2: Doctor handoff — fires when check-in answer is "worse" OR Sunita home "Doctor se baat" CTA -->
@@ -2351,6 +2470,10 @@ function isSunitaMode(){
 }
 function applySunitaMode(){
   document.body.classList.toggle('sunita', isSunitaMode());
+  // v5.3: also drive Focus Mode body class from ss_focus state
+  const focusActive = (typeof hasActiveFocus === 'function') && hasActiveFocus();
+  document.body.classList.toggle('focus', !!focusActive);
+  if (focusActive && typeof renderFocusHome === 'function') renderFocusHome();
 }
 
 // ── v5.1: Aaj ki Sehat stories rail (Instagram-style daily content) ──
@@ -2379,9 +2502,19 @@ function renderHubStories(){
 
   let html = '';
 
-  // 0) v5.2: Symptom check-in (highest priority — shown ahead of streak)
+  // 0a) v5.3: Focus Mode validation circle — highest priority, appears when per-symptom delay has passed
+  const focusDue = (typeof isFocusValidationDue === 'function' && isFocusValidationDue()) ? getActiveFocus() : null;
+  if (focusDue) {
+    const flow = FOCUS_FLOWS[focusDue.symptom] || {};
+    html += `<button class="hs-circle" onclick="openFocusValidate()">
+      <div class="hs-ring due"><span>${flow.emoji || '🤕'}</span></div>
+      <div class="hs-name">Kaisa hai ab?</div>
+    </button>`;
+  }
+
+  // 0b) v5.2: Symptom check-in (next priority after focus validation)
   const due = (typeof getDueCheckin === 'function') ? getDueCheckin() : null;
-  if (due) {
+  if (due && !focusDue) {
     const emoji = due.symptomEmoji || '🤕';
     const label = (due.displayText || 'tabiyat').split(' ').slice(0, 2).join(' ');
     html += `<button class="hs-circle" onclick="openCheckin('${due.id}')">
@@ -4250,7 +4383,12 @@ const MEDICINE_CATALOG = {
   orsl:           { brand:'ORS-L Apple',                 mfr:'Cipla',    mrp:30,  price:24,  pack:'200 ml',  emoji:'🥤', generic:'Oral Rehydration Salts' },
   cetzine10:      { brand:'Cetzine 10 mg',               mfr:'Dr.Reddys',mrp:48,  price:39,  pack:'10 tab',  emoji:'💊', generic:'Cetirizine 10 mg' },
   benadryl100:    { brand:'Benadryl Cough Syrup',        mfr:'J&J',      mrp:135, price:115, pack:'100 ml',  emoji:'🍼', generic:'Diphenhydramine + Ammonium Chloride' },
-  vicks:          { brand:'Vicks Vaporub',               mfr:'P&G',      mrp:165, price:148, pack:'25 g',    emoji:'🫙', generic:'Camphor + Menthol + Eucalyptus' }
+  vicks:          { brand:'Vicks Vaporub',               mfr:'P&G',      mrp:165, price:148, pack:'25 g',    emoji:'🫙', generic:'Camphor + Menthol + Eucalyptus' },
+  // v5.3: Ayurvedic long-term SKUs — upsold inline after a Focus Mode "Bahut behtar" answer
+  'ayur-bramhi':      { brand:'Himalaya Brahmi 60 tab',         mfr:'Himalaya',   mrp:170, price:153, pack:'60 tab', emoji:'🌿', generic:'Bacopa monnieri 250 mg · AYUSH' },
+  'ayur-sitopaladi':  { brand:'Baidyanath Sitopaladi Churan',   mfr:'Baidyanath', mrp:120, price:108, pack:'60 gm',  emoji:'🌾', generic:'Sitopaladi Churan · AYUSH' },
+  'ayur-hingvashtak': { brand:'Dabur Hingwashtak Churan',       mfr:'Dabur',      mrp:95,  price:82,  pack:'50 gm',  emoji:'🟡', generic:'Hingwashtak Churan · AYUSH' },
+  'ayur-ashwagandha': { brand:'Patanjali Ashwagandha 60 cap',   mfr:'Patanjali',  mrp:175, price:144, pack:'60 cap', emoji:'🪴', generic:'Withania somnifera 500 mg · AYUSH' }
 };
 
 // — Photo-OCR templates for Lab Reports (when Vision unavailable) —
@@ -6547,10 +6685,518 @@ function moveNextStep() {
   else closeMovement();
 }
 function closeMovement() {
+  // v5.3: capture the just-closed skill BEFORE clearing _moveSkill so Focus Mode can mark its step done
+  const closedKey = _moveSkill && (_moveSkill._focusKey || _moveSkill.key || _moveSkill.skillKey || null);
   if (_moveTimer) { clearTimeout(_moveTimer); _moveTimer = null; }
   document.getElementById('move-ov').classList.remove('on');
   if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
   _moveSkill = null; _moveStepIdx = 0;
+  // Hook into Focus Mode
+  if (closedKey && typeof markFocusStepComplete === 'function') {
+    try { markFocusStepComplete(closedKey); } catch(e){ console.warn('[focus]', e); }
+  }
+}
+
+// ══════════════ v5.3: SYMPTOM FOCUS MODE ══════════════
+//
+// When the user taps one of the 4 priority takleef (Sir dard, Sardi-khansi,
+// Pet, Neend), Dadi asks 2-3 clarifying questions, then the hub TAKES OVER:
+// body.focus class hides every non-focus surface and reveals .focus-home
+// which renders a 3-step healing path (acupressure → ghar ka nuska → rest).
+// After a per-symptom delay (30min / 2h / 4h / 8h, or 30s with ?demo_focus=1),
+// a pulsing "kaisa hai ab?" circle appears in the stories rail. Tap →
+// #focus-validate-ov modal with 3 outcomes:
+//   - Better → blessing + inline Ayurvedic upsell (Sehat Bazaar reuse)
+//   - Same   → rotate to a different remedy (max 2 retries → doctor)
+//   - Worse  → #doctor-ov (existing v5.2)
+// State lives in ss_focus. One active focus at a time.
+
+const FOCUS_FLOWS = {
+  'sir-dard': {
+    emoji: '🤕',
+    title: 'Sir dard ka ilaj',
+    dadiOpener: 'Beta, sir dard se buri taklif hoti hai. Mujhe 3 sawaal puchne do, phir saath mil ke theek karte hain.',
+    qa: [
+      { id:'where', q:'Kahan dard hai?',     opts:['Maathe ke aage','Peeche (gardan)','Side mein','Poora sir'] },
+      { id:'since', q:'Kab se?',             opts:['Abhi-abhi','Aaj subah se','Kal raat se','2 din se zyada'] },
+      { id:'with',  q:'Saath mein kya?',     opts:['Mitli aati hai','Aankh mein dard','Tension','Kuch nahi'] }
+    ],
+    quote: (a) => {
+      const w = a.where==='Maathe ke aage' ? 'Maathe ke aage tension wala dard' : a.where==='Peeche (gardan)' ? 'Gardan se uthta dard' : 'Sir mein dard';
+      const t = a.with==='Tension' ? ' — relax karte hain' : a.with==='Mitli aati hai' ? ' — pet aur sir dono shaant karte hain' : ' — dheere se theek karte hain';
+      return w + t + '.';
+    },
+    buildSteps: (a) => [
+      { type:'acupressure', key: a.where==='Peeche (gardan)' ? 'gb20-neck' : a.where==='Maathe ke aage' ? 'yintang-stress' : 'li4-headache', durMin:5 },
+      { type:'remedy',      key:'tulsi-kadha',                                                                                              durMin:8 },
+      { type:'rest',        key: a.with==='Tension' ? 'meditation' : 'shavasana',                                                          durMin:15 }
+    ],
+    altSteps: (a) => [
+      { type:'acupressure', key:'li4-headache', durMin:5 },
+      { type:'remedy',      key:'adrak-chai',   durMin:5 },
+      { type:'rest',        key:'anulom-vilom', durMin:5 }
+    ],
+    validateAfterMin: 30,
+    ayurSku: 'ayur-bramhi',
+    ayurCopy: 'Aapka sir dard baar-baar hota hai? <b>Bramhi</b> roz subah lo — dimaag shaant, dard kam.',
+    validateTitle: (a) => `Beta, ${a && a.where==='Maathe ke aage' ? 'maathe ka dard' : 'sir kaisa hai'} ab?`
+  },
+
+  'sardi-khansi': {
+    emoji: '🤧',
+    title: 'Sardi-khansi ka ilaj',
+    dadiOpener: 'Beta, mausam badla hoga. Chal, dheere-dheere theek karte hain.',
+    qa: [
+      { id:'type',   q:'Khaansi ya nazla?',         opts:['Sookhi khaansi','Balgam waali','Nazla / behti naak','Dono'] },
+      { id:'throat', q:'Galay mein khich-khich?',   opts:['Haan, bahut','Thodi','Nahi'] },
+      { id:'fever',  q:'Bukhar ya badan dard?',     opts:['Halka','Nahi','Bukhar zyada hai'] }
+    ],
+    quote: (a) => `${a.type || 'Sardi-khansi'} — gala aur seena dono ki dekhbhal karte hain.`,
+    buildSteps: (a) => [
+      { type:'acupressure', key:'lu7-cough',                                                                                                    durMin:3 },
+      { type:'remedy',      key: a.type==='Sookhi khaansi' ? 'mulethi-kadha' : a.type==='Balgam waali' ? 'ajwain-bhaap' : a.type==='Nazla / behti naak' ? 'tulsi-kadha' : 'adrak-chai', durMin:8 },
+      { type:'rest',        key:'anulom-vilom',                                                                                                  durMin:5 }
+    ],
+    altSteps: (a) => [
+      { type:'remedy',      key:'namak-gargle',  durMin:3 },
+      { type:'remedy',      key:'nimbu-shahad',  durMin:3 },
+      { type:'rest',        key:'bhramari',      durMin:5 }
+    ],
+    requiresDoctor: (a) => a.fever === 'Bukhar zyada hai',
+    validateAfterMin: 240,
+    ayurSku: 'ayur-sitopaladi',
+    ayurCopy: 'Mausam ke saath baar-baar khaansi? <b>Sitopaladi churan</b> roz shahad ke saath — immunity strong.',
+    validateTitle: () => 'Beta, gala aur khaansi ab kaisi hai?'
+  },
+
+  'pet': {
+    emoji: '🤢',
+    title: 'Pet ki dikkat ka ilaj',
+    dadiOpener: 'Beta, pet ki shaanti zindagi ki shaanti hai. Bata, kya hua?',
+    qa: [
+      { id:'kind', q:'Kya takleef hai?',  opts:['Acidity / jalan','Gas','Pet dard','Dast (loose motion)'] },
+      { id:'when', q:'Kab shuru hua?',    opts:['Khaane ke baad','Subah uthkar','Achanak','2 din se zyada'] },
+      { id:'food', q:'Kya khaaya tha?',   opts:['Tala-bhuna','Bahar ka','Doodh / dahi','Yaad nahi'] }
+    ],
+    quote: (a) => `${a.kind || 'Pet ki takleef'} — andar se shaanti karte hain.`,
+    buildSteps: (a) => [
+      { type:'movement', key: a.kind==='Gas' ? 'malasana' : 'hydration', durMin:5 },
+      { type:'remedy',   key: a.kind==='Acidity / jalan' ? 'saunf-paani' : a.kind==='Gas' ? 'jeera-paani' : a.kind==='Dast (loose motion)' ? 'nimbu-shahad' : 'ajwain-bhaap', durMin:5 },
+      { type:'rest',     key:'vajrasana',                                  durMin:10 }
+    ],
+    altSteps: () => [
+      { type:'remedy',   key:'jeera-paani',  durMin:3 },
+      { type:'remedy',   key:'saunf-paani',  durMin:3 },
+      { type:'rest',     key:'vajrasana',    durMin:5 }
+    ],
+    requiresDoctor: (a) => a.kind==='Dast (loose motion)' && a.when==='2 din se zyada',
+    validateAfterMin: 120,
+    ayurSku: 'ayur-hingvashtak',
+    ayurCopy: 'Roz pet halka rehe? <b>Hingvashtak churan</b> khane se pehle — pet aur pachchhan dono theek.',
+    validateTitle: () => 'Beta, pet ab kaisa hai?'
+  },
+
+  'neend': {
+    emoji: '😴',
+    title: 'Achi neend ka rasta',
+    dadiOpener: 'Beta, neend hi sehat ki neev hai. Mujhe bata, kya dikkat hai?',
+    qa: [
+      { id:'kind',   q:'Kya dikkat hai?',          opts:['Neend nahi aati','Beech mein toot jaati','Subah jaldi uth jaate','Theek se nahi sote'] },
+      { id:'mind',   q:'Soochne mein dikkat?',     opts:['Bahut soochta hoon','Thodi tension','Nahi'] },
+      { id:'screen', q:'Sone se pehle phone?',     opts:['Haan, late tak','Thoda','Nahi'] }
+    ],
+    quote: (a) => `${a.kind === 'Neend nahi aati' ? 'Neend dheere se aati hai, ghabraao mat' : 'Aaj raat behtar neend ki taiyari karte hain'}.`,
+    buildSteps: (a) => [
+      { type:'movement', key:'screen-break',                                                                durMin:3 },
+      { type:'remedy',   key:'haldi-doodh',                                                                  durMin:5 },
+      { type:'rest',     key: a.mind==='Bahut soochta hoon' ? 'journaling' : 'meditation',                  durMin:10 }
+    ],
+    altSteps: () => [
+      { type:'movement', key:'meditation',  durMin:5 },
+      { type:'remedy',   key:'haldi-doodh', durMin:5 },
+      { type:'rest',     key:'shavasana',   durMin:10 }
+    ],
+    validateAfterMin: 480,
+    ayurSku: 'ayur-ashwagandha',
+    ayurCopy: 'Roz gehri neend chahiye? <b>Ashwagandha</b> raat ko doodh ke saath — body shaant, mann thanda.',
+    validateTitle: () => 'Beta, kal raat ki neend kaisi rahi?'
+  }
+};
+
+// Demo-mode flag — short-circuits all per-symptom validation delays to 30 seconds.
+const FOCUS_DEMO = (function(){
+  try { return new URLSearchParams(window.location.search).get('demo_focus') === '1'; } catch(e){ return false; }
+})();
+
+// — Storage —
+function loadFocus(){ try { return JSON.parse(localStorage.getItem('ss_focus') || 'null'); } catch(e){ return null; } }
+function saveFocus(obj){ if (obj === null) localStorage.removeItem('ss_focus'); else localStorage.setItem('ss_focus', JSON.stringify(obj)); }
+
+function hasActiveFocus(){ const f = loadFocus(); return !!(f && !f.resolved); }
+function getActiveFocus(){ const f = loadFocus(); return (f && !f.resolved) ? f : null; }
+
+// — Start / End —
+function startFocus(symptom){
+  // Single-active-at-a-time: if another focus is mid-flow, ask before replacing.
+  const existing = getActiveFocus();
+  if (existing && existing.symptom !== symptom) {
+    const ok = confirm('Pehle wala ilaj rok dein? "' + (FOCUS_FLOWS[existing.symptom] && FOCUS_FLOWS[existing.symptom].title || existing.symptom) + '" abhi jari hai.');
+    if (!ok) return;
+    endFocus(false);
+  }
+  if (!FOCUS_FLOWS[symptom]) { console.warn('[focus] unknown symptom', symptom); return; }
+  ST._focusPendingSymptom = symptom;
+  ST._focusQAStep = 0;
+  ST._focusQAAnswers = {};
+  goTo('s-focus-qa');
+  renderFocusQA(0);
+}
+
+function endFocus(showHomeReset){
+  saveFocus(null);
+  document.body.classList.remove('focus');
+  if (showHomeReset !== false) {
+    if (typeof renderHubStories === 'function') renderHubStories();
+    if (typeof applySunitaMode === 'function') applySunitaMode();
+  }
+}
+
+function cancelFocusQA(){
+  ST._focusPendingSymptom = null;
+  ST._focusQAStep = 0;
+  ST._focusQAAnswers = {};
+  goBack();
+}
+
+// — Q&A render —
+function renderFocusQA(stepIdx){
+  const sym = ST._focusPendingSymptom; if (!sym) return;
+  const flow = FOCUS_FLOWS[sym]; if (!flow) return;
+  const el = document.getElementById('fq-body'); if (!el) return;
+  const titleEl = document.getElementById('fq-hdr-title');
+  const subEl = document.getElementById('fq-hdr-sub');
+  if (titleEl) titleEl.textContent = flow.title;
+  if (subEl) subEl.textContent = `${stepIdx + 1} of ${flow.qa.length} chote sawaal`;
+  const q = flow.qa[stepIdx]; if (!q) return;
+
+  let html = '';
+  if (stepIdx === 0) {
+    html += `<div class="fq-opener">${flow.dadiOpener}</div>`;
+  }
+  html += `<div class="fq-progress">`;
+  for (let i = 0; i < flow.qa.length; i++) {
+    const cls = i < stepIdx ? 'done' : i === stepIdx ? 'current' : '';
+    html += `<div class="fq-dot ${cls}"></div>`;
+  }
+  html += `</div>`;
+  html += `<div class="fq-q">${q.q}</div>`;
+  html += `<div class="fq-opts">`;
+  q.opts.forEach(opt => {
+    const esc = opt.replace(/'/g, "\\'");
+    html += `<button class="fq-opt" onclick="onFocusQATap('${q.id}','${esc}')">${opt}</button>`;
+  });
+  html += `</div>`;
+  html += `<button class="fq-skip" onclick="onFocusQASkip()">Skip — Saathi default rasta chunega</button>`;
+  el.innerHTML = html;
+}
+
+function onFocusQATap(qId, val){
+  const sym = ST._focusPendingSymptom; if (!sym) return;
+  const flow = FOCUS_FLOWS[sym];
+  ST._focusQAAnswers = ST._focusQAAnswers || {};
+  ST._focusQAAnswers[qId] = val;
+
+  // Early doctor-required short-circuit (e.g. sardi-khansi + bukhar zyada)
+  if (flow.requiresDoctor && flow.requiresDoctor(ST._focusQAAnswers)) {
+    ST._focusPendingSymptom = null;
+    ST._focusQAAnswers = {};
+    goTo('s-hub');
+    setTimeout(() => openDoctor((ST.userProfile && ST.userProfile.name) || 'Aap'), 200);
+    return;
+  }
+
+  const nextIdx = ST._focusQAStep + 1;
+  if (nextIdx >= flow.qa.length) {
+    finalizeFocusStart(false);
+  } else {
+    ST._focusQAStep = nextIdx;
+    renderFocusQA(nextIdx);
+  }
+}
+
+function onFocusQASkip(){
+  finalizeFocusStart(true);
+}
+
+function finalizeFocusStart(skipped){
+  const sym = ST._focusPendingSymptom; if (!sym) return;
+  const flow = FOCUS_FLOWS[sym];
+  const answers = ST._focusQAAnswers || {};
+  const steps = flow.buildSteps(answers).map((s, i) => ({ ...s, status: i === 0 ? 'current' : 'pending' }));
+  saveFocus({
+    symptom: sym,
+    startedAt: Date.now(),
+    qaAnswers: answers,
+    qaSkipped: !!skipped,
+    steps,
+    retryCount: 0,
+    validations: [],
+    resolved: false,
+    resolvedAt: null
+  });
+  ST._focusPendingSymptom = null;
+  ST._focusQAStep = 0;
+  ST._focusQAAnswers = {};
+  goTo('s-hub');
+  setTimeout(() => {
+    if (typeof applySunitaMode === 'function') applySunitaMode();
+    renderFocusHome();
+    if (typeof renderHubStories === 'function') renderHubStories();
+  }, 60);
+}
+
+// — Focus home render (inside the hub, revealed by body.focus) —
+function renderFocusHome(){
+  const el = document.getElementById('focus-home'); if (!el) return;
+  const f = getActiveFocus();
+  if (!f) { el.innerHTML = ''; return; }
+  const flow = FOCUS_FLOWS[f.symptom]; if (!flow) { el.innerHTML = ''; return; }
+  const doneCount = f.steps.filter(s => s.status === 'done').length;
+  const currIdx = f.steps.findIndex(s => s.status === 'current');
+  const progressLabel = doneCount === f.steps.length ? `✓ Saare ${f.steps.length} step pure huye` : `Step ${(currIdx >= 0 ? currIdx : doneCount) + 1} of ${f.steps.length}`;
+
+  let html = `<div class="focus-banner">
+    <button class="focus-banner-pause" onclick="pauseFocusConfirm()" aria-label="Pause">✕</button>
+    <div class="focus-banner-row">
+      <div class="focus-banner-emoji">${flow.emoji}</div>
+      <div>
+        <div class="focus-banner-title">${flow.title}</div>
+        <div class="focus-banner-progress">${progressLabel}</div>
+      </div>
+    </div>
+    <div class="focus-dadi-quote">${flow.quote ? flow.quote(f.qaAnswers || {}) : ''}</div>
+  </div>`;
+
+  html += `<div class="focus-stepper">`;
+  f.steps.forEach((s, i) => {
+    const meta = focusStepMeta(s);
+    html += `<button class="focus-step-card ${s.status}" onclick="${s.status==='done' ? 'replayFocusStep('+i+')' : 'openFocusStep('+i+')'}">
+      <div class="focus-step-num">${s.status === 'done' ? '✓' : (i+1)}</div>
+      <div class="focus-step-info">
+        <div class="focus-step-name">${meta.emoji} ${meta.title}</div>
+        <div class="focus-step-sub">${meta.sub} · ${s.durMin || meta.durMin || 5} min</div>
+      </div>
+      <div class="focus-step-status ${s.status}">${s.status === 'done' ? 'Done' : s.status === 'current' ? 'Shuru karein →' : 'Aage'}</div>
+    </button>`;
+  });
+  html += `</div>`;
+
+  if (doneCount === f.steps.length) {
+    const waitMins = FOCUS_DEMO ? 0.5 : (flow.validateAfterMin || 30);
+    html += `<div class="focus-allset"><b>Bahut accha kiya beta 🙏</b>Saathi thodi der mein puchega — ab kaisa hai?<br><span style="font-size:11px;color:var(--text3)">${FOCUS_DEMO ? '~30 sec' : (waitMins >= 60 ? Math.round(waitMins/60)+' ghante' : waitMins + ' min')} mein</span></div>`;
+  }
+
+  html += `<button class="focus-doctor-link" onclick="openDoctor((ST.userProfile&&ST.userProfile.name)||'Aap')">Phir bhi takleef hai? Doctor se baat karein →</button>`;
+
+  el.innerHTML = html;
+}
+
+// Look up display name + emoji + sub-text for a focus step from its underlying catalog
+function focusStepMeta(step){
+  if (step.type === 'acupressure') {
+    const p = (typeof ACUPRESSURE_POINTS !== 'undefined') ? ACUPRESSURE_POINTS[step.key] : null;
+    return { emoji: (p && p.emoji) || '✋', title: (p && p.title) || 'Acupressure', sub: (p && p.dur) || 'Pressure point', durMin: 5 };
+  }
+  if (step.type === 'remedy') {
+    const r = (typeof REMEDY_KITS !== 'undefined') ? REMEDY_KITS[step.key] : null;
+    return { emoji: (r && r.emoji) || '🍵', title: (r && r.title) || 'Nuska', sub: r ? r.ingredients.split('·')[0].trim() : 'Ghar ka nuska', durMin: r ? Math.ceil((r.durSec||300)/60) : 5 };
+  }
+  if (step.type === 'movement' || step.type === 'rest') {
+    const m = (typeof MOVEMENT_SKILLS !== 'undefined') ? MOVEMENT_SKILLS[step.key] : null;
+    return { emoji: (m && m.emoji) || '🧘', title: (m && m.title) || 'Aaram', sub: step.type === 'rest' ? 'Aaram + shaanti' : 'Shareer ki movement', durMin: m ? Math.ceil((m.durSec||300)/60) : 5 };
+  }
+  return { emoji:'•', title:'Step', sub:'', durMin:5 };
+}
+
+function openFocusStep(idx){
+  const f = getActiveFocus(); if (!f) return;
+  const step = f.steps[idx]; if (!step || step.status === 'done') return;
+  // Tag the skill with the focus step key so closeMovement can mark it done after
+  const tagSkill = () => { if (typeof _moveSkill !== 'undefined' && _moveSkill) _moveSkill._focusKey = step.key; };
+  if (step.type === 'acupressure') {
+    if (typeof openAcupressure === 'function') { openAcupressure(step.key); setTimeout(tagSkill, 20); }
+  } else if (step.type === 'remedy') {
+    if (typeof openRemedy === 'function') { openRemedy(step.key); setTimeout(tagSkill, 20); }
+  } else if (step.type === 'movement' || step.type === 'rest') {
+    if (typeof openMovement === 'function') { openMovement(step.key); setTimeout(tagSkill, 20); }
+  }
+}
+
+function replayFocusStep(idx){
+  // Allow re-watching a done step without changing state
+  const f = getActiveFocus(); if (!f) return;
+  const step = f.steps[idx]; if (!step) return;
+  const tagSkill = () => { if (typeof _moveSkill !== 'undefined' && _moveSkill) _moveSkill._focusKey = '__replay__'; };
+  if (step.type === 'acupressure' && typeof openAcupressure === 'function') { openAcupressure(step.key); setTimeout(tagSkill, 20); }
+  else if (step.type === 'remedy' && typeof openRemedy === 'function')      { openRemedy(step.key);      setTimeout(tagSkill, 20); }
+  else if (typeof openMovement === 'function')                              { openMovement(step.key);    setTimeout(tagSkill, 20); }
+}
+
+function markFocusStepComplete(stepKey){
+  if (!stepKey || stepKey === '__replay__') return;
+  const f = getActiveFocus(); if (!f) return;
+  let bumped = false;
+  for (let i = 0; i < f.steps.length; i++) {
+    if (f.steps[i].status !== 'done' && f.steps[i].key === stepKey) {
+      f.steps[i].status = 'done';
+      f.steps[i].completedAt = Date.now();
+      bumped = true;
+      const next = f.steps.find(s => s.status === 'pending');
+      if (next) next.status = 'current';
+      break;
+    }
+  }
+  if (!bumped) return;
+  if (f.steps.every(s => s.status === 'done')) {
+    f.allStepsDoneAt = Date.now();
+  }
+  saveFocus(f);
+  if (typeof bumpScore === 'function') bumpScore(2);
+  // Re-render any visible focus surface
+  renderFocusHome();
+  if (typeof renderHubStories === 'function') renderHubStories();
+}
+
+function pauseFocusConfirm(){
+  const f = getActiveFocus(); if (!f) return;
+  const ok = confirm('Ilaj rok dein? Aap kabhi bhi phir se shuru kar sakte ho.');
+  if (!ok) return;
+  endFocus(true);
+}
+
+// — Validation —
+function getFocusValidateMs(){
+  const f = getActiveFocus(); if (!f) return null;
+  const flow = FOCUS_FLOWS[f.symptom]; if (!flow) return null;
+  const min = FOCUS_DEMO ? 0.5 : (flow.validateAfterMin || 30);
+  return min * 60 * 1000;
+}
+function isFocusValidationDue(){
+  const f = getActiveFocus(); if (!f) return false;
+  // Has the user been answered already in the current cycle?
+  const lastValidation = (f.validations || []).slice(-1)[0];
+  const sinceStart = Date.now() - (lastValidation ? lastValidation.answeredAt : f.startedAt);
+  return sinceStart >= getFocusValidateMs();
+}
+
+function openFocusValidate(){
+  const f = getActiveFocus(); if (!f) return;
+  const flow = FOCUS_FLOWS[f.symptom];
+  document.getElementById('fv-emoji').textContent = flow.emoji;
+  document.getElementById('fv-title').textContent = flow.validateTitle ? flow.validateTitle(f.qaAnswers || {}) : `Beta, ${flow.title.toLowerCase()} ka kya haal hai?`;
+  document.getElementById('focus-validate-ov').classList.add('on');
+}
+function closeFocusValidate(){ document.getElementById('focus-validate-ov').classList.remove('on'); }
+
+function onFocusBetter(){
+  const f = getActiveFocus(); if (!f) { closeFocusValidate(); return; }
+  f.validations = f.validations || [];
+  f.validations.push({ askedAt: Date.now(), answeredAt: Date.now(), answer: 'better' });
+  f.resolved = true; f.resolvedAt = Date.now();
+  saveFocus(f);
+  closeFocusValidate();
+  if (typeof bumpScore === 'function') bumpScore(5);
+  openBlessing();
+  showAyurUpsell(f.symptom);
+  // exit focus mode — but keep #bless-ov visible so the upsell can be tapped
+  document.body.classList.remove('focus');
+  if (typeof renderHubStories === 'function') setTimeout(renderHubStories, 120);
+}
+
+function onFocusSame(){
+  const f = getActiveFocus(); if (!f) { closeFocusValidate(); return; }
+  f.validations = f.validations || [];
+  f.validations.push({ askedAt: Date.now(), answeredAt: Date.now(), answer: 'same' });
+  f.retryCount = (f.retryCount || 0) + 1;
+  closeFocusValidate();
+  if (f.retryCount >= 2) {
+    // Cap reached → graceful doctor handoff
+    f.resolved = true; f.resolvedAt = Date.now();
+    saveFocus(f);
+    document.body.classList.remove('focus');
+    setTimeout(() => openDoctor((ST.userProfile && ST.userProfile.name) || 'Aap'), 220);
+    if (typeof renderHubStories === 'function') setTimeout(renderHubStories, 120);
+    return;
+  }
+  // Rotate to altSteps for the next round
+  const flow = FOCUS_FLOWS[f.symptom];
+  const alt = (flow.altSteps && flow.altSteps(f.qaAnswers || {})) || flow.buildSteps(f.qaAnswers || {});
+  f.steps = alt.map((s, i) => ({ ...s, status: i === 0 ? 'current' : 'pending' }));
+  f.startedAt = Date.now();
+  saveFocus(f);
+  renderFocusHome();
+  if (typeof showToast === 'function') showToast('Ek aur upay try karein, beta 🌿');
+  if (typeof renderHubStories === 'function') setTimeout(renderHubStories, 120);
+}
+
+function onFocusWorse(){
+  const f = getActiveFocus(); if (!f) { closeFocusValidate(); return; }
+  f.validations = f.validations || [];
+  f.validations.push({ askedAt: Date.now(), answeredAt: Date.now(), answer: 'worse' });
+  f.resolved = true; f.resolvedAt = Date.now();
+  saveFocus(f);
+  closeFocusValidate();
+  document.body.classList.remove('focus');
+  setTimeout(() => openDoctor((ST.userProfile && ST.userProfile.name) || 'Aap'), 220);
+  if (typeof renderHubStories === 'function') setTimeout(renderHubStories, 120);
+}
+
+// — Inline Ayurvedic upsell, slides into #bless-ov —
+function showAyurUpsell(symptom){
+  const flow = FOCUS_FLOWS[symptom]; if (!flow || !flow.ayurSku) return;
+  const sku = flow.ayurSku;
+  const cat = (typeof MEDICINE_CATALOG !== 'undefined') ? MEDICINE_CATALOG[sku] : null;
+  if (!cat) return;
+  const slot = document.getElementById('bless-ayur-slot'); if (!slot) return;
+  const disc = Math.round((1 - cat.price / cat.mrp) * 100);
+  slot.innerHTML = `<div class="ayur-upsell">
+    <div class="ayur-upsell-head">
+      <div class="ayur-upsell-emoji">${cat.emoji}</div>
+      <div class="ayur-upsell-brand">${cat.brand}<span class="ayur-tag">AYUSH</span></div>
+    </div>
+    <div class="ayur-upsell-copy">${flow.ayurCopy}</div>
+    <div class="ayur-upsell-pricing">
+      <div class="ayur-upsell-price">₹${cat.price}</div>
+      <div class="ayur-upsell-mrp">₹${cat.mrp}</div>
+      ${disc>0?`<div style="font-size:10px;font-weight:700;color:#fb923c;background:rgba(251,146,60,.14);border-radius:var(--radius-pill);padding:2px 8px">${disc}% OFF</div>`:''}
+    </div>
+    <div class="ayur-upsell-actions">
+      <button class="ayur-upsell-btn secondary" onclick="dismissAyurUpsell()">Abhi nahi</button>
+      <button class="ayur-upsell-btn" onclick="orderAyurvedic('${sku}')">Ghar mangao →</button>
+    </div>
+  </div>`;
+}
+function dismissAyurUpsell(){
+  const slot = document.getElementById('bless-ayur-slot'); if (slot) slot.innerHTML = '';
+  const ov = document.getElementById('bless-ov'); if (ov) ov.classList.remove('on');
+}
+
+function orderAyurvedic(sku){
+  const cat = MEDICINE_CATALOG[sku]; if (!cat) return;
+  // Dismiss the blessing overlay
+  const ov = document.getElementById('bless-ov'); if (ov) ov.classList.remove('on');
+  const slot = document.getElementById('bless-ayur-slot'); if (slot) slot.innerHTML = '';
+  // Pre-seed Sehat Bazaar cart with this single AYUSH item
+  ST.orderData = {
+    items: [{ sku, name: cat.brand, generic: cat.generic, mfr: cat.mfr, mrp: cat.mrp, price: cat.price, pack: cat.pack, qty: 1, emoji: cat.emoji }],
+    forMember: (ST.userProfile && ST.userProfile.name) || 'Aap',
+    rxId: 'ayur_' + Date.now(),
+    addressId: 'home',
+    payment: 'cod'
+  };
+  ST.orderStep = 0;
+  goTo('s-order');
+  if (typeof renderOrderStep === 'function') renderOrderStep(0);
 }
 
 </script>

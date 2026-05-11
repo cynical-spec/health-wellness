@@ -2,6 +2,20 @@
 
 ---
 
+## 2026-05-10 — Symptom triage was a menu, not a committed caretaker
+
+**What happened:** Through v5.0 → v5.2, every takleef tap routed to AI chat with a generic prompt ("Sir dard kaise kam karein?"). The AI suggested a nuska, sometimes injected a recipe card, then stepped back. v5.2 added a 48h *kaisa hai ab?* check-in which was a big improvement but still felt detached — between tap and follow-up, the app showed the user the *same* full feature menu (wellness goals, all 8 symptoms, lab, dawai parchi) as if the original problem didn't exist. Navneet's review: *"when user selects sir dard, the whole app experience and home screen change towards fixing that issue. It tries to feel the problem and solve for you."* The product was treating symptoms like menu items, not like commitments.
+
+**Why it happened:** The menu model is the default for every consumer app — we inherited it without questioning whether it served *this* product's promise. Sehat Saathi's tagline is "your Dadi who heals you" — but Dadi doesn't hand you a menu of remedies when you say "sir dard". She asks you 2 questions, then she *commits* her attention until you feel better.
+
+**What was tried:** v5.2 partially addressed this with the 48h check-in (the long arc of the loop). But the short arc — what happens in the *first 30 minutes after the user taps* — was untouched until v5.3.
+
+**What fixed it:** v5.3 introduces Focus Mode. A takleef tap opens a 2–3 question Dadi clarifying screen, then the hub takes over (body.focus class hides every non-focus surface) and renders a 3-step Healing Path (acupressure → ghar ka nuska → rest) personalized to the user's answers. Steps complete via taps into the existing #move-ov player. Per-symptom timing (30 min / 2 h / 4 h / 8 h) fires the validation. Better → Ayurvedic upsell for long-term. Worse → doctor handoff. The app *commits.*
+
+**Rule going forward:** For a "warmth-promising" product like this one, every primary entry point needs to act like the warm relationship it's promising. A menu is the wrong metaphor for symptom triage. When a feature's emotional promise is *"I'll take care of you"*, the UX must commit visibly — block out the menu, show the work, circle back. Match the feeling to the promise.
+
+---
+
 ## 2026-05-10 — Symptoms triage had no closing-loop — every nuska was a one-shot guess
 
 **What happened:** Akshay's 45-min review with Navneet called out that the entire takleef path (tap symptom → AI nuska → bye) had no follow-up. The app never asked "did the remedy work?", so: (a) we have zero signal on which nuskas land for which symptoms, (b) the user has no reason to come back to *this* specific symptom, and (c) if the nuska *didn't* work, the JTBD dead-ends — no path to a doctor, no graceful escalation. Akshay: *"How will the app know if the user is feeling better? We need a way to track the journey and get user input."*
