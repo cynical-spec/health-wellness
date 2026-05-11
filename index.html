@@ -17,7 +17,7 @@
   --bg:#0a0a0a;--surface:#1a1a1a;--surface2:rgba(255,255,255,0.10);
   --primary:#6B21A8;--primary-dim:rgba(107,33,168,0.2);
   --bold:#2d1b69;--bold-dim:rgba(45,27,105,0.3);
-  --text:#fff;--text2:#b5b5b5;--text3:rgba(255,255,255,0.38);
+  --text:#fff;--text2:#c8c8c8;--text3:rgba(255,255,255,0.46);
   --success:#22c55e;--error:#dc2626;--warn:#fb923c;--sparkle:#1eccb0;
   --radius:16px;--radius-sm:10px;--radius-pill:999px;
 }
@@ -630,6 +630,78 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
 /* Persona mini pill in header */
 .persona-mini{background:var(--bold-dim);border:1px solid rgba(53,53,243,.35);border-radius:var(--radius-pill);padding:5px 10px;font-family:'JioType',sans-serif;font-size:11px;font-weight:700;color:var(--text);cursor:pointer;white-space:nowrap}
 
+/* ══ v5.2: Sunita-mode simplified home (Miller's Law, age >= 40 or household-scope) ══ */
+/* The dense wellness + symptoms grids stay in DOM but get hidden via body.sunita
+   class so cognitive load drops to 5-7 primary actions for the target archetype. */
+body.sunita .tri-rail-lbl.dense-only,
+body.sunita .tri-grid.dense-only,
+body.sunita .aham-row{display:none}
+body:not(.sunita) .sunita-home{display:none}
+.sunita-home{padding:6px 16px 4px}
+.sunita-home > .sun-lbl{padding:14px 0 8px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.5)}
+.sun-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sunita-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;background:var(--surface);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px 16px;min-height:96px;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);text-align:left;transition:transform .12s,border-color .15s}
+.sunita-tile:active{transform:scale(.97);border-color:var(--primary);box-shadow:0 0 0 3px rgba(168,85,247,.4)}
+.sunita-tile.primary{background:linear-gradient(135deg,rgba(57,0,173,.42),rgba(107,33,168,.20));border-color:rgba(168,85,247,.32)}
+.sunita-tile.warm{background:linear-gradient(135deg,rgba(251,146,60,.26),rgba(247,171,32,.10));border-color:rgba(251,146,60,.32)}
+.sunita-tile.danger{background:linear-gradient(135deg,rgba(220,38,38,.22),rgba(251,146,60,.10));border-color:rgba(220,38,38,.32)}
+.sunita-tile-emoji{font-size:28px;line-height:1}
+.sunita-tile-name{font-size:16px;font-weight:700;line-height:1.2}
+.sunita-tile-sub{font-size:12px;color:var(--text2);line-height:1.35}
+.sun-tak-tile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:var(--surface);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 14px;min-height:80px;cursor:pointer;font-family:'JioType',sans-serif;color:var(--text);text-align:left}
+.sun-tak-tile:active{transform:scale(.97);border-color:var(--primary)}
+.sun-tak-emoji{font-size:22px;line-height:1}
+.sun-tak-name{font-size:15px;font-weight:700;line-height:1.2}
+.sun-tak-sub{font-size:11px;color:var(--text2);line-height:1.3}
+.sun-more{margin:14px 0 0}
+.sun-more summary{list-style:none;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;justify-content:space-between}
+.sun-more summary::-webkit-details-marker{display:none}
+.sun-more[open] summary{background:rgba(255,255,255,.06)}
+.sun-more summary::after{content:"▾";font-size:14px;color:var(--text2);transition:transform .2s}
+.sun-more[open] summary::after{transform:rotate(180deg)}
+.sun-more-body{padding:14px 0 6px}
+
+/* ══ v5.2: Check-in modal — Dadi tone, 3 chunky outcome buttons ══ */
+#checkin-ov{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:301;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px 24px;backdrop-filter:blur(10px)}
+#checkin-ov.on{display:flex}
+.ci-glow{width:96px;height:96px;border-radius:50%;background:rgba(168,85,247,.18);border:3px solid #a855f7;display:flex;align-items:center;justify-content:center;font-size:42px;margin-bottom:6px;animation:reminderPulse 2.4s ease infinite}
+.ci-title{font-size:22px;font-weight:700;text-align:center;max-width:340px;line-height:1.3}
+.ci-sub{font-size:14px;color:var(--text2);text-align:center;line-height:1.55;margin-bottom:6px}
+.ci-actions{display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px}
+.ci-btn{display:flex;align-items:center;gap:14px;background:var(--surface);border:1.5px solid rgba(255,255,255,.1);border-radius:16px;padding:18px 16px;font-family:'JioType',sans-serif;font-size:16px;font-weight:700;color:var(--text);cursor:pointer;text-align:left;min-height:88px;transition:transform .12s,border-color .15s}
+.ci-btn:active{transform:scale(.97)}
+.ci-btn.better{border-color:rgba(34,197,94,.5);background:linear-gradient(135deg,rgba(34,197,94,.16),rgba(30,204,176,.08))}
+.ci-btn.same{border-color:rgba(247,171,32,.5);background:linear-gradient(135deg,rgba(247,171,32,.16),rgba(251,146,60,.08))}
+.ci-btn.worse{border-color:rgba(220,38,38,.5);background:linear-gradient(135deg,rgba(220,38,38,.18),rgba(251,146,60,.08))}
+.ci-btn-emoji{font-size:30px;line-height:1;flex-shrink:0}
+.ci-btn-text{flex:1}
+.ci-btn-name{font-size:17px;font-weight:700;line-height:1.2}
+.ci-btn-sub{font-size:11px;color:var(--text2);font-weight:500;margin-top:2px;line-height:1.35}
+.ci-skip{background:none;border:none;color:var(--text3);font-family:'JioType',sans-serif;font-size:13px;cursor:pointer;padding:10px;margin-top:4px}
+
+/* ══ v5.2: Blessing overlay — celebration when check-in says "better" ══ */
+#bless-ov{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:302;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px 24px;backdrop-filter:blur(12px)}
+#bless-ov.on{display:flex}
+.bless-flower{font-size:72px;animation:tickPop .8s cubic-bezier(.2,1.6,.5,1);filter:drop-shadow(0 0 28px rgba(168,85,247,.7))}
+.bless-title{font-size:24px;font-weight:700;text-align:center;max-width:320px;line-height:1.3;animation:tickPop 1s cubic-bezier(.2,1.6,.5,1) .1s both}
+.bless-sub{font-size:14px;color:var(--text2);text-align:center;line-height:1.6;max-width:300px;animation:tickPop 1.1s cubic-bezier(.2,1.6,.5,1) .2s both}
+.bless-score{font-size:13px;font-weight:700;color:#22c55e;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.34);border-radius:var(--radius-pill);padding:6px 14px;animation:tickPop 1.2s cubic-bezier(.2,1.6,.5,1) .3s both}
+
+/* ══ v5.2: Doctor handoff overlay — when check-in says "worse" ══ */
+#doctor-ov{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:303;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px 24px;backdrop-filter:blur(10px);overflow-y:auto}
+#doctor-ov.on{display:flex}
+.dr-glow{width:96px;height:96px;border-radius:50%;background:rgba(220,38,38,.18);border:3px solid #dc2626;display:flex;align-items:center;justify-content:center;font-size:42px;margin-bottom:6px;animation:reminderPulse 2.4s ease infinite}
+.dr-title{font-size:22px;font-weight:700;text-align:center;max-width:340px;line-height:1.3}
+.dr-sub{font-size:14px;color:var(--text2);text-align:center;line-height:1.55;margin-bottom:6px;max-width:320px}
+.dr-actions{display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px}
+.dr-btn{display:flex;align-items:center;gap:14px;background:var(--surface);border:1.5px solid rgba(255,255,255,.1);border-radius:16px;padding:18px 16px;font-family:'JioType',sans-serif;font-size:16px;font-weight:700;color:var(--text);cursor:pointer;text-decoration:none;min-height:88px;transition:transform .12s,border-color .15s}
+.dr-btn:active{transform:scale(.97)}
+.dr-btn.primary{border-color:rgba(34,197,94,.5);background:linear-gradient(135deg,rgba(34,197,94,.18),rgba(30,204,176,.08))}
+.dr-btn-emoji{font-size:30px;flex-shrink:0}
+.dr-btn-name{font-size:16px;font-weight:700;line-height:1.2}
+.dr-btn-sub{font-size:11px;color:var(--text2);font-weight:500;margin-top:2px;line-height:1.35}
+.dr-close{background:none;border:none;color:var(--text3);font-family:'JioType',sans-serif;font-size:13px;cursor:pointer;padding:10px;margin-top:4px}
+
 /* ══ v5.1: Aaj ki Sehat — stories rail (Instagram-style daily content) ══ */
 .hub-stories{display:flex;gap:14px;padding:10px 16px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .hub-stories::-webkit-scrollbar{display:none}
@@ -1023,9 +1095,81 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
       </button>
     </div>
 
+    <!-- v5.2: Sunita home — auto-shown when profile.age >= 40 OR profile.scope === 'household'.
+         Hidden on body.sunita removal; the dense grids below get `dense-only` so they hide when Sunita mode is on. -->
+    <div class="sunita-home">
+      <div class="sun-lbl">Aham kaam</div>
+      <div class="sun-grid">
+        <button class="sunita-tile primary" onclick="startFeature('rx')">
+          <div class="sunita-tile-emoji">💊</div>
+          <div class="sunita-tile-name">Dawai parchi</div>
+          <div class="sunita-tile-sub">Scan · reminder · ghar mangao</div>
+        </button>
+        <button class="sunita-tile warm" onclick="startFeature('lab')">
+          <div class="sunita-tile-emoji">🧪</div>
+          <div class="sunita-tile-name">Lab samjho</div>
+          <div class="sunita-tile-sub">Photo ya PDF · asaan zubaan</div>
+        </button>
+        <button class="sunita-tile" onclick="playStory('general')">
+          <div class="sunita-tile-emoji">📖</div>
+          <div class="sunita-tile-name">Dadi ki kahani</div>
+          <div class="sunita-tile-sub">2 min · roz nayi kahani</div>
+        </button>
+        <button class="sunita-tile danger" onclick="openDoctor('Aap')">
+          <div class="sunita-tile-emoji">🩺</div>
+          <div class="sunita-tile-name">Doctor se baat</div>
+          <div class="sunita-tile-sub">Call · Practo · 1mg</div>
+        </button>
+      </div>
+
+      <div class="sun-lbl">Aaj kya takleef hai?</div>
+      <div class="sun-grid">
+        <button class="sun-tak-tile" onclick="triSymptomTap('Sir dard ho raha hai','🤕 Sir dard kaise kam karein?')">
+          <div class="sun-tak-emoji">🤕</div>
+          <div class="sun-tak-name">Sir dard</div>
+          <div class="sun-tak-sub">Headache</div>
+        </button>
+        <button class="sun-tak-tile" onclick="triSymptomTap('Sardi-khansi hai','🤧 Sardi-khansi ke liye ghar ka nushka batao')">
+          <div class="sun-tak-emoji">🤧</div>
+          <div class="sun-tak-name">Sardi-khansi</div>
+          <div class="sun-tak-sub">Cold, cough</div>
+        </button>
+        <button class="sun-tak-tile" onclick="triSymptomTap('Pet ki dikkat hai','🤢 Pet dard, gas, ya acidity ka ghar ka ilaj batao')">
+          <div class="sun-tak-emoji">🤢</div>
+          <div class="sun-tak-name">Pet ki dikkat</div>
+          <div class="sun-tak-sub">Acidity, gas</div>
+        </button>
+        <button class="sun-tak-tile" onclick="triSymptomTap('Neend nahi aati','😴 Raat ko neend nahi aati, kya karein?')">
+          <div class="sun-tak-emoji">😴</div>
+          <div class="sun-tak-name">Neend nahi</div>
+          <div class="sun-tak-sub">Sleep issues</div>
+        </button>
+      </div>
+
+      <details class="sun-more">
+        <summary>Aur dekho — wellness aur baaki takleef</summary>
+        <div class="sun-more-body">
+          <div class="sun-lbl" style="padding-top:0">Sehat banao</div>
+          <div class="sun-grid">
+            <button class="sun-tak-tile" onclick="triWellnessTap('Energy chahiye, thakaan kam','⚡ Mujhe din bhar thakaan rehti hai. Energy badhane ka 1 AYUSH nuska + 1 habit batao — short, practical, Hinglish.')"><div class="sun-tak-emoji">⚡</div><div class="sun-tak-name">Energy</div></button>
+            <button class="sun-tak-tile" onclick="triWellnessTap('Mann shanti, stress kam','🧠 Stress kam karke mann shanti ke liye 1 saans technique + 1 lifestyle tip do — short, Hinglish.')"><div class="sun-tak-emoji">🧠</div><div class="sun-tak-name">Mann shanti</div></button>
+            <button class="sun-tak-tile" onclick="triWellnessTap('Pachhan strong, pet halka','🌱 Pachhan strong, pet halka rakhne ke liye 1 ghar ka tarika + 1 daily habit batao — Hinglish, short.')"><div class="sun-tak-emoji">🌱</div><div class="sun-tak-name">Pachhan</div></button>
+            <button class="sun-tak-tile" onclick="triWellnessTap('Immunity strong banao','💪 Immunity strong banane ke liye 1 daily AYUSH nuska + 1 habit — Hinglish, short.')"><div class="sun-tak-emoji">💪</div><div class="sun-tak-name">Immunity</div></button>
+          </div>
+          <div class="sun-lbl">Aur takleef</div>
+          <div class="sun-grid">
+            <button class="sun-tak-tile" onclick="triSymptomTap('Ghutno/jodon mein dard','🦴 Ghutno aur jodon mein dard ka ghar ka nushka batao')"><div class="sun-tak-emoji">🦴</div><div class="sun-tak-name">Ghutno dard</div></button>
+            <button class="sun-tak-tile" onclick="triSymptomTap('Bukhar hai','🌡 Halka bukhar hai, ghar ka nushka batao')"><div class="sun-tak-emoji">🌡</div><div class="sun-tak-name">Bukhar</div></button>
+            <button class="sun-tak-tile" onclick="triSymptomTap('Tension/chinta','😰 Tension aur chinta lagi hai, kya karein?')"><div class="sun-tak-emoji">😰</div><div class="sun-tak-name">Tension</div></button>
+            <button class="sun-tak-tile" onclick="triSymptomTap('Saans/galay ki dikkat','🌬 Galay mein khich-khich, saans bhaari — nushka batao')"><div class="sun-tak-emoji">🌬</div><div class="sun-tak-name">Saans/galay</div></button>
+          </div>
+        </div>
+      </details>
+    </div>
+
     <!-- v4.1: Wellness goals — proactive path for younger / general audience -->
-    <div class="tri-rail-lbl">Aaj behtar feel karo</div>
-    <div class="tri-grid" id="tri-well-grid">
+    <div class="tri-rail-lbl dense-only">Aaj behtar feel karo</div>
+    <div class="tri-grid dense-only" id="tri-well-grid">
       <button class="tri-btn" onclick="triWellnessTap('Energy chahiye, thakaan kam','⚡ Mujhe din bhar thakaan rehti hai. Energy badhane ka 1 AYUSH nuska + 1 habit batao — short, practical, Hinglish.')">
         <div class="tri-btn-emoji">⚡</div>
         <div class="tri-btn-text">Energy<div class="tri-btn-sub">Thakaan kam</div></div>
@@ -1061,8 +1205,8 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
     </div>
 
     <!-- v4: Symptom triage grid — for the unwell -->
-    <div class="tri-rail-lbl">Koi takleef hai?</div>
-    <div class="tri-grid" id="tri-grid">
+    <div class="tri-rail-lbl dense-only">Koi takleef hai?</div>
+    <div class="tri-grid dense-only" id="tri-grid">
       <button class="tri-btn" onclick="triSymptomTap('Sir dard ho raha hai','🤕 Sir dard kaise kam karein?')">
         <div class="tri-btn-emoji">🤕</div>
         <div class="tri-btn-text">Sir dard<div class="tri-btn-sub">Headache, migraine</div></div>
@@ -1425,6 +1569,58 @@ button.hub-list-item:active{background:rgba(255,255,255,.04)}
     <button class="reminder-snooze" onclick="snoozeReminder()">10 min baad</button>
     <button class="reminder-done" onclick="dismissReminder()">Li Li</button>
   </div>
+</div>
+
+<!-- v5.2: 48h symptom check-in (Dadi tone) -->
+<div id="checkin-ov" role="dialog" aria-modal="true" aria-labelledby="ci-title">
+  <div class="ci-glow" id="ci-emoji">🤕</div>
+  <div class="ci-title" id="ci-title">Beta, kal sir dard hua tha...</div>
+  <div class="ci-sub">Ab kaisa lag raha hai?</div>
+  <div class="ci-actions">
+    <button class="ci-btn better" onclick="onCheckinBetter()">
+      <span class="ci-btn-emoji">💚</span>
+      <span class="ci-btn-text"><span class="ci-btn-name">Bahut behtar</span><span class="ci-btn-sub">Saathi ka nuskha kaam kar gaya</span></span>
+    </button>
+    <button class="ci-btn same" onclick="onCheckinSame()">
+      <span class="ci-btn-emoji">🤔</span>
+      <span class="ci-btn-text"><span class="ci-btn-name">Aisa hi hai</span><span class="ci-btn-sub">Thoda waise hi laga, koi aur upay try karein</span></span>
+    </button>
+    <button class="ci-btn worse" onclick="onCheckinWorse()">
+      <span class="ci-btn-emoji">😔</span>
+      <span class="ci-btn-text"><span class="ci-btn-name">Aur kharaab</span><span class="ci-btn-sub">Doctor se baat karein</span></span>
+    </button>
+  </div>
+  <button class="ci-skip" onclick="closeCheckin()">Baad mein</button>
+</div>
+
+<!-- v5.2: Blessing overlay — fires when check-in answer is "better" -->
+<div id="bless-ov" role="dialog" aria-modal="true" aria-labelledby="bless-title">
+  <div class="bless-flower">🌸</div>
+  <div class="bless-title" id="bless-title">Bahut accha beta 🙏</div>
+  <div class="bless-sub">Saathi proud hai tum par.<br>Sehat banaye rakho.</div>
+  <div class="bless-score">+5 Sehat Score</div>
+</div>
+
+<!-- v5.2: Doctor handoff — fires when check-in answer is "worse" OR Sunita home "Doctor se baat" CTA -->
+<div id="doctor-ov" role="dialog" aria-modal="true" aria-labelledby="dr-title">
+  <div class="dr-glow">🩺</div>
+  <div class="dr-title" id="dr-title">Beta, ab doctor zaroori hai</div>
+  <div class="dr-sub">Ghar ka nuskha kafi nahi laga. Asli doctor se ek baar mil lo — saathi yahin hai, ghabraao mat.</div>
+  <div class="dr-actions">
+    <a class="dr-btn primary" href="tel:18001801104" onclick="trackFeature('doctor_call')">
+      <span class="dr-btn-emoji">📞</span>
+      <span><div class="dr-btn-name">Doctor ko call karo</div><div class="dr-btn-sub">NDHM Helpline 1800-180-1104 (free)</div></span>
+    </a>
+    <a class="dr-btn" href="https://www.practo.com" target="_blank" rel="noopener" onclick="trackFeature('doctor_practo')">
+      <span class="dr-btn-emoji">🩺</span>
+      <span><div class="dr-btn-name">Practo se appointment</div><div class="dr-btn-sub">Online consultation · ₹199 se shuru</div></span>
+    </a>
+    <a class="dr-btn" href="https://www.1mg.com" target="_blank" rel="noopener" onclick="trackFeature('doctor_1mg')">
+      <span class="dr-btn-emoji">💊</span>
+      <span><div class="dr-btn-name">Tata 1mg se baat</div><div class="dr-btn-sub">Pharmacist consultation</div></span>
+    </a>
+  </div>
+  <button class="dr-close" onclick="closeDoctor()">Abhi nahi, baad mein</button>
 </div>
 
 <!-- ══════════════ TOAST ══════════════ -->
@@ -2135,8 +2331,26 @@ function initHubDynamic() {
   refreshStoryCard();
   // v5: Mera Sehat tile counts + RX pill badge
   if (typeof updateHubBazaarSub === 'function') updateHubBazaarSub();
+  // v5.2: Sunita home toggle (auto by profile.age >= 40 OR scope === 'household')
+  if (typeof applySunitaMode === 'function') applySunitaMode();
   // v5.1: Aaj ki Sehat stories rail
   if (typeof renderHubStories === 'function') renderHubStories();
+}
+
+// ── v5.2: Sunita-archetype simplified home (Miller's Law) ──
+// Toggles a body.sunita class which hides the dense .dense-only wellness +
+// symptoms grids and reveals the parallel .sunita-home block (4 primary
+// tiles + 4 takleef + Aur dekho expand). Auto-detected from profile.
+function isSunitaMode(){
+  const p = ST.userProfile || loadProfile();
+  if (!p) return false;
+  const age = parseInt(p.age, 10);
+  if (!isNaN(age) && age >= 40) return true;
+  if (p.scope === 'household') return true;
+  return false;
+}
+function applySunitaMode(){
+  document.body.classList.toggle('sunita', isSunitaMode());
 }
 
 // ── v5.1: Aaj ki Sehat stories rail (Instagram-style daily content) ──
@@ -2164,6 +2378,17 @@ function renderHubStories(){
                                 : { emoji:'🌙', name:'Raat ki dua', cmd:'playStory(\'general\')' };
 
   let html = '';
+
+  // 0) v5.2: Symptom check-in (highest priority — shown ahead of streak)
+  const due = (typeof getDueCheckin === 'function') ? getDueCheckin() : null;
+  if (due) {
+    const emoji = due.symptomEmoji || '🤕';
+    const label = (due.displayText || 'tabiyat').split(' ').slice(0, 2).join(' ');
+    html += `<button class="hs-circle" onclick="openCheckin('${due.id}')">
+      <div class="hs-ring due"><span>${emoji}</span></div>
+      <div class="hs-name">Kaisa hai?</div>
+    </button>`;
+  }
 
   // 1) Streak
   if (streak > 0) {
@@ -2599,6 +2824,8 @@ function triSymptomTap(displayText, aiPrompt) {
   ST.chatHistory = [];
   ST.isFirstMsg = true;
   trackFeature('nushke');
+  // v5.2: log the symptom so we can fire a 48h "kaisa hai?" check-in
+  if (typeof pushCheckin === 'function') pushCheckin(displayText, aiPrompt);
   goTo('s-chat');
   const lbl = document.getElementById('chat-ctx-label');
   if (lbl) lbl.textContent = 'Ghar ke Nushke';
@@ -3803,6 +4030,165 @@ function dismissReminder() {
 // reload reminders on start
 function reloadSavedReminders() {
   loadReminders().forEach(rem => scheduleReminder(rem));
+}
+
+// ══════════════ v5.2: 48h SYMPTOM CHECK-IN LOOP ══════════════
+//
+// When the user taps a takleef button (triSymptomTap), we log the symptom in
+// ss_checkins with status='pending'. Every time the hub re-opens, we check
+// for any pending row >= CHECKIN_WAIT_MS old and surface it as a pulsing
+// red-orange circle in the stories rail. Tapping that circle opens the
+// 3-button Dadi modal (#checkin-ov). Outcome handlers branch the JTBD:
+//   - 'better' → blessing overlay + bumpScore(+5)
+//   - 'same'   → alternative remedy card + Doctor CTA
+//   - 'worse'  → in-app doctor handoff with tel: + Practo + 1mg placeholders
+//
+// No service worker — the loop fires on the user's natural next hub-open
+// (which works on any browser/device). For prototype QA, ?demo_checkin=1
+// lowers the threshold from 48h to 10 seconds.
+
+const CHECKIN_WAIT_MS = (function(){
+  try {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('demo_checkin') === '1') return 10 * 1000; // 10s for live demo
+  } catch(e){}
+  return 48 * 60 * 60 * 1000; // 48 hours
+})();
+
+// Symptom → emoji map (mirrors the takleef grid + sunita-home tak tiles)
+const SYMPTOM_EMOJI = {
+  'sir':'🤕','head':'🤕','sardi':'🤧','khansi':'🤧','cough':'🤧','cold':'🤧',
+  'pet':'🤢','acid':'🤢','gas':'🤢','neend':'😴','sleep':'😴',
+  'ghutno':'🦴','jodon':'🦴','joint':'🦴','bukhar':'🌡','fever':'🌡',
+  'tension':'😰','chinta':'😰','anxiety':'😰','saans':'🌬','galay':'🌬','throat':'🌬'
+};
+function pickSymptomEmoji(txt){
+  const t = (txt||'').toLowerCase();
+  for (const k of Object.keys(SYMPTOM_EMOJI)) if (t.includes(k)) return SYMPTOM_EMOJI[k];
+  return '🤕';
+}
+
+function loadCheckins(){ try { return JSON.parse(localStorage.getItem('ss_checkins')||'[]'); } catch(e){ return []; } }
+function saveCheckins(arr){ localStorage.setItem('ss_checkins', JSON.stringify(arr)); }
+
+function pushCheckin(displayText, aiPrompt){
+  const arr = loadCheckins();
+  // Dedupe: if there's already a pending row for this exact symptom in the last 12h, skip — don't spam.
+  const recent = arr.find(c => c.status === 'pending' && c.displayText === displayText && (Date.now() - c.ts) < 12 * 60 * 60 * 1000);
+  if (recent) return;
+  arr.push({
+    id: 'ci_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    displayText,
+    aiPrompt: aiPrompt || '',
+    symptomEmoji: pickSymptomEmoji(displayText),
+    member: (ST.userProfile && ST.userProfile.name) || 'Aap',
+    ts: Date.now(),
+    status: 'pending'
+  });
+  saveCheckins(arr);
+}
+
+function getDueCheckin(){
+  const arr = loadCheckins();
+  const now = Date.now();
+  return arr.find(c => c.status === 'pending' && (now - c.ts) >= CHECKIN_WAIT_MS) || null;
+}
+
+function answerCheckin(id, answer){
+  const arr = loadCheckins();
+  const row = arr.find(c => c.id === id);
+  if (!row) return null;
+  row.status = 'answered';
+  row.answer = answer;
+  row.answeredAt = Date.now();
+  saveCheckins(arr);
+  return row;
+}
+
+// — Open the modal (called from rail circle) —
+function openCheckin(id){
+  const arr = loadCheckins();
+  const row = id ? arr.find(c => c.id === id) : getDueCheckin();
+  if (!row) return;
+  ST._activeCheckin = row;
+  const emoji = row.symptomEmoji || '🤕';
+  // Singular-ish display fragment from the long displayText
+  // e.g. "Sir dard ho raha hai" → "sir dard"
+  const frag = (row.displayText || 'tabiyat')
+    .replace(/ho raha hai|hai|hai\.|hai!|hua tha/gi, '')
+    .trim() || row.displayText;
+  document.getElementById('ci-emoji').textContent = emoji;
+  document.getElementById('ci-title').textContent = `Beta, kal ${frag} hua tha...`;
+  document.getElementById('checkin-ov').classList.add('on');
+}
+function closeCheckin(){ document.getElementById('checkin-ov').classList.remove('on'); }
+
+// — Outcome handlers —
+function onCheckinBetter(){
+  const row = ST._activeCheckin; if (!row) { closeCheckin(); return; }
+  answerCheckin(row.id, 'better');
+  closeCheckin();
+  if (typeof bumpScore === 'function') bumpScore(5);
+  openBlessing();
+  if (typeof renderHubStories === 'function') setTimeout(renderHubStories, 100);
+}
+function onCheckinSame(){
+  const row = ST._activeCheckin; if (!row) { closeCheckin(); return; }
+  answerCheckin(row.id, 'same');
+  closeCheckin();
+  openAltRemedy(row);
+  if (typeof renderHubStories === 'function') setTimeout(renderHubStories, 100);
+}
+function onCheckinWorse(){
+  const row = ST._activeCheckin; if (!row) { closeCheckin(); return; }
+  answerCheckin(row.id, 'worse');
+  closeCheckin();
+  openDoctor(row.member);
+  if (typeof renderHubStories === 'function') setTimeout(renderHubStories, 100);
+}
+
+// — Blessing overlay — auto-dismisses in 3.5s —
+function openBlessing(){
+  const ov = document.getElementById('bless-ov');
+  if (!ov) return;
+  ov.classList.add('on');
+  if (ST._blessTimer) clearTimeout(ST._blessTimer);
+  ST._blessTimer = setTimeout(() => ov.classList.remove('on'), 3500);
+  ov.onclick = () => { clearTimeout(ST._blessTimer); ov.classList.remove('on'); };
+}
+
+// — Doctor handoff — full-screen, real tel: + external placeholders —
+function openDoctor(forWhom){
+  const ov = document.getElementById('doctor-ov'); if (!ov) return;
+  const sub = ov.querySelector('.dr-sub');
+  if (sub && forWhom) sub.innerHTML = `Ghar ka nuskha kafi nahi laga ${forWhom === 'Aap' ? '' : '(' + forWhom + ' ke liye)'}. Asli doctor se ek baar mil lo — saathi yahin hai, ghabraao mat.`;
+  ov.classList.add('on');
+}
+function closeDoctor(){ document.getElementById('doctor-ov').classList.remove('on'); }
+
+// — Alternative remedy when "Aisa hi hai" — try a different REMEDY_KIT —
+// Uses keyword overlap with the user's displayText; falls back to a generic
+// "try saans" suggestion if no matching kit exists.
+function openAltRemedy(row){
+  const txt = (row && row.displayText || '').toLowerCase();
+  // Loose mapping of common symptoms → fallback REMEDY_KIT key
+  const fallback = txt.includes('sir') || txt.includes('head') ? 'tulsi-kadha'
+                 : txt.includes('khansi') || txt.includes('sardi') || txt.includes('cough') || txt.includes('cold') ? 'ajwain-bhaap'
+                 : txt.includes('pet') || txt.includes('acid') || txt.includes('gas') ? 'saunf-paani'
+                 : txt.includes('neend') || txt.includes('sleep') ? 'haldi-doodh'
+                 : txt.includes('bukhar') || txt.includes('fever') ? 'tulsi-kadha'
+                 : txt.includes('saans') || txt.includes('galay') || txt.includes('throat') ? 'namak-gargle'
+                 : 'haldi-doodh';
+  const kit = (typeof REMEDY_KITS !== 'undefined') ? REMEDY_KITS[fallback] : null;
+  if (kit && typeof openRemedy === 'function') {
+    openRemedy(fallback);
+    setTimeout(() => {
+      if (typeof showToast === 'function') showToast('Phir bhi aaram nahi mile toh doctor se baat karein 🩺');
+    }, 1200);
+  } else {
+    // No matching kit — fall straight to doctor card
+    openDoctor((row && row.member) || 'Aap');
+  }
 }
 
 // ══════════════ v5: PRESCRIPTION SCAN + REMINDER + ORDER FLOW ══════════════

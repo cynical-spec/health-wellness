@@ -2,6 +2,58 @@
 
 ---
 
+## 2026-05-10 — Session 11: v5.2 — Recovery Feedback Loop + Sunita-archetype JTBD
+
+Akshay reviewed v5.1 with Navneet and called out three product gaps blocking L0 validation: (1) no recovery loop after a symptom tap — the app never asks "did the nuska work?", (2) cognitive overload for Sunita-archetype (43yo Marathi housewife, low digital literacy) — the v5.1 hub stacks ~30 surfaces (16 grid buttons + 7 stories circles + 2 aham cards + 5 rail cards), violating Miller's Law, (3) JTBD breaks at "remedy didn't work" — no graceful path to a doctor. This session ships the closure to that loop.
+
+### Added — `v5.2` Recovery Feedback Loop
+- **`ss_checkins` localStorage** — new array of `{id, displayText, aiPrompt, symptomEmoji, member, ts, status: 'pending'|'answered', answer?, answeredAt?}`. Single-row dedupe: same symptom within 12h skips a re-push.
+- **`pushCheckin()`** — fired inside `triSymptomTap()` (the takleef grid handler). Logs the symptom + timestamp before routing to chat. `triWellnessTap()` is intentionally NOT instrumented — wellness goals aren't symptomatic.
+- **`CHECKIN_WAIT_MS`** — 48 hours in production, lowered to 10 seconds when the URL has `?demo_checkin=1` (for live demos and QA).
+- **`getDueCheckin()`** — scans `ss_checkins`, returns the first row that's pending and ≥48h old. Called on every hub re-render via `renderHubStories`.
+- **Stories rail check-in circle** — when a check-in is due, prepended ahead of Streak as the highest-priority circle. Uses `.hs-ring.due` (red→orange gradient + `reminderPulse` animation already in the stylesheet). Label: "Kaisa hai?".
+- **`#checkin-ov` modal** — Dadi-tone full-screen overlay, 3 chunky 88px buttons:
+  - 💚 **Bahut behtar** → `onCheckinBetter()` — marks `answered/better`, `bumpScore(+5)`, fires blessing overlay
+  - 🤔 **Aisa hi hai** → `onCheckinSame()` — marks `answered/same`, opens an alternative `REMEDY_KIT` based on symptom-keyword match, toast "phir bhi aaram nahi mile toh doctor se baat karein"
+  - 😔 **Aur kharaab** → `onCheckinWorse()` — marks `answered/worse`, opens doctor handoff overlay
+- **`#bless-ov` overlay** — reuses `@keyframes tickPop` (already shipped for order-success). 🌸 emoji + "Bahut accha beta 🙏 / Saathi proud hai tum par" + "+5 Sehat Score" pill. Auto-dismisses in 3.5s, tap-anywhere also dismisses.
+- **`#doctor-ov` overlay** — full-screen handoff with 3 stacked 88px CTAs:
+  - 📞 **Doctor ko call karo** — `tel:18001801104` (NDHM Helpline placeholder)
+  - 🩺 **Practo se appointment** — `https://www.practo.com` placeholder (`target=_blank`)
+  - 💊 **Tata 1mg se baat** — `https://www.1mg.com` placeholder
+  - Also reachable directly from the Sunita-home "Doctor se baat" tile, not only via check-in.
+
+### Added — `v5.2` Sunita-archetype simplified home
+- **`isSunitaMode()`** — returns `true` if `profile.age >= 40` OR `profile.scope === 'household'`. Auto-detected from existing `ss_profile`; no new toggle UI.
+- **`applySunitaMode()`** — called inside `initHubDynamic()`. Toggles `body.sunita` class. CSS:
+  - `body.sunita .tri-grid.dense-only, body.sunita .tri-rail-lbl.dense-only, body.sunita .aham-row { display:none }` — hides the v5.1 dense layout entirely.
+  - `body:not(.sunita) .sunita-home { display:none }` — hides the simplified layout for younger users.
+- **`.sunita-home` block** — parallel render with 2 sections:
+  - **Aham kaam** 2×2 grid: Dawai parchi · Lab samjho · Dadi ki kahani · Doctor se baat (96px tall, font 16px, high-contrast gradient tiles)
+  - **Aaj kya takleef hai?** 2×2 grid: Sir dard · Sardi-khansi · Pet ki dikkat · Neend nahi (80px tall)
+  - **`<details class="sun-more">`** — collapsed-by-default expand with the full wellness (Energy, Mann shanti, Pachhan, Immunity) + remaining 4 takleefs (Ghutno, Bukhar, Tension, Saans). Zero-JS; native HTML element.
+
+### Changed
+- **Contrast bump for 40+ eyes** — `--text2` from `#b5b5b5` (~4.4:1 on dark bg) to `#c8c8c8` (~5.6:1). `--text3` from `rgba(255,255,255,.38)` to `.46`. WCAG AA comfortably for all body text. No palette redesign — single-token change.
+- **`triSymptomTap()`** — added one-line `pushCheckin(displayText, aiPrompt)` call before the `goTo('s-chat')` route. Behavior for users who don't return is unaffected; the check-in just stays pending until they do.
+- **`renderHubStories()`** — first circle is now conditional: if `getDueCheckin()` returns a row, the check-in circle takes priority over Streak.
+
+### Broken / Known issues
+- **`tel:` link UX on desktop** — clicking opens "Open this in your default phone app?" prompt; only fully natural on mobile. Acceptable for prototype since target device is mobile.
+- **External placeholder links** (practo.com, 1mg.com) leave the app — single biggest break in the "warm conversation" flow. Real partnerships needed; flagged in DEC-022.
+- **Check-in dedupe is conservative** — same symptom within 12h doesn't re-push, but if the user taps "Sir dard" today and again tomorrow, the second tap won't get its own check-in. Acceptable: users with chronic complaints get one consolidated follow-up, not five.
+- File grew from ~6172 → ~6470 lines. Past DEC-009's 5000-line ideal but contained in clearly-marked `// ══ v5.2 ══` blocks.
+
+### Next session should start with
+- **Live URL QA (mobile, 390px)** — set profile `age:45` → confirm Sunita home renders (no dense grid). Tap "Sir dard" with `?demo_checkin=1` → wait 10s → return to hub → confirm pulsing check-in circle appears first in the stories rail → tap → confirm Dadi modal with 3 colored buttons → tap each outcome in 3 separate sessions:
+  - **Better:** blessing overlay slides up with 🌸 + tickPop, +5 score, auto-dismisses
+  - **Same:** appropriate `REMEDY_KIT` opens (Sir dard → Tulsi kadha)
+  - **Worse:** doctor handoff overlay, tap call CTA → device dial prompt
+- **`age:28` profile** — confirm dense v5.1 layout returns unchanged.
+- **Per-symptom Dadi copy** — first cut interpolates `displayText`. Hand-write 8 specific scripts for the 8 symptoms (Sir dard ke liye haldi-doodh diya tha — abhi sir kaisa hai?) for the next iteration.
+
+---
+
 ## 2026-05-10 — Session 10b: v5.1 — Aaj ki Sehat stories rail + de-clutter + RX render fix
 
 User feedback after v5 shipped: (a) tapped "Dawai parchi" hero card → header rendered ("Yeh dawai kiske liye? / Member chunein") and the progress bar showed step 0 done, but the body below was completely blank — no member buttons. (b) "the landing screen right lost its today's activities or story that lure people to come back — something like story of instagram or today's task, way to make screen less cluttered and more warming?"

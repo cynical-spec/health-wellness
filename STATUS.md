@@ -1,5 +1,15 @@
 # Status — Sehat Saathi
-*Last updated: 2026-05-10 — Session 10 (v5 — End-to-end Dawai parchi: scan → reminder → order → tracking)*
+*Last updated: 2026-05-10 — Session 11 (v5.2 — Recovery Feedback Loop + Sunita-archetype JTBD)*
+
+## Session 11 highlights (v5.2)
+- **48h symptom check-in loop** — `pushCheckin` fires in `triSymptomTap`, `getDueCheckin` scans on every hub re-open, pulsing red-orange "Kaisa hai?" circle prepended to the stories rail. `?demo_checkin=1` URL param drops the wait to 10s for QA.
+- **Dadi-tone check-in modal** (`#checkin-ov`) — 3 chunky 88px buttons: Bahut behtar / Aisa hi hai / Aur kharaab.
+- **JTBD branching** — Better → 🌸 blessing overlay (`tickPop` anim) + `bumpScore(+5)`; Same → keyword-matched alternative REMEDY_KIT + soft doctor nudge; Worse → full-screen doctor handoff with `tel:18001801104` + Practo + 1mg.
+- **Sunita-archetype home** — auto-detected via `profile.age >= 40 OR scope === 'household'`. `body.sunita` class hides the dense grids + aham-row; reveals parallel 4-primary-tile + 4-takleef-tile + `<details>` "Aur dekho" expand.
+- **Accessibility contrast bump** — `--text2` #b5b5b5 → #c8c8c8 (WCAG 4.4:1 → 5.6:1 on dark bg), `--text3` .38 → .46. Single-token change, no palette redesign.
+- **`#doctor-ov`** also reachable from Sunita-home "Doctor se baat" tile directly, not just via check-in.
+
+## Session 10 highlights (v5)
 
 ## Session 10 highlights (v5)
 - **Hub re-balanced** — `aham-row` (2-card gradient row) under hero promotes Dawai parchi + Lab report to first-class entry points alongside symptoms triage. Live "N active" pill on Dawai when reminders exist.
@@ -278,3 +288,4 @@ Last successful deploy: 2026-05-07 Session 7 (commit `f41068c`)
 | `ss_orders` | Session 10 | Sehat Bazaar order history (full snapshot incl. address, payment, status) |
 | `ss_addresses` | Session 10 | Saved delivery addresses (Ghar/Maa-Papa seeded) |
 | `ss_rems` (extended) | Session 10 | Now stores `channel`, `phone`, `dose`, `duration_days`, `rxId`, `member`, `strength`, `notes` |
+| `ss_checkins` | Session 11 | 48h symptom check-in queue. Each row: `{id, displayText, aiPrompt, symptomEmoji, member, ts, status: 'pending'|'answered', answer?, answeredAt?}`. |

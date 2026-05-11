@@ -2,6 +2,33 @@
 
 ---
 
+## DEC-020 — 48h symptom check-in fires by hub-reopen scan, not service worker
+**Date:** 2026-05-10 (Session 11 / v5.2)
+**Decision:** When a user taps a symptom (`triSymptomTap`), we log it in `ss_checkins` with `status:'pending'`. On every hub re-render (`renderHubStories` called from `initHubDynamic`), we scan for any pending row ≥48h old and surface it as a pulsing red-orange "Kaisa hai?" circle, first position. No service worker, no client-side `setTimeout` (would die on tab close).
+**Reason:** A static-html prototype on GitHub Pages can't reliably push notifications without a Service Worker + VAPID keys + a backend. The hub-reopen pattern works on any device, doesn't require permissions beyond what's already in place for browser notifications (which still fire as a secondary surface when permitted), and naturally aligns with the user's intent — they only know about a check-in *because* they came back to the app. URL param `?demo_checkin=1` lowers the threshold to 10 seconds for QA so reviewers can validate the full loop in one sitting.
+**Trade-offs:** A user who never returns within 48h gets no nudge — but they also weren't a daily user. For the L0 SIT cohort we care about return cadence, not absent-user recovery. When we wire WhatsApp templates (already planned for dawai reminders), the check-in template piggybacks for the absent-user case.
+**Revisit if:** L0 SIT cohort shows >40% of check-ins go stale because users don't return within a week.
+
+---
+
+## DEC-021 — Sunita mode auto-toggled by `profile.age >= 40 OR scope === 'household'`
+**Date:** 2026-05-10 (Session 11 / v5.2)
+**Decision:** A `body.sunita` class is applied automatically when the user's profile indicates Sunita archetype (40+, or anyone with a `household` caregiver scope). The class hides the dense v5.1 wellness + symptoms grids + `aham-row` via `.dense-only` markers, and reveals a parallel `.sunita-home` block (4 primary tiles + 4 takleef + collapsible "Aur dekho" expand). No toggle UI — the user shouldn't have to know about it.
+**Reason:** Sunita-archetype users explicitly told us (via Navneet's research) they want fewer choices, larger targets, and a clear path to care. Younger digitally-literate users want the dense, multi-modal grid because they're optimizing across wellness and symptoms simultaneously. One size doesn't fit both; profile-driven inference does. Manual toggle would require Sunita to discover and use a setting — she won't. Always-on simplification would strip the younger audience of surface area they want.
+**Trade-offs:** A 39-year-old caregiver (scope: 'family' but not 'household') gets the dense view. The threshold is a heuristic; the right answer is feature-flag with cohort split-test in production. For prototype, age + scope are good enough proxies.
+**Revisit if:** Engagement on Sunita home is materially different from dense home (better or worse), OR if profile data shows the 35–42 band is bimodal in preference.
+
+---
+
+## DEC-022 — Doctor handoff = in-app card with `tel:` + external placeholder links
+**Date:** 2026-05-10 (Session 11 / v5.2)
+**Decision:** When the check-in answer is "worse", or when Sunita-home's "Doctor se baat" tile is tapped, we open a full-screen `#doctor-ov` with three 88px CTAs: (1) `tel:18001801104` (NDHM Helpline placeholder — real free Govt of India number), (2) Practo.com `target=_blank`, (3) 1mg.com `target=_blank`. No real Practo / 1mg API integration — this is intentionally stubbed.
+**Reason:** Akshay's review called out that the JTBD breaks if "remedy didn't work" leads nowhere. We need *something* to put in front of the user that says "we hear you, here are real next steps." A `tel:` link is universally honored by mobile OSes and dials a real free helpline. The Practo and 1mg external links are honest placeholders — they leave the app, but they leave it to a credible destination, not a generic search page. Real Practo API requires a partnership and OAuth flow we can't ship in prototype.
+**Trade-offs:** External links break the warm-conversation magical moment (just like the YouTube card did in v3 — see DEC-013). Acceptable for this case because: (a) the user has explicitly said "I want a doctor" — they're already exiting the conversational mode; (b) we keep the in-app `tel:` option as a no-context-switch primary; (c) when partnerships are signed, swap the external links for in-app booking flows.
+**Revisit if:** A Practo / 1mg / Pristyn Care partnership is signed and an in-app booking surface is feasible.
+
+---
+
 ## DEC-015 — Three magical moments get equal primary real estate (Symptoms / Lab / Dawai)
 **Date:** 2026-05-10 (Session 10 / v5)
 **Decision:** The home now treats Symptoms triage, Lab Report, and Dawai parchi as three peer entry points. Symptoms keeps its 8-button `tri-grid`, but a new 2-card `aham-row` (gradient, full-width tiles) sits directly under the hero promoting Lab and Dawai. Wellness goals stay where they are. The `tri-rail` keeps secondary use cases but loses Lab and Dawai (now promoted) and gains "Mera Sehat" (unified Reminders + Orders + Reports list).
