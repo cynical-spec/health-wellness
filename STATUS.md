@@ -1,5 +1,15 @@
 # Status — Sehat Saathi
-*Last updated: 2026-05-10 — Session 11 (v5.2 — Recovery Feedback Loop + Sunita-archetype JTBD)*
+*Last updated: 2026-05-10 — Session 12 (v5.3 — Symptom Focus Mode: committed healing path for 4 takleef)*
+
+## Session 12 highlights (v5.3)
+- **Symptom Focus Mode** — tapping Sir dard / Sardi-khansi / Pet / Neend opens a clarifying Q&A (3 questions, Dadi tone, hand-authored per symptom), then the hub *takes over* (body.focus class) and renders a 3-step Healing Path (acupressure → ghar ka nuska → rest) personalized to answers.
+- **Per-symptom validation cycle** — 30 min (Sir dard), 2 h (Pet), 4 h (Sardi-khansi), 8 h (Neend). `?demo_focus=1` URL param collapses all to 30s for QA. Validation circle appears in stories rail (priority above v5.2 check-in).
+- **JTBD branching**: Bahut behtar → blessing + inline Ayurvedic upsell (Bramhi / Sitopaladi / Hingvashtak / Ashwagandha — real Indian brands at real MRP/discount, AYUSH-compliant) → Sehat Bazaar checkout. Aisa hi hai → rotate to alternative remedy (1 retry → escalate to doctor). Aur kharaab → `#doctor-ov` immediately.
+- **Doctor short-circuit** during Q&A — Sardi-khansi + "Bukhar zyada hai" OR Pet + "Dast 2 din se zyada" skips focus and opens doctor handoff directly.
+- **Step completion hook** — `closeMovement()` now invokes `markFocusStepComplete(stepKey)` when the closed skill belongs to the active focus step. Score bumps +2 per step.
+- **Persistence** — `ss_focus` localStorage survives tab close. Focus state, step progress, validation timing all restored.
+
+## Session 11 highlights (v5.2)
 
 ## Session 11 highlights (v5.2)
 - **48h symptom check-in loop** — `pushCheckin` fires in `triSymptomTap`, `getDueCheckin` scans on every hub re-open, pulsing red-orange "Kaisa hai?" circle prepended to the stories rail. `?demo_checkin=1` URL param drops the wait to 10s for QA.
@@ -289,3 +299,4 @@ Last successful deploy: 2026-05-07 Session 7 (commit `f41068c`)
 | `ss_addresses` | Session 10 | Saved delivery addresses (Ghar/Maa-Papa seeded) |
 | `ss_rems` (extended) | Session 10 | Now stores `channel`, `phone`, `dose`, `duration_days`, `rxId`, `member`, `strength`, `notes` |
 | `ss_checkins` | Session 11 | 48h symptom check-in queue. Each row: `{id, displayText, aiPrompt, symptomEmoji, member, ts, status: 'pending'|'answered', answer?, answeredAt?}`. |
+| `ss_focus` | Session 12 | Active Symptom Focus Mode (single-row). Stores `{symptom, startedAt, qaAnswers, steps[], retryCount, validations[], resolved, resolvedAt, allStepsDoneAt}`. Removed when focus is resolved. |

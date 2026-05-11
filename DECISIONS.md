@@ -2,6 +2,42 @@
 
 ---
 
+## DEC-023 — Symptom Focus Mode is a full hub takeover, single-active-at-a-time
+**Date:** 2026-05-10 (Session 12 / v5.3)
+**Decision:** When a user starts a takleef Focus Mode (Sir dard / Sardi-khansi / Pet / Neend), a `body.focus` class hides every non-focus surface (`.tri-hero`, `.aham-row`, dense grids, Sunita home, secondary rail) and reveals a `.focus-home` block: gradient symptom banner + Dadi quote + 3-step Healing Path stepper + escape-hatch doctor link. Only one focus is active at any time; starting a new takleef while one is active prompts a confirm dialog to replace it.
+**Reason:** Navneet's explicit ask: *"when user selects sir dard, the whole app experience and home screen change towards fixing that issue — it tries to feel the problem and solve for you."* A pinned banner with normal hub still visible would split attention and dilute the "the app is committed to fixing this" signal. Single-active-at-a-time keeps the model simple — users have one problem in mind when they tap a takleef.
+**Trade-offs:** Other entry points (Lab, Dawai parchi, daily habit) are temporarily hidden when focus is active. The stories rail stays visible so users can still see streak/score/reminders, and the Sehat Tools bottom sheet (3-dot menu) reaches every feature. Pause/X escape is one tap away on the banner.
+**Revisit if:** Multi-symptom users complain they can't access other tools mid-focus, OR if data shows users frequently abandon a focus to reach another feature.
+
+---
+
+## DEC-024 — Per-symptom validation timing tuned to remedy timeline
+**Date:** 2026-05-10 (Session 12 / v5.3)
+**Decision:** Validation circle ("Kaisa hai ab?") fires after a per-symptom delay: Sir dard 30 min, Pet 2 h, Sardi-khansi 4 h, Neend 8 h (next-morning). Each delay matches how quickly the corresponding ghar ka nuska actually works in practice. `?demo_focus=1` URL param lowers all delays to 30 seconds for QA.
+**Reason:** A uniform 1-hour delay misfires for Sir dard (too late — most people would've already known if Tulsi kadha worked in 30 min) and Neend (too early — sleep needs a full night to validate). Tuned delays make the *kaisa hai ab?* moment land with the right honesty.
+**Trade-offs:** Four magic numbers to maintain. Mitigated by sourcing them from `FOCUS_FLOWS[symptom].validateAfterMin` (single source of truth) and exposing the demo flag for fast QA. Could be tuned per-user in the future based on profile (age, condition) if data warrants.
+**Revisit if:** L0 SIT data shows materially different "remedy actually worked" timing than the assumed buckets.
+
+---
+
+## DEC-025 — Ayurvedic upsell is inline-only, piggybacks on existing MEDICINE_CATALOG + Sehat Bazaar
+**Date:** 2026-05-10 (Session 12 / v5.3)
+**Decision:** When a Focus Mode validation answer is "Bahut behtar", a long-term Ayurvedic supplement card slides into `#bless-ov`. Tap → existing Sehat Bazaar (`s-order`) opens with the SKU pre-loaded. No standalone Ayurvedic Store screen. 4 SKUs added to `MEDICINE_CATALOG`: `ayur-bramhi`, `ayur-sitopaladi`, `ayur-hingvashtak`, `ayur-ashwagandha` — real Indian brands, real MRP/discount, AYUSH-compliant.
+**Reason:** The upsell makes sense only after the user has just experienced acute relief — that's the exact moment they're open to the idea of long-term prevention. A standalone store would surface the same SKUs to a user without context, which feels like push-marketing. Piggybacking on existing Sehat Bazaar means zero new checkout code — the v5 cart/address/payment/success flow handles fulfillment unchanged.
+**Trade-offs:** Users who never reach a "better" validation never see the Ayurvedic SKUs. Acceptable for v5.3 — if engagement data shows demand for a standalone surface, we add it in a follow-up (planned as `s-ayur` per the explored option).
+**Revisit if:** ≥20% of users tap "Abhi nahi" on the upsell card AND open the Sehat Bazaar tab within the same week, indicating they want to revisit the offer without re-triggering a focus.
+
+---
+
+## DEC-026 — Focus state persists in `ss_focus`, single row, survives tab close
+**Date:** 2026-05-10 (Session 12 / v5.3)
+**Decision:** Active focus lives in `localStorage.ss_focus` as a single JSON object: `{symptom, startedAt, qaAnswers, steps[], retryCount, validations[], resolved, resolvedAt, allStepsDoneAt}`. Closing the tab and reopening picks up exactly where the user left off — step statuses, score, validation timing all restored. Resolved focuses stay in the row briefly (until next focus starts) so the blessing/doctor flow can complete cleanly; then `endFocus()` removes the key.
+**Reason:** Mirrors the v5.2 `ss_checkins` pattern (DEC-020) — hub-reopen scan, no service worker, no setTimeout. Survives reload, which is critical because users juggle apps. Single-row model avoids the complexity of a queue while the multi-focus use case is unvalidated.
+**Trade-offs:** Single-row means we can only remember one in-flight problem at a time. If a user has both Sir dard and Pet dikkat simultaneously, they have to resolve/pause one before the other gets focus. Acceptable until L0 data shows this is real.
+**Revisit if:** Multi-focus emerges as a real need from user testing.
+
+---
+
 ## DEC-020 — 48h symptom check-in fires by hub-reopen scan, not service worker
 **Date:** 2026-05-10 (Session 11 / v5.2)
 **Decision:** When a user taps a symptom (`triSymptomTap`), we log it in `ss_checkins` with `status:'pending'`. On every hub re-render (`renderHubStories` called from `initHubDynamic`), we scan for any pending row ≥48h old and surface it as a pulsing red-orange "Kaisa hai?" circle, first position. No service worker, no client-side `setTimeout` (would die on tab close).

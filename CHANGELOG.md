@@ -2,6 +2,72 @@
 
 ---
 
+## 2026-05-10 — Session 12: v5.3 — Symptom Focus Mode (committed healing path for 4 takleef)
+
+Navneet's followup: *"build wow experience for first 4 takleef — when user selects sir dard, the whole app experience and home screen change towards fixing that issue."* v5.2's takleef tap still suggested-and-stepped-back; v5.3 turns the hub into a committed caretaker. Dadi asks 2–3 clarifying questions, the home transforms into a 3-step Healing Path, then a per-symptom-tuned validation circle later asks *"kaisa hai ab?"* — branching to blessing + Ayurvedic upsell, alternative remedy, or doctor handoff.
+
+### Added — `FOCUS_FLOWS` catalog
+Four takleef × uniquely-authored Dadi scripts. Each entry has: `emoji`, `title`, `dadiOpener`, `qa[]` (3 questions with 3–4 options each), `quote(answers)` to personalize the focus-banner subtitle, `buildSteps(answers)` returning a 3-step plan (acupressure → remedy → rest), `altSteps(answers)` for the "Aisa hi hai" retry, optional `requiresDoctor(answers)` short-circuit, `validateAfterMin`, `ayurSku`, `ayurCopy`, `validateTitle(answers)`.
+
+| Takleef | Validation | Default path (no answers) | Ayur upsell |
+|---|---|---|---|
+| `sir-dard` | 30 min | LI-4 acupressure → Tulsi kadha → Shavasana | Himalaya Brahmi 60 tab ₹153 |
+| `sardi-khansi` | 4 h | LU-7 → Adrak chai → Anulom-Vilom (Mulethi if sookhi khaansi, Ajwain bhaap if balgam, Tulsi if nazla) | Baidyanath Sitopaladi ₹108 |
+| `pet` | 2 h | Hydration → Ajwain bhaap → Vajrasana (Malasana + Jeera/Saunf/Nimbu-shahad routes for Gas/Acidity/Dast) | Dabur Hingwashtak ₹82 |
+| `neend` | 8 h | 20-20-20 screen break → Haldi doodh → Meditation (Journaling if "bahut soochta hoon") | Patanjali Ashwagandha ₹144 |
+
+Doctor-required short-circuits: `Bukhar zyada hai` for sardi-khansi → skip focus, open `#doctor-ov` directly. `Dast (loose motion)` + `2 din se zyada` for pet → same.
+
+### Added — Focus Mode UI
+- **`s-focus-qa` screen** — full-screen clarifying Q&A. Dadi opener line on first question, 3 progress dots, 4-option chip grid per question, auto-advance on tap. *Skip* button uses default `buildSteps({})`.
+- **`#bless-ov` extension** — new `#bless-ayur-slot` div appended; populated by `showAyurUpsell(symptom)` when the validation answer is "better". Card has brand, AYUSH tag, generic, MRP/price/discount, "Ghar mangao →" + "Abhi nahi" buttons.
+- **`#focus-validate-ov` overlay** — copy of `#checkin-ov` shape, 3 chunky 88px buttons (Bahut behtar / Aisa hi hai / Aur kharaab) + dynamic title from `flow.validateTitle(answers)`.
+- **`.focus-home` block inside `#s-hub`** — revealed by `body.focus` class. Renders a gradient symptom banner with emoji + title + step counter + close button, a personalized Dadi quote line, the 3-step `.focus-stepper` (current step highlighted with purple ring + shadow), a "Phir bhi takleef hai? Doctor se baat" escape hatch, and a "Bahut accha kiya beta 🙏" celebratory waiting block when all 3 steps are done.
+- **Stories rail extension** — when `isFocusValidationDue()` returns true, a pulsing red-orange "Kaisa hai ab?" circle prepends the rail (ahead of streak, even ahead of v5.2 check-in circle).
+
+### Added — JS engine
+- `FOCUS_DEMO` — reads `?demo_focus=1` URL param; when true, all `validateAfterMin` values collapse to 30 seconds for QA.
+- `loadFocus / saveFocus / hasActiveFocus / getActiveFocus` — `ss_focus` localStorage single-row state.
+- `startFocus(symptom)` — handles single-active-at-a-time with confirm dialog if another focus is mid-flow. Routes to `s-focus-qa`.
+- `renderFocusQA(idx) / onFocusQATap / onFocusQASkip / cancelFocusQA / finalizeFocusStart` — Q&A flow + commits state on last tap.
+- `renderFocusHome` — paints the active focus into `#focus-home`. Called from `applySunitaMode()` (which now also toggles `body.focus`).
+- `openFocusStep(idx)` — taps a step → opens existing `openAcupressure / openRemedy / openMovement`. Tags `_moveSkill._focusKey` so `closeMovement` knows which focus step to mark done.
+- `markFocusStepComplete(stepKey)` — invoked from extended `closeMovement`. Marks step done, promotes next to current, sets `allStepsDoneAt`, bumps score +2 per step.
+- `isFocusValidationDue() / openFocusValidate / closeFocusValidate / onFocusBetter / onFocusSame / onFocusWorse` — validation loop. Same path: rotates to `altSteps`, capped at 2 retries → doctor. Worse path: `#doctor-ov`. Better path: blessing + Ayur upsell.
+- `showAyurUpsell(symptom) / dismissAyurUpsell / orderAyurvedic(sku)` — slides upsell into `#bless-ov`, then jumps into existing Sehat Bazaar `s-order` flow with the SKU pre-loaded.
+
+### Added — Ayurvedic SKUs in `MEDICINE_CATALOG`
+- `ayur-bramhi` — Himalaya Brahmi 60 tab · ₹153 · Bacopa monnieri 250 mg
+- `ayur-sitopaladi` — Baidyanath Sitopaladi Churan · ₹108 · 60 gm
+- `ayur-hingvashtak` — Dabur Hingwashtak Churan · ₹82 · 50 gm
+- `ayur-ashwagandha` — Patanjali Ashwagandha 60 cap · ₹144 · Withania somnifera 500 mg
+
+Real brands, real prices, AYUSH-compliant. Existing Sehat Bazaar cart/address/payment/success flow handles checkout unchanged.
+
+### Changed
+- `closeMovement` now captures `_moveSkill._focusKey` before clearing state and fires `markFocusStepComplete` for the focused step. Same flow continues to work for non-focus usage (no `_focusKey` → no-op).
+- `applySunitaMode()` (called from `initHubDynamic`) now also toggles `body.focus` and calls `renderFocusHome()`.
+- `renderHubStories` priority order: focus-validation circle (v5.3) → 48h symptom check-in (v5.2) → streak → score → kahani → time-of-day habit → due reminder → active order → AYUSH aadat.
+- The 4 priority takleef tiles in both the dense `tri-grid` and the Sunita home now route to `startFocus(symptom)` instead of `triSymptomTap(...)`. The other 4 takleef (Ghutno, Bukhar, Tension, Saans) keep the chat path until v5.4.
+- `body.focus` CSS hides `.tri-hero`, `.aham-row`, `.tri-grid.dense-only`, `.tri-rail-lbl.dense-only`, `.sunita-home`, `.tri-rail-lbl[data-rail="secondary"]`, `.tri-rail` — full hub takeover.
+
+### Broken / Known issues
+- Multi-focus queue not supported — tapping a second takleef during an active focus prompts a confirm dialog and replaces. Acceptable; multi-focus UI is a follow-up.
+- "Same" path rotates `buildSteps` → `altSteps` once. The catalog has alternates for all 4 symptoms but with only one alt iteration. After two "Aisa hi hai" answers, escalation to doctor is the only path.
+- Validation fires by hub-reopen scan (same as v5.2 check-ins, DEC-020). If the user never returns to the hub within 24h after focus completes, no nudge fires. Add WhatsApp template when channel is provisioned.
+- `confirm()` for pause/replace is browser-native (not styled). Replace with a proper modal in a follow-up if it becomes a friction.
+- File grew from ~6558 → ~7290 lines.
+
+### Next session should start with
+- **Live URL QA** on a 390px viewport with `?demo_focus=1`. End-to-end path for Sir dard happy: tap → 3 questions → focus home → tap each step → validate "Bahut behtar" → blessing + ayur upsell → tap "Ghar mangao" → Bazaar cart with Bramhi → success.
+- **Other 3 takleef**: confirm each has unique opener line, unique buildSteps mapping (esp. Pet's first-step-is-hydration-not-acupressure), unique Ayur SKU.
+- **Doctor short-circuit**: tap Sardi-khansi → Q3 "Bukhar zyada hai" → confirm focus is NOT created, doctor overlay opens directly.
+- **Same retry cap**: complete 2 Aisa hi hai loops in demo mode → confirm graceful doctor handoff.
+- **Persistence**: complete 1 step, close tab, reopen → focus home renders with step 1 done.
+- **Per-symptom Dadi copy** beyond Q&A — quote variants by answer combo, validateTitle variants.
+
+---
+
 ## 2026-05-10 — Session 11: v5.2 — Recovery Feedback Loop + Sunita-archetype JTBD
 
 Akshay reviewed v5.1 with Navneet and called out three product gaps blocking L0 validation: (1) no recovery loop after a symptom tap — the app never asks "did the nuska work?", (2) cognitive overload for Sunita-archetype (43yo Marathi housewife, low digital literacy) — the v5.1 hub stacks ~30 surfaces (16 grid buttons + 7 stories circles + 2 aham cards + 5 rail cards), violating Miller's Law, (3) JTBD breaks at "remedy didn't work" — no graceful path to a doctor. This session ships the closure to that loop.
