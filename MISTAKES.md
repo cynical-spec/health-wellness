@@ -2,6 +2,34 @@
 
 ---
 
+## 2026-05-10 — Symptoms triage had no closing-loop — every nuska was a one-shot guess
+
+**What happened:** Akshay's 45-min review with Navneet called out that the entire takleef path (tap symptom → AI nuska → bye) had no follow-up. The app never asked "did the remedy work?", so: (a) we have zero signal on which nuskas land for which symptoms, (b) the user has no reason to come back to *this* specific symptom, and (c) if the nuska *didn't* work, the JTBD dead-ends — no path to a doctor, no graceful escalation. Akshay: *"How will the app know if the user is feeling better? We need a way to track the journey and get user input."*
+
+**Why it happened:** Sessions 7–10 focused on optimizing the *first* interaction (symptom tap → AI reply → recipe card → step animation). Every iteration added more shine to that single touchpoint. Nobody designed the second touchpoint because the metric we were tracking (engagement on first-tap) didn't surface the gap.
+
+**What was tried:** N/A — surfaced from external review.
+
+**What fixed it:** v5.2 ships an explicit 48h check-in loop. `triSymptomTap` writes a `pending` row to `ss_checkins`. On every hub re-open, `getDueCheckin()` scans for any ≥48h-old pending row and surfaces it as a pulsing rail circle. Tapping opens a Dadi-tone modal with 3 outcomes that each branch the JTBD: "better" → blessing + score bump, "same" → alternative nuska + soft doctor nudge, "worse" → full-screen doctor handoff with `tel:` + Practo + 1mg CTAs.
+
+**Rule going forward:** Every entry-point flow must be designed with its closing-loop touchpoint at the same time. If a feature ends in "AI replies, end of journey", that's a half-built feature. Closing the loop is the difference between an episodic tool and a daily-use product — and tier-2/3 users in particular only return when something *invites* them back.
+
+---
+
+## 2026-05-10 — Hub had 30 surfaces — Sunita archetype couldn't focus
+
+**What happened:** v5.1 ship to live URL → Akshay reviewed for the Sunita archetype lens (43yo Marathi housewife, low digital literacy) and flagged Miller's Law violation. Count: 7 stories circles + 2 aham cards + 8 wellness grid buttons + 8 takleef grid buttons + 5 tri-rail cards = 30 tappable surfaces on the hub alone. For a younger digitally-literate user this density felt thorough; for Sunita it felt overwhelming and forced her into Google-like search behavior (scan-everything-then-pick), which is the antithesis of the "Dadi-Ma talks to you" magical moment.
+
+**Why it happened:** We optimized for *first-visit clarity* across the broadest possible audience and stacked features as they were built. Each session added without subtracting. The result: a hub that's a feature-completeness exhibit rather than a calm Dadi-Ma surface.
+
+**What was tried:** v5.1 had de-cluttered by removing the mood pulse strip and compacting the hero — incremental help, but didn't address the core grid count.
+
+**What fixed it:** Profile-driven layout split. `isSunitaMode()` reads `profile.age >= 40 OR scope === 'household'`. When true, `body.sunita` class hides the dense grids + aham-row via `.dense-only`, and reveals a parallel `.sunita-home` block: 4 primary tiles (Dawai parchi · Lab samjho · Dadi ki kahani · Doctor se baat) + 4 most-common takleefs (Sir dard · Sardi-khansi · Pet · Neend), with everything else tucked behind a `<details>` "Aur dekho" expand. Touch targets bumped to 96px primary / 80px secondary, body contrast lifted from #b5b5b5 → #c8c8c8 (WCAG 4.4:1 → 5.6:1).
+
+**Rule going forward:** When you have two distinct user archetypes with conflicting needs (Sunita: fewer choices, larger targets; young pro: more choices, density), don't compromise on one shared layout. Auto-detect and serve different surfaces. The profile already exists — use it. Manual toggles are a last resort because the user who needs them most won't find them.
+
+---
+
 ## 2026-05-10 — RX step 0 crashed because `m.conditions` is a string, not an array
 
 **What happened:** v5.1's defensive try/catch around `renderRxStep` finally surfaced the *real* root cause of the empty-body bug from earlier today: the family member-card render in step 0 was calling `(m.conditions||[]).join(', ')` — but `m.conditions` is stored as a comma-joined **string** (e.g., `"Diabetes, BP"`), not an array. So `(m.conditions||[]).join` was `undefined`, which threw a TypeError. Without the try/catch, the whole `renderRxStep(0)` would silently abort midway through building the html string, leaving `el.innerHTML = html` never called → blank body.
