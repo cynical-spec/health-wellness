@@ -5960,20 +5960,57 @@ let _currentAudio = null;
 
 // v3.3: cache Roman → Devanagari transliterations to avoid re-billing same text
 const _translitCache = new Map();
-// v5.3.5: Sarvam's CORS preflight is broken from github.io origin (returns
-// invalid `Access-Control-Allow-Origin: *.sarvam.ai`). Route all Sarvam
-// browser calls through a public CORS proxy that wraps the response with
-// proper headers. The proxy adds ~50ms latency but unblocks audio entirely.
-// To bypass: set window.SARVAM_PROXY = '' in console for direct calls.
+// v5.3.5 / v5.3.8: Sarvam's CORS preflight is broken from github.io origin.
+// Route through a CORS proxy. corsproxy.io works for simple POSTs but
+// returns non-2xx on the OPTIONS preflight when custom headers are sent,
+// so it's not a complete fix. For the production-quality fix, deploy your
+// own Cloudflare Worker (https://workers.cloudflare.com — free) with this
+// ~15-line code and set the URL via:
+//   localStorage.setItem('ss_sarvam_proxy', 'https://your.worker.workers.dev/')
+// Reload. The constant below is the fallback.
+//
+// CF Worker source (paste into a Worker, deploy, copy the workers.dev URL):
+//   export default {
+//     async fetch(req) {
+//       if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: {
+//         'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS',
+//         'Access-Control-Allow-Headers':'*','Access-Control-Max-Age':'86400' }});
+//       const u = new URL(req.url);
+//       const target = 'https://api.sarvam.ai' + u.pathname + u.search;
+//       const h = new Headers(req.headers); h.delete('host'); h.delete('origin');
+//       const r = await fetch(target, { method: req.method, headers: h, body: req.body });
+//       const rh = new Headers(r.headers); rh.set('Access-Control-Allow-Origin','*');
+//       return new Response(r.body, { status: r.status, headers: rh });
+//     }
+//   };
 const SARVAM_PROXY = 'https://corsproxy.io/?url=';
 function sarvamUrl(path) {
   const target = 'https://api.sarvam.ai' + path;
-  // Allow runtime override / disable
-  const proxy = (typeof window !== 'undefined' && typeof window.SARVAM_PROXY === 'string')
-    ? window.SARVAM_PROXY
-    : SARVAM_PROXY;
+  // 1) localStorage override (set ss_sarvam_proxy = 'https://your.worker.workers.dev/' to use your CF Worker)
+  let proxy = '';
+  try { proxy = localStorage.getItem('ss_sarvam_proxy') || ''; } catch(e){}
+  // 2) runtime override via window
+  if (!proxy && typeof window !== 'undefined' && typeof window.SARVAM_PROXY === 'string') {
+    proxy = window.SARVAM_PROXY;
+  }
+  // 3) compile-time default
+  if (proxy === '' && proxy !== null) proxy = SARVAM_PROXY;
   if (!proxy) return target;
-  return proxy + encodeURIComponent(target);
+  // If proxy is a Cloudflare Worker style passthrough (ends with /), append path directly.
+  // If it's a wrapping proxy (corsproxy.io style ?url=), URL-encode the target.
+  if (proxy.endsWith('?url=') || proxy.endsWith('?quest=') || proxy.includes('?')) {
+    return proxy + encodeURIComponent(target);
+  }
+  // Passthrough (e.g. CF Worker): proxy is like 'https://x.workers.dev/' — append path+search
+  return proxy.replace(/\/$/, '') + path;
+}
+
+// User helper: paste your Cloudflare Worker URL to bypass corsproxy.io
+function setSarvamProxy(url) {
+  if (!url) { localStorage.removeItem('ss_sarvam_proxy'); showToast('Sarvam proxy reset to default'); return; }
+  localStorage.setItem('ss_sarvam_proxy', url);
+  _sarvamCorsBlocked = false; // reset kill-switch so it retries with new proxy
+  showToast('Sarvam proxy updated — try Speak again');
 }
 
 // v5.3.2: Sarvam's OPTIONS preflight returns HTTP 400 on cynical-spec.github.io
