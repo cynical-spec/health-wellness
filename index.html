@@ -6110,11 +6110,10 @@ function setElevenLabsKey() {
   }
 }
 
-// v5.3.4: OpenAI TTS fallback. /v1/audio/speech has proper CORS and is
-// cheap (~$0.015/1000 chars). Insert BETWEEN ElevenLabs and Sarvam since
-// it's much more reliable than Sarvam on github.io. The OpenAI key already
-// flows through (used for chat in some setups; injected by deploy.yml).
-let _openaiTtsBlocked = false;
+// v5.3.4 / v5.3.6: OpenAI TTS endpoint /v1/audio/speech does NOT support
+// direct browser CORS — confirmed in production. Disabled by default. If a
+// proxy is added later, set _openaiTtsBlocked = false in console + retry.
+let _openaiTtsBlocked = true;  // v5.3.6: was: false. Browser direct = always CORS fail.
 async function speakOpenAI(text, opts) {
   if (_openaiTtsBlocked) return false;
   if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20 || OPENAI_API_KEY.includes('REPLACE')) return false;
@@ -6149,7 +6148,13 @@ async function speakOpenAI(text, opts) {
     await _currentAudio.play();
     return true;
   } catch (e) {
-    console.info('[OpenAI TTS] failed', e);
+    // v5.3.6: OpenAI TTS deliberately blocks direct browser CORS — trip the
+    // kill-switch on TypeError (CORS preflight failure) so we don't burn
+    // a round-trip on every speak() call.
+    if (!_openaiTtsBlocked) {
+      _openaiTtsBlocked = true;
+      console.info('[OpenAI TTS] blocked by CORS (browser → /v1/audio/speech direct not supported). Disabling for session.');
+    }
     return false;
   }
 }
@@ -6199,8 +6204,9 @@ async function speak(text, opts) {
   if (!text) return;
   // v3.7: try ElevenLabs first if user pasted a key (faster + more natural)
   if (await speakElevenLabs(text, opts)) return;
-  // v5.3.4: OpenAI TTS — reliable CORS, cheap, second-priority fallback
-  if (await speakOpenAI(text, opts)) return;
+  // v5.3.4 disabled at v5.3.6: OpenAI TTS requires a proxy (no direct browser CORS).
+  // Skipping unless user explicitly re-enables via _openaiTtsBlocked = false.
+  if (!_openaiTtsBlocked && await speakOpenAI(text, opts)) return;
   // opts: { quiet, ttsText } — if ttsText provided, speak THAT (caller-supplied Devanagari) and skip transliteration.
   const quiet = opts && opts.quiet;
   const callerTtsText = opts && opts.ttsText;
