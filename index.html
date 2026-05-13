@@ -2784,7 +2784,7 @@ async function playCachedStory() {
       if (detectedScript === 'roman' && targetLang.startsWith('hi')) {
         chunk = await transliterateToDevanagari(chunk, targetLang);
       }
-      const res = await fetch('https://api.sarvam.ai/text-to-speech', {
+      const res = await fetch(sarvamUrl('/text-to-speech'), {
         method: 'POST',
         headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3105,7 +3105,7 @@ async function vpPlaySample(speakerId) {
   if (btn) btn.classList.add('loading');
   const sample = 'नमस्ते बेटा, आज कैसे हो? कुछ खाया कि नहीं? बैठो, मैं तुम्हें एक छोटा सा घरेलू नुस्खा बताती हूं।';
   try {
-    const res = await fetch('https://api.sarvam.ai/text-to-speech', {
+    const res = await fetch(sarvamUrl('/text-to-speech'), {
       method: 'POST',
       headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5866,7 +5866,7 @@ async function transcribeWithSarvam(audioBlob) {
     fd.append('model', 'saarika:v2.5');
     fd.append('language_code', ST.currentLanguage || 'hi-IN');
     fd.append('with_timestamps', 'false');
-    const res = await fetch('https://api.sarvam.ai/speech-to-text', {
+    const res = await fetch(sarvamUrl('/speech-to-text'), {
       method: 'POST',
       headers: { 'api-subscription-key': SARVAM_KEY },
       body: fd
@@ -5960,6 +5960,22 @@ let _currentAudio = null;
 
 // v3.3: cache Roman → Devanagari transliterations to avoid re-billing same text
 const _translitCache = new Map();
+// v5.3.5: Sarvam's CORS preflight is broken from github.io origin (returns
+// invalid `Access-Control-Allow-Origin: *.sarvam.ai`). Route all Sarvam
+// browser calls through a public CORS proxy that wraps the response with
+// proper headers. The proxy adds ~50ms latency but unblocks audio entirely.
+// To bypass: set window.SARVAM_PROXY = '' in console for direct calls.
+const SARVAM_PROXY = 'https://corsproxy.io/?url=';
+function sarvamUrl(path) {
+  const target = 'https://api.sarvam.ai' + path;
+  // Allow runtime override / disable
+  const proxy = (typeof window !== 'undefined' && typeof window.SARVAM_PROXY === 'string')
+    ? window.SARVAM_PROXY
+    : SARVAM_PROXY;
+  if (!proxy) return target;
+  return proxy + encodeURIComponent(target);
+}
+
 // v5.3.2: Sarvam's OPTIONS preflight returns HTTP 400 on cynical-spec.github.io
 // even though Access-Control-Allow-* headers are present. Chrome blocks the
 // actual POST. After the first failure, set a session kill-switch so we don't
@@ -5980,7 +5996,7 @@ async function transliterateToDevanagari(text, langCode) {
   try {
     const target = (langCode && langCode.length === 5) ? langCode : 'hi-IN';
     const _tStart = performance.now();
-    const res = await fetch('https://api.sarvam.ai/transliterate', {
+    const res = await fetch(sarvamUrl('/transliterate'), {
       method: 'POST',
       headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -6227,7 +6243,7 @@ async function speak(text, opts) {
     }
     const speaker = (localStorage.getItem('ss_voice_pref')) || SARVAM_SPEAKERS[ST.persona] || SARVAM_SPEAKERS.dadi;
     const _t0 = performance.now();
-    const res = await fetch('https://api.sarvam.ai/text-to-speech', {
+    const res = await fetch(sarvamUrl('/text-to-speech'), {
       method: 'POST',
       headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
