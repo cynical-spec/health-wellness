@@ -2,6 +2,15 @@
 
 ---
 
+## DEC-024 — Sarvam calls go through our own Cloudflare Worker, baked into source
+**Date:** 2026-05-13 (Session 13 / v5.3.9)
+**Decision:** The compile-time default proxy for every Sarvam call (`/text-to-speech`, `/speech-to-text`, `/transliterate`) is `https://sarvam-proxy.nawaneet-kumar.workers.dev/`. The Worker is a ~15-line pass-through that forwards to `api.sarvam.ai`, answers OPTIONS preflight with `204 + Access-Control-Allow-*`, and strips `host`/`origin` headers. `localStorage.ss_sarvam_proxy` still overrides if set — useful for testing alt proxies. `window.SARVAM_PROXY` is a secondary runtime override.
+**Reason:** Sarvam's own API returns HTTP 400 on the OPTIONS preflight from `github.io` origins when custom `api-subscription-key` headers are sent, even though it returns `Access-Control-Allow-*`. Chrome blocks the POST. Third-party proxies (`corsproxy.io`) fail the same preflight when custom headers are present. The Worker is the only durable fix that (a) handles preflight cleanly, (b) doesn't require Sarvam to change their CORS config, (c) doesn't depend on a third party's free-tier uptime, (d) doesn't require every user to paste a console command.
+**Trade-offs:** New hard dependency on `sarvam-proxy.nawaneet-kumar.workers.dev`. If the CF account is suspended or the Worker is deleted, all Sarvam voice breaks until users paste a new proxy via `setSarvamProxy()`. Worker is currently on CF free tier (100k req/day, more than enough for prototype). API key is still sent client-side — the Worker does not store it. Worker URL embeds the deployer's CF account name (`nawaneet-kumar`); already public via DNS, no additional leak.
+**Revisit if:** (a) Sarvam fixes their CORS preflight to return 2xx on github.io origin (then we can drop the proxy and hit `api.sarvam.ai` directly), or (b) we move to a real backend where the API key lives server-side (then the Worker becomes the auth point too, not just CORS). Either path makes this decision moot.
+
+---
+
 ## DEC-023 — Symptom Focus Mode is a full hub takeover, single-active-at-a-time
 **Date:** 2026-05-10 (Session 12 / v5.3)
 **Decision:** When a user starts a takleef Focus Mode (Sir dard / Sardi-khansi / Pet / Neend), a `body.focus` class hides every non-focus surface (`.tri-hero`, `.aham-row`, dense grids, Sunita home, secondary rail) and reveals a `.focus-home` block: gradient symptom banner + Dadi quote + 3-step Healing Path stepper + escape-hatch doctor link. Only one focus is active at any time; starting a new takleef while one is active prompts a confirm dialog to replace it.

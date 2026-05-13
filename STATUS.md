@@ -1,5 +1,10 @@
 # Status — Sehat Saathi
-*Last updated: 2026-05-10 — Session 12 (v5.3 — Symptom Focus Mode: committed healing path for 4 takleef)*
+*Last updated: 2026-05-13 — Session 13 (v5.3.9 — Permanent Sarvam CORS fix via baked-in CF Worker default)*
+
+## Session 13 highlights (v5.3.9)
+- **CORS root-cause fix shipped** — `SARVAM_PROXY` default constant now points at our own `sarvam-proxy.nawaneet-kumar.workers.dev` Cloudflare Worker (was `corsproxy.io/?url=` which fails Sarvam's preflight when custom `api-subscription-key` headers are sent). Every Sarvam TTS / STT / transliterate call hits the Worker → `api.sarvam.ai`, no browser CORS error.
+- **No per-device paste required** — previous v5.3.8 fix lived in `localStorage.ss_sarvam_proxy`, so only the one device where the console helper had been pasted actually used the Worker. Every other visitor silently fell back to Web Speech / ElevenLabs. v5.3.9 bakes it into source so it works on first load for every visitor on every device.
+- **Override paths preserved** — `setSarvamProxy(url)` console helper still works for swapping proxies during testing; `window.SARVAM_PROXY` runtime override still works; passing `null` resets to the Worker default.
 
 ## Session 12 highlights (v5.3)
 - **Symptom Focus Mode** — tapping Sir dard / Sardi-khansi / Pet / Neend opens a clarifying Q&A (3 questions, Dadi tone, hand-authored per symptom), then the hub *takes over* (body.focus class) and renders a 3-step Healing Path (acupressure → ghar ka nuska → rest) personalized to answers.

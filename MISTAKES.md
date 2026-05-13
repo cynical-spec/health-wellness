@@ -2,6 +2,31 @@
 
 ---
 
+## 2026-05-13 — Sarvam CORS "fix" only worked on the device that pasted the console helper
+
+**What happened:** v5.3.8 shipped `setSarvamProxy(url)` plus a CF Worker template in comments, intended as the permanent Sarvam CORS fix. The deployed Worker (`sarvam-proxy.nawaneet-kumar.workers.dev`) was confirmed working in the live console: `[TTS] manisha ~800ms · 42 chars ← Sarvam Bulbul Manisha via your Worker`. We thought we were done. The next day the user reported voice still broken with CORS errors — "since 1 hour".
+
+**Why it happened:** The Worker URL was stored in `localStorage.ss_sarvam_proxy`, which is per-origin **and per-device/browser**. The constant default at `index.html:5986` was still `'https://corsproxy.io/?url='`, which fails Sarvam's OPTIONS preflight when custom `api-subscription-key` headers are sent (corsproxy.io returns non-2xx on preflight for header-bearing requests, Chrome blocks the POST). So every "fresh" user — incognito tab, different browser, different machine, cleared storage — hit corsproxy.io, got CORS-blocked, and silently fell through to Web Speech / ElevenLabs. The Worker was deployed correctly but only ~one device was using it.
+
+**What was tried:**
+- v5.3.1: Sarvam STT codec fix (Chrome webm/opus rejection) — not the CORS problem
+- v5.3.2: ElevenLabs as primary TTS — different voice, doesn't fix Sarvam
+- v5.3.3: Web Speech fallback when ElevenLabs quota / Sarvam CORS fail — symptom hiding, not root cause
+- v5.3.4: OpenAI TTS as 2nd fallback — OpenAI TTS has no browser CORS either, removed in v5.3.6
+- v5.3.5: route all Sarvam through corsproxy.io — works for some calls but breaks on preflight with custom headers
+- v5.3.6: disable OpenAI TTS — cleanup
+- v5.3.7: restore Sarvam path that was bypassed when ElevenLabs blocked — bug fix
+- v5.3.8: localStorage override + CF Worker template — works on one device, not for any other visitor
+
+**What fixed it:** Changed the compile-time `SARVAM_PROXY` constant directly to `'https://sarvam-proxy.nawaneet-kumar.workers.dev/'`. The localStorage override path still exists for swapping proxies during testing, but the default is now the real Worker. No per-device paste required.
+
+**Rule going forward:**
+1. When the fix lives in localStorage, it's not "shipped" — it's "shipped to one device". Either bake the value into source, or write a `<script>` snippet that auto-injects it on first load. Console helpers are dev-only affordances, not production state.
+2. For any CORS workaround, verify it from a **fresh incognito tab on a different machine** before declaring success. localStorage state from a previous test poisons the verification.
+3. The OPTIONS preflight is where most "free CORS proxy" services fall over when custom headers are involved. Test the preflight specifically (`curl -X OPTIONS -H 'Access-Control-Request-Headers: api-subscription-key' -i $URL`) before trusting a proxy in production.
+
+---
+
 ## 2026-05-10 — Symptom triage was a menu, not a committed caretaker
 
 **What happened:** Through v5.0 → v5.2, every takleef tap routed to AI chat with a generic prompt ("Sir dard kaise kam karein?"). The AI suggested a nuska, sometimes injected a recipe card, then stepped back. v5.2 added a 48h *kaisa hai ab?* check-in which was a big improvement but still felt detached — between tap and follow-up, the app showed the user the *same* full feature menu (wellness goals, all 8 symptoms, lab, dawai parchi) as if the original problem didn't exist. Navneet's review: *"when user selects sir dard, the whole app experience and home screen change towards fixing that issue. It tries to feel the problem and solve for you."* The product was treating symptoms like menu items, not like commitments.

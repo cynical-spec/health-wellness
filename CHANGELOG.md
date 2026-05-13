@@ -2,6 +2,31 @@
 
 ---
 
+## 2026-05-13 — Session 13: v5.3.9 — Permanent Sarvam CORS fix (CF Worker baked in as default proxy)
+
+User had been chasing the Sarvam "CORS preflight 400" bug for an hour across sessions. v5.3.8 shipped a Cloudflare Worker template + `setSarvamProxy()` console helper, but the Worker URL was stored in `localStorage.ss_sarvam_proxy`, so it only worked on the one device/browser where the helper had been called. Every new visitor, incognito tab, or cleared-storage event reset the proxy back to `corsproxy.io` — which fails the OPTIONS preflight when custom `api-subscription-key` headers are present. That's why TTS kept silently falling back to Web Speech / ElevenLabs for "fresh" sessions.
+
+### Changed
+- **`SARVAM_PROXY` constant** (`index.html:5986`) — `'https://corsproxy.io/?url='` → `'https://sarvam-proxy.nawaneet-kumar.workers.dev/'`. The Worker is already deployed and confirmed working in the previous session's live console (`[TTS] manisha ~800ms · 42 chars ← Sarvam Bulbul Manisha via your Worker`).
+- **Comment block above the constant** — reflects the new state: this is the permanent fix, no per-device localStorage paste needed. localStorage override still works for testing alt proxies.
+
+### Why this works
+`sarvamUrl()` already handles "passthrough" proxies (URLs ending with `/`, no `?`) by appending the path directly — so `https://sarvam-proxy.nawaneet-kumar.workers.dev/text-to-speech` is what every Sarvam call now hits. The Worker forwards to `api.sarvam.ai/text-to-speech`, adds `Access-Control-Allow-Origin: *`, and returns 204 on OPTIONS. No browser CORS objection. No `corsproxy.io` middleman.
+
+### Unaffected by this change
+- Users who already pasted `setSarvamProxy('https://sarvam-proxy.nawaneet-kumar.workers.dev/')` still hit the same URL — localStorage override wins, but it's the same target now.
+- ElevenLabs path stays as the optional faster/warmer voice if user pastes their key; Sarvam Bulbul Manisha is the default.
+
+### Broken / Known issues
+- **Worker uptime is now a hard dependency** — if `sarvam-proxy.nawaneet-kumar.workers.dev` goes down or the CF account is suspended, Sarvam TTS/STT/transliterate all fail until users paste a new proxy via `setSarvamProxy()`. Acceptable for prototype; production should self-host or buy CF Pro.
+- **API key is still client-side** — the Worker doesn't store `SARVAM_KEY`. Browser sends it on every request. That's the same as before; no new risk.
+
+### Next session should start with
+- **Live URL QA on a fresh incognito tab** — open https://cynical-spec.github.io/health-wellness/, no console paste, tap Speak, confirm Bulbul Manisha plays.
+- **Bake the Symptom Focus Mode QA** from v5.3's next-session list (Sir dard demo path, doctor short-circuit, persistence).
+
+---
+
 ## 2026-05-10 — Session 12: v5.3 — Symptom Focus Mode (committed healing path for 4 takleef)
 
 Navneet's followup: *"build wow experience for first 4 takleef — when user selects sir dard, the whole app experience and home screen change towards fixing that issue."* v5.2's takleef tap still suggested-and-stepped-back; v5.3 turns the hub into a committed caretaker. Dadi asks 2–3 clarifying questions, the home transforms into a 3-step Healing Path, then a per-symptom-tuned validation circle later asks *"kaisa hai ab?"* — branching to blessing + Ayurvedic upsell, alternative remedy, or doctor handoff.
