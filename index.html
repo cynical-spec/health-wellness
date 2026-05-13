@@ -5847,11 +5847,21 @@ async function transcribeWithSarvam(audioBlob) {
     return '';
   }
   try {
-    // Match file extension to actual MIME type (Sarvam infers format from filename)
-    const mt = (audioBlob.type || '').toLowerCase();
-    const ext = mt.includes('webm') ? 'webm' : mt.includes('mp4') ? 'mp4' : mt.includes('mpeg') ? 'mp3' : mt.includes('wav') ? 'wav' : 'webm';
+    // v5.3.1: Sarvam STT recently tightened format validation — Chrome's
+    // MediaRecorder webm/opus output now returns HTTP 400 "Failed to read
+    // the file, please check the audio format." Probed Sarvam directly:
+    // 16kHz mono WAV returns HTTP 200 reliably. So we convert client-side.
+    let uploadBlob = audioBlob;
+    let uploadExt = 'wav';
+    try {
+      uploadBlob = await audioBlobToWav(audioBlob, 16000);
+    } catch (convErr) {
+      console.warn('[Sarvam STT] WAV conversion failed, falling back to raw blob', convErr);
+      const mt = (audioBlob.type || '').toLowerCase();
+      uploadExt = mt.includes('webm') ? 'webm' : mt.includes('mp4') ? 'mp4' : mt.includes('mpeg') ? 'mp3' : mt.includes('wav') ? 'wav' : 'webm';
+    }
     const fd = new FormData();
-    fd.append('file', audioBlob, 'rec.' + ext);
+    fd.append('file', uploadBlob, 'rec.' + uploadExt);
     fd.append('model', 'saarika:v2.5');
     fd.append('language_code', ST.currentLanguage || 'hi-IN');
     fd.append('with_timestamps', 'false');
@@ -5875,6 +5885,67 @@ async function transcribeWithSarvam(audioBlob) {
     showToast('Voice ka kuch problem aaya');
     return '';
   }
+}
+
+// v5.3.1: Convert any decodable audio blob (webm/opus, mp4/aac, ogg, etc.)
+// to a 16kHz mono 16-bit PCM WAV blob — what Sarvam STT reliably accepts.
+// Uses OfflineAudioContext for proper resampling.
+async function audioBlobToWav(blob, targetRate) {
+  targetRate = targetRate || 16000;
+  const Ctor = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  const TmpCtx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctor || !TmpCtx) throw new Error('Web Audio API unavailable');
+  const tmpCtx = new TmpCtx();
+  const arrayBuf = await blob.arrayBuffer();
+  const decoded = await tmpCtx.decodeAudioData(arrayBuf.slice(0));
+  try { await tmpCtx.close(); } catch(e){}
+  // Resample + downmix to mono via OfflineAudioContext
+  const offCtx = new Ctor(1, Math.ceil(decoded.duration * targetRate), targetRate);
+  const src = offCtx.createBufferSource();
+  // Downmix to mono manually if multi-channel
+  let monoBuf;
+  if (decoded.numberOfChannels === 1) {
+    monoBuf = decoded;
+  } else {
+    monoBuf = offCtx.createBuffer(1, decoded.length, decoded.sampleRate);
+    const out = monoBuf.getChannelData(0);
+    const ch0 = decoded.getChannelData(0);
+    const ch1 = decoded.getChannelData(1);
+    for (let i = 0; i < decoded.length; i++) out[i] = (ch0[i] + ch1[i]) * 0.5;
+  }
+  src.buffer = monoBuf;
+  src.connect(offCtx.destination);
+  src.start(0);
+  const rendered = await offCtx.startRendering();
+  const samples = rendered.getChannelData(0);
+  return encodeWavBlob(samples, targetRate);
+}
+
+function encodeWavBlob(samples, sampleRate) {
+  const len = samples.length;
+  const buf = new ArrayBuffer(44 + len * 2);
+  const view = new DataView(buf);
+  const writeStr = (off, str) => { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); };
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + len * 2, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);                  // chunk size
+  view.setUint16(20, 1, true);                   // PCM
+  view.setUint16(22, 1, true);                   // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);      // byte rate
+  view.setUint16(32, 2, true);                   // block align
+  view.setUint16(34, 16, true);                  // bits per sample
+  writeStr(36, 'data');
+  view.setUint32(40, len * 2, true);
+  let off = 44;
+  for (let i = 0; i < len; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    off += 2;
+  }
+  return new Blob([buf], { type: 'audio/wav' });
 }
 // ── v3: Sarvam TTS (Bulbul) — replaces Web Speech API ──
 const SARVAM_SPEAKERS = { dadi: 'manisha', maa: 'anushka', saathi: 'vidya' };  // v3.5: Bulbul v2 — 3x faster than v3 (median 2s vs 6s); warm female voices
