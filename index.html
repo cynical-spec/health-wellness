@@ -6018,7 +6018,14 @@ async function transliterateToDevanagari(text, langCode) {
 
 
 // ── v3.7: ElevenLabs opt-in TTS (faster + more natural; user must paste their key) ──
+// v5.3.3: ElevenLabs quota_exceeded → trip kill-switch so we don't burn cycles
+// on every speak() call. User needs to top up at elevenlabs.io or use a
+// different account-keyed key.
+let _elevenLabsBlocked = false;
+let _elevenLabsBlockedReason = '';
+
 async function speakElevenLabs(text, opts) {
+  if (_elevenLabsBlocked) return false;
   // v5.3.2: prefer build-time injected key (GitHub Secret ELEVEN_KEYS),
   // fall back to user-pasted localStorage key. Sarvam TTS CORS preflight
   // started failing on cynical-spec.github.io so ElevenLabs is now the
@@ -6044,7 +6051,19 @@ async function speakElevenLabs(text, opts) {
     if (!res.ok) {
       const errTxt = await res.text();
       console.warn('[ElevenLabs]', res.status, errTxt);
-      return false; // fall back to Sarvam
+      // v5.3.3: any 401 / 402 / 429 / quota_exceeded → session kill-switch.
+      // Sarvam's CORS is also broken so we won't get audio either way — show
+      // a clear toast and stop trying.
+      if (res.status === 401 || res.status === 402 || res.status === 429 || /quota_exceeded|invalid|unauthor/i.test(errTxt)) {
+        _elevenLabsBlocked = true;
+        _elevenLabsBlockedReason = /quota_exceeded/i.test(errTxt) ? 'quota_exceeded' : ('http_' + res.status);
+        if (typeof showToast === 'function') {
+          showToast(_elevenLabsBlockedReason === 'quota_exceeded'
+            ? 'Voice quota khatam — text mein dekhein'
+            : 'Voice ka key problem — text mein dekhein');
+        }
+      }
+      return false; // fall back to Sarvam (which will also fail, then Web Speech)
     }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -6075,6 +6094,28 @@ function setElevenLabsKey() {
   }
 }
 
+// v5.3.3: Last-resort TTS via browser Web Speech API. Quality is lower than
+// ElevenLabs / Sarvam but it always works offline and needs no API keys.
+// Used when ElevenLabs is blocked (quota / 401) AND Sarvam is blocked (CORS).
+function speakWebSpeech(text, opts) {
+  try {
+    if (!('speechSynthesis' in window) || !text) return false;
+    const u = new SpeechSynthesisUtterance((opts && opts.ttsText) || text);
+    // Best effort: pick a Hindi voice if available
+    const voices = window.speechSynthesis.getVoices() || [];
+    const hi = voices.find(v => /hi[-_]?IN|hindi/i.test(v.lang) || /hindi/i.test(v.name));
+    if (hi) u.lang = hi.lang || 'hi-IN', u.voice = hi;
+    else u.lang = 'hi-IN';
+    u.rate = 0.92; u.pitch = 1.0; u.volume = 1.0;
+    try { window.speechSynthesis.cancel(); } catch(e){}
+    window.speechSynthesis.speak(u);
+    return true;
+  } catch (e) {
+    console.info('[Web Speech] failed', e);
+    return false;
+  }
+}
+
 async function speak(text, opts) {
   if (!text) return;
   // v3.7: try ElevenLabs first if user pasted a key (faster + more natural)
@@ -6083,16 +6124,23 @@ async function speak(text, opts) {
   const quiet = opts && opts.quiet;
   const callerTtsText = opts && opts.ttsText;
   if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+  // v5.3.3: if ElevenLabs is blocked (quota/auth) — skip Sarvam too (its CORS is broken)
+  // and go straight to Web Speech. Saves a guaranteed-to-fail network round-trip.
+  if (_elevenLabsBlocked) {
+    speakWebSpeech(text, opts);
+    return;
+  }
   if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes('REPLACE')) {
-    if (!quiet) console.info('[speak] SARVAM_KEY missing — skipping TTS');
+    if (!quiet) console.info('[speak] SARVAM_KEY missing — using Web Speech fallback');
+    speakWebSpeech(text, opts);
     return;
   }
   // v5.3.2: Sarvam TTS CORS preflight is failing on github.io origin. If
   // transliterate already CORS-failed, skip the TTS call too — it would fail
-  // identically and we'd lose the user's audio entirely.
+  // identically. Fall through to Web Speech.
   if (_sarvamCorsBlocked) {
-    if (!quiet) console.info('[speak] Sarvam blocked by CORS; ElevenLabs key required for TTS');
-    if (typeof showToast === 'function') showToast('Voice abhi available nahi — text mein dekhein');
+    if (!quiet) console.info('[speak] Sarvam blocked by CORS; using Web Speech fallback');
+    speakWebSpeech(text, opts);
     return;
   }
   try {
@@ -6134,8 +6182,10 @@ async function speak(text, opts) {
     // v5.3.2: fetch TypeError from CORS preflight failure → trip the kill-switch
     if (!_sarvamCorsBlocked) {
       _sarvamCorsBlocked = true;
-      console.info('[Sarvam TTS] blocked (likely CORS). Audio disabled this session; configure ElevenLabs for TTS.');
+      console.info('[Sarvam TTS] blocked (likely CORS). Falling back to Web Speech for the rest of this session.');
     }
+    // v5.3.3: don't lose the user's audio — fall back to Web Speech
+    speakWebSpeech(text, opts);
   }
 }
 
