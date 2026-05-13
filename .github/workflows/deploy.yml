@@ -28,20 +28,23 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           SARVAM_KEY: ${{ secrets.SARVAM_KEY }}
+          ELEVEN_KEYS: ${{ secrets.ELEVEN_KEYS }}
         run: |
           python3 - <<'PYEOF'
           import os
           oai    = os.environ.get("OPENAI_API_KEY","").strip()
           groq   = os.environ.get("GROQ_API_KEY","").strip()
           sarvam = os.environ.get("SARVAM_KEY","").strip()
+          eleven = os.environ.get("ELEVEN_KEYS","").strip()
           with open("index.html","r") as f:
               html = f.read()
           html = html.replace("REPLACE_WITH_YOUR_KEY", oai)
           html = html.replace("REPLACE_WITH_GROQ_KEY", groq)
           html = html.replace("REPLACE_WITH_SARVAM_KEY", sarvam)
+          html = html.replace("REPLACE_WITH_ELEVENLABS_KEY", eleven)
           with open("index.html","w") as f:
               f.write(html)
-          print("Injected. OpenAI:", bool(oai), "Groq:", bool(groq), "Sarvam:", bool(sarvam))
+          print("Injected. OpenAI:", bool(oai), "Groq:", bool(groq), "Sarvam:", bool(sarvam), "ElevenLabs:", bool(eleven))
           PYEOF
 
       - uses: actions/configure-pages@v5

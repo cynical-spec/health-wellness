@@ -1751,6 +1751,7 @@ body:not(.focus) .focus-home{display:none}
 const OPENAI_API_KEY = "REPLACE_WITH_YOUR_KEY";
 const GROQ_API_KEY = "REPLACE_WITH_GROQ_KEY";
 const SARVAM_KEY = "REPLACE_WITH_SARVAM_KEY";  // Sarvam STT (Saarika) + TTS (Bulbul)
+const ELEVENLABS_KEY = "REPLACE_WITH_ELEVENLABS_KEY";  // v5.3.2: build-time injection (GitHub Secret ELEVEN_KEYS). Falls back to localStorage 'ss_elevenlabs_key' if user pasted one manually.
 
 // ── State ──
 const ST = {
@@ -5959,8 +5960,15 @@ let _currentAudio = null;
 
 // v3.3: cache Roman → Devanagari transliterations to avoid re-billing same text
 const _translitCache = new Map();
+// v5.3.2: Sarvam's OPTIONS preflight returns HTTP 400 on cynical-spec.github.io
+// even though Access-Control-Allow-* headers are present. Chrome blocks the
+// actual POST. After the first failure, set a session kill-switch so we don't
+// spam console errors. Real fix needs Sarvam to return 2xx on OPTIONS.
+let _sarvamCorsBlocked = false;
+
 async function transliterateToDevanagari(text, langCode) {
   if (!text) return text;
+  if (_sarvamCorsBlocked) return text;
   // v3.5: normalize cache key (case + whitespace) for higher hit rate
   const cacheKey = text.toLowerCase().replace(/\s+/g, ' ').trim();
   if (_translitCache.has(cacheKey)) return _translitCache.get(cacheKey);
@@ -5999,7 +6007,11 @@ async function transliterateToDevanagari(text, langCode) {
     }
     return out;
   } catch (e) {
-    console.warn('[transliterate] failed, using original', e);
+    // First failure on CORS / network — silence subsequent attempts to keep console clean
+    if (!_sarvamCorsBlocked) {
+      _sarvamCorsBlocked = true;
+      console.info('[transliterate] Sarvam endpoint blocked (likely CORS preflight). Using original text.');
+    }
     return text;
   }
 }
@@ -6007,8 +6019,14 @@ async function transliterateToDevanagari(text, langCode) {
 
 // ── v3.7: ElevenLabs opt-in TTS (faster + more natural; user must paste their key) ──
 async function speakElevenLabs(text, opts) {
-  const key = localStorage.getItem('ss_elevenlabs_key');
-  if (!key || key.length < 20) return false;
+  // v5.3.2: prefer build-time injected key (GitHub Secret ELEVEN_KEYS),
+  // fall back to user-pasted localStorage key. Sarvam TTS CORS preflight
+  // started failing on cynical-spec.github.io so ElevenLabs is now the
+  // primary TTS path; Sarvam is fallback only.
+  const injectedKey = (typeof ELEVENLABS_KEY === 'string' && !ELEVENLABS_KEY.includes('REPLACE') && ELEVENLABS_KEY.length >= 20) ? ELEVENLABS_KEY : '';
+  const localKey = localStorage.getItem('ss_elevenlabs_key') || '';
+  const key = localKey && localKey.length >= 20 ? localKey : injectedKey;
+  if (!key) return false;
   const voiceId = localStorage.getItem('ss_elevenlabs_voice') || 'EXAVITQu4vr4xnSDxMaL'; // Sarah default
   if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
   try {
@@ -6069,6 +6087,14 @@ async function speak(text, opts) {
     if (!quiet) console.info('[speak] SARVAM_KEY missing — skipping TTS');
     return;
   }
+  // v5.3.2: Sarvam TTS CORS preflight is failing on github.io origin. If
+  // transliterate already CORS-failed, skip the TTS call too — it would fail
+  // identically and we'd lose the user's audio entirely.
+  if (_sarvamCorsBlocked) {
+    if (!quiet) console.info('[speak] Sarvam blocked by CORS; ElevenLabs key required for TTS');
+    if (typeof showToast === 'function') showToast('Voice abhi available nahi — text mein dekhein');
+    return;
+  }
   try {
     // v3.3: Detect script → if Roman/Hinglish, transliterate to the target Indian script BEFORE TTS so Bulbul speaks natural Hindi (not letter-by-letter phonemes).
     const detected = detectLang(text);
@@ -6105,7 +6131,11 @@ async function speak(text, opts) {
       _currentAudio.play().catch(e => console.warn('[speak] autoplay blocked', e));
     }
   } catch (e) {
-    console.error('[Sarvam TTS] failed', e);
+    // v5.3.2: fetch TypeError from CORS preflight failure → trip the kill-switch
+    if (!_sarvamCorsBlocked) {
+      _sarvamCorsBlocked = true;
+      console.info('[Sarvam TTS] blocked (likely CORS). Audio disabled this session; configure ElevenLabs for TTS.');
+    }
   }
 }
 
