@@ -6211,28 +6211,18 @@ async function speak(text, opts) {
   const quiet = opts && opts.quiet;
   const callerTtsText = opts && opts.ttsText;
   if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
-  // v5.3.4: if both ElevenLabs (quota) AND OpenAI (auth/limit) are blocked —
-  // skip Sarvam too (its CORS is broken on github.io). Go straight to Web Speech.
-  if (_elevenLabsBlocked && _openaiTtsBlocked) {
-    speakWebSpeech(text, opts);
-    return;
-  }
-  // v5.3.3: if just ElevenLabs is blocked but OpenAI isn't, we already tried OpenAI above
-  // and it must have returned false → also skip Sarvam to avoid burning a guaranteed-to-fail round-trip.
-  if (_elevenLabsBlocked) {
-    speakWebSpeech(text, opts);
-    return;
-  }
+  // v5.3.7: Sarvam is the primary TTS path (routed through corsproxy.io in
+  // v5.3.5). Earlier "shortcut to Web Speech when ElevenLabs+OpenAI blocked"
+  // was a v5.3.3 optimization that pre-dated the proxy. Now we always try
+  // Sarvam — its own kill-switch (_sarvamCorsBlocked) + catch-block fallback
+  // handle the case where the proxy fails.
   if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes('REPLACE')) {
     if (!quiet) console.info('[speak] SARVAM_KEY missing — using Web Speech fallback');
     speakWebSpeech(text, opts);
     return;
   }
-  // v5.3.2: Sarvam TTS CORS preflight is failing on github.io origin. If
-  // transliterate already CORS-failed, skip the TTS call too — it would fail
-  // identically. Fall through to Web Speech.
   if (_sarvamCorsBlocked) {
-    if (!quiet) console.info('[speak] Sarvam blocked by CORS; using Web Speech fallback');
+    if (!quiet) console.info('[speak] Sarvam blocked (proxy + direct both failed) — Web Speech fallback');
     speakWebSpeech(text, opts);
     return;
   }
