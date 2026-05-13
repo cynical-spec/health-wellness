@@ -5960,16 +5960,17 @@ let _currentAudio = null;
 
 // v3.3: cache Roman → Devanagari transliterations to avoid re-billing same text
 const _translitCache = new Map();
-// v5.3.5 / v5.3.8: Sarvam's CORS preflight is broken from github.io origin.
-// Route through a CORS proxy. corsproxy.io works for simple POSTs but
-// returns non-2xx on the OPTIONS preflight when custom headers are sent,
-// so it's not a complete fix. For the production-quality fix, deploy your
-// own Cloudflare Worker (https://workers.cloudflare.com — free) with this
-// ~15-line code and set the URL via:
-//   localStorage.setItem('ss_sarvam_proxy', 'https://your.worker.workers.dev/')
-// Reload. The constant below is the fallback.
+// v5.3.9: Sarvam's CORS preflight is broken from github.io origin (returns
+// HTTP 400 on OPTIONS even with allow-* headers present). We route every
+// Sarvam call through our own Cloudflare Worker which forwards to
+// api.sarvam.ai and answers the preflight cleanly. This is the permanent fix
+// — no per-device localStorage paste required.
 //
-// CF Worker source (paste into a Worker, deploy, copy the workers.dev URL):
+// Override at runtime with:
+//   localStorage.setItem('ss_sarvam_proxy', 'https://your.worker.workers.dev/')
+// Reset with: setSarvamProxy(null)
+//
+// CF Worker source (already deployed to sarvam-proxy.nawaneet-kumar.workers.dev):
 //   export default {
 //     async fetch(req) {
 //       if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: {
@@ -5983,7 +5984,7 @@ const _translitCache = new Map();
 //       return new Response(r.body, { status: r.status, headers: rh });
 //     }
 //   };
-const SARVAM_PROXY = 'https://corsproxy.io/?url=';
+const SARVAM_PROXY = 'https://sarvam-proxy.nawaneet-kumar.workers.dev/';
 function sarvamUrl(path) {
   const target = 'https://api.sarvam.ai' + path;
   // 1) localStorage override (set ss_sarvam_proxy = 'https://your.worker.workers.dev/' to use your CF Worker)
