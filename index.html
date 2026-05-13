@@ -6094,21 +6094,84 @@ function setElevenLabsKey() {
   }
 }
 
-// v5.3.3: Last-resort TTS via browser Web Speech API. Quality is lower than
-// ElevenLabs / Sarvam but it always works offline and needs no API keys.
-// Used when ElevenLabs is blocked (quota / 401) AND Sarvam is blocked (CORS).
+// v5.3.4: OpenAI TTS fallback. /v1/audio/speech has proper CORS and is
+// cheap (~$0.015/1000 chars). Insert BETWEEN ElevenLabs and Sarvam since
+// it's much more reliable than Sarvam on github.io. The OpenAI key already
+// flows through (used for chat in some setups; injected by deploy.yml).
+let _openaiTtsBlocked = false;
+async function speakOpenAI(text, opts) {
+  if (_openaiTtsBlocked) return false;
+  if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20 || OPENAI_API_KEY.includes('REPLACE')) return false;
+  const speakText = (opts && opts.ttsText) || text;
+  if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+  try {
+    const _t = performance.now();
+    const res = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + OPENAI_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'tts-1',
+        // Voices: alloy, echo, fable, onyx, nova, shimmer. Persona-mapped.
+        voice: (ST.persona === 'maa') ? 'nova' : (ST.persona === 'saathi') ? 'shimmer' : 'shimmer',
+        input: speakText.length > 4000 ? speakText.substring(0, 4000) : speakText,
+        speed: 0.95
+      })
+    });
+    if (!res.ok) {
+      const errTxt = await res.text();
+      console.warn('[OpenAI TTS]', res.status, errTxt);
+      if (res.status === 401 || res.status === 429) {
+        _openaiTtsBlocked = true;
+      }
+      return false;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    console.info('[TTS-OAI]', Math.round(performance.now() - _t), 'ms', '·', speakText.length, 'chars');
+    _currentAudio = new Audio(url);
+    _currentAudio.onended = () => { try { URL.revokeObjectURL(url); } catch(e){} };
+    await _currentAudio.play();
+    return true;
+  } catch (e) {
+    console.info('[OpenAI TTS] failed', e);
+    return false;
+  }
+}
+
+// v5.3.3 / v5.3.4: Last-resort TTS via browser Web Speech API. Always
+// available, no keys needed. On Chrome desktop, getVoices() returns empty
+// on first call until the `voiceschanged` event fires — handle that.
 function speakWebSpeech(text, opts) {
   try {
-    if (!('speechSynthesis' in window) || !text) return false;
-    const u = new SpeechSynthesisUtterance((opts && opts.ttsText) || text);
-    // Best effort: pick a Hindi voice if available
-    const voices = window.speechSynthesis.getVoices() || [];
-    const hi = voices.find(v => /hi[-_]?IN|hindi/i.test(v.lang) || /hindi/i.test(v.name));
-    if (hi) u.lang = hi.lang || 'hi-IN', u.voice = hi;
-    else u.lang = 'hi-IN';
-    u.rate = 0.92; u.pitch = 1.0; u.volume = 1.0;
-    try { window.speechSynthesis.cancel(); } catch(e){}
-    window.speechSynthesis.speak(u);
+    if (!('speechSynthesis' in window) || !text) {
+      console.info('[Web Speech] not supported in this browser');
+      return false;
+    }
+    const speakText = (opts && opts.ttsText) || text;
+    const tryNow = () => {
+      const u = new SpeechSynthesisUtterance(speakText);
+      const voices = window.speechSynthesis.getVoices() || [];
+      // Prefer Hindi; if none, prefer any Indian English; else any voice.
+      const hi = voices.find(v => /hi[-_]?IN|hindi/i.test(v.lang) || /hindi/i.test(v.name));
+      const enIN = voices.find(v => /en[-_]?IN/i.test(v.lang));
+      const pick = hi || enIN || voices[0];
+      if (pick) { u.voice = pick; u.lang = pick.lang || 'hi-IN'; }
+      else u.lang = 'hi-IN';
+      u.rate = 0.92; u.pitch = 1.0; u.volume = 1.0;
+      u.onerror = e => console.info('[Web Speech] utterance error', e && e.error);
+      try { window.speechSynthesis.cancel(); } catch(e){}
+      window.speechSynthesis.speak(u);
+      console.info('[TTS-WS]', pick ? pick.name + ' (' + pick.lang + ')' : 'default voice', '·', speakText.length, 'chars');
+    };
+    if ((window.speechSynthesis.getVoices() || []).length === 0) {
+      // Chrome quirk: voices load async; wait once then play.
+      const onChange = () => { window.speechSynthesis.removeEventListener('voiceschanged', onChange); tryNow(); };
+      window.speechSynthesis.addEventListener('voiceschanged', onChange);
+      // Some Chrome builds never fire voiceschanged — guard with a 350ms timer
+      setTimeout(() => { window.speechSynthesis.removeEventListener('voiceschanged', onChange); tryNow(); }, 350);
+    } else {
+      tryNow();
+    }
     return true;
   } catch (e) {
     console.info('[Web Speech] failed', e);
@@ -6120,12 +6183,20 @@ async function speak(text, opts) {
   if (!text) return;
   // v3.7: try ElevenLabs first if user pasted a key (faster + more natural)
   if (await speakElevenLabs(text, opts)) return;
+  // v5.3.4: OpenAI TTS — reliable CORS, cheap, second-priority fallback
+  if (await speakOpenAI(text, opts)) return;
   // opts: { quiet, ttsText } — if ttsText provided, speak THAT (caller-supplied Devanagari) and skip transliteration.
   const quiet = opts && opts.quiet;
   const callerTtsText = opts && opts.ttsText;
   if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
-  // v5.3.3: if ElevenLabs is blocked (quota/auth) — skip Sarvam too (its CORS is broken)
-  // and go straight to Web Speech. Saves a guaranteed-to-fail network round-trip.
+  // v5.3.4: if both ElevenLabs (quota) AND OpenAI (auth/limit) are blocked —
+  // skip Sarvam too (its CORS is broken on github.io). Go straight to Web Speech.
+  if (_elevenLabsBlocked && _openaiTtsBlocked) {
+    speakWebSpeech(text, opts);
+    return;
+  }
+  // v5.3.3: if just ElevenLabs is blocked but OpenAI isn't, we already tried OpenAI above
+  // and it must have returned false → also skip Sarvam to avoid burning a guaranteed-to-fail round-trip.
   if (_elevenLabsBlocked) {
     speakWebSpeech(text, opts);
     return;
