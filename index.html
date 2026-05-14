@@ -5799,6 +5799,71 @@ async function convListenOnce() {
 // v5.5.1: check both the user's transcript AND the bot reply — the user
 // explicitly named the skill in the question, so even a vague AI reply still
 // triggers the right overlay.
+// v5.5.4: conversational voice mode — instead of auto-launching the skill
+// overlay (which caused TTS overlap with the chat reply and felt jarring), we
+// now ASK the user "would you like to do this with me?" and wait for yes/no.
+// Yes → clean handoff to the skill overlay (single voice at a time).
+// No  → continue conversation normally.
+// _pendingVoiceSkill carries state across turns inside convHandleTranscript.
+let _pendingVoiceSkill = null; // { kind:'movement'|'remedy'|'acupressure', key, title }
+
+function _isAffirmative(t) {
+  if (!t) return false;
+  const s = t.trim().toLowerCase();
+  // Roman: haan/han/haa/yes/yeah/yep/chalo/theek/karenge/start/shuru/sure/ok
+  // Devanagari: हाँ/हां/जी/बिल्कुल/चलो/ठीक/करूँ/करूं/करेंगे/शुरू
+  // v5.5.4 note: NOT using \b — JS word boundary is ASCII-only, fails on
+  // Devanagari. Use lookahead for "end-of-token" instead.
+  return /^(haa?n?|haaji|yes+|yeah?|yep|sure|ok(ay)?|chalo|theek|theek\s*hai|start|shuru|karna|karenge?|karke|haa\s*ji|बिल्कुल|हाँ|हां|हा|जी|जी\s*हाँ|करना|करूँ|करूं|करेंगे|करेगा|शुरू|चलो|ठीक|हाँ\s*जी)(\s|$|[.,!?।])/i.test(s + ' ');
+}
+function _isNegative(t) {
+  if (!t) return false;
+  const s = t.trim().toLowerCase();
+  return /^(nahi+n?|nai|nope|no+|skip|chod\s*do|chhod|baad\s*mein|rehne\s*do|नहीं|नहि|नही|छोड़|रहने\s*दो|बाद\s*में|मत)(\s|$|[.,!?।])/i.test(s + ' ');
+}
+
+// Speaks a confirmation prompt + waits for TTS to fully end, then resumes
+// listening so the user's yes/no can be captured by the next convListenOnce.
+async function _offerVoiceSkillConfirmation(skill) {
+  _pendingVoiceSkill = skill;
+  // Prompts in Hindi/Hinglish that match the warm "saathi" tone.
+  const prompts = {
+    movement:    skill.title + ' aapko mere saath karwaaun? Step-by-step bataati hoon. Haan ya nahi?',
+    remedy:      skill.title + ' banane mein mere saath chalein? Step-by-step bataati hoon. Haan ya nahi?',
+    acupressure: skill.title + ' ka point bataati hoon, mere saath dabaaiyega? Haan ya nahi?'
+  };
+  const prompt = prompts[skill.kind] || (skill.title + ' karna chahenge mere saath? Haan ya nahi?');
+  // v5.5.4: guarantee no overlap — kill any in-flight TTS before speaking the
+  // confirmation prompt. The previous chat-reply audio could still be playing
+  // if checkDone resolved on a stale _currentAudio.ended state.
+  if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+  appendVoiceLine('bot', prompt);
+  setVoiceState('speaking');
+  await new Promise(resolve => {
+    let resolved = false;
+    speak(prompt, { ttsText: prompt });
+    // Wait for TTS to actually start playing, then wait for it to end.
+    let started = false;
+    const tick = () => {
+      if (resolved) return;
+      const playing = _currentAudio && !_currentAudio.paused && !_currentAudio.ended;
+      if (playing) started = true;
+      if (started && (!playing)) {
+        resolved = true; setTimeout(resolve, 500); return;
+      }
+      setTimeout(tick, 200);
+    };
+    setTimeout(tick, 800); // give Sarvam fetch + Audio load a beat to start
+    // Safety net — if TTS never plays (e.g. Sarvam returns 5xx + Web Speech also fails) resolve after 7s
+    setTimeout(() => { if (!resolved) { resolved = true; resolve(); } }, 7000);
+  });
+  // Now resume listening for the user's yes/no
+  if (_convActive) {
+    setVoiceState('listening');
+    _convResumeTimer = setTimeout(convListenOnce, 350);
+  }
+}
+
 function _autoLaunchSkillFromVoice(userText, botText) {
   const combined = [userText || '', botText || ''].filter(Boolean).join(' \n ');
   if (!combined.trim()) { console.info('[voice-skill] no text to match'); return; }
@@ -5833,31 +5898,63 @@ async function convHandleTranscript(transcript) {
   // v4: Show user's spoken text in the overlay BEFORE sending to AI
   appendVoiceLine('user', transcript);
   if (target === 'chat') {
+    // v5.5.4: confirmation flow — if a previous turn offered a skill, this
+    // turn is the user's yes/no, NOT a new AI question.
+    if (_pendingVoiceSkill) {
+      const pending = _pendingVoiceSkill;
+      if (_isAffirmative(transcript)) {
+        console.info('[voice-skill] user confirmed →', pending.kind, pending.key);
+        addMsg('user', transcript, false);
+        _pendingVoiceSkill = null;
+        stopVoice();
+        setTimeout(() => {
+          if (pending.kind === 'movement') openMovement(pending.key);
+          else if (pending.kind === 'remedy') openRemedy(pending.key);
+          else if (pending.kind === 'acupressure') openAcupressure(pending.key);
+        }, 400);
+        return;
+      }
+      if (_isNegative(transcript)) {
+        console.info('[voice-skill] user declined →', pending.kind, pending.key);
+        _pendingVoiceSkill = null;
+        addMsg('user', transcript, false);
+        // Brief warm acknowledgement, then continue as normal conversation
+        const ack = 'Theek hai. Aur kuch poochna ho to bolein.';
+        addMsg('bot', ack, false);
+        appendVoiceLine('bot', ack);
+        if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+        speak(ack, { ttsText: ack });
+        return; // onstop in convListenOnce will resume listening after _isSpeaking clears
+      }
+      // Ambiguous response — clear pending and treat as a fresh AI turn
+      console.info('[voice-skill] ambiguous response, treating as new turn');
+      _pendingVoiceSkill = null;
+    }
+
     addMsg('user', transcript, false);
     setVoiceState('thinking');
     appendVoiceLine('thinking', 'Soch rahi hoon...');
     // v5.5: capture the bot's reply text so we can auto-launch a matching skill
     // (movement / remedy / acupressure) overlay after TTS finishes.
     let lastBotText = '';
-    // Wrap callAI so we know when it's done speaking (roughly when audio finishes)
+    // Wrap callAI so we know when it's done speaking. v5.5.4: use _isSpeaking
+    // (set by _markTtsStart on every TTS play site) as the source of truth —
+    // the old _currentAudio.ended polling false-resolved on stale state.
     await new Promise(resolve => {
-      const _origSpeak = window.speak;
       let resolved = false;
-      // Hook: when next addMsg(bot) is called → wait for speech to finish
       const replyHook = (role) => {
         if (role === 'bot' && !resolved) {
-          // Wait for current audio to end, OR 12s max
-          const start = Date.now();
-          const checkDone = () => {
-            const noAudioPlaying = !_currentAudio || _currentAudio.paused || _currentAudio.ended;
-            if (noAudioPlaying || Date.now() - start > 12000) {
-              if (!resolved) { resolved = true; resolve(); }
-            } else {
-              setTimeout(checkDone, 250);
-            }
-          };
           setVoiceState('speaking');
-          setTimeout(checkDone, 1500); // give TTS time to start
+          const start = Date.now();
+          let started = false;
+          const tick = () => {
+            if (resolved) return;
+            if (Date.now() - start > 14000) { resolved = true; resolve(); return; }
+            if (_isSpeaking) started = true;
+            if (started && !_isSpeaking) { resolved = true; resolve(); return; }
+            setTimeout(tick, 200);
+          };
+          setTimeout(tick, 800); // let Sarvam fetch + audio start
         }
       };
       // Patch addMsg only to detect when bot reply lands (mirror is handled inside addMsg itself)
@@ -5869,19 +5966,24 @@ async function convHandleTranscript(transcript) {
         return r;
       };
       callAI(transcript, getSystemPromptFor(ST.chatCtx)).finally(() => {
-        // Restore addMsg
         window.addMsg = origAddMsg;
-        // Safety net — if TTS never starts, resolve in 8s
-        setTimeout(() => { if (!resolved) { resolved = true; resolve(); } }, 8000);
+        // Safety net — if TTS never starts, resolve in 9s
+        setTimeout(() => { if (!resolved) { resolved = true; resolve(); } }, 9000);
       });
     });
-    // v5.5: If the bot reply triggers a movement / remedy / acupressure skill,
-    // auto-launch the step-by-step overlay (which has its own voice-led flow
-    // and step animations). This mirrors what chat-mode card-injection does
-    // (taps the card) — but voice mode users can't see/tap the card behind the
-    // voice overlay, so we tap it for them. Pause conversation listening
-    // while the skill overlay is active.
-    try { _autoLaunchSkillFromVoice(transcript, lastBotText); } catch(e) { console.warn('[voice] skill auto-launch failed', e); }
+    // v5.5.4: instead of auto-launching the skill (which caused 2-voice overlap
+    // + felt jarring), OFFER it conversationally. The user's yes/no on the next
+    // turn either opens the skill overlay or continues the chat.
+    try {
+      const combined = [transcript, lastBotText].filter(Boolean).join(' \n ');
+      const mv = (typeof detectMovement === 'function') ? detectMovement(combined) : null;
+      const rm = !mv && (typeof detectRemedy === 'function') ? detectRemedy(combined) : null;
+      const ap = !mv && !rm && (typeof detectAcupressure === 'function') ? detectAcupressure(combined) : null;
+      if (mv)      { console.info('[voice-skill] offering movement →', mv[0]);    await _offerVoiceSkillConfirmation({kind:'movement',    key:mv[0], title:mv[1].title}); return; }
+      else if (rm) { console.info('[voice-skill] offering remedy →', rm[0]);      await _offerVoiceSkillConfirmation({kind:'remedy',      key:rm[0], title:rm[1].title}); return; }
+      else if (ap) { console.info('[voice-skill] offering acupressure →', ap[0]); await _offerVoiceSkillConfirmation({kind:'acupressure', key:ap[0], title:ap[1].title}); return; }
+      else { console.info('[voice-skill] no skill in this turn'); }
+    } catch(e) { console.warn('[voice] skill confirmation failed', e); }
   } else {
     // Hub: route the transcript through the hub flow → opens chat → AI replies
     setVoiceState('thinking');
@@ -5950,6 +6052,9 @@ function stopVoice() {
   // v5.5: release half-duplex flag (user cancelled mid-speech; speakSynthesis covers Web Speech)
   try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){}
   _isSpeaking = false;
+  // v5.5.4: clear any pending skill confirmation so a future voice session
+  // doesn't open with a stale offer.
+  _pendingVoiceSkill = null;
   hideVoiceOverlay();
 }
 
@@ -6216,8 +6321,17 @@ function _markTtsStart(audioEl) {
 // v5.3.3: ElevenLabs quota_exceeded → trip kill-switch so we don't burn cycles
 // on every speak() call. User needs to top up at elevenlabs.io or use a
 // different account-keyed key.
-let _elevenLabsBlocked = false;
-let _elevenLabsBlockedReason = '';
+// v5.5.4: default to BLOCKED. ElevenLabs is opt-in only — the user must explicitly
+// paste their own key via the voice picker (setElevenLabsKey). This skips a
+// wasted round-trip on every page load for users who don't have a paid key
+// (the common case). When a user does have a key, we persist the unblock to
+// localStorage so it survives reloads; if that key's quota is exhausted, we
+// persist the block too so we don't waste cycles on a known-dead key.
+const _localElKey = (typeof localStorage !== 'undefined' ? (localStorage.getItem('ss_elevenlabs_key') || '') : '');
+const _hasUserElKey = _localElKey && _localElKey.length >= 20;
+const _persistedBlock = (typeof localStorage !== 'undefined' && localStorage.getItem('ss_eleven_blocked') === '1');
+let _elevenLabsBlocked = _persistedBlock || !_hasUserElKey;
+let _elevenLabsBlockedReason = !_hasUserElKey ? 'opt-in-required' : (_persistedBlock ? 'previously-blocked' : '');
 
 async function speakElevenLabs(text, opts) {
   if (_elevenLabsBlocked) return false;
@@ -6252,6 +6366,8 @@ async function speakElevenLabs(text, opts) {
       if (res.status === 401 || res.status === 402 || res.status === 429 || /quota_exceeded|invalid|unauthor/i.test(errTxt)) {
         _elevenLabsBlocked = true;
         _elevenLabsBlockedReason = /quota_exceeded/i.test(errTxt) ? 'quota_exceeded' : ('http_' + res.status);
+        // v5.5.4: persist so we don't waste a round-trip on every page reload
+        try { localStorage.setItem('ss_eleven_blocked', '1'); } catch(e){}
         if (typeof showToast === 'function') {
           showToast(_elevenLabsBlockedReason === 'quota_exceeded'
             ? 'Voice quota khatam — text mein dekhein'
@@ -6281,11 +6397,18 @@ function setElevenLabsKey() {
   if (key === null) return;
   if (key.trim().length === 0) {
     localStorage.removeItem('ss_elevenlabs_key');
+    // v5.5.4: removing the key → revert to opt-in-blocked default
+    _elevenLabsBlocked = true;
+    _elevenLabsBlockedReason = 'opt-in-required';
     showToast('ElevenLabs hata di — Sarvam wapas active');
   } else if (key.length < 20) {
     showToast('Key chhoti lagti hai — dobara try karein');
   } else {
     localStorage.setItem('ss_elevenlabs_key', key.trim());
+    // v5.5.4: new key paste → clear any stale block state, unblock for this session
+    try { localStorage.removeItem('ss_eleven_blocked'); } catch(e){}
+    _elevenLabsBlocked = false;
+    _elevenLabsBlockedReason = '';
     showToast('ElevenLabs ready! 🎙️ Faster + warmer voice');
   }
 }
@@ -6343,6 +6466,19 @@ async function speakOpenAI(text, opts) {
 // v5.3.3 / v5.3.4: Last-resort TTS via browser Web Speech API. Always
 // available, no keys needed. On Chrome desktop, getVoices() returns empty
 // on first call until the `voiceschanged` event fires — handle that.
+// v5.5.4: check whether the OS has a native voice for a given lang code.
+// Web Speech voices are OS-shipped (Android Chrome has rich Indian-language
+// support, iOS Safari has hi/ta/mr, macOS has limited). When a native voice
+// exists for the user's language, it sounds more natural than Sarvam Bulbul's
+// Hindi-primary multilingual speakers.
+function _hasWebSpeechVoiceFor(langCode) {
+  if (!('speechSynthesis' in window)) return false;
+  const voices = window.speechSynthesis.getVoices() || [];
+  const prefix = (langCode || '').toLowerCase().split('-')[0]; // 'pa-IN' → 'pa'
+  if (!prefix) return false;
+  return voices.some(v => v.lang && v.lang.toLowerCase().startsWith(prefix));
+}
+
 function speakWebSpeech(text, opts) {
   try {
     if (!('speechSynthesis' in window) || !text) {
@@ -6350,15 +6486,21 @@ function speakWebSpeech(text, opts) {
       return false;
     }
     const speakText = (opts && opts.ttsText) || text;
+    // v5.5.4: caller can hint a target language so we pick a matching voice.
+    const wantLang = (opts && opts.langCode) ? opts.langCode.toLowerCase() : '';
+    const wantPrefix = wantLang.split('-')[0];
     const tryNow = () => {
       const u = new SpeechSynthesisUtterance(speakText);
       const voices = window.speechSynthesis.getVoices() || [];
-      // Prefer Hindi; if none, prefer any Indian English; else any voice.
+      // v5.5.4: pick order — exact target lang match first, then prefix match,
+      // then Hindi (existing default), then Indian English, then any voice.
+      const exact = wantLang ? voices.find(v => v.lang && v.lang.toLowerCase() === wantLang) : null;
+      const prefix = !exact && wantPrefix ? voices.find(v => v.lang && v.lang.toLowerCase().startsWith(wantPrefix)) : null;
       const hi = voices.find(v => /hi[-_]?IN|hindi/i.test(v.lang) || /hindi/i.test(v.name));
       const enIN = voices.find(v => /en[-_]?IN/i.test(v.lang));
-      const pick = hi || enIN || voices[0];
-      if (pick) { u.voice = pick; u.lang = pick.lang || 'hi-IN'; }
-      else u.lang = 'hi-IN';
+      const pick = exact || prefix || hi || enIN || voices[0];
+      if (pick) { u.voice = pick; u.lang = pick.lang || wantLang || 'hi-IN'; console.info('[Web Speech] picked', pick.name, '(' + pick.lang + ') for wantLang=' + (wantLang||'hi-IN')); }
+      else u.lang = wantLang || 'hi-IN';
       u.rate = 0.92; u.pitch = 1.0; u.volume = 1.0;
       u.onerror = e => { console.info('[Web Speech] utterance error', e && e.error); _markTtsStart(null); };
       // v5.5: mark speaking + release on end so voice conversation half-duplex works
@@ -6394,6 +6536,11 @@ async function speak(text, opts) {
   // opts: { quiet, ttsText } — if ttsText provided, speak THAT (caller-supplied Devanagari) and skip transliteration.
   const quiet = opts && opts.quiet;
   const callerTtsText = opts && opts.ttsText;
+  // v5.5.4: keep Sarvam as primary for EVERY language. Web Speech sounds
+  // robotic per user feedback — even though it has more native pronunciation
+  // for non-Hindi, the quality drop isn't worth it. Sarvam Bulbul v2 stays
+  // for all languages; non-Hindi gets enable_preprocessing=false (below) to
+  // reduce Hindi-leaning text normalization on Gurmukhi/Bengali/Tamil/etc.
   if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
   // v5.3.7: Sarvam is the primary TTS path (routed through corsproxy.io in
   // v5.3.5). Earlier "shortcut to Web Speech when ElevenLabs+OpenAI blocked"
@@ -6423,6 +6570,14 @@ async function speak(text, opts) {
     }
     const speaker = _validSarvamSpeaker();
     const _t0 = performance.now();
+    // v5.5.4: log the actual target language so users can verify routing.
+    // (Bulbul v2 speakers are all Hindi-primary multilingual — even with
+    // target_language_code: 'pa-IN' the Punjabi rendering carries a Hindi
+    // accent. That's a Sarvam model limitation, not our routing.)
+    console.info('[TTS] lang=' + targetLangCode + ' speaker=' + speaker + ' chars=' + speakText.length);
+    // For non-Hindi targets, disable preprocessing — it over-normalizes
+    // Gurmukhi/Bengali/Tamil text toward Hindi phonology.
+    const _enablePreprocess = targetLangCode.startsWith('hi') || targetLangCode.startsWith('en');
     const res = await fetch(sarvamUrl('/text-to-speech'), {
       method: 'POST',
       headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
@@ -6430,7 +6585,7 @@ async function speak(text, opts) {
         inputs: [speakText.length > 500 ? speakText.substring(0, 500) : speakText],
         target_language_code: targetLangCode,
         speaker, pitch: 0, pace: 0.85, loudness: 1.4,
-        speech_sample_rate: 22050, enable_preprocessing: true,
+        speech_sample_rate: 22050, enable_preprocessing: _enablePreprocess,
         model: 'bulbul:v2'
       })
     });
@@ -7359,6 +7514,9 @@ function injectRemedyCard(text, msgsContainer) {
 function openRemedy(key) {
   const kit = REMEDY_KITS[key];
   if (!kit) return;
+  // v5.5.4: kill any in-flight TTS before remedy walkthrough starts speaking
+  if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+  try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){}
   // Reuse the move-ov player — it already supports steps + auto-advance + speak
   _moveSkill = kit;
   _moveStepIdx = 0;
@@ -7525,6 +7683,9 @@ function injectAcupressureCard(text, msgsContainer) {
 function openAcupressure(key) {
   const p = ACUPRESSURE_POINTS[key];
   if (!p) return;
+  // v5.5.4: kill any in-flight TTS before acupressure walkthrough starts speaking
+  if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+  try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){}
   // Reuse move-ov player; render an SVG silhouette in the anim slot
   // v4.2: pass tts[] through so TTS reads clean Devanagari (not ambiguous Roman)
   _moveSkill = { emoji:p.emoji, title:p.title, durSec:60, steps:p.instr, tts:p.tts };
@@ -7932,6 +8093,11 @@ let _moveSkill = null, _moveStepIdx = 0, _moveTimer = null;
 function openMovement(key) {
   _moveSkill = MOVEMENT_SKILLS[key];
   if (!_moveSkill) return;
+  // v5.5.4: belt-and-braces — kill any in-flight chat/TTS audio before the
+  // step overlay starts speaking. Prevents 2-voice overlap if the user tapped
+  // a fallback chip / confirmation while the previous reply was still talking.
+  if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+  try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){}
   _moveStepIdx = 0;
   document.getElementById('move-ov').classList.add('on');
   document.getElementById('move-ov-title').textContent = _moveSkill.title;
