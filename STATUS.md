@@ -1,5 +1,11 @@
 # Status — Sehat Saathi
-*Last updated: 2026-05-13 — Session 13 (v5.3.9 — Permanent Sarvam CORS fix via baked-in CF Worker default)*
+*Last updated: 2026-05-14 — Session 14 (v5.4 — 100 ghar ke nushke + per-step animations for every movement)*
+
+## Session 14 highlights (v5.4)
+- **REMEDY_KITS grown from 15 → 100** — 85 new Ayurvedic remedies across digestion (12), respiratory (12), sleep & stress (8), joint pain (8), skin (8), hair (6), fever & immunity (8), headache (5), eye/ear (4), women's wellness (5), kids (4), seasonal (3), detox/extras (2). Each follows the existing `kw / emoji / title / durSec / ingredients / steps[]` schema. Verified parsing.
+- **Per-step animation library shipped** — `ANIM_SVG` map of 39 inline-SVG animations using SMIL. All 13 MOVEMENT_SKILLS now have an `anim: [...]` array parallel to `steps[]`. Animations cover breathing primitives (in/out/cycle/hold/sharp-exhale/bee-hum), nostril positions, sitting/kneeling/lying/squat poses, neck rotations, Surya Namaskar 6-pose sequence, walk-cycle (slow/brisk), water glass + 8-glass day, eye + screen-break, notebook + pen-writing, meditation poses.
+- **Lottie infrastructure ready** — `lottie-web@5.12.2` deferred from CDN; each skill has an optional `lottie: ['<url>', ...]` slot that, when populated, takes priority over the SVG fallback. One-line upgrade per step. DEC-025 captures the hybrid trade-off.
+- **`renderStepAnim(animKey, lottieUrl)`** — single renderer used by `showMoveStep`; preserves emoji-fallback for REMEDY_KITS (cooking, not movement) and acupressure (own SVG silhouette path).
 
 ## Session 13 highlights (v5.3.9)
 - **CORS root-cause fix shipped** — `SARVAM_PROXY` default constant now points at our own `sarvam-proxy.nawaneet-kumar.workers.dev` Cloudflare Worker (was `corsproxy.io/?url=` which fails Sarvam's preflight when custom `api-subscription-key` headers are sent). Every Sarvam TTS / STT / transliterate call hits the Worker → `api.sarvam.ai`, no browser CORS error.

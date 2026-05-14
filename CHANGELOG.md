@@ -2,6 +2,61 @@
 
 ---
 
+## 2026-05-14 — Session 14: v5.4 — 100 ghar ke nushke + per-step animations for every movement
+
+Two product asks from the user: (1) "Check how many ghar k nushke you have in your learnings. I need 100." (2) "I need animation on each physical exercise / deep breathing or movements — it need not be super good but it should work."
+
+### Added — 85 new REMEDY_KITS entries (total 100)
+Organized by ailment so the keyword detector (`detectRemedy()`) routes the right card on AYUSH-ingredient mentions across categories:
+
+| Category | Count | Sample keys |
+|---|---|---|
+| Digestion | 12 | `hing-paani`, `pudina-paani`, `nariyal-paani-dast`, `munakka-kabz`, `dahi-jeera`, `isabgol-doodh`, `ajwain-namak-chura`, `dhaniya-paani`, `saunth-chai`, `elaichi-paani`, `amla-jeera-acidity`, `kala-namak-nimbu` |
+| Respiratory | 12 | `shahad-adrak-paste`, `kali-mirch-doodh`, `tulsi-shahad`, `lavang-paani`, `ajwain-shahad`, `dalchini-shahad`, `haldi-namak-garara`, `ghee-kali-mirch`, `eucalyptus-bhaap`, `saunf-mishri`, `badaam-kesar-doodh`, `lasun-shahad` |
+| Sleep & stress | 8 | `jaiphal-doodh`, `ashwagandha-doodh`, `kesar-doodh-neend`, `brahmi-chai`, `khus-khus-doodh`, `lavender-malish`, `shankhpushpi-syrup`, `tulsi-vetiver-snan` |
+| Joint & body pain | 8 | `haldi-doodh-jod`, `sarso-tel-malish`, `methi-pisi-jod`, `til-tel-malish`, `lasun-tel-jod`, `ajwain-til-potli`, `eranda-tel-jod`, `nirgundi-tel` |
+| Skin | 8 | `besan-haldi-mask`, `malai-kesar-mask`, `neem-haldi-paste`, `aloe-vera-sunburn`, `khira-aankh`, `multani-mitti-mask`, `tulsi-pack-pimple`, `shahad-nimbu-face` |
+| Hair & scalp | 6 | `amla-nariyal-tel`, `methi-dahi-mask`, `bhringraj-tel-malish`, `shikakai-snan`, `henna-pack`, `pyaaz-ras-balon` |
+| Fever & immunity | 8 | `tulsi-kalimirch-kadha`, `giloy-paani`, `chyawanprash-roz`, `amla-haldi-shahad`, `ajwain-gud-bachay-imm`, `neem-giloy-kadha`, `ccf-chai`, `kesar-doodh-bukhar` |
+| Headache variants | 5 | `pudina-balm-sir`, `lavang-tel-temple`, `til-tel-naas`, `brahmi-malish-sir`, `ghee-migraine` |
+| Eye & ear | 4 | `gulab-jal-aankh`, `trifala-aankh-dho`, `sarso-tel-kaan`, `lasun-tel-kaan` |
+| Women's wellness | 5 | `methi-laddu`, `dashmool-kadha`, `ajwain-gud-period`, `anjeer-akhrot-fertility`, `shatavari-doodh` |
+| Kids | 4 | `ajwain-baccha-pet`, `saunth-shahad-baccha`, `badaam-rogan-bachay`, `baby-malish-tel` |
+| Seasonal | 3 | `khus-sharbat-garmi`, `masala-chai-monsoon`, `amla-til-laddu-jaada` |
+| Detox / extras | 2 | `methi-saunth-kabz`, `kheere-pani-detox` |
+
+Each follows the existing 5-step schema (`kw`, `emoji`, `title`, `durSec`, `ingredients`, `steps[]`). Reuses the same `move-ov` overlay player. Verified: 100 entries parse as a valid JS object.
+
+### Added — Per-step animation library (`ANIM_SVG`, 39 entries) + Lottie infrastructure (DEC-025)
+- **`lottie-web@5.12.2`** CDN script in `<head>` (defer-loaded). When a step declares `lottie: ['<url>', ...]`, that URL renders via `window.lottie.loadAnimation` — drop-in replacement when better animations are sourced from LottieFiles.com or commissioned.
+- **`ANIM_SVG`** — 39 inline SVG animations using SMIL `<animate>` and `<animateTransform>` (well-supported in Chrome/Safari, the existing voice-supported browsers). Theme: `#22c55e` stroke on transparent bg, 200×200 viewBox matching `.move-ov-anim`. Categories: breathing primitives (in/out/cycle/hold/sharp-exhale/bee-hum), nostril positions (left-in/right-out/alt + ears-blocked), sitting/kneeling/lying/squat poses, neck rotations (right/left/360°/shoulders), Surya Namaskar 6-pose sequence, walking (slow/brisk), water glass + 8-glass day, eye/screen-break, notebook + pen-writing, meditation + thoughts + still + daily-loop.
+- **`renderStepAnim(animKey, lottieUrl)`** — picks Lottie if URL+player available, else falls back to SVG library lookup, else falls back to pulsing emoji.
+
+### Added — `anim[]` field on all 13 MOVEMENT_SKILLS
+Anulom-Vilom, Kapalbhati, Bhramari, Vajrasana, Surya Namaskar, Gardan, Malasana, Shavasana, Daily Walk, Hydration, Screen Break, Journaling, Meditation. Each step gets its own animation key matching the instruction. Optional `lottie[]` slot per skill — null today, populated when the user supplies real Lottie URLs (one-line swap per step).
+
+### Changed
+- **`showMoveStep`** — calls `renderStepAnim(animKey, lottieUrl)` only when the current skill declares an `anim` or `lottie` array. REMEDY_KITS and ACUPRESSURE_POINTS skip this branch and keep their existing visuals (emoji or body silhouette).
+- **`openRemedy`** — explicitly re-applies `.pulse` class + green-tinted bg/border + 80px font for the emoji so it renders cleanly even if a prior MOVEMENT_SKILLS run had transparent-styled the container.
+- **`openAcupressure`** — same defensive reset before painting the body silhouette + pulsing pin.
+- **`closeMovement`** — destroys any active `_lottieInstance` so it doesn't keep rendering off-screen after close.
+
+### Why Lottie + inline SVG fallback (not pure Lottie)
+User explicitly chose Lottie over inline SVG when asked. But sourcing 65+ production-quality Lottie JSONs in a single session isn't realistic from this environment — LottieFiles.com URLs change/expire and hand-authoring bezier-keyframe JSON for 65 anims would be ~12k+ lines of pure data. The hybrid keeps the user's Lottie choice while shipping working animations today: every step animates on first load via SVG, and any individual step is one-line-upgradable to Lottie by setting `lottie: [URL, ...]` on the skill.
+
+### Broken / Known issues
+- SMIL animation has degraded support in Firefox (renders static last frame). Acceptable — voice already requires Chrome/Safari (DEC-007), so this fits the existing browser support matrix.
+- Lottie player adds ~110 KB to the cold load (deferred, so doesn't block paint). When the `lottie[]` slot is empty everywhere, the script is unused weight — accepted trade-off so the slot is plug-and-play later.
+- File grew from ~7475 lines → ~8290 lines (mostly the 85 nushke + the ANIM_SVG library).
+- The 6 ACUPRESSURE_POINTS still use their original body-silhouette + pulsing-pin SVG (not migrated to `anim[]` schema). Acceptable — that visual is already animated and works.
+
+### Next session should start with
+- **Live URL QA**: open https://cynical-spec.github.io/health-wellness/ on a 390px viewport, do Suryanamaskar/Anulom-Vilom/Malasana → confirm step animations switch on each step (not just emoji), TTS reads instruction, auto-advance every 9s works as before.
+- **Browser sanity**: verify on Safari iOS that SMIL `<animate>` renders. Chrome already known-good.
+- **Optional polish**: source Lottie URLs for the 5–6 most-shown skills (Anulom-Vilom, Kapalbhati, Daily Walk, Meditation, Surya Namaskar 1st pose) — set `lottie[]` array on those skills.
+
+---
+
 ## 2026-05-13 — Session 13: v5.3.9 — Permanent Sarvam CORS fix (CF Worker baked in as default proxy)
 
 User had been chasing the Sarvam "CORS preflight 400" bug for an hour across sessions. v5.3.8 shipped a Cloudflare Worker template + `setSarvamProxy()` console helper, but the Worker URL was stored in `localStorage.ss_sarvam_proxy`, so it only worked on the one device/browser where the helper had been called. Every new visitor, incognito tab, or cleared-storage event reset the proxy back to `corsproxy.io` — which fails the OPTIONS preflight when custom `api-subscription-key` headers are present. That's why TTS kept silently falling back to Web Speech / ElevenLabs for "fresh" sessions.

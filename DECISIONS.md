@@ -2,6 +2,27 @@
 
 ---
 
+## DEC-025 — Movement step animations: Lottie infrastructure with inline SVG fallback (hybrid)
+**Date:** 2026-05-14 (Session 14 / v5.4)
+**Decision:** Every MOVEMENT_SKILLS step animates via a two-layer renderer:
+1. **Lottie layer (primary, when URL supplied)** — `lottie-web@5.12.2` loaded via deferred CDN script. Each skill can declare a parallel `lottie: ['<url>', ...]` array. When a step has a URL, `renderStepAnim` calls `window.lottie.loadAnimation` to play it.
+2. **Inline SVG layer (active fallback)** — 39 hand-authored SVGs in `ANIM_SVG` using SMIL `<animate>` / `<animateTransform>`. Each MOVEMENT_SKILLS step declares an `anim: ['<key>', ...]` array; renderer looks up the SVG by key and sets `innerHTML`.
+3. **Emoji fallback (legacy)** — for skills without `anim` or `lottie` (e.g. REMEDY_KITS which don't need movement animation), the existing pulsing-emoji circle is preserved.
+
+The user explicitly chose Lottie when offered the architectural choice. The hybrid honors that choice while shipping a working animation today on every step.
+
+**Reason:** Sourcing 65+ production Lottie JSONs in a single session is impractical from this environment — LottieFiles.com URLs change/expire and hand-authoring bezier-keyframe JSON is ~150-300 lines per animation. Inline SVG can be hand-authored cleanly (~1 line per animation, parameter-tunable), works offline, and keeps the single-file discipline (CLAUDE.md §6) for the visual layer. The Lottie player itself is a one-time ~110 KB CDN dependency — accepted as breaking strict single-file discipline because the value (drop-in upgrade per step) is high and the player is loaded with `defer`.
+
+**Trade-offs:**
+- SMIL animation has degraded support in Firefox (static last frame). Already known limitation — voice (Sarvam/Web Speech) requires Chrome/Safari (DEC-007), so the existing browser matrix is unchanged.
+- Lottie player loaded even when no `lottie[]` slots are populated — ~110 KB of wasted bytes until at least one URL is set. Defer-loaded so doesn't block FCP. Accepted because slot-and-fill upgrade pattern is more valuable than the bytes.
+- ANIM_SVG library is ~40 hand-authored SVG strings inside `index.html` (~600 lines of JS template literals). Keeps single-file but adds bulk. Each SVG is 200×200 SMIL with `#22c55e` accent; visual style is "stylized geometric figure with motion" not "realistic illustration".
+- Real Lottie animations require manual URL sourcing per step. Acceptable: the SVG fallback is always there, and Lottie upgrade is a one-line edit per step when the user finds a good URL.
+
+**Revisit if:** (a) the user supplies a curated Lottie library, then we drop the SVG layer for those skills; (b) Lottie player CDN goes down — SVG layer keeps working; (c) we move to a backend that can serve pre-rendered video clips per step (then both Lottie and SVG become legacy).
+
+---
+
 ## DEC-024 — Sarvam calls go through our own Cloudflare Worker, baked into source
 **Date:** 2026-05-13 (Session 13 / v5.3.9)
 **Decision:** The compile-time default proxy for every Sarvam call (`/text-to-speech`, `/speech-to-text`, `/transliterate`) is `https://sarvam-proxy.nawaneet-kumar.workers.dev/`. The Worker is a ~15-line pass-through that forwards to `api.sarvam.ai`, answers OPTIONS preflight with `204 + Access-Control-Allow-*`, and strips `host`/`origin` headers. `localStorage.ss_sarvam_proxy` still overrides if set — useful for testing alt proxies. `window.SARVAM_PROXY` is a secondary runtime override.
