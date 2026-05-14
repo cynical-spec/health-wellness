@@ -2,6 +2,27 @@
 
 ---
 
+## 2026-05-14 — Voice-mode skill auto-launch shipped but never fired (Devanagari blind spot)
+
+**What happened:** v5.5 added `_autoLaunchSkillFromVoice` to auto-open the movement / remedy / acupressure overlay when the AI's spoken reply mentioned a skill. User did the QA — asked "बॉक्स ब्रीडिंग कैसे करूं" in voice mode — AI replied with a Devanagari explanation, no skill opened. Screenshot showed the voice overlay just sitting there with the bot's spoken paragraph.
+
+**Why it happened:** Three compounding misses:
+  1. `box-breathing` wasn't in MOVEMENT_SKILLS at all. Only the 13 v5.4 entries existed.
+  2. `detectMovement` regexes were ALL Roman-script (`anulom|kapalbhati|bhramari|...`). Sarvam STT returns Devanagari for `hi-IN`, and AI replies in the same script. So every Devanagari voice question silently fell through detection.
+  3. `_autoLaunchSkillFromVoice` only inspected the BOT reply text. The user had explicitly named the skill in the question (`बॉक्स ब्रीडिंग`) — high-confidence signal — but we threw it away. Even if box-breathing had been in the catalog with Roman kw, a paraphrased AI reply ("एक आसान तरीका है... 4 सेकंड... 4 सेकंड...") wouldn't have triggered.
+
+**What was tried:** None — caught on first user QA.
+
+**What fixed it:** All three layers:
+  1. Added `box-breathing` entry with anim + steps + Devanagari `tts[]`.
+  2. Added Devanagari aliases to every detection regex (अनुलोम/विलोम, कपालभाति, भ्रामरी, वज्रासन, सूर्य नमस्कार, गर्दन घुमाने, मालासन/स्क्वैट, शवासन, टहलन/पैदल चल, पानी पीन/पिय/कितन, आँखों का आराम, डायरी/जर्नल, ध्यान/मेडिटेशन, बॉक्स ब्र/चौकोर साँस).
+  3. Changed `_autoLaunchSkillFromVoice(botText)` → `_autoLaunchSkillFromVoice(userText, botText)` and detect on the concatenated text.
+  4. Wrote a Node.js sanity test against 13 Roman + Devanagari inputs — all route to the correct skill before commit.
+
+**Rule going forward:** For ANY user-facing text matcher (skill detection, intent routing, keyword triggers), ALWAYS add Devanagari aliases alongside Roman keywords from day one. We claim "responds in user's language" (CLAUDE.md §5) but had silent failures for the exact target script. Also: when an auto-action takes user-supplied content as a signal, use BOTH the user's words and any model output, not just the model output. The user is the source of truth for intent.
+
+---
+
 ## 2026-05-14 — Voice mode echoed its own TTS through the device speaker
 
 **What happened:** In voice conversation mode, the assistant's TTS reply (Sarvam Bulbul) playing through the phone speaker was being re-captured by the mic on the next listen cycle, transcribed, and fed back as the user's next turn. The AI started "talking to itself."

@@ -5767,23 +5767,27 @@ async function convListenOnce() {
 // overlay — so we tap it for them. Movement takes priority (most interactive),
 // then remedy, then acupressure. We stop voice listening on hand-off; the user
 // taps mic again after the skill to resume.
-function _autoLaunchSkillFromVoice(botText) {
-  if (!botText) return;
+// v5.5.1: check both the user's transcript AND the bot reply — the user
+// explicitly named the skill in the question, so even a vague AI reply still
+// triggers the right overlay.
+function _autoLaunchSkillFromVoice(userText, botText) {
+  const combined = [userText || '', botText || ''].filter(Boolean).join(' \n ');
+  if (!combined.trim()) return;
   // Detection runs in the same order as the in-chat card injection, but we
   // pick only ONE — the user can only do one thing at a time.
-  const mv = typeof detectMovement === 'function' ? detectMovement(botText) : null;
+  const mv = typeof detectMovement === 'function' ? detectMovement(combined) : null;
   if (mv) {
     stopVoice();
     setTimeout(() => openMovement(mv[0]), 400);
     return;
   }
-  const rm = typeof detectRemedy === 'function' ? detectRemedy(botText) : null;
+  const rm = typeof detectRemedy === 'function' ? detectRemedy(combined) : null;
   if (rm) {
     stopVoice();
     setTimeout(() => openRemedy(rm[0]), 400);
     return;
   }
-  const ap = typeof detectAcupressure === 'function' ? detectAcupressure(botText) : null;
+  const ap = typeof detectAcupressure === 'function' ? detectAcupressure(combined) : null;
   if (ap) {
     stopVoice();
     setTimeout(() => openAcupressure(ap[0]), 400);
@@ -5844,7 +5848,7 @@ async function convHandleTranscript(transcript) {
     // (taps the card) — but voice mode users can't see/tap the card behind the
     // voice overlay, so we tap it for them. Pause conversation listening
     // while the skill overlay is active.
-    try { _autoLaunchSkillFromVoice(lastBotText); } catch(e) { console.warn('[voice] skill auto-launch failed', e); }
+    try { _autoLaunchSkillFromVoice(transcript, lastBotText); } catch(e) { console.warn('[voice] skill auto-launch failed', e); }
   } else {
     // Hub: route the transcript through the hub flow → opens chat → AI replies
     setVoiceState('thinking');
@@ -7811,25 +7815,51 @@ const MOVEMENT_SKILLS = {
       'ऐसे पाँच मिनट — बिना judge किए।',
       'रोज़ सुबह या रात। मन शांत, focus तेज़।'
     ]
+  },
+  // v5.5.1: box breathing — a very commonly-requested 4-4-4-4 calming technique.
+  // Added after voice-mode QA: user asked "बॉक्स ब्रीडिंग कैसे करूं" and detection
+  // returned null (skill didn't exist). Now it does + matches Devanagari too.
+  'box-breathing': {
+    emoji: '🟦', title: 'Box Breathing (4-4-4-4)', durSec: 240,
+    anim: ['sit-spine','breath-in','breath-hold','breath-out','breath-cycle'],
+    steps: [
+      'Aaram se baitho. Reedh seedhi, kandhe dheele.',
+      '4 second mein naak se saans andar lo — dheere, gehri.',
+      '4 second saans roko — pet aur sina bhara hua.',
+      '4 second mein saans bahar nikalo — naak ya muh se.',
+      '4 second rukao. Yeh 1 round. Aise 5-10 round karo.'
+    ],
+    tts:[
+      'आराम से बैठो। रीढ़ सीधी, कंधे ढीले।',
+      'चार सेकंड में नाक से साँस अंदर लो — धीरे, गहरी।',
+      'चार सेकंड साँस रोको — पेट और सीना भरा हुआ।',
+      'चार सेकंड में साँस बाहर निकालो — नाक या मुँह से।',
+      'चार सेकंड रुको। यह एक round हुआ। ऐसे पाँच से दस round करो।'
+    ]
   }
 };
+// v5.5.1: detection now ALSO matches Devanagari aliases. Earlier regexes were
+// Roman-only — Sarvam STT returns Devanagari for hi-IN, so detection failed on
+// every voice-mode question even when the skill was in the catalog.
 function detectMovement(text) {
   if (!text) return null;
   const t = text.toLowerCase();
-  if (/anulom|vilom|nadi\s*shodhana/.test(t)) return ['anulom-vilom', MOVEMENT_SKILLS['anulom-vilom']];
-  if (/kapalbhati/.test(t)) return ['kapalbhati', MOVEMENT_SKILLS.kapalbhati];
-  if (/bhramari|bhinbh/.test(t)) return ['bhramari', MOVEMENT_SKILLS.bhramari];
-  if (/vajrasana/.test(t)) return ['vajrasana', MOVEMENT_SKILLS.vajrasana];
-  if (/surya\s*namaskar/.test(t)) return ['surya-namaskar', MOVEMENT_SKILLS['surya-namaskar']];
-  if (/(gardan|neck)\s*(rotation|exercise|ghumao|hila)/.test(t)) return ['gardan', MOVEMENT_SKILLS.gardan];
-  if (/malasana|squat/.test(t)) return ['malasana', MOVEMENT_SKILLS.malasana];
-  if (/shavasana|relaxation\s*pose/.test(t)) return ['shavasana', MOVEMENT_SKILLS.shavasana];
+  if (/anulom|vilom|nadi\s*shodhana|अनुलोम|विलोम|नाड़ी\s*शोधन/.test(t)) return ['anulom-vilom', MOVEMENT_SKILLS['anulom-vilom']];
+  if (/kapalbhati|कपालभाति|कपाल\s*भाति/.test(t)) return ['kapalbhati', MOVEMENT_SKILLS.kapalbhati];
+  if (/bhramari|bhinbh|भ्रामरी|भ्रमरी/.test(t)) return ['bhramari', MOVEMENT_SKILLS.bhramari];
+  if (/vajrasana|वज्रासन/.test(t)) return ['vajrasana', MOVEMENT_SKILLS.vajrasana];
+  if (/surya\s*namaskar|सूर्य\s*नमस्कार/.test(t)) return ['surya-namaskar', MOVEMENT_SKILLS['surya-namaskar']];
+  if (/(gardan|neck)\s*(rotation|exercise|ghumao|hila)|गर्दन\s*(घुम|हिल|एक्सरसाइज़|exercise)/.test(t)) return ['gardan', MOVEMENT_SKILLS.gardan];
+  if (/malasana|squat|मालासन|स्क्वैट/.test(t)) return ['malasana', MOVEMENT_SKILLS.malasana];
+  if (/shavasana|relaxation\s*pose|शवासन/.test(t)) return ['shavasana', MOVEMENT_SKILLS.shavasana];
+  // v5.5.1: box breathing — Roman + Devanagari (बॉक्स/बाक्स/चौकोर/4-4-4)
+  if (/box\s*breath|box\s*br[ie]+thing|4[\s-]?4[\s-]?4[\s-]?4|बॉक्स\s*ब्र|बाक्स\s*ब्र|चौकोर\s*साँस|चार\s*चार\s*साँस/.test(t)) return ['box-breathing', MOVEMENT_SKILLS['box-breathing']];
   // v4.2: wellness habit detection — common lifestyle terms that fire a step card
-  if (/(brisk\s*walk|daily\s*walk|tehlna|tehlne|chalna|walking|walk\s*karo|30\s*minute\s*walk|metabolism)/.test(t)) return ['daily-walk', MOVEMENT_SKILLS['daily-walk']];
-  if (/(hydration|pani\s*peena|pani\s*piye|water\s*routine|2-3\s*glass\s*pani|glass\s*paani|glasses?\s*water)/.test(t)) return ['hydration', MOVEMENT_SKILLS.hydration];
-  if (/(20[\s-]?20[\s-]?20|screen\s*break|aankho\s*ka\s*aaram|eye\s*strain|laptop\s*break)/.test(t)) return ['screen-break', MOVEMENT_SKILLS['screen-break']];
-  if (/(journal|diary|likh\s*lo|raat\s*ko\s*likh|gratitude)/.test(t)) return ['journaling', MOVEMENT_SKILLS.journaling];
-  if (/(meditation|dhyan|mindful|5\s*minute\s*shanti|saans\s*pe\s*dhyan)/.test(t)) return ['meditation', MOVEMENT_SKILLS.meditation];
+  if (/(brisk\s*walk|daily\s*walk|tehlna|tehlne|chalna|walking|walk\s*karo|30\s*minute\s*walk|metabolism)|टहलन|पैदल\s*चल|रोज़\s*चलन|वॉक\s*कर/.test(t)) return ['daily-walk', MOVEMENT_SKILLS['daily-walk']];
+  if (/(hydration|pani\s*peena|pani\s*piye|water\s*routine|2-3\s*glass\s*pani|glass\s*paani|glasses?\s*water)|पानी\s*(पी|पीन|पिय|कितन|कब|रोज़|का\s*routine)|आठ\s*गिलास/.test(t)) return ['hydration', MOVEMENT_SKILLS.hydration];
+  if (/(20[\s-]?20[\s-]?20|screen\s*break|aankho\s*ka\s*aaram|eye\s*strain|laptop\s*break)|आँखों\s*का\s*आराम|स्क्रीन\s*break|बीस\s*बीस\s*बीस/.test(t)) return ['screen-break', MOVEMENT_SKILLS['screen-break']];
+  if (/(journal|diary|likh\s*lo|raat\s*ko\s*likh|gratitude)|डायरी|जर्नल|रात\s*को\s*लिख/.test(t)) return ['journaling', MOVEMENT_SKILLS.journaling];
+  if (/(meditation|dhyan|mindful|5\s*minute\s*shanti|saans\s*pe\s*dhyan)|ध्यान|मेडिटेशन|माइंडफुल/.test(t)) return ['meditation', MOVEMENT_SKILLS.meditation];
   return null;
 }
 function injectMovementCard(text, msgsContainer) {

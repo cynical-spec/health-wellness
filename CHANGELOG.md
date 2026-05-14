@@ -2,6 +2,28 @@
 
 ---
 
+## 2026-05-14 — Session 16: v5.5.1 — Voice-mode skill detection hotfix (Devanagari + box-breathing)
+
+User QA on v5.5 found voice mode still didn't auto-launch skills. Screenshot: user asked "बॉक्स ब्रीडिंग कैसे करूं" → AI replied in Devanagari → no skill opened. Three root causes:
+
+### Fixed — `detectMovement` was Roman-only
+Sarvam STT returns Devanagari for `hi-IN` and AI replies in the same script — but the existing detection regexes only matched Roman keywords (`anulom`, `kapalbhati`, etc.). Every Devanagari voice question silently fell through. Added Devanagari aliases for all 13 existing skills: `अनुलोम|विलोम|नाड़ी शोधन`, `कपालभाति`, `भ्रामरी|भ्रमरी`, `वज्रासन`, `सूर्य नमस्कार`, `गर्दन (घुमाने|हिलाने)`, `मालासन|स्क्वैट`, `शवासन`, `टहलन|पैदल चल|वॉक`, `पानी (पी|पीन|पिय|कितन|कब|रोज़)`, `आँखों का आराम|स्क्रीन break|बीस बीस बीस`, `डायरी|जर्नल|रात को लिख`, `ध्यान|मेडिटेशन|माइंडफुल`.
+
+### Added — `box-breathing` skill (the actual one from the screenshot)
+4-4-4-4 calming technique was missing from MOVEMENT_SKILLS entirely. New entry with 5 steps (sit → inhale 4s → hold 4s → exhale 4s → hold 4s repeat) wired to the existing SVG animations (`sit-spine`, `breath-in`, `breath-hold`, `breath-out`, `breath-cycle`). Devanagari `tts[]` included. Roman + Devanagari detection: `box breath|box br[ie]+thing|4-4-4-4|बॉक्स ब्र|बाक्स ब्र|चौकोर साँस|चार चार साँस`. Movement count: 13 → 14.
+
+### Fixed — auto-launch only checked bot reply, not user transcript
+The user explicitly names the skill in their question (high-confidence signal), but v5.5's `_autoLaunchSkillFromVoice(botText)` ignored that. Changed signature to `(userText, botText)` and run detection on the concatenated text. Even when the AI's reply paraphrases without using the exact keyword, the user's own words still trigger the skill overlay.
+
+### Verified
+Node.js parser test against the exact failing input + 12 other Roman/Devanagari variants — all 13 cases route to the correct skill (or correctly to "no skill" for unrelated text). The Devanagari "बॉक्स ब्रीडिंग कैसे करूं" from the screenshot now resolves to `box-breathing`.
+
+### Next session should start with
+- **Re-test voice mode** on the live URL with the same Devanagari question — confirm the box-breathing overlay auto-opens after TTS finishes, animates through the 4 steps, and reads the Devanagari `tts[]` for each step.
+- **Other Devanagari prompts**: ask "अनुलोम विलोम कैसे करें", "पानी कब पीयूं", "ध्यान लगाना है" etc. → each should auto-launch the right skill.
+
+---
+
 ## 2026-05-14 — Session 15: v5.5 — Voice mode: skill auto-launch, half-duplex, echo + noise suppression
 
 Three voice-mode fixes from user feedback: (1) "While talking it should also support skills — exercise, movement, breathing"; (2) "The voice sometimes captures its own voice from speaker"; (3) "Suppress background noise somehow".
