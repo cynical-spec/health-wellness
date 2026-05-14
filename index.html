@@ -5611,10 +5611,36 @@ function appendVoiceLine(role, text, opts) {
     body.textContent = text;
     line.appendChild(lbl);
     line.appendChild(body);
+    // v5.5.2: if a bot reply mentions a movement / remedy / acupressure, render
+    // a tappable chip right under the bubble so the user can open the step
+    // overlay manually if auto-launch didn't pick it up (CDN cache, regex miss,
+    // or AI mentioned multiple skills and we picked the wrong one).
+    if (role === 'bot') {
+      try { _maybeRenderVoiceSkillChip(line, text); } catch(e) { console.warn('[voice] chip render failed', e); }
+    }
   }
   ta.appendChild(line);
   ta.scrollTop = ta.scrollHeight;
   return line;
+}
+
+// v5.5.2: voice-line fallback chip — when auto-launch can't decide, the user can tap.
+function _maybeRenderVoiceSkillChip(lineEl, text) {
+  if (!text || !lineEl) return;
+  const mv = typeof detectMovement === 'function' ? detectMovement(text) : null;
+  const rm = !mv && typeof detectRemedy === 'function' ? detectRemedy(text) : null;
+  const ap = !mv && !rm && typeof detectAcupressure === 'function' ? detectAcupressure(text) : null;
+  let label = '', onTap = null;
+  if (mv) { label = '▶ ' + (mv[1].title || 'Karke dekho'); onTap = () => { stopVoice(); setTimeout(() => openMovement(mv[0]), 350); }; }
+  else if (rm) { label = '▶ ' + (rm[1].title || 'Recipe dekho'); onTap = () => { stopVoice(); setTimeout(() => openRemedy(rm[0]), 350); }; }
+  else if (ap) { label = '▶ ' + (ap[1].title || 'Point dekho'); onTap = () => { stopVoice(); setTimeout(() => openAcupressure(ap[0]), 350); }; }
+  if (!onTap) return;
+  const chip = document.createElement('button');
+  chip.className = 'qr-chip voice-skill-chip';
+  chip.style.cssText = 'margin-top:10px;align-self:flex-start;font-size:13px;padding:8px 14px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.5);color:#22c55e;border-radius:18px;cursor:pointer;font-family:inherit';
+  chip.textContent = label;
+  chip.onclick = onTap;
+  lineEl.appendChild(chip);
 }
 function removeVoiceThinkingLine() {
   document.querySelectorAll('#voice-transcript-area .voice-line.thinking').forEach(n => n.remove());
@@ -5772,27 +5798,31 @@ async function convListenOnce() {
 // triggers the right overlay.
 function _autoLaunchSkillFromVoice(userText, botText) {
   const combined = [userText || '', botText || ''].filter(Boolean).join(' \n ');
-  if (!combined.trim()) return;
+  if (!combined.trim()) { console.info('[voice-skill] no text to match'); return; }
   // Detection runs in the same order as the in-chat card injection, but we
   // pick only ONE — the user can only do one thing at a time.
   const mv = typeof detectMovement === 'function' ? detectMovement(combined) : null;
   if (mv) {
+    console.info('[voice-skill] movement match →', mv[0]);
     stopVoice();
     setTimeout(() => openMovement(mv[0]), 400);
     return;
   }
   const rm = typeof detectRemedy === 'function' ? detectRemedy(combined) : null;
   if (rm) {
+    console.info('[voice-skill] remedy match →', rm[0]);
     stopVoice();
     setTimeout(() => openRemedy(rm[0]), 400);
     return;
   }
   const ap = typeof detectAcupressure === 'function' ? detectAcupressure(combined) : null;
   if (ap) {
+    console.info('[voice-skill] acupressure match →', ap[0]);
     stopVoice();
     setTimeout(() => openAcupressure(ap[0]), 400);
     return;
   }
+  console.info('[voice-skill] no skill matched. userText:', (userText||'').slice(0,60), '| botText:', (botText||'').slice(0,60));
 }
 
 async function convHandleTranscript(transcript) {
