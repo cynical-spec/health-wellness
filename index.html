@@ -3059,7 +3059,10 @@ let _vpSelected = null;
 let _vpCurrentAudio = null;
 
 function openVoicePicker() {
-  _vpSelected = localStorage.getItem('ss_voice_pref') || 'kavitha';
+  // v5.5.3: was 'kavitha' default — removed from bulbul:v2 by Sarvam. Use the
+  // same validation path the speak() flow uses so picker + actual TTS stay in
+  // sync on what's actually playable.
+  _vpSelected = (typeof _validSarvamSpeaker === 'function') ? _validSarvamSpeaker() : (localStorage.getItem('ss_voice_pref') || 'manisha');
   renderVoicePickerList();
   document.getElementById('voice-picker-ov').classList.add('on');
 }
@@ -6058,6 +6061,21 @@ function encodeWavBlob(samples, sampleRate) {
 }
 // ── v3: Sarvam TTS (Bulbul) — replaces Web Speech API ──
 const SARVAM_SPEAKERS = { dadi: 'manisha', maa: 'anushka', saathi: 'vidya' };  // v3.5: Bulbul v2 — 3x faster than v3 (median 2s vs 6s); warm female voices
+// v5.5.3: Bulbul v2 dropped some legacy speakers (kavitha, meera, pavithra, maitreyi).
+// Stored localStorage prefs from earlier sessions could point at retired names →
+// every TTS call returns 400 "Speaker 'kavitha' is not compatible with bulbul:v2".
+// Validate against the current allowlist on every read.
+const BULBUL_V2_SPEAKERS = ['anushka','abhilash','manisha','vidya','arya','karun','hitesh'];
+function _validSarvamSpeaker() {
+  const stored = localStorage.getItem('ss_voice_pref');
+  if (stored && BULBUL_V2_SPEAKERS.includes(stored)) return stored;
+  if (stored) {
+    // Stale pref — clear it so the picker shows a valid default next time
+    console.info('[Sarvam TTS] stored speaker "' + stored + '" not in bulbul:v2 allowlist — clearing localStorage.ss_voice_pref');
+    try { localStorage.removeItem('ss_voice_pref'); } catch(e){}
+  }
+  return SARVAM_SPEAKERS[ST.persona] || SARVAM_SPEAKERS.dadi;
+}
 const SARVAM_LANG_MAP = {
   'hi-IN':'hi-IN','mr-IN':'hi-IN','bn-IN':'bn-IN','ta-IN':'ta-IN','te-IN':'te-IN',
   'kn-IN':'kn-IN','ml-IN':'ml-IN','gu-IN':'gu-IN','pa-IN':'pa-IN',
@@ -6403,7 +6421,7 @@ async function speak(text, opts) {
     if (!callerTtsText && detected.script === 'roman' && targetLangCode.startsWith('hi')) {
       speakText = await transliterateToDevanagari(text, targetLangCode);
     }
-    const speaker = (localStorage.getItem('ss_voice_pref')) || SARVAM_SPEAKERS[ST.persona] || SARVAM_SPEAKERS.dadi;
+    const speaker = _validSarvamSpeaker();
     const _t0 = performance.now();
     const res = await fetch(sarvamUrl('/text-to-speech'), {
       method: 'POST',
