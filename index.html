@@ -5572,6 +5572,10 @@ let _convAudioCtx = null;
 let _convRecorder = null;
 let _convTickTimer = null;
 let _convResumeTimer = null;
+// v5.5: half-duplex flag — true between speak() start and "playback fully drained
+// + grace period". convListenOnce refuses to (re)open the mic while this is on, so
+// TTS coming out of the phone speaker doesn't get re-captured by the mic.
+let _isSpeaking = false;
 
 async function toggleVoice(target) {
   if (_convActive) { stopVoice(); return; }
@@ -5646,8 +5650,25 @@ function _setBarsListening() {
 
 async function convListenOnce() {
   if (!_convActive) return;
+  // v5.5: refuse to re-open the mic while TTS is still emitting — otherwise the
+  // speaker tail (browser AEC handles most of it, but room reverb leaks) gets
+  // re-transcribed and the AI starts talking to itself.
+  if (_isSpeaking) {
+    _convResumeTimer = setTimeout(convListenOnce, 250);
+    return;
+  }
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // v5.5: enable browser-native AEC + noise suppression + AGC. Chrome ships
+    // WebRTC AEC3 here; Safari uses its own AEC. Big improvement on the
+    // "AI hears its own TTS through the phone speaker" loop and on background
+    // hum (fans, traffic) being mistaken for speech.
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+    });
     _convStream = stream;
     _audioChunks = [];
     const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
@@ -5689,7 +5710,9 @@ async function convListenOnce() {
       let speechSeen = false;
       let silenceMs = 0;
       let elapsed = 0;
-      const SILENCE_THRESHOLD = 14;   // RMS-ish on 0-255 scale
+      let aboveThreshFrames = 0;      // v5.5: consecutive loud frames before flipping speechSeen
+      const SILENCE_THRESHOLD = 18;   // v5.5: raised 14→18 — less sensitive to ambient hum (fans, traffic, AC)
+      const SPEECH_CONFIRM_FRAMES = 3; // v5.5: need 3 frames (~300ms) above threshold to count as speech (filters single-frame spikes / room noise pops)
       const SILENCE_HANG_MS = 1500;   // 1.5s of silence after speech → stop
       const MAX_RECORD_MS = 25000;    // hard cap 25s
       const NO_SPEECH_TIMEOUT = 6000; // stop if no speech detected at all in 6s
@@ -5703,13 +5726,19 @@ async function convListenOnce() {
         _setBarsFromLevel(avg);
         elapsed += 100;
         if (avg > SILENCE_THRESHOLD) {
-          speechSeen = true;
+          aboveThreshFrames++;
+          if (aboveThreshFrames >= SPEECH_CONFIRM_FRAMES) speechSeen = true;
           silenceMs = 0;
-        } else if (speechSeen) {
-          silenceMs += 100;
-          if (silenceMs >= SILENCE_HANG_MS) {
-            try { _convRecorder.stop(); } catch(e){}
-            return;
+        } else {
+          // v5.5: reset CONSECUTIVE loud-frame counter on any quiet frame so a single
+          // door-slam / pot-clang doesn't slowly accumulate into a false speechSeen.
+          aboveThreshFrames = 0;
+          if (speechSeen) {
+            silenceMs += 100;
+            if (silenceMs >= SILENCE_HANG_MS) {
+              try { _convRecorder.stop(); } catch(e){}
+              return;
+            }
           }
         }
         if (elapsed >= MAX_RECORD_MS || (!speechSeen && elapsed >= NO_SPEECH_TIMEOUT)) {
@@ -5732,6 +5761,36 @@ async function convListenOnce() {
   }
 }
 
+// v5.5: when voice replies suggest a skill (e.g. "anulom vilom karein", or a
+// remedy like "haldi doodh", or an acupressure point), auto-tap the card the
+// chat path would render. Voice users can't see/tap the card behind the voice
+// overlay — so we tap it for them. Movement takes priority (most interactive),
+// then remedy, then acupressure. We stop voice listening on hand-off; the user
+// taps mic again after the skill to resume.
+function _autoLaunchSkillFromVoice(botText) {
+  if (!botText) return;
+  // Detection runs in the same order as the in-chat card injection, but we
+  // pick only ONE — the user can only do one thing at a time.
+  const mv = typeof detectMovement === 'function' ? detectMovement(botText) : null;
+  if (mv) {
+    stopVoice();
+    setTimeout(() => openMovement(mv[0]), 400);
+    return;
+  }
+  const rm = typeof detectRemedy === 'function' ? detectRemedy(botText) : null;
+  if (rm) {
+    stopVoice();
+    setTimeout(() => openRemedy(rm[0]), 400);
+    return;
+  }
+  const ap = typeof detectAcupressure === 'function' ? detectAcupressure(botText) : null;
+  if (ap) {
+    stopVoice();
+    setTimeout(() => openAcupressure(ap[0]), 400);
+    return;
+  }
+}
+
 async function convHandleTranscript(transcript) {
   const target = ST.voiceTarget || 'chat';
   // v4: Show user's spoken text in the overlay BEFORE sending to AI
@@ -5740,6 +5799,9 @@ async function convHandleTranscript(transcript) {
     addMsg('user', transcript, false);
     setVoiceState('thinking');
     appendVoiceLine('thinking', 'Soch rahi hoon...');
+    // v5.5: capture the bot's reply text so we can auto-launch a matching skill
+    // (movement / remedy / acupressure) overlay after TTS finishes.
+    let lastBotText = '';
     // Wrap callAI so we know when it's done speaking (roughly when audio finishes)
     await new Promise(resolve => {
       const _origSpeak = window.speak;
@@ -5764,6 +5826,7 @@ async function convHandleTranscript(transcript) {
       // Patch addMsg only to detect when bot reply lands (mirror is handled inside addMsg itself)
       const origAddMsg = window.addMsg;
       window.addMsg = function(role, text, showBadge) {
+        if (role === 'bot') lastBotText = text;
         const r = origAddMsg.apply(this, arguments);
         replyHook(role);
         return r;
@@ -5775,6 +5838,13 @@ async function convHandleTranscript(transcript) {
         setTimeout(() => { if (!resolved) { resolved = true; resolve(); } }, 8000);
       });
     });
+    // v5.5: If the bot reply triggers a movement / remedy / acupressure skill,
+    // auto-launch the step-by-step overlay (which has its own voice-led flow
+    // and step animations). This mirrors what chat-mode card-injection does
+    // (taps the card) — but voice mode users can't see/tap the card behind the
+    // voice overlay, so we tap it for them. Pause conversation listening
+    // while the skill overlay is active.
+    try { _autoLaunchSkillFromVoice(lastBotText); } catch(e) { console.warn('[voice] skill auto-launch failed', e); }
   } else {
     // Hub: route the transcript through the hub flow → opens chat → AI replies
     setVoiceState('thinking');
@@ -5840,6 +5910,9 @@ function stopVoice() {
   _convStream = null; _convAudioCtx = null; _convRecorder = null;
   // Stop any in-progress TTS audio so the loop ends cleanly
   if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+  // v5.5: release half-duplex flag (user cancelled mid-speech; speakSynthesis covers Web Speech)
+  try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){}
+  _isSpeaking = false;
   hideVoiceOverlay();
 }
 
@@ -6072,6 +6145,21 @@ async function transliterateToDevanagari(text, langCode) {
 }
 
 
+// v5.5: half-duplex helper — call right before play() on TTS audio. Sets
+// _isSpeaking true for the duration of playback + a 700ms grace period
+// (covers speaker output latency + room reverb tail), then clears. Voice
+// conversation mode reads this flag to refuse to (re)open the mic while
+// TTS is still audible.
+function _markTtsStart(audioEl) {
+  _isSpeaking = true;
+  const done = () => { setTimeout(() => { _isSpeaking = false; }, 700); };
+  if (audioEl) {
+    const orig = audioEl.onended;
+    audioEl.onended = (e) => { try { orig && orig(e); } catch(_){} done(); };
+    audioEl.addEventListener('error', done, { once: true });
+  } else { done(); /* unknown path → release after grace */ }
+}
+
 // ── v3.7: ElevenLabs opt-in TTS (faster + more natural; user must paste their key) ──
 // v5.3.3: ElevenLabs quota_exceeded → trip kill-switch so we don't burn cycles
 // on every speak() call. User needs to top up at elevenlabs.io or use a
@@ -6125,6 +6213,7 @@ async function speakElevenLabs(text, opts) {
     console.info('[TTS-EL]', voiceId, Math.round(performance.now() - _t), 'ms', '·', speakText.length, 'chars');
     _currentAudio = new Audio(url);
     _currentAudio.onended = () => { try { URL.revokeObjectURL(url); } catch(e){} };
+    _markTtsStart(_currentAudio);
     await _currentAudio.play();
     return true;
   } catch (e) {
@@ -6184,6 +6273,7 @@ async function speakOpenAI(text, opts) {
     console.info('[TTS-OAI]', Math.round(performance.now() - _t), 'ms', '·', speakText.length, 'chars');
     _currentAudio = new Audio(url);
     _currentAudio.onended = () => { try { URL.revokeObjectURL(url); } catch(e){} };
+    _markTtsStart(_currentAudio);
     await _currentAudio.play();
     return true;
   } catch (e) {
@@ -6218,7 +6308,10 @@ function speakWebSpeech(text, opts) {
       if (pick) { u.voice = pick; u.lang = pick.lang || 'hi-IN'; }
       else u.lang = 'hi-IN';
       u.rate = 0.92; u.pitch = 1.0; u.volume = 1.0;
-      u.onerror = e => console.info('[Web Speech] utterance error', e && e.error);
+      u.onerror = e => { console.info('[Web Speech] utterance error', e && e.error); _markTtsStart(null); };
+      // v5.5: mark speaking + release on end so voice conversation half-duplex works
+      _isSpeaking = true;
+      u.onend = () => { setTimeout(() => { _isSpeaking = false; }, 700); };
       try { window.speechSynthesis.cancel(); } catch(e){}
       window.speechSynthesis.speak(u);
       console.info('[TTS-WS]', pick ? pick.name + ' (' + pick.lang + ')' : 'default voice', '·', speakText.length, 'chars');
@@ -6298,6 +6391,7 @@ async function speak(text, opts) {
     const data = await res.json();
     if (data.audios && data.audios[0]) {
       _currentAudio = new Audio('data:audio/wav;base64,' + data.audios[0]);
+      _markTtsStart(_currentAudio);
       _currentAudio.play().catch(e => console.warn('[speak] autoplay blocked', e));
     }
   } catch (e) {

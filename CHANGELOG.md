@@ -2,6 +2,43 @@
 
 ---
 
+## 2026-05-14 — Session 15: v5.5 — Voice mode: skill auto-launch, half-duplex, echo + noise suppression
+
+Three voice-mode fixes from user feedback: (1) "While talking it should also support skills — exercise, movement, breathing"; (2) "The voice sometimes captures its own voice from speaker"; (3) "Suppress background noise somehow".
+
+### Fixed — Voice mode now auto-launches skills (`_autoLaunchSkillFromVoice`)
+Previously in voice conversation mode, when the AI's spoken reply mentioned a skill (e.g. "let's do anulom-vilom — first sit up straight"), the in-chat card was injected into `#chat-msgs` but the user couldn't see or tap it because the voice overlay was on top. Now: after the bot reply's TTS finishes, the new `_autoLaunchSkillFromVoice(lastBotText)` runs `detectMovement` → `detectRemedy` → `detectAcupressure` (in priority order); on the first match, voice listening stops cleanly via `stopVoice()` and the corresponding skill overlay (`openMovement` / `openRemedy` / `openAcupressure`) auto-opens 400ms later. The skill overlay has its own voice-led step instruction + step animation, so the user gets a hands-free walkthrough. After the skill closes, they tap the mic to resume voice chat.
+
+### Fixed — Echo from device speaker (TTS getting re-transcribed)
+Root cause was the `getUserMedia({ audio: true })` call requesting no audio processing — the browser delivered raw mic input with no AEC, so the phone speaker's TTS output bled into the next recording cycle and Sarvam transcribed it back. Fixes:
+- **Browser-native AEC enabled** — `getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })`. Chrome ships WebRTC AEC3; Safari has its own AEC. Big improvement on the loop.
+- **Half-duplex guard (`_isSpeaking` flag)** — `_markTtsStart(audioEl)` wraps every TTS play() site (ElevenLabs, OpenAI, Sarvam Bulbul, Web Speech) and flips `_isSpeaking = true`. The flag clears 700ms after audio `ended` to cover speaker tail + room reverb. `convListenOnce` checks `_isSpeaking` at the top and polls every 250ms while it's true rather than acquiring the mic. Belt-and-braces with AEC.
+
+### Fixed — Background noise being mistaken for speech
+- **VAD threshold raised 14 → 18** on the 0-255 RMS scale — less sensitive to ambient hum (ceiling fans, traffic, AC).
+- **Speech-confirm frames** — flipping `speechSeen = true` now requires 3 consecutive frames (~300ms) above threshold. Single-frame spikes (door slam, pot clang, cough) decay back to 0 on the next quiet frame and don't open a recording session for nothing.
+- Combined with `noiseSuppression: true` constraint (browser-level RNNoise-class processing) — works on top of the existing constraint.
+
+### Added — `_markTtsStart(audioEl)` helper
+Sets `_isSpeaking` for the duration of any TTS playback + 700ms grace. Used by all four TTS paths (ElevenLabs, OpenAI, Sarvam, Web Speech). Cleanly hooks `onended` / `onerror` without clobbering existing handlers (chains the original onended call inside the wrap).
+
+### Changed
+- **`convListenOnce`** — top of function now polls `_isSpeaking` (250ms cadence) before acquiring `getUserMedia`. New audio constraint object with AEC + noise suppression + AGC.
+- **`stopVoice`** — releases `_isSpeaking = false` and cancels any pending `speechSynthesis` utterance so quitting voice mid-TTS doesn't leave the half-duplex flag stuck.
+- **`speakWebSpeech`** — utterance `onend` now releases `_isSpeaking` (Web Speech doesn't use the `Audio` element path).
+
+### Broken / Known issues
+- iOS Safari WebRTC AEC is reportedly less aggressive than Chrome — the half-duplex guard is the primary defense there.
+- ElevenLabs `_markTtsStart` is bypassed when `_elevenLabsBlocked` trips after quota exhaustion (false branch returns early before play). Acceptable — once quota's gone, that path doesn't speak at all so no echo source.
+- If the user holds their phone right next to the speaker, no amount of AEC will fully eliminate echo. The skill auto-launch path sidesteps this entirely (no voice during step playback).
+
+### Next session should start with
+- **Live mic QA** on iPhone Safari: open the live preview at https://cynical-spec.github.io/health-wellness/, start voice mode, ask "anulom vilom kaise karein" → confirm AI replies + the movement overlay auto-opens after TTS finishes (not just emoji-card buried behind overlay).
+- **Echo check**: speak at moderate volume with phone on table, see if the mic re-opens during TTS (it shouldn't — pill should stay "Bata rahi hoon" until 700ms after TTS audio.ended).
+- **Noise check**: turn on a fan or play background music below conversation volume → confirm the new VAD threshold (18) doesn't open recording on ambient hum.
+
+---
+
 ## 2026-05-14 — Session 14: v5.4 — 100 ghar ke nushke + per-step animations for every movement
 
 Two product asks from the user: (1) "Check how many ghar k nushke you have in your learnings. I need 100." (2) "I need animation on each physical exercise / deep breathing or movements — it need not be super good but it should work."
