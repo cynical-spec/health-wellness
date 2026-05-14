@@ -5807,6 +5807,20 @@ async function convListenOnce() {
 // _pendingVoiceSkill carries state across turns inside convHandleTranscript.
 let _pendingVoiceSkill = null; // { kind:'movement'|'remedy'|'acupressure', key, title }
 
+// v5.5.5: unified skill detector for voice mode. Returns a normalized
+// {kind, key, title} object or null. Used by both the fast-path (explicit
+// user request) and the suggestion-confirmation path (AI mentioned a skill).
+function _detectSkillForVoice(text) {
+  if (!text) return null;
+  const mv = (typeof detectMovement === 'function') ? detectMovement(text) : null;
+  if (mv) return { kind:'movement', key:mv[0], title:(mv[1] && mv[1].title) || mv[0] };
+  const rm = (typeof detectRemedy === 'function') ? detectRemedy(text) : null;
+  if (rm) return { kind:'remedy', key:rm[0], title:(rm[1] && rm[1].title) || rm[0] };
+  const ap = (typeof detectAcupressure === 'function') ? detectAcupressure(text) : null;
+  if (ap) return { kind:'acupressure', key:ap[0], title:(ap[1] && ap[1].title) || ap[0] };
+  return null;
+}
+
 function _isAffirmative(t) {
   if (!t) return false;
   const s = t.trim().toLowerCase();
@@ -5931,15 +5945,46 @@ async function convHandleTranscript(transcript) {
       _pendingVoiceSkill = null;
     }
 
+    // v5.5.5: FAST-PATH — if the user explicitly named a skill in their question
+    // (e.g. "box breathing exercise karwaaye", "anulom vilom sikhao"), skip the
+    // AI text reply entirely and open the skill overlay directly. Saves 20+
+    // seconds of redundant explanation when the user already asked for the
+    // skill by name. AI is only consulted when the user has a general question
+    // (e.g. "sir mein dard hai") — then the AI suggests a skill and we offer
+    // confirmation.
+    const userSkill = _detectSkillForVoice(transcript);
+    if (userSkill) {
+      console.info('[voice-skill] user explicitly asked →', userSkill.kind, userSkill.key, '· fast-path');
+      addMsg('user', transcript, false);
+      // Short warm ack so the user knows we heard them, then open the skill.
+      const ack = 'Chaliye, ' + userSkill.title + ' karte hain mere saath.';
+      addMsg('bot', ack, false);
+      appendVoiceLine('bot', ack);
+      if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
+      // Wait briefly for the ack to start speaking + most of it to play, then hand off.
+      // The skill overlay pauses any in-flight audio so a slight bleed is fine.
+      speak(ack, { ttsText: ack });
+      stopVoice();
+      setTimeout(() => {
+        if (userSkill.kind === 'movement')        openMovement(userSkill.key);
+        else if (userSkill.kind === 'remedy')     openRemedy(userSkill.key);
+        else if (userSkill.kind === 'acupressure') openAcupressure(userSkill.key);
+      }, 2500); // ~2.5s lets the ack finish; openSkill cancels any residual audio anyway
+      return;
+    }
+
     addMsg('user', transcript, false);
     setVoiceState('thinking');
     appendVoiceLine('thinking', 'Soch rahi hoon...');
-    // v5.5: capture the bot's reply text so we can auto-launch a matching skill
+    // v5.5: capture the bot's reply text so we can offer a matching skill
     // (movement / remedy / acupressure) overlay after TTS finishes.
     let lastBotText = '';
     // Wrap callAI so we know when it's done speaking. v5.5.4: use _isSpeaking
     // (set by _markTtsStart on every TTS play site) as the source of truth —
     // the old _currentAudio.ended polling false-resolved on stale state.
+    // v5.5.5: removed the 14s force-resolve which was cutting long bot TTS off
+    // mid-sentence. Now we wait for _isSpeaking to transition true → false
+    // (real audio finish) with a generous 60s safety net.
     await new Promise(resolve => {
       let resolved = false;
       const replyHook = (role) => {
@@ -5949,7 +5994,7 @@ async function convHandleTranscript(transcript) {
           let started = false;
           const tick = () => {
             if (resolved) return;
-            if (Date.now() - start > 14000) { resolved = true; resolve(); return; }
+            if (Date.now() - start > 60000) { resolved = true; resolve(); return; } // safety net
             if (_isSpeaking) started = true;
             if (started && !_isSpeaking) { resolved = true; resolve(); return; }
             setTimeout(tick, 200);
@@ -5967,22 +6012,21 @@ async function convHandleTranscript(transcript) {
       };
       callAI(transcript, getSystemPromptFor(ST.chatCtx)).finally(() => {
         window.addMsg = origAddMsg;
-        // Safety net — if TTS never starts, resolve in 9s
-        setTimeout(() => { if (!resolved) { resolved = true; resolve(); } }, 9000);
+        // Safety net — if TTS never starts, resolve in 12s
+        setTimeout(() => { if (!resolved) { resolved = true; resolve(); } }, 12000);
       });
     });
     // v5.5.4: instead of auto-launching the skill (which caused 2-voice overlap
-    // + felt jarring), OFFER it conversationally. The user's yes/no on the next
-    // turn either opens the skill overlay or continues the chat.
+    // + felt jarring), OFFER it conversationally. v5.5.5: only check the BOT
+    // reply now — explicit user requests took the fast-path above.
     try {
-      const combined = [transcript, lastBotText].filter(Boolean).join(' \n ');
-      const mv = (typeof detectMovement === 'function') ? detectMovement(combined) : null;
-      const rm = !mv && (typeof detectRemedy === 'function') ? detectRemedy(combined) : null;
-      const ap = !mv && !rm && (typeof detectAcupressure === 'function') ? detectAcupressure(combined) : null;
-      if (mv)      { console.info('[voice-skill] offering movement →', mv[0]);    await _offerVoiceSkillConfirmation({kind:'movement',    key:mv[0], title:mv[1].title}); return; }
-      else if (rm) { console.info('[voice-skill] offering remedy →', rm[0]);      await _offerVoiceSkillConfirmation({kind:'remedy',      key:rm[0], title:rm[1].title}); return; }
-      else if (ap) { console.info('[voice-skill] offering acupressure →', ap[0]); await _offerVoiceSkillConfirmation({kind:'acupressure', key:ap[0], title:ap[1].title}); return; }
-      else { console.info('[voice-skill] no skill in this turn'); }
+      const botSkill = _detectSkillForVoice(lastBotText);
+      if (botSkill) {
+        console.info('[voice-skill] AI suggested →', botSkill.kind, botSkill.key, '· offering confirmation');
+        await _offerVoiceSkillConfirmation(botSkill);
+        return;
+      }
+      console.info('[voice-skill] no skill in this turn');
     } catch(e) { console.warn('[voice] skill confirmation failed', e); }
   } else {
     // Hub: route the transcript through the hub flow → opens chat → AI replies
