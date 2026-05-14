@@ -1,5 +1,10 @@
 # Status — Sehat Saathi
-*Last updated: 2026-05-14 — Session 14 (v5.4 — 100 ghar ke nushke + per-step animations for every movement)*
+*Last updated: 2026-05-14 — Session 15 (v5.5 — Voice mode: skill auto-launch + half-duplex echo fix + noise suppression)*
+
+## Session 15 highlights (v5.5)
+- **Voice mode now supports skills** — when AI's spoken reply mentions a movement / remedy / acupressure keyword, the voice overlay closes cleanly and the matching skill overlay auto-opens (`openMovement` / `openRemedy` / `openAcupressure`). Hands-free walkthrough with per-step voice + animation (the v5.4 SVG/Lottie infrastructure). User taps mic again after to resume voice chat.
+- **Echo loop killed** — three-layer defense: (1) browser AEC + noise suppression + AGC enabled via `getUserMedia` constraints; (2) `_isSpeaking` flag wrapped around all TTS play sites (`_markTtsStart` helper) blocks mic acquisition while TTS is audible + 700ms grace; (3) skill auto-launch sidesteps listen-while-speak entirely. Captures DEC-026.
+- **Background noise filtering** — VAD silence threshold raised 14 → 18 (RMS scale), plus a 3-consecutive-frame speech-confirm gate so single-frame spikes (door slam, cough, pot clang) don't open a recording session for nothing.
 
 ## Session 14 highlights (v5.4)
 - **REMEDY_KITS grown from 15 → 100** — 85 new Ayurvedic remedies across digestion (12), respiratory (12), sleep & stress (8), joint pain (8), skin (8), hair (6), fever & immunity (8), headache (5), eye/ear (4), women's wellness (5), kids (4), seasonal (3), detox/extras (2). Each follows the existing `kw / emoji / title / durSec / ingredients / steps[]` schema. Verified parsing.

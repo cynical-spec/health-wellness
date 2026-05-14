@@ -2,6 +2,25 @@
 
 ---
 
+## 2026-05-14 — Voice mode echoed its own TTS through the device speaker
+
+**What happened:** In voice conversation mode, the assistant's TTS reply (Sarvam Bulbul) playing through the phone speaker was being re-captured by the mic on the next listen cycle, transcribed, and fed back as the user's next turn. The AI started "talking to itself."
+
+**Why it happened:** Two root causes compounded:
+  1. `getUserMedia({ audio: true })` requested raw mic input — no AEC, no noise suppression, no AGC. Browsers don't enable these by default on the bare `true` shorthand.
+  2. After TTS `audio.ended` fired, `convListenOnce` re-opened the mic just 350ms later. The speaker output has audio-output latency + room reverb that extends well past `ended` — easily 500-1000ms of audible tail that the freshly-opened mic captured.
+
+**What was tried:** Considered bumping only the resume timer (350ms → 1500ms). Would help but wouldn't fully kill the loop on iOS Safari where AEC was minimal. The real fix had to be multi-layered.
+
+**What fixed it:** Three-layer defense:
+  1. Enabled browser AEC explicitly: `audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }`.
+  2. Added an application-level `_isSpeaking` flag wrapped around every TTS play() site (`_markTtsStart` helper) that stays true for 700ms after `audio.ended`. `convListenOnce` polls this flag and refuses to acquire the mic while it's set.
+  3. Bonus: skill auto-launch when the AI suggests a movement/remedy/acupressure — hands the user off to the step overlay (which speaks each step without listening), sidestepping the echo path entirely.
+
+**Rule going forward:** For any voice-in / voice-out flow, ALWAYS request AEC + noise suppression + AGC on `getUserMedia` constraints AND maintain an application-level half-duplex flag. Browser AEC alone is incomplete on Safari. Don't trust `audio.ended` as the "speaker is silent" signal — add ~700ms grace for output latency + reverb.
+
+---
+
 ## 2026-05-13 — Sarvam CORS "fix" only worked on the device that pasted the console helper
 
 **What happened:** v5.3.8 shipped `setSarvamProxy(url)` plus a CF Worker template in comments, intended as the permanent Sarvam CORS fix. The deployed Worker (`sarvam-proxy.nawaneet-kumar.workers.dev`) was confirmed working in the live console: `[TTS] manisha ~800ms · 42 chars ← Sarvam Bulbul Manisha via your Worker`. We thought we were done. The next day the user reported voice still broken with CORS errors — "since 1 hour".

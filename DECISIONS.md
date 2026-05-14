@@ -2,6 +2,25 @@
 
 ---
 
+## DEC-026 — Voice conversation is strictly half-duplex; skill overlays take over from voice on auto-launch
+**Date:** 2026-05-14 (Session 15 / v5.5)
+**Decision:** Voice conversation mode uses three independent mechanisms to prevent TTS-from-speaker → mic re-capture, in priority order:
+1. **Browser-native AEC** via `getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })` — first line of defense.
+2. **Application-level half-duplex** via `_isSpeaking` flag, flipped true on every TTS play() and cleared 700ms after `ended`. `convListenOnce` polls this flag and refuses to acquire the mic while it's set.
+3. **Skill auto-launch on match** — when a voice reply triggers `detectMovement` / `detectRemedy` / `detectAcupressure`, voice mode terminates cleanly (`stopVoice`) and the skill overlay takes over with its own per-step voice + animation. No conversation listening during the skill — the user resumes voice by tapping the mic afterwards.
+
+**Reason:** AEC alone is incomplete on iOS Safari (less aggressive than Chrome AEC3). A "hard mute mic during TTS" guard is robust across browsers. The skill auto-launch fixes a UX gap where voice users couldn't see/tap the skill card injected into the chat msg list behind the overlay — the chat path renders the card and lets the user tap it; voice mode auto-taps.
+
+**Trade-offs:**
+- Half-duplex means the user can't barge-in (interrupt the AI mid-sentence). Acceptable for a vernacular Ayurvedic assistant where conversations are slow + thoughtful, not real-time agentic.
+- 700ms grace = perceptible "dead air" between TTS-end and next listen. Tunable.
+- Skill auto-launch on first detection means if the AI says "for sir dard try LI-4 OR pudina paste" both keywords could match (acupressure + remedy). Priority order is movement > remedy > acupressure — picks one. Acceptable; the user can see the chat msg list after the overlay closes and tap alternatives.
+- VAD threshold raised 14 → 18 + 3-frame speech-confirm means very quiet speakers might need to talk slightly louder. Acceptable trade for not opening recording sessions on ambient hum.
+
+**Revisit if:** (a) iOS Safari ships better AEC and half-duplex feels too restrictive — could try full-duplex with `_isSpeaking`-aware VAD that ducks loud TTS frames; (b) a real conversational AI provider (e.g. OpenAI Realtime) becomes the chat backend — they handle barge-in natively.
+
+---
+
 ## DEC-025 — Movement step animations: Lottie infrastructure with inline SVG fallback (hybrid)
 **Date:** 2026-05-14 (Session 14 / v5.4)
 **Decision:** Every MOVEMENT_SKILLS step animates via a two-layer renderer:
