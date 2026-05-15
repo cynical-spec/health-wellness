@@ -1804,6 +1804,210 @@ const DEFAULT_PERSONA = 'dadi';
 
 // v3.7: Authoritative remedy knowledge base distilled from "Ghar ka Vaidh" PDF
 // Used as authoritative reference inside SYSTEM_PROMPT — not for direct display.
+// v5.6: CCRAS — government-validated Ayurvedic remedy reference
+// Source: Central Council for Research in Ayurveda and Siddha (CCRAS),
+// Department of ISM&H, Ministry of Health & Family Welfare, Government of India.
+// 25 ingredients × multiple validated use cases each. The AI cites this source
+// naturally when prescribing ("Yeh CCRAS - Ministry of Health, Govt of India
+// ke mutabik hai") and always closes with the CCRAS safety gate (2-3 day rule).
+// Compiled into a prompt-ready KB string below (CCRAS_KB) and injected into
+// SYSTEM_PROMPT.
+const CCRAS_REMEDIES = {
+  adrak: { name: 'Adrak / Sonth', conditions: {
+    indigestion: '5gm crushed rhizome with salt or jaggery twice daily before meal',
+    ear_pain: '2-4 drops fresh warm juice in ear — do not use if there is discharge',
+    hoarseness: '1-3gm dry rhizome powder with honey in three divided doses',
+    aches_pains: '10-20ml decoction from 2gm dry rhizome twice a day',
+    cold_cough: '2-5gm dry rhizome powder with jaggery thrice daily. 10ml decoction every morning prevents recurrent cold.',
+    headache: 'Warm paste applied on forehead 3-4 times a day',
+    abdominal_pain: '5ml juice in a glass of buttermilk with lemon and salt'
+  }},
+  ajwain: { name: 'Ajwain', conditions: {
+    abdominal_pain: '1gm powder with lukewarm water twice or thrice',
+    flatulence: '2gm ajwain powder with equal saunf powder with warm water',
+    piles: '1gm powder and 1gm black salt with buttermilk twice daily',
+    sinusitis: 'Warm paste applied over forehead and below eyes in morning',
+    nasal_block: '1-2gm powder in steaming water, inhale vapour 2-3 times a day',
+    loss_of_appetite: '1gm powder with warm water half hour before meals',
+    skin_allergy: '1-2gm powder with water twice daily'
+  }},
+  anar: { name: 'Anar', conditions: {
+    indigestion: '10ml fruit juice with black salt or fried jeera powder with honey before food',
+    bleeding_piles: '10ml fruit juice with sugar twice a day',
+    diarrhoea: '10ml decoction of fruit skin thrice a day',
+    acidity: '10ml fruit juice twice a day or eat the fruit',
+    bad_breath: 'Gargle with warm decoction of fruit skin 3-4 times a day',
+    acne: 'Paste of seeds applied to affected part twice daily'
+  }},
+  amla: { name: 'Amla', conditions: {
+    general_health: 'Regular use provides nutrition and boosts immunity',
+    acidity_constipation: '3-5gm powdered fruit rind with milk twice a day or 10-20ml juice twice daily',
+    stress: '25-50gm fruit rind ground in buttermilk applied on forehead',
+    diabetes: '10-20ml fruit juice with 10-20ml fresh haldi juice twice a day',
+    hair_fall_dandruff: 'Fruit rind soaked overnight applied on scalp two hours before bath',
+    bleeding_gums: 'Fine powder massaged to gums after brushing twice daily'
+  }},
+  dalchini: { name: 'Dalchini', conditions: {
+    indigestion: '2gm bark powder with water twice a day',
+    loss_of_appetite: '2gm equal parts dalchini and ajwain for chewing before food',
+    vomiting: '1-2gm powder with honey thrice daily',
+    tension_headache: 'Rubbed with water and applied to forehead',
+    mental_tension: 'Aroma has soothing effect — crushed pieces near pillow',
+    dry_cough: 'Chewing controls throat irritation'
+  }},
+  dhania: { name: 'Dhania', conditions: {
+    cold_cough: '20ml decoction from 5gm powder with sugar and haldi thrice daily. Dhania tea every morning prevents cold.',
+    intestinal_worms: '3-5gm powder with jaggery twice daily for 5 days',
+    dehydration: '20ml decoction with sugar and pinch of salt frequently',
+    indigestion: '20ml decoction from 5gm powder with pinch of ginger thrice daily',
+    fever: '20ml decoction from 5gm powder with sugar 3-4 times a day'
+  }},
+  elaichi: { name: 'Elaichi', conditions: {
+    hiccough: '1-2 fruits chewed frequently (max 4 per day)',
+    vomiting: '250-500mg seed powder fried in ghee thrice daily with honey',
+    bad_breath: '1-2 seeds chewed frequently',
+    cold: '20ml decoction from 5gm dhania, 1gm methi, little haldi, 2-3 times daily',
+    cough: 'Little elaichi powder with teaspoon honey 3-4 times day. Max 3 per day.'
+  }},
+  ghee: { name: 'Ghee', conditions: {
+    wounds_burns: 'Application over affected part frequently',
+    loss_of_appetite: 'With hing and jeera powder with food',
+    memory: 'Daily use in children improves memory',
+    constipation: '5ml ghee in warm milk with sugar at bedtime'
+  }},
+  haldi: { name: 'Haldi', conditions: {
+    diabetes: '10ml fresh juice with 10ml amla juice twice daily',
+    acne: 'Paste applied to affected part twice a day. Haldi with milk on face gives glow.',
+    cold: '2gm powder with warm milk and sugar twice a day. Haldi in herbal tea prevents allergies.',
+    wounds_skin: 'Wash with haldi decoction, apply paste mixed with ghee or coconut oil',
+    skin_allergy: '1-3gm powder with jaggery twice a day'
+  }},
+  hing: { name: 'Hing', conditions: {
+    abdominal_pain: 'Dissolve in water and apply on and around umbilicus. Especially useful in children. 1gm fried in ghee with buttermilk twice a day.',
+    toothache: 'Keep fried hing in the affected tooth',
+    loss_of_appetite: 'Pinch of hing fried in ghee with crushed adrak in buttermilk before food'
+  }},
+  jayphal: { name: 'Jayphal', conditions: {
+    diarrhoea_children: 'Pinch of powder rubbed in milk or water 3-4 times a day',
+    irritability_children: '1-2 pinch powder with milk acts as mild sedative 3-4 times day',
+    abdominal_pain: '2gm powder with warm water 4-5 times a day'
+  }},
+  jeera: { name: 'Jeera', conditions: {
+    indigestion: '3-6gm fried jeera powder with rock salt in warm water thrice daily',
+    diarrhoea: '1-2gm fried jeera powder with 250ml buttermilk four times daily',
+    acidity: '5-10gm ghee boiled with jeera taken with rice during meals',
+    cold: 'Warm decoction of 2gm jeera, 5gm dhania, 1gm haldi, 1gm methi with honey and lemon 2-3 times',
+    cough: 'Same decoction or chewing few grains frequently'
+  }},
+  kalimirach: { name: 'Kalimirach', conditions: {
+    cough: '1gm powder with ghee and honey twice daily',
+    indigestion: 'Pinch with crushed ginger and rock salt before meal',
+    loss_of_appetite: 'Pinch with 2 teaspoon lemon juice half hour before food',
+    hoarseness: '1-2gm seed powder fried in ghee twice daily, keep in mouth',
+    bleeding_gums: 'Pinch mixed with honey applied to gums after gargling with warm salt water'
+  }},
+  karela: { name: 'Karela', conditions: {
+    diabetes: '1-3gm seed powder with water twice a day',
+    indigestion: '5-10ml fruit juice twice daily',
+    skin_diseases: '5-10ml juice every morning on empty stomach',
+    acne: '5-10ml juice on empty stomach once a day',
+    intestinal_worms: '10ml juice with jaggery in morning for 3 days'
+  }},
+  lahsun: { name: 'Lahsun', conditions: {
+    ear_pain: '2-4 drops warm fresh juice in ear twice daily — no discharge',
+    flatulence: '6ml juice with honey twice a day',
+    cold_cough: 'Crushed bulb boiled in water taken with sugar',
+    joint_pain: '5gm paste with honey twice a day. Warm paste in oil applied over joint.'
+  }},
+  laung: { name: 'Laung', conditions: {
+    cough: 'Chew frequently or 1gm powder with honey 2-3 times. 20ml warm decoction 3-4 times daily.',
+    cold_hiccough: '1-2gm powder with honey in three divided doses',
+    indigestion: '1-2gm powder with warm water',
+    toothache: 'Crushed clove kept in affected tooth',
+    bad_breath: 'Small piece chewed frequently',
+    ear_pain: 'Warm coconut oil boiled with laung powder filled in ear twice daily — no discharge'
+  }},
+  madhu: { name: 'Madhu / Honey', conditions: {
+    obesity: 'One teaspoon with glass of water in the morning',
+    cough: 'With pinch of laung powder 3-4 times',
+    wounds_burns: 'Honey and ghee mixed and applied',
+    bleeding_gums: 'Mixture of ginger, pepper, rock salt, honey and ghee applied to gums twice daily',
+    note: 'Honey should never be boiled'
+  }},
+  methi: { name: 'Methi', conditions: {
+    diabetes: '2gm powder with milk twice daily',
+    body_ache: '2gm powder with 2gm jeera powder in warm milk twice daily',
+    dandruff: 'Scalp massaged with paste half hour before bath. Coconut oil boiled with methi powder used regularly.'
+  }},
+  nariyal: { name: 'Nariyal', conditions: {
+    acidity: 'Tender coconut water twice daily',
+    kidney_stone: 'Tender coconut water twice daily',
+    dehydration: 'Tender coconut water frequently',
+    hair_fall: 'Coconut oil processed with methi and amla powder used regularly',
+    wounds: 'Coconut oil applied frequently'
+  }},
+  neem: { name: 'Neem', conditions: {
+    skin_disease: '10ml leaf juice with honey twice a day',
+    wounds: 'Warm paste of leaves over affected part',
+    intestinal_worms: '20ml decoction from handful of leaves on empty stomach for 3 days',
+    dandruff: 'Decoction applied to scalp one hour before bath'
+  }},
+  nimbu: { name: 'Nimbu', conditions: {
+    indigestion: '5-10ml juice with pinch of salt and pepper before food',
+    dehydration: 'One nimbu in glass of water with salt and sugar',
+    vomiting: '5-10ml juice with water, sugar and pinch of salt frequently in small quantities',
+    bleeding_gums: 'Fruit skin crushed and rubbed gently to gums twice daily',
+    loss_of_appetite: '5ml juice with salt and pinch of pepper before meals'
+  }},
+  pyaj: { name: 'Pyaj', conditions: {
+    sun_stroke: 'Use plenty of onion for prevention',
+    cold_cough_children: 'Decoction from a piece given with jaggery thrice daily',
+    dysentery: 'White onion chopped and fried in ghee eaten with rice'
+  }},
+  pippali: { name: 'Pippali', conditions: {
+    indigestion: '2gm powder with jaggery twice daily before meal',
+    cold_cough: '2gm powder with honey thrice daily. 10-20ml decoction with ginger and black pepper 2-3 times.',
+    diarrhoea: '2-3gm powder in 1 litre buttermilk divided into 4 parts, one part every 6 hours',
+    cold_with_fever: '2gm powder with honey twice daily'
+  }},
+  saunf: { name: 'Saunf', conditions: {
+    indigestion: '3-5gm powder with fried jeera and rock salt in warm water thrice daily',
+    diarrhoea: '3-5gm powder with buttermilk 3-4 times daily',
+    abdominal_pain: '3-5gm powder with buttermilk 3-4 times daily',
+    bad_breath: 'Little quantity chewed after food',
+    loss_of_appetite: '3-5gm roasted saunf powder with buttermilk, pepper and salt twice daily'
+  }},
+  tulsi: { name: 'Tulsi', conditions: {
+    cold_cough: '5-10ml juice twice or thrice daily with honey',
+    fever: '30ml decoction from handful of leaves and 5gm dhania thrice daily',
+    skin_allergy: '5-10ml juice twice or thrice daily',
+    indigestion: '5-10ml juice twice or thrice daily',
+    ear_pain: '2-3 lukewarm drops twice daily — no discharge',
+    wound: 'Juice mixed with honey and haldi applied'
+  }}
+};
+
+// v5.6: Build a prompt-ready compact KB from CCRAS_REMEDIES so the source of
+// truth stays in the JS object (easy to edit/lookup) but the AI gets a tight
+// inline reference. ~25 ingredients × ~5 conditions each ≈ 4k tokens added to
+// the system prompt — accepted cost for the ministry-backed credibility win.
+const CCRAS_KB = (() => {
+  const out = [];
+  out.push('GOVERNMENT-VALIDATED CCRAS REFERENCE — Central Council for Research in Ayurveda and Siddha, Department of ISM&H, Ministry of Health & Family Welfare, Government of India. These are clinically validated dosages. Prefer these over generic kitchen-wisdom remedies.');
+  out.push('');
+  for (const item of Object.values(CCRAS_REMEDIES)) {
+    out.push(item.name.toUpperCase() + ':');
+    for (const [cond, dose] of Object.entries(item.conditions)) {
+      out.push('  • ' + cond.replace(/_/g, ' ') + ' — ' + dose);
+    }
+    out.push('');
+  }
+  out.push('CCRAS SAFETY GATE (always close with this when giving a remedy): "Agar 2-3 din mein aaram na ho to doctor se zaroor milein." Source: CCRAS booklet.');
+  out.push('');
+  out.push('HOW TO CITE: When you give a remedy that matches a CCRAS entry above, mention it naturally — e.g. "Yeh nushka CCRAS - Ministry of Health, Govt of India ke validated reference se hai." Do NOT cite if you are using a remedy that is not in CCRAS_KB.');
+  return out.join('\n');
+})();
+
 const NUSHKE_KB = `AUTHORITATIVE NUSHKE REFERENCE (use these as your source of truth):
 
 KABZ (Constipation):
@@ -1923,7 +2127,19 @@ CRITICAL — DO NOT RUSH TO REMEDIES:
 SERIOUS EMERGENCY (escalate immediately, NO remedy, NO question):
 Chest pain, breathing trouble, infant <3 months with fever, seizure, sudden worst-ever headache, vomiting blood, loss of consciousness, sudden face droop or arm weakness. Tell them warmly but firmly: doctor ke paas turant jao, der mat karo.
 
-KNOWLEDGE BASE: Authoritative remedies for common ailments are listed in the AUTHORITATIVE NUSHKE REFERENCE block below. Match the user's complaint to those entries before suggesting anything. If their complaint isn't covered, fall back to the kitchen ingredient bank (ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt, nimbu, cloves, cinnamon, hing).
+KNOWLEDGE BASE: You have TWO authoritative knowledge bases below:
+1) GOVERNMENT-VALIDATED CCRAS REFERENCE (Central Council for Research in Ayurveda and Siddha, Ministry of Health, Govt of India) — clinical-grade dosages. Prefer these when the complaint matches.
+2) TRADITIONAL GHAR-KE-NUSHKE — household Ayurvedic wisdom for complaints not in CCRAS.
+
+PREFERENCE ORDER:
+- If the user's complaint matches a CCRAS entry, use the CCRAS dosage AND cite the source: "Yeh nushka CCRAS - Ministry of Health, Govt of India ke validated reference se hai." This one sentence builds trust — use it.
+- If it's not in CCRAS, fall back to the traditional Ghar-ke-Nushke block.
+- If neither has it, use the kitchen ingredient bank (ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt, nimbu, cloves, cinnamon, hing).
+
+ALWAYS CLOSE WITH THE CCRAS SAFETY GATE when giving any remedy:
+"Agar 2-3 din mein aaram na ho to doctor se zaroor milein."
+
+${CCRAS_KB}
 
 ${NUSHKE_KB}
 
