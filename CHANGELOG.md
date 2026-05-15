@@ -2,6 +2,32 @@
 
 ---
 
+## 2026-05-14 — Session 17: v5.6 — CCRAS government-validated remedy knowledge base
+
+User added two PDFs as the credibility anchor for the Ghar-ka-Nushka feature: (1) CCRAS Ayurvedic Home Remedies — published by the Central Council for Research in Ayurveda and Siddha, Department of ISM&H, Ministry of Health & Family Welfare, Govt of India; (2) Ghar Ka Vaidh (traditional). The CCRAS PDF gives the product a ministry-backed credibility line ("yeh Central Government ke Ayurvedic research ke mutabik hai").
+
+### Added — `CCRAS_REMEDIES` JS object (25 ingredients × 122 validated conditions)
+Verbatim from the CCRAS PDF. 25 ingredients (adrak, ajwain, anar, amla, dalchini, dhania, elaichi, ghee, haldi, hing, jayphal, jeera, kalimirach, karela, lahsun, laung, madhu, methi, nariyal, neem, nimbu, pyaj, pippali, saunf, tulsi). Each ingredient has a `conditions` map keyed by lowercase ailment slug (e.g. `cold_cough`, `bleeding_gums`, `loss_of_appetite`) with the exact CCRAS dosage as the value. Used as the AI's primary remedy source (preferred over the traditional Ghar-ka-Vaidh `NUSHKE_KB`) and available in code for future lookup/display features.
+
+### Added — `CCRAS_KB` prompt KB string (~9.7 KB / ~2.4k tokens)
+Compiled from `CCRAS_REMEDIES` at script load by an IIFE — source of truth stays in the JS object; the prompt format stays in sync automatically. Inlined into `SYSTEM_PROMPT` alongside the existing `NUSHKE_KB` block.
+
+### Changed — `SYSTEM_PROMPT`
+Now explicitly tells the AI:
+- TWO knowledge bases available (CCRAS + traditional Ghar-ke-Nushke)
+- Preference order: CCRAS first (if complaint matches), then traditional, then kitchen ingredient bank
+- When using a CCRAS remedy, **cite the source**: "Yeh nushka CCRAS - Ministry of Health, Govt of India ke validated reference se hai."
+- **Always close with the CCRAS safety gate**: "Agar 2-3 din mein aaram na ho to doctor se zaroor milein."
+
+### Why this matters
+The CCRAS PDF is government-validated, ministry-backed Ayurvedic guidance. The credibility anchor differentiates Sehat Saathi from "WhatsApp-forward Ayurveda" — every remedy is now traceable to an authoritative source. Users get not just a remedy but trust.
+
+### Next session should start with
+- **Verify CCRAS citation in live replies**: open the live preview, ask "khansi ke liye kya karoon?" → bot should reply with a tulsi or kalimirach remedy from CCRAS_KB AND include the "CCRAS - Ministry of Health" credibility line AND end with the 2-3 day safety gate.
+- **Verify dosages match**: spot-check that responses preserve the CCRAS-exact dosage (e.g. tulsi cold_cough is "5-10ml juice twice or thrice daily with honey", not paraphrased into different numbers).
+
+---
+
 ## 2026-05-14 — Session 16: v5.5.1 — Voice-mode skill detection hotfix (Devanagari + box-breathing)
 
 User QA on v5.5 found voice mode still didn't auto-launch skills. Screenshot: user asked "बॉक्स ब्रीडिंग कैसे करूं" → AI replied in Devanagari → no skill opened. Three root causes:
