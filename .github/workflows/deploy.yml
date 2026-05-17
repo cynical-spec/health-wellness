@@ -29,22 +29,28 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           SARVAM_KEY: ${{ secrets.SARVAM_KEY }}
           ELEVEN_KEYS: ${{ secrets.ELEVEN_KEYS }}
+          # v6.3: Cerebras Cloud — primary LLM provider. Accept either secret
+          # name so whichever was set in repo settings works without renaming.
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          NEXT_PUBLIC_CEREBRAS_KEY: ${{ secrets.NEXT_PUBLIC_CEREBRAS_KEY }}
         run: |
           python3 - <<'PYEOF'
           import os
-          oai    = os.environ.get("OPENAI_API_KEY","").strip()
-          groq   = os.environ.get("GROQ_API_KEY","").strip()
-          sarvam = os.environ.get("SARVAM_KEY","").strip()
-          eleven = os.environ.get("ELEVEN_KEYS","").strip()
+          oai      = os.environ.get("OPENAI_API_KEY","").strip()
+          groq     = os.environ.get("GROQ_API_KEY","").strip()
+          sarvam   = os.environ.get("SARVAM_KEY","").strip()
+          eleven   = os.environ.get("ELEVEN_KEYS","").strip()
+          cerebras = os.environ.get("CEREBRAS_API_KEY","").strip() or os.environ.get("NEXT_PUBLIC_CEREBRAS_KEY","").strip()
           with open("index.html","r") as f:
               html = f.read()
           html = html.replace("REPLACE_WITH_YOUR_KEY", oai)
           html = html.replace("REPLACE_WITH_GROQ_KEY", groq)
           html = html.replace("REPLACE_WITH_SARVAM_KEY", sarvam)
           html = html.replace("REPLACE_WITH_ELEVENLABS_KEY", eleven)
+          html = html.replace("REPLACE_WITH_CEREBRAS_KEY", cerebras)
           with open("index.html","w") as f:
               f.write(html)
-          print("Injected. OpenAI:", bool(oai), "Groq:", bool(groq), "Sarvam:", bool(sarvam), "ElevenLabs:", bool(eleven))
+          print("Injected. OpenAI:", bool(oai), "Groq:", bool(groq), "Sarvam:", bool(sarvam), "ElevenLabs:", bool(eleven), "Cerebras:", bool(cerebras))
           PYEOF
 
       - uses: actions/configure-pages@v5
