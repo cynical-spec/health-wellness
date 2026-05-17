@@ -1553,6 +1553,482 @@ body:not(.focus) .focus-home{display:none}
   animation: wt-finger-sweep 2.4s ease-in-out infinite;
 }
 
+
+/* === v6.0/v6.1 warm landing CSS — synced from apps/health === */
+/* ══════════════════════════════════════════════════════════════════════════
+   v6.0 — Warm landing (warm-hero, active-choice, exit-grid, safar-path)
+   The goal is a hub that feels like a friend who remembers you, not a
+   feature directory. Reuses existing tokens (--surface, --text, --accent2).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* — Warm hero: time-aware greeting block, replaces the old tri-hero — */
+.warm-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 16px 14px;
+  margin: 0 0 12px;
+}
+.warm-hero-emoji {
+  font-size: 44px;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.12));
+}
+.warm-hero-text {
+  flex: 1;
+  min-width: 0;
+}
+.warm-hero-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.warm-hero-time {
+  font-size: 13px;
+  color: var(--text3);
+  margin-top: 2px;
+  font-weight: 500;
+}
+.warm-hero-ask {
+  font-size: 14px;
+  color: var(--text2);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* — Active Choice card: single contextual nudge picked from history — */
+.active-choice-card {
+  display: flex;
+  gap: 12px;
+  margin: 0 16px 16px;
+  padding: 14px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(107, 33, 168, 0.1), rgba(20, 184, 166, 0.08));
+  border: 1px solid rgba(107, 33, 168, 0.18);
+}
+.active-choice-card .ac-icon {
+  font-size: 26px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.active-choice-card .ac-body {
+  flex: 1;
+  min-width: 0;
+}
+.active-choice-card .ac-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.45;
+  font-weight: 500;
+}
+.active-choice-card .ac-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.ac-btn {
+  border: 0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 10px;
+  transition:
+    transform 0.08s,
+    opacity 0.15s;
+  font-family: inherit;
+}
+.ac-btn:active {
+  transform: scale(0.96);
+}
+.ac-btn-primary {
+  background: var(--accent2, #6b21a8);
+  color: #fff;
+}
+.ac-btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+}
+
+/* — Exit grid: 4 warm verb-based entry points, replaces aham-row — */
+.exit-section {
+  margin: 4px 0 18px;
+}
+.exit-section-lbl {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  padding: 0 16px;
+  margin: 0 0 10px;
+  letter-spacing: 0.02em;
+}
+.exit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 16px;
+}
+.exit-tile {
+  position: relative;
+  text-align: left;
+  border: 0;
+  cursor: pointer;
+  padding: 14px 13px;
+  border-radius: 16px;
+  background: var(--surface, #1a1a26);
+  color: var(--text);
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition:
+    transform 0.08s,
+    background 0.15s;
+  min-height: 96px;
+}
+.exit-tile:active {
+  transform: scale(0.97);
+}
+.exit-tile-emoji {
+  font-size: 28px;
+  line-height: 1;
+}
+.exit-tile-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.exit-tile-sub {
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.35;
+}
+/* Tile accent variants — subtle washes, not loud */
+.exit-tile.tile-nushka {
+  background: linear-gradient(160deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.03));
+  border: 1px solid rgba(34, 197, 94, 0.18);
+}
+.exit-tile.tile-wellness {
+  background: linear-gradient(160deg, rgba(20, 184, 166, 0.12), rgba(20, 184, 166, 0.03));
+  border: 1px solid rgba(20, 184, 166, 0.18);
+}
+.exit-tile.tile-lab {
+  background: linear-gradient(160deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.03));
+  border: 1px solid rgba(245, 158, 11, 0.18);
+}
+.exit-tile.tile-dawai {
+  background: linear-gradient(160deg, rgba(236, 72, 153, 0.12), rgba(236, 72, 153, 0.03));
+  border: 1px solid rgba(236, 72, 153, 0.18);
+}
+
+/* — Aaj ka safar: gamified path (visual breadcrumb, not a tracker) — */
+.safar-path {
+  margin: 4px 16px 18px;
+  padding: 14px 14px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+.safar-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+.safar-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+.safar-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text3);
+}
+.safar-track {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.safar-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.safar-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border, rgba(255, 255, 255, 0.15));
+  background: var(--surface2, rgba(255, 255, 255, 0.04));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    transform 0.08s,
+    background 0.15s,
+    border-color 0.15s;
+  padding: 0;
+  font-family: inherit;
+}
+.safar-dot:active {
+  transform: scale(0.92);
+}
+.safar-dot-emoji {
+  font-size: 18px;
+  line-height: 1;
+  filter: grayscale(0.6) opacity(0.55);
+  transition: filter 0.2s;
+}
+.safar-dot.now {
+  border-color: var(--accent2, #6b21a8);
+  background: rgba(107, 33, 168, 0.18);
+  box-shadow: 0 0 0 4px rgba(107, 33, 168, 0.12);
+}
+.safar-dot.now .safar-dot-emoji {
+  filter: none;
+}
+.safar-dot.done {
+  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(34, 197, 94, 0.16);
+}
+.safar-dot.done .safar-dot-emoji {
+  filter: none;
+}
+.safar-dot-lbl {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.safar-sep {
+  flex: 1;
+  height: 1.5px;
+  background: var(--border, rgba(255, 255, 255, 0.08));
+  margin: 0 2px;
+  margin-bottom: 16px; /* visually center with dots (which have labels below) */
+  align-self: center;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   v6.1 — Talk to Dadi card (voice-first hero with rotating placeholder + chip rail)
+   ══════════════════════════════════════════════════════════════════════════ */
+.talk-card {
+  margin: 0 16px 16px;
+  padding: 12px 12px 10px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.talk-card-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.talk-card-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  color: var(--text, #fff);
+  font-family: inherit;
+  font-size: 15px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.talk-card-input::placeholder {
+  color: var(--text3, rgba(255, 255, 255, 0.42));
+  font-style: italic;
+}
+.talk-card-input:focus {
+  border-color: var(--accent2, #6b21a8);
+  background: var(--surface2, rgba(255, 255, 255, 0.08));
+}
+.talk-card-mic {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  background: linear-gradient(135deg, #6b21a8, #14b8a6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 0 rgba(107, 33, 168, 0.45);
+  animation: talk-mic-pulse 3s ease-in-out infinite;
+  transition: transform 0.1s;
+  font-family: inherit;
+}
+.talk-card-mic:active {
+  transform: scale(0.94);
+  animation: none;
+}
+@keyframes talk-mic-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(107, 33, 168, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(107, 33, 168, 0);
+  }
+}
+.talk-card-chip-rail {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.talk-card-chip-rail::-webkit-scrollbar {
+  display: none;
+}
+.talk-chip {
+  flex-shrink: 0;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text2, #d1d5db);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    transform 0.08s,
+    background 0.15s,
+    border-color 0.15s;
+  white-space: nowrap;
+}
+.talk-chip:active {
+  transform: scale(0.95);
+  background: rgba(107, 33, 168, 0.18);
+  border-color: var(--accent2, #6b21a8);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+
+/* ══════════════════════════════════════════════════════════════════════════
+   v6.1 — Talk to Dadi card (voice-first hero with rotating placeholder + chip rail)
+   ══════════════════════════════════════════════════════════════════════════ */
+.talk-card {
+  margin: 0 16px 16px;
+  padding: 12px 12px 10px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.talk-card-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.talk-card-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  color: var(--text, #fff);
+  font-family: inherit;
+  font-size: 15px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.talk-card-input::placeholder {
+  color: var(--text3, rgba(255, 255, 255, 0.42));
+  font-style: italic;
+}
+.talk-card-input:focus {
+  border-color: var(--accent2, #6b21a8);
+  background: var(--surface2, rgba(255, 255, 255, 0.08));
+}
+.talk-card-mic {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  background: linear-gradient(135deg, #6b21a8, #14b8a6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 0 rgba(107, 33, 168, 0.45);
+  animation: talk-mic-pulse 3s ease-in-out infinite;
+  transition: transform 0.1s;
+  font-family: inherit;
+}
+.talk-card-mic:active {
+  transform: scale(0.94);
+  animation: none;
+}
+@keyframes talk-mic-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(107, 33, 168, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(107, 33, 168, 0);
+  }
+}
+.talk-card-chip-rail {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.talk-card-chip-rail::-webkit-scrollbar {
+  display: none;
+}
+.talk-chip {
+  flex-shrink: 0;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text2, #d1d5db);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    transform 0.08s,
+    background 0.15s,
+    border-color 0.15s;
+  white-space: nowrap;
+}
+.talk-chip:active {
+  transform: scale(0.95);
+  background: rgba(107, 33, 168, 0.18);
+  border-color: var(--accent2, #6b21a8);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
@@ -1583,7 +2059,7 @@ body:not(.focus) .focus-home{display:none}
         <!-- Sehat Saathi — LIVE -->
         <div class="assistant-card" onclick="enterHub()">
           <div class="assistant-avatar active-border" id="av-sehat">
-            <img src="https://sunit1986.github.io/design-prototypes/Assets/persona-health.png" alt="Sehat Saathi" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
+            <div role="img" aria-label="Sehat Saathi Dadi" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fde68a 0%,#fb923c 55%,#b45309 100%);font-size:42px;line-height:1;">👵🏽</div>
           </div>
           <span class="assistant-name">Sehat<br>Saathi</span>
         </div>
@@ -1702,55 +2178,51 @@ body:not(.focus) .focus-home{display:none}
     <!-- v5.3: Focus Mode home — shown when body.focus is set (active healing path) -->
     <div class="focus-home" id="focus-home"><!-- JS renders renderFocusHome() --></div>
 
-    <!-- v5.1: Compact warm hero -->
-    <div class="tri-hero">
-      <h1>Namaste<span id="hub3-name"></span> 🙏</h1>
-      <p>Aaj kaisi sehat banayein?</p>
+    <!-- v6.0/v6.1 warm landing — JS hydrates these on hub init -->
+    <div class="warm-hero" id="warm-hero"></div>
+    <div class="active-choice-card" id="active-choice-card"></div>
+    <div class="talk-card">
+      <div class="talk-card-row">
+        <input class="talk-card-input" id="hub-input" placeholder="Dadi se kuch bhi kahein…" onkeydown="hubKey(event)">
+        <button class="talk-card-mic" id="hub-speak" onclick="toggleVoice('hub')" aria-label="Dadi se awaaz mein baat karein">
+          <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+            <path d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3z" fill="currentColor"/>
+            <path d="M19 11a7 7 0 01-14 0M12 18v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="talk-card-chip-rail" id="talk-chip-rail"></div>
     </div>
-
-    <!-- v5: Aham kaam — prescription + lab as first-class entry points (no longer buried in rail) -->
-    <div class="aham-row">
-      <button class="aham-card" onclick="startFeature('rx')">
-        <span class="aham-card-pill" id="aham-rx-pill">Scan</span>
-        <div class="aham-card-emoji">💊</div>
-        <div class="aham-card-name">Dawai parchi</div>
-        <div class="aham-card-sub">Scan karo · reminder lago · ghar mangao</div>
-      </button>
-      <button class="aham-card warm" onclick="startFeature('lab')">
-        <span class="aham-card-pill">AI</span>
-        <div class="aham-card-emoji">🧪</div>
-        <div class="aham-card-name">Lab report</div>
-        <div class="aham-card-sub">Photo ya PDF · asaan zubaan mein samjhao</div>
-      </button>
+    <div class="exit-section">
+      <div class="exit-section-lbl">Aaj kya karna hai?</div>
+      <div class="exit-grid">
+        <button class="exit-tile tile-nushka" onclick="goToFeature('nushke')" aria-label="Tabiyat poochho">
+          <div class="exit-tile-emoji">🌿</div>
+          <div class="exit-tile-title">Tabiyat poochho</div>
+          <div class="exit-tile-sub">Sir dard, sardi, pet — Dadi se kahein</div>
+        </button>
+        <button class="exit-tile tile-wellness" onclick="goToFeature('wellness')" aria-label="Tan-Man ke saath">
+          <div class="exit-tile-emoji">🧘</div>
+          <div class="exit-tile-title">Tan-Man ke saath</div>
+          <div class="exit-tile-sub">Saans, neend, energy — chhote skills</div>
+        </button>
+        <button class="exit-tile tile-lab" onclick="startFeature('lab')" aria-label="Report samjho">
+          <div class="exit-tile-emoji">🧪</div>
+          <div class="exit-tile-title">Report samjho</div>
+          <div class="exit-tile-sub">Photo ya PDF — asaan zubaan</div>
+        </button>
+        <button class="exit-tile tile-dawai" onclick="startFeature('rx')" aria-label="Dawai ka time">
+          <div class="exit-tile-emoji">💊</div>
+          <div class="exit-tile-title">Dawai ka time</div>
+          <div class="exit-tile-sub">Parchi scan · reminder · ghar mangao</div>
+        </button>
+      </div>
     </div>
+    <div class="safar-path" id="safar-path"></div>
 
     <!-- v5.2: Sunita home — auto-shown when profile.age >= 40 OR profile.scope === 'household'.
          Hidden on body.sunita removal; the dense grids below get `dense-only` so they hide when Sunita mode is on. -->
     <div class="sunita-home">
-      <div class="sun-lbl">Aham kaam</div>
-      <div class="sun-grid">
-        <button class="sunita-tile primary" onclick="startFeature('rx')">
-          <div class="sunita-tile-emoji">💊</div>
-          <div class="sunita-tile-name">Dawai parchi</div>
-          <div class="sunita-tile-sub">Scan · reminder · ghar mangao</div>
-        </button>
-        <button class="sunita-tile warm" onclick="startFeature('lab')">
-          <div class="sunita-tile-emoji">🧪</div>
-          <div class="sunita-tile-name">Lab samjho</div>
-          <div class="sunita-tile-sub">Photo ya PDF · asaan zubaan</div>
-        </button>
-        <button class="sunita-tile" onclick="playStory('general')">
-          <div class="sunita-tile-emoji">📖</div>
-          <div class="sunita-tile-name">Dadi ki kahani</div>
-          <div class="sunita-tile-sub">2 min · roz nayi kahani</div>
-        </button>
-        <button class="sunita-tile danger" onclick="openDoctor('Aap')">
-          <div class="sunita-tile-emoji">🩺</div>
-          <div class="sunita-tile-name">Doctor se baat</div>
-          <div class="sunita-tile-sub">Call · Practo · 1mg</div>
-        </button>
-      </div>
-
       <div class="sun-lbl">Aaj kya takleef hai?</div>
       <div class="sun-grid">
         <button class="sun-tak-tile" onclick="startFocus('sir-dard')">
@@ -1774,147 +2246,11 @@ body:not(.focus) .focus-home{display:none}
           <div class="sun-tak-sub">Sleep issues</div>
         </button>
       </div>
-
-      <details class="sun-more">
-        <summary>Aur dekho — wellness aur baaki takleef</summary>
-        <div class="sun-more-body">
-          <div class="sun-lbl" style="padding-top:0">Sehat banao</div>
-          <div class="sun-grid">
-            <button class="sun-tak-tile" onclick="triWellnessTap('Energy chahiye, thakaan kam','⚡ Mujhe din bhar thakaan rehti hai. Energy badhane ka 1 AYUSH nuska + 1 habit batao — short, practical, Hinglish.')"><div class="sun-tak-emoji">⚡</div><div class="sun-tak-name">Energy</div></button>
-            <button class="sun-tak-tile" onclick="triWellnessTap('Mann shanti, stress kam','🧠 Stress kam karke mann shanti ke liye 1 saans technique + 1 lifestyle tip do — short, Hinglish.')"><div class="sun-tak-emoji">🧠</div><div class="sun-tak-name">Mann shanti</div></button>
-            <button class="sun-tak-tile" onclick="triWellnessTap('Pachhan strong, pet halka','🌱 Pachhan strong, pet halka rakhne ke liye 1 ghar ka tarika + 1 daily habit batao — Hinglish, short.')"><div class="sun-tak-emoji">🌱</div><div class="sun-tak-name">Pachhan</div></button>
-            <button class="sun-tak-tile" onclick="triWellnessTap('Immunity strong banao','💪 Immunity strong banane ke liye 1 daily AYUSH nuska + 1 habit — Hinglish, short.')"><div class="sun-tak-emoji">💪</div><div class="sun-tak-name">Immunity</div></button>
-          </div>
-          <div class="sun-lbl">Aur takleef</div>
-          <div class="sun-grid">
-            <button class="sun-tak-tile" onclick="triSymptomTap('Ghutno/jodon mein dard','🦴 Ghutno aur jodon mein dard ka ghar ka nushka batao')"><div class="sun-tak-emoji">🦴</div><div class="sun-tak-name">Ghutno dard</div></button>
-            <button class="sun-tak-tile" onclick="triSymptomTap('Bukhar hai','🌡 Halka bukhar hai, ghar ka nushka batao')"><div class="sun-tak-emoji">🌡</div><div class="sun-tak-name">Bukhar</div></button>
-            <button class="sun-tak-tile" onclick="triSymptomTap('Tension/chinta','😰 Tension aur chinta lagi hai, kya karein?')"><div class="sun-tak-emoji">😰</div><div class="sun-tak-name">Tension</div></button>
-            <button class="sun-tak-tile" onclick="triSymptomTap('Saans/galay ki dikkat','🌬 Galay mein khich-khich, saans bhaari — nushka batao')"><div class="sun-tak-emoji">🌬</div><div class="sun-tak-name">Saans/galay</div></button>
-          </div>
-        </div>
-      </details>
-    </div>
+      </div>
 
     <!-- v4.1: Wellness goals — proactive path for younger / general audience -->
-    <div class="tri-rail-lbl dense-only">Aaj behtar feel karo</div>
-    <div class="tri-grid dense-only" id="tri-well-grid">
-      <button class="tri-btn" onclick="triWellnessTap('Energy chahiye, thakaan kam','⚡ Mujhe din bhar thakaan rehti hai. Energy badhane ka 1 AYUSH nuska + 1 habit batao — short, practical, Hinglish.')">
-        <div class="tri-btn-emoji">⚡</div>
-        <div class="tri-btn-text">Energy<div class="tri-btn-sub">Thakaan kam</div></div>
-      </button>
-      <button class="tri-btn" onclick="triWellnessTap('Achi neend chahiye','😴 Achi gehri neend ke liye aaj raat ka ek ritual + 1 ghar ka nuska batao — short, Hinglish.')">
-        <div class="tri-btn-emoji">😴</div>
-        <div class="tri-btn-text">Achi neend<div class="tri-btn-sub">Gehri, sukoon</div></div>
-      </button>
-      <button class="tri-btn" onclick="triWellnessTap('Pachhan strong, pet halka','🌱 Pachhan strong, pet halka rakhne ke liye 1 ghar ka tarika + 1 daily habit batao — Hinglish, short.')">
-        <div class="tri-btn-emoji">🌱</div>
-        <div class="tri-btn-text">Pachhan<div class="tri-btn-sub">Pet halka</div></div>
-      </button>
-      <button class="tri-btn" onclick="triWellnessTap('Mann shanti, stress kam','🧠 Stress kam karke mann shanti ke liye 1 saans technique + 1 lifestyle tip do — short, Hinglish.')">
-        <div class="tri-btn-emoji">🧠</div>
-        <div class="tri-btn-text">Mann shanti<div class="tri-btn-sub">Stress kam</div></div>
-      </button>
-      <button class="tri-btn" onclick="triWellnessTap('Skin glow chahiye','✨ Skin glow ke liye Indian kitchen se 1 daily nuska + 1 habit batao — Hinglish, no chemicals talk.')">
-        <div class="tri-btn-emoji">✨</div>
-        <div class="tri-btn-text">Skin glow<div class="tri-btn-sub">Roz nikhar</div></div>
-      </button>
-      <button class="tri-btn" onclick="triWellnessTap('Healthy weight chahiye','⚖ Sustainable healthy weight ke liye 1 ghar ka tarika + 1 movement habit — no crash diet, Hinglish.')">
-        <div class="tri-btn-emoji">⚖</div>
-        <div class="tri-btn-text">Vajan<div class="tri-btn-sub">Healthy way</div></div>
-      </button>
-      <button class="tri-btn" onclick="triWellnessTap('Focus chahiye padhai/kaam mein','🎯 Padhai/kaam mein focus badhane ke 2 practical wellness tips — Hinglish, short, actionable.')">
-        <div class="tri-btn-emoji">🎯</div>
-        <div class="tri-btn-text">Focus<div class="tri-btn-sub">Padhai/kaam</div></div>
-      </button>
-      <button class="tri-btn" onclick="triWellnessTap('Immunity strong banao','💪 Immunity strong banane ke liye 1 daily AYUSH nuska + 1 habit — Hinglish, short.')">
-        <div class="tri-btn-emoji">💪</div>
-        <div class="tri-btn-text">Immunity<div class="tri-btn-sub">Strong rahein</div></div>
-      </button>
-    </div>
-
     <!-- v4: Symptom triage grid — for the unwell -->
-    <div class="tri-rail-lbl dense-only">Koi takleef hai?</div>
-    <div class="tri-grid dense-only" id="tri-grid">
-      <button class="tri-btn" onclick="startFocus('sir-dard')">
-        <div class="tri-btn-emoji">🤕</div>
-        <div class="tri-btn-text">Sir dard<div class="tri-btn-sub">Headache, migraine</div></div>
-      </button>
-      <button class="tri-btn" onclick="startFocus('sardi-khansi')">
-        <div class="tri-btn-emoji">🤧</div>
-        <div class="tri-btn-text">Sardi-khansi<div class="tri-btn-sub">Cold, cough</div></div>
-      </button>
-      <button class="tri-btn" onclick="startFocus('pet')">
-        <div class="tri-btn-emoji">🤢</div>
-        <div class="tri-btn-text">Pet ki dikkat<div class="tri-btn-sub">Acidity, gas, dard</div></div>
-      </button>
-      <button class="tri-btn" onclick="startFocus('neend')">
-        <div class="tri-btn-emoji">😴</div>
-        <div class="tri-btn-text">Neend nahi<div class="tri-btn-sub">Sleep issues</div></div>
-      </button>
-      <button class="tri-btn" onclick="triSymptomTap('Ghutno/jodon mein dard','🦴 Ghutno aur jodon mein dard ka ghar ka nushka batao')">
-        <div class="tri-btn-emoji">🦴</div>
-        <div class="tri-btn-text">Ghutno/jodon dard<div class="tri-btn-sub">Joints, knees</div></div>
-      </button>
-      <button class="tri-btn" onclick="triSymptomTap('Bukhar hai','🌡 Halka bukhar hai, ghar ka nushka batao')">
-        <div class="tri-btn-emoji">🌡</div>
-        <div class="tri-btn-text">Bukhar<div class="tri-btn-sub">Fever</div></div>
-      </button>
-      <button class="tri-btn" onclick="triSymptomTap('Tension/chinta','😰 Tension aur chinta lagi hai, kya karein?')">
-        <div class="tri-btn-emoji">😰</div>
-        <div class="tri-btn-text">Tension<div class="tri-btn-sub">Anxiety, stress</div></div>
-      </button>
-      <button class="tri-btn" onclick="triSymptomTap('Saans/galay ki dikkat','🌬 Galay mein khich-khich, saans bhaari — nushka batao')">
-        <div class="tri-btn-emoji">🌬</div>
-        <div class="tri-btn-text">Saans/galay<div class="tri-btn-sub">Throat, breath</div></div>
-      </button>
-    </div>
-
     <!-- v5.1: Mood pulse strip removed for de-cluttering — wellness goals + symptoms grid cover both intents -->
-
-    <!-- v4: Aur kya kar sakte ho — subtle horizontal rail of secondary use cases -->
-    <div class="tri-rail-lbl">Aur kya kar sakte ho</div>
-    <div class="tri-rail" id="tri-rail">
-      <button class="tri-rail-card" onclick="startFeature('bazaar')">
-        <span class="tri-rail-emoji">🗂</span>
-        <span class="tri-rail-name">Mera Sehat</span>
-        <span class="tri-rail-sub" id="tri-rail-bazaar-sub">Reminders · Orders</span>
-      </button>
-      <button class="tri-rail-card" onclick="playStory('general')">
-        <span class="tri-rail-emoji">📖</span>
-        <span class="tri-rail-name">Dadi ki kahani</span>
-        <span class="tri-rail-sub">2 min · Suno</span>
-      </button>
-      <button class="tri-rail-card" onclick="goTo('s-breathwork')">
-        <span class="tri-rail-emoji">🌬</span>
-        <span class="tri-rail-name">Saans karein</span>
-        <span class="tri-rail-sub">2 min · Try</span>
-      </button>
-      <button class="tri-rail-card" onclick="startFeature('meal')">
-        <span class="tri-rail-emoji">🍽</span>
-        <span class="tri-rail-name">Meal plan</span>
-        <span class="tri-rail-sub">3-din ka</span>
-      </button>
-      <button class="tri-rail-card" onclick="startFeature('family')">
-        <span class="tri-rail-emoji">👨‍👩‍👧</span>
-        <span class="tri-rail-name">Parivaar</span>
-        <span class="tri-rail-sub">Sab ek jagah</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Bottom bar — Speak primary CTA -->
-  <div class="bar">
-    <div class="bar-inner">
-      <input class="bar-input" id="hub-input" placeholder="Kuch bhi batao..." onkeydown="hubKey(event)">
-      <button class="bar-send" id="hub-send-btn" onclick="hubSend()" style="display:none;background:rgba(255,255,255,.12);width:36px;height:36px;border-radius:50%;border:none;display:none;align-items:center;justify-content:center;color:#fff;cursor:pointer">
-        <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M5 12l14 0M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <button class="bar-speak" id="hub-speak" onclick="toggleVoice('hub')">
-        <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3z" stroke="white" stroke-width="2" fill="white"/><path d="M19 10a7 7 0 01-14 0M12 17v4" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
-        <span id="hub-speak-lbl">Speak</span>
-      </button>
-    </div>
   </div>
 </div>
 
@@ -1973,7 +2309,7 @@ body:not(.focus) .focus-home{display:none}
     </button>
     <div class="hdr-center">
       <div class="hdr-avatar">
-        <div style="width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid #6D17CE;"><img src="https://sunit1986.github.io/design-prototypes/Assets/persona-health.png" alt="Sehat Saathi" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+        <div role="img" aria-label="Sehat Saathi Dadi" style="width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid #6D17CE;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fde68a 0%,#fb923c 55%,#b45309 100%);font-size:24px;line-height:1;">👵🏽</div>
         <div class="hdr-online"></div>
       </div>
       <div class="hdr-text">
@@ -3279,6 +3615,347 @@ function askName() {
 // ── v3 Hub: 3-zone interactions ──
 const PERSONA_MODE_LBL = { dadi: 'Dadi mode', maa: 'Maa mode', saathi: 'Saathi mode' };
 
+
+/* === v6.0/v6.1 warm landing helpers — synced from apps/health === */
+const HUB_CHIPS = [
+    {
+      label: "Sir dard",
+      ai: "🤕 Sir dard ho raha hai. Ek ghar ka nuska + kab doctor ke paas jaayein — short, Hinglish.",
+    },
+    {
+      label: "Sardi-khansi",
+      ai: "🤧 Sardi aur khansi ke liye Dadi ka ek ghar ka nuska batao — short, Hinglish.",
+    },
+    {
+      label: "Pet ki dikkat",
+      ai: "🤢 Pet mein gas/acidity ho rahi hai, ek ghar ka tarika batao — Hinglish, short.",
+    },
+    {
+      label: "Neend nahi",
+      ai: "😴 Raat ko neend nahi aati — ek ghar ka tarika + raat ka ritual batao — Hinglish, short.",
+    },
+    {
+      label: "Tension",
+      ai: "😰 Tension aur chinta lagi hai, kya karein? — short, Hinglish, warm.",
+    },
+  ];
+
+const HUB_PROMPTS_BY_TOD = {
+    morning: [
+      "sir dard hai…",
+      "subah weakness lag rahi…",
+      "khaali pet acidity…",
+      "saans bhaari hai…",
+      "naashta hi kya khaaun?",
+    ],
+    noon: [
+      "khaane ke baad gas…",
+      "thakaan lag rahi…",
+      "pet mein hawa bhar gayi…",
+      "sir dard ho raha…",
+      "neend aa rahi…",
+    ],
+    evening: [
+      "shaam tak thak gaye…",
+      "mood theek nahi…",
+      "kal ki sardi-khansi…",
+      "sir dard ho raha…",
+      "kuch halka khaaun?",
+    ],
+    night: [
+      "neend nahi aati…",
+      "tension lag rahi…",
+      "raat ko pet mein dard…",
+      "dimaag chal raha…",
+      "gehri saans kaise lein?",
+    ],
+  };
+
+const SAFAR_STEPS = [
+    { id: "paani", label: "Paani", emoji: "💧", whenHour: 6 },
+    { id: "stretch", label: "Stretch", emoji: "🧘", whenHour: 8 },
+    { id: "naashta", label: "Naashta", emoji: "🍵", whenHour: 9 },
+    { id: "walk", label: "Walk", emoji: "🚶", whenHour: 14 },
+    { id: "saans", label: "Saans", emoji: "🌬", whenHour: 18 },
+    { id: "neend", label: "Neend", emoji: "🌙", whenHour: 22 },
+  ];
+
+let _hubPlaceholderTimer = null;
+
+let _hubPlaceholderIdx = 0;
+
+function getTodWarm() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) return { bucket: "morning", emoji: "🌅", label: "Subah" };
+    if (h >= 12 && h < 16) return { bucket: "noon", emoji: "☀️", label: "Dopahar" };
+    if (h >= 16 && h < 19) return { bucket: "evening", emoji: "🌇", label: "Shaam" };
+    return { bucket: "night", emoji: "🌙", label: "Raat" };
+  }
+
+function getWarmGreeting(tod, name) {
+    const who = name ? ", " + name : "";
+    const h = new Date().getHours();
+    const time = h % 12 === 0 ? 12 : h % 12;
+    const meridian = h < 12 ? "subah" : h < 17 ? "dopahar" : h < 20 ? "shaam" : "raat";
+    const ask = {
+      morning: "Chai pi li? Aaj ke liye taiyaar ho?",
+      noon: "Khaana time pe khaya? Thoda saans le lo.",
+      evening: "Din kaisa raha? Thoda halka feel karein?",
+      night: "Raat ho gayi. Neend ke pehle gehri saans?",
+    }[tod.bucket];
+    return {
+      title: "Namaste" + who,
+      time: tod.label + " ke " + time + " baj rahe hain.",
+      ask: ask,
+    };
+  }
+
+function renderWarmHero() {
+    const el = document.getElementById("warm-hero");
+    if (!el) return;
+    const tod = getTodWarm();
+    const profile = ST.userProfile || (typeof loadProfile === "function" ? loadProfile() : null);
+    const name = profile && profile.name ? profile.name : "";
+    const g = getWarmGreeting(tod, name);
+    el.innerHTML =
+      '<div class="warm-hero-emoji">' +
+      tod.emoji +
+      '</div><div class="warm-hero-text"><div class="warm-hero-title">' +
+      g.title +
+      '</div><div class="warm-hero-time">' +
+      g.time +
+      '</div><div class="warm-hero-ask">' +
+      g.ask +
+      "</div></div>";
+  }
+
+function pickActiveChoice() {
+    // 1. Recent unresolved complaint — pull last user line from chatHistory
+    const hist = (ST.chatHistory || []).slice().reverse();
+    const lastUser = hist.find((m) => m && m.role === "user");
+    if (lastUser && lastUser.content) {
+      // Trim to first sentence / 80 chars for the recall blurb
+      const snippet = String(lastUser.content)
+        .split(/[.!?।\n]/)[0]
+        .trim()
+        .slice(0, 80);
+      if (snippet) {
+        return {
+          kind: "recall",
+          icon: "💭",
+          text: 'Pichli baar aapne kaha tha: "' + snippet + '". Aaj kaisa hai?',
+          primary: { label: "Theek hai", action: "ac_resolve" },
+          secondary: { label: "Aur batao →", action: "ac_continue" },
+        };
+      }
+    }
+    // 2. Returner — last visit > 3 days ago
+    try {
+      const last = parseInt(localStorage.getItem("ss_last_visit") || "0", 10);
+      if (last && Date.now() - last > 3 * 24 * 60 * 60 * 1000) {
+        return {
+          kind: "returner",
+          icon: "👋",
+          text: "Kuch din ho gaye. Sab theek? Aaj kaise feel kar rahe hain?",
+          primary: { label: "Sab badhiya", action: "ac_resolve" },
+          secondary: { label: "Thoda batao →", action: "ac_continue" },
+        };
+      }
+    } catch (e) {}
+    // 3. Time-of-day default
+    const tod = getTodWarm();
+    const todMap = {
+      morning: {
+        icon: "🍵",
+        text: "Subah ki shuruaat — ek glass garam paani + nimbu se din halka shuru karein?",
+      },
+      noon: {
+        icon: "🚶",
+        text: "Khaane ke baad 10 minute walk pet halka rakhta hai. Try karein?",
+      },
+      evening: {
+        icon: "🧘",
+        text: "Din thakaan utaarne ke liye 5 minute Anulom-Vilom — saath karein?",
+      },
+      night: {
+        icon: "🌙",
+        text: "Sone se pehle gehri 4-4-4 saans — neend gehri aati hai.",
+      },
+    };
+    const t = todMap[tod.bucket];
+    return {
+      kind: "tod",
+      icon: t.icon,
+      text: t.text,
+      primary: { label: "Chalo karein", action: "ac_do_tod" },
+      secondary: { label: "Baad mein", action: "ac_dismiss" },
+    };
+  }
+
+function renderActiveChoice() {
+    const el = document.getElementById("active-choice-card");
+    if (!el) return;
+    const ac = pickActiveChoice();
+    el.dataset.kind = ac.kind;
+    el.innerHTML =
+      '<div class="ac-icon" aria-hidden="true">' +
+      ac.icon +
+      '</div><div class="ac-body"><div class="ac-text">' +
+      ac.text +
+      '</div><div class="ac-actions"><button class="ac-btn ac-btn-primary" onclick="handleActiveChoice(\'' +
+      ac.primary.action +
+      "')\">" +
+      ac.primary.label +
+      '</button><button class="ac-btn ac-btn-secondary" onclick="handleActiveChoice(\'' +
+      ac.secondary.action +
+      "')\">" +
+      ac.secondary.label +
+      "</button></div></div>";
+  }
+
+function handleActiveChoice(action) {
+    if (action === "ac_resolve") {
+      if (typeof bumpScore === "function") bumpScore(1);
+      if (typeof showToast === "function") showToast("Achha laga sun ke 💚");
+      const el = document.getElementById("active-choice-card");
+      if (el) el.style.display = "none";
+      return;
+    }
+    if (action === "ac_continue") {
+      goToFeature("nushke");
+      return;
+    }
+    if (action === "ac_do_tod") {
+      const tod = getTodWarm();
+      if (tod.bucket === "morning") {
+        if (typeof bumpScore === "function") bumpScore(1);
+        showToast("Paani piyo, ⭐ +1");
+        markRitual("paani");
+      } else if (tod.bucket === "noon") {
+        markRitual("walk");
+        showToast("10 min walk pe nikal jao");
+      } else if (tod.bucket === "evening" || tod.bucket === "night") {
+        if (typeof openMovement === "function") openMovement("box-breathing");
+      }
+      const el = document.getElementById("active-choice-card");
+      if (el) el.style.display = "none";
+      return;
+    }
+    if (action === "ac_dismiss") {
+      const el = document.getElementById("active-choice-card");
+      if (el) el.style.display = "none";
+    }
+  }
+
+function renderHubChipRail() {
+    const el = document.getElementById("talk-chip-rail");
+    if (!el) return;
+    el.innerHTML = HUB_CHIPS.map(
+      (c, i) =>
+        '<button class="talk-chip" onclick="tapHubChip(' + i + ')">' + c.label + "</button>",
+    ).join("");
+  }
+
+function tapHubChip(i) {
+    const c = HUB_CHIPS[i];
+    if (!c) return;
+    if (typeof triSymptomTap === "function") {
+      triSymptomTap(c.label, c.ai);
+    }
+  }
+
+function startHubPlaceholderRotation() {
+    if (_hubPlaceholderTimer) {
+      clearInterval(_hubPlaceholderTimer);
+      _hubPlaceholderTimer = null;
+    }
+    const input = document.getElementById("hub-input");
+    if (!input) return;
+    const tod = typeof getTodWarm === "function" ? getTodWarm() : { bucket: "noon" };
+    const pool = HUB_PROMPTS_BY_TOD[tod.bucket] || HUB_PROMPTS_BY_TOD.noon;
+    _hubPlaceholderIdx = 0;
+    const apply = () => {
+      // Don't override while user is typing.
+      if (input.value && input.value.length > 0) return;
+      input.placeholder = "Try: " + pool[_hubPlaceholderIdx % pool.length];
+      _hubPlaceholderIdx++;
+    };
+    apply();
+    _hubPlaceholderTimer = setInterval(apply, 3500);
+  }
+
+function stopHubPlaceholderRotation() {
+    if (_hubPlaceholderTimer) {
+      clearInterval(_hubPlaceholderTimer);
+      _hubPlaceholderTimer = null;
+    }
+  }
+
+function loadRituals() {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const raw = localStorage.getItem("ss_rituals_" + today);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+function markRitual(id) {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const r = loadRituals();
+      r[id] = Date.now();
+      localStorage.setItem("ss_rituals_" + today, JSON.stringify(r));
+      renderSafarPath();
+    } catch (e) {}
+  }
+
+function renderSafarPath() {
+    const el = document.getElementById("safar-path");
+    if (!el) return;
+    const now = new Date().getHours();
+    const done = loadRituals();
+    const parts = SAFAR_STEPS.map((s, i) => {
+      // A step is "ready" if the current hour has passed its whenHour; done
+      // if user explicitly tapped it or auto-passed (>2h past).
+      const passed = now >= s.whenHour;
+      const userDone = !!done[s.id];
+      const autoDone = passed && now >= s.whenHour + 2 && !userDone;
+      const isDone = userDone || autoDone;
+      const isNow = passed && !isDone;
+      const cls = isDone ? "safar-dot done" : isNow ? "safar-dot now" : "safar-dot";
+      const dot =
+        '<button class="' +
+        cls +
+        '" onclick="markRitual(\'' +
+        s.id +
+        '\')" aria-label="' +
+        s.label +
+        '"><span class="safar-dot-emoji">' +
+        s.emoji +
+        '</span></button><div class="safar-dot-lbl">' +
+        s.label +
+        "</div>";
+      const sep = i < SAFAR_STEPS.length - 1 ? '<div class="safar-sep"></div>' : "";
+      return '<div class="safar-step">' + dot + "</div>" + sep;
+    }).join("");
+    const completed = SAFAR_STEPS.filter((s) => done[s.id] || now >= s.whenHour + 2).length;
+    el.innerHTML =
+      '<div class="safar-hdr"><span class="safar-title">Aaj ka safar</span><span class="safar-count">' +
+      completed +
+      "/" +
+      SAFAR_STEPS.length +
+      '</span></div><div class="safar-track">' +
+      parts +
+      "</div>";
+  }
+
+window.handleActiveChoice = handleActiveChoice;
+window.tapHubChip = tapHubChip;
+window.markRitual = markRitual;
+window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
+/* === /warm landing helpers === */
 function initHubDynamic() {
   // v3.1: Populate greeting with name (or prompt to set one)
   const profile = ST.userProfile || loadProfile();
@@ -3307,6 +3984,14 @@ function initHubDynamic() {
   if (typeof applySunitaMode === 'function') applySunitaMode();
   // v5.1: Aaj ki Sehat stories rail
   if (typeof renderHubStories === 'function') renderHubStories();
+
+  // v6.0/v6.1 warm landing renders
+  try { renderWarmHero(); } catch (e) {}
+  try { renderActiveChoice(); } catch (e) {}
+  try { renderSafarPath(); } catch (e) {}
+  try { renderHubChipRail(); } catch (e) {}
+  try { startHubPlaceholderRotation(); } catch (e) {}
+  try { localStorage.setItem('ss_last_visit', String(Date.now())); } catch (e) {}
 }
 
 // ── v5.2: Sunita-archetype simplified home (Miller's Law) ──
