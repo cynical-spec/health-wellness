@@ -2223,30 +2223,7 @@ body:not(.focus) .focus-home{display:none}
     <!-- v5.2: Sunita home — auto-shown when profile.age >= 40 OR profile.scope === 'household'.
          Hidden on body.sunita removal; the dense grids below get `dense-only` so they hide when Sunita mode is on. -->
     <div class="sunita-home">
-      <div class="sun-lbl">Aaj kya takleef hai?</div>
-      <div class="sun-grid">
-        <button class="sun-tak-tile" onclick="startFocus('sir-dard')">
-          <div class="sun-tak-emoji">🤕</div>
-          <div class="sun-tak-name">Sir dard</div>
-          <div class="sun-tak-sub">Headache</div>
-        </button>
-        <button class="sun-tak-tile" onclick="startFocus('sardi-khansi')">
-          <div class="sun-tak-emoji">🤧</div>
-          <div class="sun-tak-name">Sardi-khansi</div>
-          <div class="sun-tak-sub">Cold, cough</div>
-        </button>
-        <button class="sun-tak-tile" onclick="startFocus('pet')">
-          <div class="sun-tak-emoji">🤢</div>
-          <div class="sun-tak-name">Pet ki dikkat</div>
-          <div class="sun-tak-sub">Acidity, gas</div>
-        </button>
-        <button class="sun-tak-tile" onclick="startFocus('neend')">
-          <div class="sun-tak-emoji">😴</div>
-          <div class="sun-tak-name">Neend nahi</div>
-          <div class="sun-tak-sub">Sleep issues</div>
-        </button>
-      </div>
-      </div>
+    </div>
 
     <!-- v4.1: Wellness goals — proactive path for younger / general audience -->
     <!-- v4: Symptom triage grid — for the unwell -->
@@ -2631,7 +2608,7 @@ body:not(.focus) .focus-home{display:none}
 <script>
 const OPENAI_API_KEY = "REPLACE_WITH_YOUR_KEY";
 const GROQ_API_KEY = "REPLACE_WITH_GROQ_KEY";
-const CEREBRAS_API_KEY = (window.__SS_CONFIG__ && window.__SS_CONFIG__.cerebrasKey) || "";
+const CEREBRAS_API_KEY = "REPLACE_WITH_CEREBRAS_KEY"; // paste your Cerebras key here (starts with csk-)
 const SARVAM_KEY = "REPLACE_WITH_SARVAM_KEY";  // Sarvam STT (Saarika) + TTS (Bulbul)
 const ELEVENLABS_KEY = "REPLACE_WITH_ELEVENLABS_KEY";  // v5.3.2: build-time injection (GitHub Secret ELEVEN_KEYS). Falls back to localStorage 'ss_elevenlabs_key' if user pasted one manually.
 
@@ -2970,9 +2947,9 @@ const CCRAS_KB = (() => {
     }
     out.push('');
   }
-  out.push('CCRAS SAFETY GATE (always close with this when giving a remedy): "Agar 2-3 din mein aaram na ho to doctor se zaroor milein." Source: CCRAS booklet.');
+  out.push('DOCTOR ESCALATION: NOT a default footer. Add the "agar 2-3 din mein aaram na ho to doctor se milein" line ONLY for severe/persistent symptoms (chest pain, breathing trouble, infant fever, blood, prolonged anything). For ordinary cold/cough/gas/sir dard/neend issues, end warmly without disclaimer.');
   out.push('');
-  out.push('HOW TO CITE: When you give a remedy that matches a CCRAS entry above, mention it naturally — e.g. "Yeh nushka CCRAS - Ministry of Health, Govt of India ke validated reference se hai." Do NOT cite if you are using a remedy that is not in CCRAS_KB.');
+  out.push('CITATION RULE: Do NOT cite "CCRAS / Ministry of Health" in every reply — this is Dadi voice, not a regulator. Mention the source at most once per conversation, only if the user asks where the nushka came from or for a non-obvious remedy. Never paste the full Ministry citation as a footer. Use natural Dadi phrasing like "yeh purana Ayurvedic tarika hai" instead.');
   return out.join('\n');
 })();
 
@@ -3103,12 +3080,11 @@ KNOWLEDGE BASE: You have TWO authoritative knowledge bases below:
 2) TRADITIONAL GHAR-KE-NUSHKE — household Ayurvedic wisdom for complaints not in CCRAS.
 
 PREFERENCE ORDER:
-- If the user's complaint matches a CCRAS entry, use the CCRAS dosage AND cite the source: "Yeh nushka CCRAS - Ministry of Health, Govt of India ke validated reference se hai." This one sentence builds trust — use it.
+- If the user's complaint matches a CCRAS entry, use the CCRAS dosage. Do NOT cite the Ministry source by default — this is Dadi's voice, not a regulator's. Mention it only if the user asks "kahan se sikha?" or you're giving an unusual remedy, and even then use natural phrasing like "yeh purana Ayurvedic tarika hai".
 - If it's not in CCRAS, fall back to the traditional Ghar-ke-Nushke block.
 - If neither has it, use the kitchen ingredient bank (ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt, nimbu, cloves, cinnamon, hing).
 
-ALWAYS CLOSE WITH THE CCRAS SAFETY GATE when giving any remedy:
-"Agar 2-3 din mein aaram na ho to doctor se zaroor milein."
+DOCTOR ESCALATION: NOT a default footer. Add the "2-3 din mein farak na pade toh doctor se milein" line ONLY for severe/recurring/red-flag symptoms (chest pain, breathing trouble, prolonged fever, infant/pregnancy, blood, sudden weakness). For everyday tabiyat (sardi, gas, sir dard, neend, acidity), end warmly without a disclaimer — "thodi der mein farak feel hoga, beta" or similar.
 
 ${CCRAS_KB}
 
@@ -5546,12 +5522,20 @@ function clearChat() {
 
 // Hub input
 function hubSend() {
-  const txt = document.getElementById('hub-input').value.trim(); if (!txt) return;
-  document.getElementById('hub-input').value = '';
-  document.getElementById('hub-send-btn').style.display = 'none';
-  document.getElementById('hub-speak').style.display = '';
+  // v6.1: hub-input now lives in .talk-card (old bottom .bar + hub-send-btn
+  // were removed). Null-guard every DOM lookup so the voice path
+  // (convHandleTranscript -> hubSend) doesn't crash on hub-send-btn null.
+  const inputEl = document.getElementById('hub-input');
+  const txt = inputEl ? inputEl.value.trim() : '';
+  if (!txt) return;
+  if (inputEl) inputEl.value = '';
+  const sendBtn = document.getElementById('hub-send-btn');
+  if (sendBtn) sendBtn.style.display = 'none';
+  const speakBtn = document.getElementById('hub-speak');
+  if (speakBtn) speakBtn.style.display = '';
   ST.chatCtx = 'general'; ST.chatHistory = []; ST.isFirstMsg = true;
-  document.getElementById('chat-ctx-label').textContent = 'Sehat Saathi';
+  const ctxLbl = document.getElementById('chat-ctx-label');
+  if (ctxLbl) ctxLbl.textContent = 'Sehat Saathi';
   goTo('s-chat');
   setTimeout(() => { addMsg('user', txt, false); callAI(txt); }, 100);
 }
