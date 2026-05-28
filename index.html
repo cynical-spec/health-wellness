@@ -8498,7 +8498,7 @@ async function speakElevenLabs(text, opts) {
   // FDQcYNtvPtQjNlTyU3du → Hindi + Bengali + every other Indic language.
   // Either ID overridable via the placeholders the workflow substitutes
   // from secrets ELEVENLABS_VOICE_ID and ELEVENLABS_VOICE_ID_INDIC.
-  const _lang = ((typeof ST !== 'undefined' && ST && ST.currentLanguage) || 'hi-IN').split('-')[0];
+  // v6.7.14: voice picked from speakText's script (resolved below).
   const _voiceEn = (typeof ELEVENLABS_VOICE_ID === 'string' && !ELEVENLABS_VOICE_ID.includes('REPLACE') && ELEVENLABS_VOICE_ID.length >= 8)
     ? ELEVENLABS_VOICE_ID
     : 'EXAVITQu4vr4xnSDxMaL';
@@ -8506,11 +8506,19 @@ async function speakElevenLabs(text, opts) {
     ? ELEVENLABS_VOICE_ID_INDIC
     : 'FDQcYNtvPtQjNlTyU3du';
   const _lsVoice = localStorage.getItem('ss_elevenlabs_voice');
-  const voiceId = _lsVoice ? _lsVoice : (_lang === 'en' ? _voiceEn : _voiceIndic);
   if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
   try {
     const _t = performance.now();
     const speakText = (opts && opts.ttsText) || text;
+    // v6.7.14: pick voice from the ACTUAL text being spoken. A previous turn
+    // where Dadi replied in English flipped ST.currentLanguage to en-IN; that
+    // used to pin Sarah even for a Hindi card. Now we detect Indic script in
+    // the text itself — any Devanagari/Bengali/Tamil/etc cp → Indic voice.
+    const voiceId = _lsVoice
+      ? _lsVoice
+      : (/[ऀ-ൿ]/.test(speakText)
+          ? _voiceIndic
+          : (((ST && ST.currentLanguage) || 'hi-IN').split('-')[0] === 'en' ? _voiceEn : _voiceIndic));
     const elUrl = USE_WORKER
       ? WORKER_URL + '/elevenlabs/v1/text-to-speech/' + voiceId + '/stream?optimize_streaming_latency=4&output_format=mp3_44100_128'
       : 'https://api.elevenlabs.io/v1/text-to-speech/' + voiceId + '/stream?optimize_streaming_latency=4&output_format=mp3_44100_128';
