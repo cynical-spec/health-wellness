@@ -8331,10 +8331,15 @@ async function transliterateToDevanagari(text, langCode) {
   // v3.5: normalize cache key (case + whitespace) for higher hit rate
   const cacheKey = text.toLowerCase().replace(/\s+/g, ' ').trim();
   if (_translitCache.has(cacheKey)) return _translitCache.get(cacheKey);
-  // v3.5: skip transliteration for very short text (3 words or less) — Bulbul handles short phrases OK
+  // v6.7.6: short-text + script-already-correct + Indic-Roman heuristic.
+  // The old Hindi-only word list silently skipped Bengali/Tamil/Marathi
+  // Romanized input → ElevenLabs got "kemon achen" and pronounced it with
+  // English phonology. Now: skip only if text is already in the target
+  // script, or it's plausibly pure English with no Indic words at all.
   if (text.length < 16 && text.split(/\s+/).length <= 3) return text;
-  // v3.5: skip if text is mostly English (no Hindi loanwords) — heuristic: very few short Devanagari-ish trigrams
-  if (!/\b(beta|beti|hai|nahi|kya|mein|aap|tum|hum|pet|sir|sehat|ghar|nushka|takleef|dard|paani|chai|doodh|namaste|nasha|saans|neend|bukhar|khaaya|piya|kiya|raha|rahi|rahe|aaj|kal|subah|sham|raat|dopahar|theek|achha|achhi|acche|wah|haldi|adrak|ajwain|tulsi|jeera)\b/i.test(text)) return text;
+  const _det = (typeof detectLang === 'function' ? detectLang(text) : { code: 'hi-IN', script: 'roman' });
+  if (_det.code === (langCode || 'hi-IN') && _det.script !== 'roman') return text;
+  if (!/\b(beta|beti|hai|nahi|kya|mein|aap|tum|hum|pet|sir|sehat|ghar|nushka|takleef|dard|paani|chai|doodh|namaste|saans|neend|bukhar|khaaya|piya|kiya|raha|rahi|rahe|aaj|kal|subah|sham|raat|dopahar|theek|achha|achhi|acche|haldi|adrak|ajwain|tulsi|jeera|kemon|achen|bhalo|kothay|tomar|amar|kintu|aapni|aapnar|tumi|kothai|tomader|baba|maa|dada|didi|ekhon|kichhu|kichu|kothao)\b/i.test(text) && !/[ऀ-ൿ]/.test(text)) return text;
   if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes('REPLACE')) return text;
   try {
     const target = (langCode && langCode.length === 5) ? langCode : 'hi-IN';
@@ -8632,8 +8637,29 @@ function speakWebSpeech(text, opts) {
 
 async function speak(text, opts) {
   if (!text) return;
+  // v6.7.6: pre-transliterate BEFORE either TTS engine. ElevenLabs Sarah was
+  // pronouncing Roman Hinglish/Bengali with English phonology ("sha-HAD
+  // ni-MBU PAH-nee"). Feeding it native script triggers the multilingual
+  // model's correct phonology. Caller-supplied ttsText overrides.
+  let _prepText = text;
+  try {
+    const _callerEarly = opts && opts.ttsText;
+    if (!_callerEarly && typeof detectLang === 'function') {
+      const _detEarly = detectLang(text);
+      const _tgtEarly = (_detEarly.script !== 'roman')
+        ? (SARVAM_LANG_MAP[_detEarly.code] || 'hi-IN')
+        : (SARVAM_LANG_MAP[ST.currentLanguage] || 'hi-IN');
+      if (_detEarly.script === 'roman' && _tgtEarly && _tgtEarly !== 'en-IN') {
+        _prepText = await transliterateToDevanagari(text, _tgtEarly);
+      }
+    } else if (_callerEarly) {
+      _prepText = _callerEarly;
+    }
+  } catch (e) {
+    console.warn('[speak] pre-translit failed, using raw text', e);
+  }
   // v3.7: try ElevenLabs first if user pasted a key (faster + more natural)
-  if (await speakElevenLabs(text, opts)) return;
+  if (await speakElevenLabs(_prepText, opts)) return;
   // v5.3.4 disabled at v5.3.6: OpenAI TTS requires a proxy (no direct browser CORS).
   // Skipping unless user explicitly re-enables via _openaiTtsBlocked = false.
   if (!_openaiTtsBlocked && await speakOpenAI(text, opts)) return;
