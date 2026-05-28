@@ -3577,7 +3577,18 @@ CRITICAL RULES:
 
 const SYSTEM_PROMPT = `You are Sehat Saathi — a warm dadi/nani figure inside JioBharatIQ. NOT a remedy machine.
 
-LANGUAGE: Reply in the user's language and dialect. Match their script (if they wrote in Devanagari, reply in Devanagari; if Roman/Hinglish, reply that way). Never switch language unless they do. Never ask them to change language.
+LANGUAGE: Reply in the user's language and dialect. Match their script (if they wrote in Devanagari, reply in Devanagari; if Roman/Hinglish, reply that way; if they wrote Bengali in Bengali script, reply in Bengali script). Supported languages: Hindi, Bengali, Marathi, Tamil, Telugu, Kannada, Malayalam, Gujarati, Punjabi, English. Never switch language unless they do. Never ask them to change language.
+
+LANGUAGE STYLE — NATURAL, NOT MACHINE-TRANSLATED:
+- Hinglish: write like a real Mumbai/Delhi dadi who naturally code-mixes. Keep everyday English words English ("cup", "doctor", "sugar", "BP", "step", "minute", "blood test", "wifi") — do NOT translate them into archaic Hindi like "kappa", "vaidya", "shakkar", "raktchaap". Use the word the user would use.
+- Devanagari: write modern conversational Hindi (the kind in a Mumbai newspaper), not Shuddh/Sanskritised Hindi. Common borrowed words can stay in Devanagari but keep the borrowed form ("कप", "डॉक्टर", "मिनट").
+- Bengali: write modern Kolkata-conversational Bengali. Same rule — borrowed English words stay borrowed, written in Bengali script ("কাপ", "ডাক্তার").
+- NEVER sound like Google Translate: avoid stilted constructions like "raktchaap mapana zaroori hai" (just say "BP check karna chahiye"). Avoid Sanskrit-style genitives that no one says.
+- The test: would a real Indian dadi say this on the phone? If it sounds like a textbook, rewrite.
+
+STAY ON ONE TOPIC PER REPLY:
+- Pick ONE remedy or ONE piece of advice per turn. Do not introduce a second remedy in the same reply ("agar ye na ho toh ye karein"). If user asks for alternatives, give them in a SEPARATE follow-up turn.
+- Mention ingredients only when they ARE in the remedy you're explaining. Don't list substitutes as side notes — they confuse the downstream walkthrough engine and the user.
 
 YOUR PERSONALITY: Like a real grandmother — slow, listening, asks back. Vary your tone. Don't sound mechanical. Sometimes you just acknowledge ("achha beta", "samajh gayi"), sometimes you share a tiny relatable memory. Don't use bullet lists.
 
@@ -8407,6 +8418,11 @@ let _elevenLabsBlocked = _persistedBlock || !_hasAnyElKey;
 let _elevenLabsBlockedReason = !_hasAnyElKey ? 'no-key-available' : (_persistedBlock ? 'previously-blocked' : '');
 
 async function speakElevenLabs(text, opts) {
+  // v6.7.5: skip ElevenLabs for non-Hindi/English Indic languages —
+  // Sarah is Hindi/English-tuned and sounds awkward in Bengali/Tamil.
+  // Returning false makes speak() fall through to Sarvam's native voice.
+  const _ttsLang = ((typeof ST !== 'undefined' && ST && ST.currentLanguage) || 'hi-IN').split('-')[0];
+  if (_ttsLang && _ttsLang !== 'hi' && _ttsLang !== 'en') return false;
   // v6.6.1: USE_WORKER bypasses the block flag — the Worker proxy
   // handles auth, so a key-related block from a previous direct-call
   // session shouldn't gate Worker-routed attempts.
@@ -8437,7 +8453,14 @@ async function speakElevenLabs(text, opts) {
       body: JSON.stringify({
         text: speakText.length > 800 ? speakText.substring(0, 800) : speakText,
         model_id: 'eleven_flash_v2_5',
-        voice_settings: { stability: 0.45, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true }
+        voice_settings: {
+              // v6.7.5: tuned warmer + ~8% slower per user feedback
+              stability: 0.55,
+              similarity_boost: 0.85,
+              style: 0.45,
+              use_speaker_boost: true,
+              speed: 0.92
+            }
       })
     });
     if (!res.ok) {
@@ -10478,26 +10501,30 @@ const REMEDY_KITS = {
     ] }
 };
 function detectRemedy(text) {
-  if (!text) return null;
-  const t = text.toLowerCase();
-  for (const key in REMEDY_KITS) {
-    const kit = REMEDY_KITS[key];
-    for (const k of kit.kw) if (t.includes(k)) return [key, kit];
-  }
-  // v6.2.2: Devanagari fallback via REMEDY_EXPERIENCES.match
-  if (typeof REMEDY_EXPERIENCES !== "undefined") {
-    for (const key in REMEDY_EXPERIENCES) {
-      if (!REMEDY_KITS[key]) continue;
-      const exp = REMEDY_EXPERIENCES[key];
-      for (const n of (exp.match || [])) {
-        if (t.includes(String(n).toLowerCase())) {
-          return [key, REMEDY_KITS[key]];
-        }
+    // v6.7.5: rank by EARLIEST keyword position so the primary remedy in
+    // the reply wins, not whichever keyword happens to be iterated first.
+    // Was: Dadi explaining Jaiphal Doodh that incidentally mentions "thoda
+    // shahad mila lo" → walkthrough engine offered Nimbu-shahad paani.
+    if (!text) return null;
+    const t = text.toLowerCase();
+    let best = null;
+    function consider(key, kit, needle) {
+      const pos = t.indexOf(String(needle).toLowerCase());
+      if (pos < 0) return;
+      if (!best || pos < best.pos) best = { key, kit, pos };
+    }
+    for (const key in REMEDY_KITS) {
+      const kit = REMEDY_KITS[key];
+      for (const k of kit.kw) consider(key, kit, k);
+    }
+    if (typeof REMEDY_EXPERIENCES !== "undefined") {
+      for (const key in REMEDY_EXPERIENCES) {
+        if (!REMEDY_KITS[key]) continue;
+        for (const n of (REMEDY_EXPERIENCES[key].match || [])) consider(key, REMEDY_KITS[key], n);
       }
     }
+    return best ? [best.key, best.kit] : null;
   }
-  return null;
-}
 function injectRemedyCard(text, msgsContainer) {
   const r = detectRemedy(text);
   if (!r) return;
