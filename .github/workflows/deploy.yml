@@ -29,10 +29,22 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           SARVAM_KEY: ${{ secrets.SARVAM_KEY }}
           ELEVEN_KEYS: ${{ secrets.ELEVEN_KEYS }}
-          # v6.3: Cerebras Cloud — primary LLM provider. Accept either secret
-          # name so whichever was set in repo settings works without renaming.
+          # v6.3: Cerebras Cloud — secondary LLM after Anthropic. Accept either
+          # secret name so whichever was set in repo settings works without
+          # renaming.
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
           NEXT_PUBLIC_CEREBRAS_KEY: ${{ secrets.NEXT_PUBLIC_CEREBRAS_KEY }}
+          # v6.5: Anthropic (Claude) — PRIMARY in the cascade. Defaults the
+          # model to claude-sonnet-4-5 when the secret is unset.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
+          # v6.6 (pilot): unified Cloudflare Worker proxy. When set, ALL
+          # upstream API calls route through it and the browser only sees the
+          # shared CLIENT_TOKEN — real keys live on the Worker. If unset, the
+          # direct key substitutions above keep the legacy direct-from-browser
+          # path working as a fallback.
+          WORKER_URL: ${{ secrets.WORKER_URL }}
+          CLIENT_TOKEN: ${{ secrets.CLIENT_TOKEN }}
         run: |
           python3 - <<'PYEOF'
           import os
@@ -41,6 +53,10 @@ jobs:
           sarvam   = os.environ.get("SARVAM_KEY","").strip()
           eleven   = os.environ.get("ELEVEN_KEYS","").strip()
           cerebras = os.environ.get("CEREBRAS_API_KEY","").strip() or os.environ.get("NEXT_PUBLIC_CEREBRAS_KEY","").strip()
+          anthropic       = os.environ.get("ANTHROPIC_API_KEY","").strip()
+          anthropic_model = os.environ.get("ANTHROPIC_MODEL","").strip() or "claude-sonnet-4-5"
+          worker_url      = os.environ.get("WORKER_URL","").strip()
+          client_token    = os.environ.get("CLIENT_TOKEN","").strip()
           with open("index.html","r") as f:
               html = f.read()
           html = html.replace("REPLACE_WITH_YOUR_KEY", oai)
@@ -48,9 +64,23 @@ jobs:
           html = html.replace("REPLACE_WITH_SARVAM_KEY", sarvam)
           html = html.replace("REPLACE_WITH_ELEVENLABS_KEY", eleven)
           html = html.replace("REPLACE_WITH_CEREBRAS_KEY", cerebras)
+          html = html.replace("REPLACE_WITH_ANTHROPIC_KEY", anthropic)
+          html = html.replace("REPLACE_WITH_ANTHROPIC_MODEL", anthropic_model)
+          html = html.replace("REPLACE_WITH_WORKER_URL", worker_url)
+          html = html.replace("REPLACE_WITH_CLIENT_TOKEN", client_token)
           with open("index.html","w") as f:
               f.write(html)
-          print("Injected. OpenAI:", bool(oai), "Groq:", bool(groq), "Sarvam:", bool(sarvam), "ElevenLabs:", bool(eleven), "Cerebras:", bool(cerebras))
+          print(
+              "Injected.",
+              "OpenAI:",     bool(oai),
+              "Groq:",       bool(groq),
+              "Sarvam:",     bool(sarvam),
+              "ElevenLabs:", bool(eleven),
+              "Cerebras:",   bool(cerebras),
+              "Anthropic:",  bool(anthropic), "(model:", anthropic_model + ")",
+              "Worker:",     bool(worker_url),
+              "ClientToken:", bool(client_token),
+          )
           PYEOF
 
       - uses: actions/configure-pages@v5

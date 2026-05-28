@@ -9,9 +9,6 @@
 <title>JioBharatIQ — Sehat Saathi</title>
 <script src="https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.min.js" defer></script>
 <style>
-@font-face{font-family:'JioType';font-weight:400;src:url('https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/fonts/woff2/JioTypeVarW05-Regular.woff2') format('woff2')}
-@font-face{font-family:'JioType';font-weight:500;src:url('https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/fonts/woff2/JioTypeW05-Medium.woff2') format('woff2')}
-@font-face{font-family:'JioType';font-weight:700;src:url('https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/fonts/woff2/JioTypeW05-Bold.woff2') format('woff2')}
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -2029,6 +2026,23 @@ body:not(.focus) .focus-home{display:none}
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+
+/* v6.6: voice-vid was a <video> autoplaying HelloJio_Listening_242.mp4.
+   Now a div with concentric pulse rings + Dadi emoji in the centre. */
+.voice-vid{position:relative;width:140px;height:140px;border-radius:50%;margin-bottom:14px;display:flex;align-items:center;justify-content:center;isolation:isolate}
+.voice-pulse-ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(34,197,94,.55);animation:ssVoicePulse 2.4s cubic-bezier(0.22,1,0.36,1) infinite}
+.voice-pulse-ring:nth-child(2){animation-delay:.8s}
+.voice-pulse-ring:nth-child(3){animation-delay:1.6s}
+.voice-pulse-core{font-size:56px;line-height:1;filter:drop-shadow(0 4px 12px rgba(34,197,94,.35));z-index:1}
+@keyframes ssVoicePulse{0%{transform:scale(.65);opacity:.85}70%{opacity:0}100%{transform:scale(1.35);opacity:0}}
+@media (prefers-reduced-motion: reduce){.voice-pulse-ring{animation:none;opacity:.3}}
+/* v6.6: WhatsApp feedback floating button */
+.ss-feedback-btn{position:fixed;right:14px;bottom:18px;z-index:9000;display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border:none;border-radius:24px;background:#25d366;color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(37,211,102,.45),0 1px 2px rgba(0,0,0,.1);transition:transform .12s ease,box-shadow .2s ease}
+.ss-feedback-btn:active{transform:scale(.94)}
+.ss-feedback-btn:hover{box-shadow:0 6px 20px rgba(37,211,102,.55),0 1px 2px rgba(0,0,0,.12)}
+.ss-feedback-lbl{white-space:nowrap}
+@media (max-width:340px){.ss-feedback-lbl{display:none}.ss-feedback-btn{padding:12px;border-radius:50%}}
+#voice-overlay.active ~ .ss-feedback-btn,.screen#voice-overlay.active + .ss-feedback-btn{bottom:120px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
@@ -2295,7 +2309,7 @@ body:not(.focus) .focus-home{display:none}
       </div>
     </div>
     <button class="hdr-btn" onclick="clearChat()">
-      <img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_edit_pen.svg" width="20" height="20" style="filter:invert(1);opacity:.8" alt="New">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" style="opacity:.8"><path d="M4 20h4l10.5-10.5a2.121 2.121 0 00-3-3L5 17v3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 6.5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
   </div>
   <div class="chat-messages" id="chat-msgs"></div>
@@ -2307,7 +2321,7 @@ body:not(.focus) .focus-home{display:none}
         <span id="chat-speak-lbl">Speak</span>
       </button>
       <button class="bar-send" onclick="chatSend()">
-        <img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_message_send.svg" width="20" height="20" style="filter:invert(1)" alt="Send">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
   </div>
@@ -2501,7 +2515,7 @@ body:not(.focus) .focus-home{display:none}
     <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
   </button>
   <div class="voice-state-pill" id="voice-state-pill">Sun rahi hoon</div>
-  <video class="voice-vid" id="voice-vid" autoplay loop muted playsinline src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/states/Dark/HelloJio_Listening_242.mp4"></video>
+  <div class="voice-vid" id="voice-vid" aria-hidden="true"><span class="voice-pulse-ring"></span><span class="voice-pulse-ring"></span><span class="voice-pulse-ring"></span><span class="voice-pulse-core">👵🏽</span></div>
   <div class="voice-bars" id="voice-bars">
     <div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div>
   </div>
@@ -2515,7 +2529,7 @@ body:not(.focus) .focus-home{display:none}
 
 <!-- ══════════════ REMINDER OVERLAY ══════════════ -->
 <div id="reminder-ov">
-  <div class="reminder-glow"><img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_alarm.svg" width="48" height="48" style="filter:invert(1)" alt=""></div>
+  <div class="reminder-glow"><svg viewBox="0 0 24 24" width="48" height="48" fill="none"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9zM13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
   <div class="reminder-ov-title" id="rov-title">Dawai ka Waqt!</div>
   <div class="reminder-ov-sub" id="rov-sub">Aapki dawai lene ka waqt ho gaya</div>
   <div class="reminder-ov-actions">
@@ -2602,6 +2616,12 @@ body:not(.focus) .focus-home{display:none}
 
 <!-- ══════════════ TOAST ══════════════ -->
 <div id="toast"></div>
+<!-- v6.6: WhatsApp feedback floating button — bottom-right on every screen -->
+<button id="ss-feedback-btn" class="ss-feedback-btn" aria-label="Kuch problem hai?" title="Kuch problem hai?" onclick="openFeedbackWA()">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span class="ss-feedback-lbl">Problem?</span>
+</button>
+
 
 </div><!-- #app -->
 
@@ -2611,6 +2631,113 @@ const GROQ_API_KEY = "REPLACE_WITH_GROQ_KEY";
 const CEREBRAS_API_KEY = "REPLACE_WITH_CEREBRAS_KEY"; // paste your Cerebras key here (starts with csk-)
 const SARVAM_KEY = "REPLACE_WITH_SARVAM_KEY";  // Sarvam STT (Saarika) + TTS (Bulbul)
 const ELEVENLABS_KEY = "REPLACE_WITH_ELEVENLABS_KEY";  // v5.3.2: build-time injection (GitHub Secret ELEVEN_KEYS). Falls back to localStorage 'ss_elevenlabs_key' if user pasted one manually.
+// v6.5: Anthropic Claude — NOT OpenAI-compatible. Separate system field,
+// content as array, x-api-key header. Promoted to PRIMARY in cascade.
+const ANTHROPIC_API_KEY = "REPLACE_WITH_ANTHROPIC_KEY";
+const ANTHROPIC_MODEL = "REPLACE_WITH_ANTHROPIC_MODEL";
+// v6.6 (pilot): Cloudflare Worker proxy. When WORKER_URL is set we route
+// ALL upstream API calls through it. Browser sends x-pilot-token; Worker
+// holds real keys server-side.
+const WORKER_URL = "REPLACE_WITH_WORKER_URL".replace(/\/$/, "");
+const CLIENT_TOKEN = "REPLACE_WITH_CLIENT_TOKEN";
+const USE_WORKER = !!(WORKER_URL && WORKER_URL.length > 10 && !WORKER_URL.includes("REPLACE"));
+if (USE_WORKER) { console.info("[worker] routing all upstream calls via", WORKER_URL); }
+
+
+// ── v6.6: WhatsApp feedback button handler ──
+const FEEDBACK_WA_NUMBER = "918527685485";
+const APP_VERSION = "v6.6";
+function openFeedbackWA() {
+  try { trackEvent("feedback_tap"); } catch (_) {}
+  const lastEvents = _evBuf.slice(-3).map(e => e.event + "@" + (e.screen || "?")).join(", ");
+  const screen = (ST && ST.screen) || "?";
+  const lines = [
+    "Namaste! Sehat Saathi mein kuch dikkat hai —",
+    "",
+    "[Yahan apni problem likhein]",
+    "",
+    "—",
+    "App: Sehat Saathi " + APP_VERSION,
+    "Screen: " + screen,
+    "ID: " + USER_HASH,
+    lastEvents ? "Last: " + lastEvents : ""
+  ].filter(Boolean).join("\n");
+  const url = "https://wa.me/" + FEEDBACK_WA_NUMBER + "?text=" + encodeURIComponent(lines);
+  window.open(url, "_blank", "noopener");
+}
+window.openFeedbackWA = openFeedbackWA;
+
+// ── v6.6: anonymous device-stable user hash ──
+const USER_HASH = (function () {
+  try {
+    let h = localStorage.getItem("ss_user_hash");
+    if (h && /^ss_[a-z0-9]{6,}$/.test(h)) return h;
+    let raw;
+    if (window.crypto && window.crypto.randomUUID) {
+      raw = window.crypto.randomUUID().replace(/-/g, "");
+    } else {
+      raw = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    }
+    h = "ss_" + raw.slice(0, 11);
+    localStorage.setItem("ss_user_hash", h);
+    return h;
+  } catch (_) {
+    return "ss_ephem" + Math.random().toString(36).slice(2, 6);
+  }
+})();
+console.info("[id] user hash:", USER_HASH);
+
+// ── v6.6: lightweight analytics ──
+const _evBuf = [];
+function trackEvent(event, props) {
+  try {
+    _evBuf.push({
+      ts: Date.now(),
+      event: String(event).slice(0, 40),
+      screen: (ST && ST.screen) || "",
+      props: props || null
+    });
+    if (_evBuf.length > 50) _evBuf.splice(0, _evBuf.length - 50);
+  } catch (_) {}
+}
+function _flushAnalytics() {
+  if (!USE_WORKER || !_evBuf.length) return;
+  const payload = JSON.stringify({ userHash: USER_HASH, events: _evBuf.splice(0, _evBuf.length) });
+  try {
+    fetch(WORKER_URL + "/analytics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-pilot-token": CLIENT_TOKEN, "x-user-hash": USER_HASH },
+      body: payload,
+      keepalive: true
+    }).catch(() => {});
+  } catch (_) {}
+}
+setInterval(_flushAnalytics, 30000);
+window.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") _flushAnalytics(); });
+window.addEventListener("pagehide", _flushAnalytics);
+
+// ── v6.6: per-device daily chat cap ──
+const DAILY_CHAT_CAP = 50;
+function _todayKey() {
+  const d = new Date();
+  return "ss_chat_count_" + d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
+}
+function getDailyChatCount() {
+  try { return parseInt(localStorage.getItem(_todayKey()) || "0", 10) || 0; } catch (_) { return 0; }
+}
+function bumpDailyChatCount() {
+  try {
+    const k = _todayKey();
+    const n = getDailyChatCount() + 1;
+    localStorage.setItem(k, String(n));
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("ss_chat_count_") && key !== k) localStorage.removeItem(key);
+    }
+    return n;
+  } catch (_) { return 0; }
+}
+function isOverDailyCap() { return getDailyChatCount() >= DAILY_CHAT_CAP; }
 
 // ── State ──
 const ST = {
@@ -4299,7 +4426,7 @@ async function playCachedStory() {
       }
       const res = await fetch(sarvamUrl('/text-to-speech'), {
         method: 'POST',
-        headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
+        headers: sarvamHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           inputs: [chunk], target_language_code: targetLang, speaker,
           pitch: 0, pace: 0.9, loudness: 1.4, speech_sample_rate: 22050,
@@ -4623,7 +4750,7 @@ async function vpPlaySample(speakerId) {
   try {
     const res = await fetch(sarvamUrl('/text-to-speech'), {
       method: 'POST',
-      headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
+      headers: sarvamHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         inputs: [sample], target_language_code: 'hi-IN',
         speaker: speakerId, pace: 0.85, pitch: 0, loudness: 1.4,
@@ -4726,11 +4853,30 @@ function detectSkill(text) {
   return null;
 }
 
-const IC = 'https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/';
+// v6.6: was a base URL for raw.githubusercontent.com icon SVGs — that host
+// is blocked on Jio corp / enterprise networks. Now icons are inlined via
+// iconSvg(name, size, color). Lucide-style strokes, currentColor for theming.
+const ICON_PATHS = {
+  yoga_meditation: '<circle cx="12" cy="5" r="2.5" stroke-width="2"/><path d="M5 21c1-3 3-5 7-5s6 2 7 5M12 9v5" stroke-width="2" stroke-linecap="round"/>',
+  health_conditions: '<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" stroke-width="2" stroke-linejoin="round"/>',
+  yoga: '<circle cx="12" cy="4" r="2" stroke-width="2"/><path d="M12 8v6m-5 0h10m-5 0l-3 7m3-7l3 7" stroke-width="2" stroke-linecap="round"/>',
+  sound_loud: '<path d="M11 5L6 9H2v6h4l5 4V5z" stroke-width="2" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 010 7M19 5a9 9 0 010 14" stroke-width="2" stroke-linecap="round"/>',
+  alarm: '<path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9zM13.73 21a2 2 0 01-3.46 0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  multiple_user: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  trash_clear: '<path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  edit_pen: '<path d="M4 20h4l10.5-10.5a2.121 2.121 0 00-3-3L5 17v3z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 6.5l3 3" stroke-width="2" stroke-linecap="round"/>',
+  message_send: '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+};
+function iconSvg(name, size, color) {
+  const s = size || 20;
+  const c = color || 'currentColor';
+  const paths = (ICON_PATHS[name] || '').replace(/<(circle|path) /g, '<$1 stroke="' + c + '" ');
+  return '<svg viewBox="0 0 24 24" width="' + s + '" height="' + s + '" fill="none" aria-hidden="true">' + paths + '</svg>';
+}
 const SKILL_CARDS = {
-  breathe: { icon:`<img src="${IC}ic_yoga_meditation.svg" width="24" height="24" style="filter:invert(1)" alt="">`, title:'Box Breathing Exercise', sub:'Instant tension relief — 4 minutes', action: () => { goTo('s-breathwork'); } },
-  pressure: { icon:`<img src="${IC}ic_health_conditions.svg" width="24" height="24" style="filter:invert(1)" alt="">`, title:'Pressure Points for Headache', sub:'3 points jo sir dard mein help karte hain', action: showPressureGuide },
-  stretch: { icon:`<img src="${IC}ic_yoga.svg" width="24" height="24" style="filter:invert(1)" alt="">`, title:'Gentle Stretch for Pain Relief', sub:'5-minute body stretch — abhi karein', action: showStretchGuide }
+  breathe: { icon: iconSvg('yoga_meditation', 24, '#fff'), title:'Box Breathing Exercise', sub:'Instant tension relief — 4 minutes', action: () => { goTo('s-breathwork'); } },
+  pressure: { icon: iconSvg('health_conditions', 24, '#fff'), title:'Pressure Points for Headache', sub:'3 points jo sir dard mein help karte hain', action: showPressureGuide },
+  stretch: { icon: iconSvg('yoga', 24, '#fff'), title:'Gentle Stretch for Pain Relief', sub:'5-minute body stretch — abhi karein', action: showStretchGuide }
 };
 
 function renderSkillCard(type, container) {
@@ -4762,7 +4908,7 @@ function addMsg(role, text, showBadge) {
     acts.className = 'bubble-row-actions';
     const spk = document.createElement('button');
     spk.className = 'speak-icon-btn';
-    spk.innerHTML = '<img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_sound_loud.svg" width="15" height="15" style="filter:invert(.5)" alt="speak">';
+    spk.innerHTML = iconSvg('sound_loud', 15, 'rgba(255,255,255,0.5)');
     spk.onclick = () => speak(text);
     acts.appendChild(spk);
     if (showBadge) {
@@ -4818,37 +4964,38 @@ function addQuickReplies(options, onSelect) {
 
 // v3.6: Provider-agnostic JSON-mode helper (Groq primary, OpenAI fallback)
 async function callAIJSON(systemPrompt, userPrompt, opts) {
-  const hasOpenAI = OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes('REPLACE');
-  const hasGroq   = GROQ_API_KEY   && GROQ_API_KEY.length   > 20 && !GROQ_API_KEY.includes('REPLACE');
-  const hasCerebras = CEREBRAS_API_KEY && CEREBRAS_API_KEY.length > 20 && !CEREBRAS_API_KEY.includes('REPLACE');
+  const hasOpenAI = USE_WORKER || (OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes('REPLACE'));
+  const hasGroq = USE_WORKER || (GROQ_API_KEY && GROQ_API_KEY.length > 20 && !GROQ_API_KEY.includes('REPLACE'));
+  const hasCerebras = USE_WORKER || (CEREBRAS_API_KEY && CEREBRAS_API_KEY.length > 20 && !CEREBRAS_API_KEY.includes('REPLACE'));
+  const hasAnthropic = USE_WORKER || (ANTHROPIC_API_KEY && ANTHROPIC_API_KEY.length > 20 && !ANTHROPIC_API_KEY.includes('REPLACE'));
   const providers = [];
-  if (hasCerebras) providers.push({ url: 'https://api.cerebras.ai/v1/chat/completions', key: CEREBRAS_API_KEY, model: 'qwen-3-235b-a22b-instruct-2507' });
-  if (hasGroq)   providers.push({ url:'https://api.groq.com/openai/v1/chat/completions', key:GROQ_API_KEY, model:'llama-3.3-70b-versatile' });
-  if (hasOpenAI) providers.push({ url:'https://api.openai.com/v1/chat/completions', key:OPENAI_API_KEY, model:'gpt-4o-mini' });
+  if (hasAnthropic) providers.push({ kind: 'anthropic', url: USE_WORKER ? WORKER_URL + '/anthropic/v1/messages' : 'https://api.anthropic.com/v1/messages', key: ANTHROPIC_API_KEY, model: ANTHROPIC_MODEL });
+  if (hasCerebras) providers.push({ url: USE_WORKER ? WORKER_URL + '/cerebras/v1/chat/completions' : 'https://api.cerebras.ai/v1/chat/completions', key: CEREBRAS_API_KEY, model: 'qwen-3-235b-a22b-instruct-2507' });
+  if (hasGroq) providers.push({ url: USE_WORKER ? WORKER_URL + '/groq/openai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions', key: GROQ_API_KEY, model: 'llama-3.3-70b-versatile' });
+  if (hasOpenAI) providers.push({ url: USE_WORKER ? WORKER_URL + '/openai/v1/chat/completions' : 'https://api.openai.com/v1/chat/completions', key: OPENAI_API_KEY, model: 'gpt-4o-mini' });
   const maxTokens = (opts && opts.maxTokens) || 600;
   for (const p of providers) {
     try {
       const _t = performance.now();
-      const res = await fetch(p.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + p.key },
-        body: JSON.stringify({
-          model: p.model,
-          max_tokens: maxTokens,
-          response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ]
-        })
-      });
+      const isAnthropic = p.kind === 'anthropic';
+      const headers = USE_WORKER
+        ? { 'Content-Type': 'application/json', 'x-pilot-token': CLIENT_TOKEN, 'x-user-hash': USER_HASH }
+        : isAnthropic
+          ? { 'Content-Type': 'application/json', 'x-api-key': p.key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }
+          : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + p.key };
+      const body = isAnthropic
+        ? JSON.stringify({ model: p.model, max_tokens: maxTokens, system: systemPrompt + '\n\nReturn ONLY a valid JSON object. No prose. No code fences. Just JSON.', messages: [{ role: 'user', content: userPrompt }] })
+        : JSON.stringify({ model: p.model, max_tokens: maxTokens, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] });
+      const res = await fetch(p.url, { method: 'POST', headers, body });
       if (!res.ok) {
         console.warn('[callAIJSON]', p.model, res.status, await res.text());
-        continue; // try next provider
+        continue;
       }
       const data = await res.json();
       console.info('[AI-JSON]', p.model, Math.round(performance.now() - _t), 'ms');
-      return JSON.parse(data.choices[0].message.content.trim());
+      const raw = isAnthropic ? ((data.content && data.content[0] && data.content[0].text) || '') : data.choices[0].message.content;
+      const cleaned = raw.trim().replace(/^```(?:json)?\s*/, '').replace(/```\s*$/, '').trim();
+      return JSON.parse(cleaned);
     } catch (e) {
       console.warn('[callAIJSON] failed for', p.model, e);
     }
@@ -4857,11 +5004,12 @@ async function callAIJSON(systemPrompt, userPrompt, opts) {
 }
 
 async function callAI(userText, systemOverride) {
-  const hasOpenAI = OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes('REPLACE');
-  const hasGroq   = GROQ_API_KEY   && GROQ_API_KEY.length   > 20 && !GROQ_API_KEY.includes('REPLACE');
-  const hasCerebras = CEREBRAS_API_KEY && CEREBRAS_API_KEY.length > 20 && !CEREBRAS_API_KEY.includes('REPLACE');
-  if (!hasOpenAI && !hasGroq) {
-    addMsg('bot', '⚙️ API key set nahi hai — GitHub Secrets mein OPENAI_API_KEY ya GROQ_API_KEY daalo.', false);
+  const hasOpenAI = USE_WORKER || (OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes('REPLACE'));
+  const hasGroq = USE_WORKER || (GROQ_API_KEY && GROQ_API_KEY.length > 20 && !GROQ_API_KEY.includes('REPLACE'));
+  const hasCerebras = USE_WORKER || (CEREBRAS_API_KEY && CEREBRAS_API_KEY.length > 20 && !CEREBRAS_API_KEY.includes('REPLACE'));
+  const hasAnthropic = USE_WORKER || (ANTHROPIC_API_KEY && ANTHROPIC_API_KEY.length > 20 && !ANTHROPIC_API_KEY.includes('REPLACE'));
+  if (!hasOpenAI && !hasGroq && !hasCerebras && !hasAnthropic) {
+    addMsg('bot', '⚙️ API key set nahi hai — GitHub Secrets mein ANTHROPIC_API_KEY, CEREBRAS_API_KEY, GROQ_API_KEY ya OPENAI_API_KEY daalo.', false);
     return;
   }
   ST.chatHistory.push({ role: 'user', content: userText });
@@ -4871,26 +5019,36 @@ async function callAI(userText, systemOverride) {
 
   // v3.6: Groq first (~1s, reliable), OpenAI fallback (currently key may be invalid in live env)
   const providers = [];
-  if (hasCerebras) providers.push({ url: 'https://api.cerebras.ai/v1/chat/completions', key: CEREBRAS_API_KEY, model: 'qwen-3-235b-a22b-instruct-2507' });
-  if (hasGroq)   providers.push({ url:'https://api.groq.com/openai/v1/chat/completions', key:GROQ_API_KEY, model:'llama-3.3-70b-versatile' });
-  if (hasOpenAI) providers.push({ url:'https://api.openai.com/v1/chat/completions', key:OPENAI_API_KEY, model:'gpt-4o-mini' });
+  if (hasAnthropic) providers.push({ kind: 'anthropic', url: USE_WORKER ? WORKER_URL + '/anthropic/v1/messages' : 'https://api.anthropic.com/v1/messages', key: ANTHROPIC_API_KEY, model: ANTHROPIC_MODEL });
+  if (hasCerebras) providers.push({ url: USE_WORKER ? WORKER_URL + '/cerebras/v1/chat/completions' : 'https://api.cerebras.ai/v1/chat/completions', key: CEREBRAS_API_KEY, model: 'qwen-3-235b-a22b-instruct-2507' });
+  if (hasGroq) providers.push({ url: USE_WORKER ? WORKER_URL + '/groq/openai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions', key: GROQ_API_KEY, model: 'llama-3.3-70b-versatile' });
+  if (hasOpenAI && !USE_WORKER) providers.push({ url: 'https://api.openai.com/v1/chat/completions', key: OPENAI_API_KEY, model: 'gpt-4o-mini' });
 
   let lastErr = '';
   for (const p of providers) {
     try {
-      const res = await fetch(p.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + p.key },
-        body: JSON.stringify({ model: p.model, temperature: 0.75, max_tokens: 400, messages: msgs })
-      });
+      const isAnthropic = p.kind === 'anthropic';
+      const sysContent = (msgs[0] && msgs[0].role === 'system') ? msgs[0].content : (systemOverride || SYSTEM_PROMPT);
+      const turns = msgs.filter(m => m.role !== 'system');
+      const headers = USE_WORKER
+        ? { 'Content-Type': 'application/json', 'x-pilot-token': CLIENT_TOKEN, 'x-user-hash': USER_HASH }
+        : isAnthropic
+          ? { 'Content-Type': 'application/json', 'x-api-key': p.key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }
+          : { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + p.key };
+      const body = isAnthropic
+        ? JSON.stringify({ model: p.model, max_tokens: 400, temperature: 0.75, system: sysContent, messages: turns })
+        : JSON.stringify({ model: p.model, temperature: 0.75, max_tokens: 400, messages: msgs });
+      const res = await fetch(p.url, { method: 'POST', headers, body });
       if (!res.ok) {
         let et = ''; try { const j = await res.json(); et = j.error?.message || ''; } catch(e2) {}
         if (res.status === 401) { lastErr = '❌ API key invalid (' + p.url.split('/')[2] + ')'; continue; }
-        if (res.status === 429) { lastErr = '⏳ Rate limit — thoda wait karo'; break; }
+        if (res.status === 429) { lastErr = '⏳ Rate limit — thoda wait karo'; continue; }
         lastErr = '❌ Error ' + res.status + (et ? ': '+et.slice(0,50) : ''); continue;
       }
       const data = await res.json();
-      let reply = data.choices[0].message.content.trim();
+      let reply = isAnthropic
+        ? ((data.content && data.content[0] && data.content[0].text) || '').trim()
+        : data.choices[0].message.content.trim();
       // v3: Parse LANG: prefix and update currentLanguage for downstream Sarvam TTS
       const langMatch = reply.match(/^LANG:\s*([a-z]{2,3})\s*\n/i);
       if (langMatch) {
@@ -5624,7 +5782,7 @@ function renderMedConfirm() {
   const flow = document.getElementById('med-flow');
   flow.innerHTML = `
     <div style="background:var(--surface);border-radius:var(--radius);padding:20px;margin-bottom:16px">
-      <div style="text-align:center;margin-bottom:12px"><img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_alarm.svg" width="40" height="40" style="filter:invert(1)" alt=""></div>
+      <div style="text-align:center;margin-bottom:12px"><svg viewBox="0 0 24 24" width="40" height="40" fill="none"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9zM13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <div style="font-size:14px;color:var(--text2);margin-bottom:8px">Reminder summary:</div>
       <div style="font-size:16px;font-weight:700;margin-bottom:4px">${d.name || 'Dawai'}</div>
       <div style="font-size:14px;color:var(--text2)">${who} ke liye • ${d.timing || ''} • ${d.time || ''}</div>
@@ -6901,12 +7059,12 @@ function renderFamilyList() {
   const fam = loadFamily();
   const flow = document.getElementById('family-list');
   if (fam.length === 0) {
-    flow.innerHTML = `<div class="empty-state"><div style="margin-bottom:8px"><img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_multiple_user.svg" width="48" height="48" style="filter:invert(.4)" alt=""></div><p>Abhi koi family member add nahi hai.<br>Add karo aur personalized health tips pao.</p></div><button class="add-family-btn" onclick="showAddFamily()">Family Member Add Karo</button>`;
+    flow.innerHTML = `<div class="empty-state"><div style="margin-bottom:8px"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" style="opacity:.4"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><p>Abhi koi family member add nahi hai.<br>Add karo aur personalized health tips pao.</p></div><button class="add-family-btn" onclick="showAddFamily()">Family Member Add Karo</button>`;
     return;
   }
   let html = `<button class="add-family-btn" onclick="showAddFamily()">Aur member add karo</button>`;
   fam.forEach((m, i) => {
-    html += `<div class="family-member"><div class="family-avatar">${m.name[0].toUpperCase()}</div><div class="family-info"><div class="family-name">${m.name}</div><div class="family-meta">${m.age} saal • ${m.gender} • ${m.conditions || 'Healthy'}</div>${m.phone ? `<div class="family-meta">${m.phone}</div>` : ''}</div><button style="background:none;border:none;cursor:pointer;color:var(--error);padding:8px" onclick="deleteFamily(${i})"><img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_trash_clear.svg" width="20" height="20" style="filter:invert(1) sepia(1) saturate(5) hue-rotate(300deg)" alt=""></button></div>`;
+    html += `<div class="family-member"><div class="family-avatar">${m.name[0].toUpperCase()}</div><div class="family-info"><div class="family-name">${m.name}</div><div class="family-meta">${m.age} saal • ${m.gender} • ${m.conditions || 'Healthy'}</div>${m.phone ? `<div class="family-meta">${m.phone}</div>` : ''}</div><button style="background:none;border:none;cursor:pointer;color:var(--error);padding:8px" onclick="deleteFamily(${i})"><svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>`;
   });
   flow.innerHTML = html;
 }
@@ -7652,7 +7810,7 @@ async function transcribeWithSarvam(audioBlob) {
     fd.append('with_timestamps', 'false');
     const res = await fetch(sarvamUrl('/speech-to-text'), {
       method: 'POST',
-      headers: { 'api-subscription-key': SARVAM_KEY },
+      headers: sarvamHeaders(),
       body: fd
     });
     if (!res.ok) {
@@ -7759,58 +7917,21 @@ let _currentAudio = null;
 
 // v3.3: cache Roman → Devanagari transliterations to avoid re-billing same text
 const _translitCache = new Map();
-// v5.3.9: Sarvam's CORS preflight is broken from github.io origin (returns
-// HTTP 400 on OPTIONS even with allow-* headers present). We route every
-// Sarvam call through our own Cloudflare Worker which forwards to
-// api.sarvam.ai and answers the preflight cleanly. This is the permanent fix
-// — no per-device localStorage paste required.
-//
-// Override at runtime with:
-//   localStorage.setItem('ss_sarvam_proxy', 'https://your.worker.workers.dev/')
-// Reset with: setSarvamProxy(null)
-//
-// CF Worker source (already deployed to sarvam-proxy.nawaneet-kumar.workers.dev):
-//   export default {
-//     async fetch(req) {
-//       if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: {
-//         'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS',
-//         'Access-Control-Allow-Headers':'*','Access-Control-Max-Age':'86400' }});
-//       const u = new URL(req.url);
-//       const target = 'https://api.sarvam.ai' + u.pathname + u.search;
-//       const h = new Headers(req.headers); h.delete('host'); h.delete('origin');
-//       const r = await fetch(target, { method: req.method, headers: h, body: req.body });
-//       const rh = new Headers(r.headers); rh.set('Access-Control-Allow-Origin','*');
-//       return new Response(r.body, { status: r.status, headers: rh });
-//     }
-//   };
-const SARVAM_PROXY = 'https://sarvam-proxy.nawaneet-kumar.workers.dev/';
-function sarvamUrl(path) {
-  const target = 'https://api.sarvam.ai' + path;
-  // 1) localStorage override (set ss_sarvam_proxy = 'https://your.worker.workers.dev/' to use your CF Worker)
-  let proxy = '';
-  try { proxy = localStorage.getItem('ss_sarvam_proxy') || ''; } catch(e){}
-  // 2) runtime override via window
-  if (!proxy && typeof window !== 'undefined' && typeof window.SARVAM_PROXY === 'string') {
-    proxy = window.SARVAM_PROXY;
-  }
-  // 3) compile-time default
-  if (proxy === '' && proxy !== null) proxy = SARVAM_PROXY;
-  if (!proxy) return target;
-  // If proxy is a Cloudflare Worker style passthrough (ends with /), append path directly.
-  // If it's a wrapping proxy (corsproxy.io style ?url=), URL-encode the target.
-  if (proxy.endsWith('?url=') || proxy.endsWith('?quest=') || proxy.includes('?')) {
-    return proxy + encodeURIComponent(target);
-  }
-  // Passthrough (e.g. CF Worker): proxy is like 'https://x.workers.dev/' — append path+search
-  return proxy.replace(/\/$/, '') + path;
-}
 
-// User helper: paste your Cloudflare Worker URL to bypass corsproxy.io
-function setSarvamProxy(url) {
-  if (!url) { localStorage.removeItem('ss_sarvam_proxy'); showToast('Sarvam proxy reset to default'); return; }
-  localStorage.setItem('ss_sarvam_proxy', url);
-  _sarvamCorsBlocked = false; // reset kill-switch so it retries with new proxy
-  showToast('Sarvam proxy updated — try Speak again');
+// PR #16 + v6.6: Sarvam endpoint routing.
+//   - If WORKER_URL is set (pilot): route via /sarvam/<path> on the unified Worker
+//     which handles CORS + adds the api-subscription-key server-side.
+//   - Otherwise: fall back to the legacy single-purpose Sarvam proxy.
+const SARVAM_PROXY_BASE_URL = "https://sarvam-proxy.nawaneet-kumar.workers.dev";
+function sarvamUrl(path) {
+  if (USE_WORKER) return WORKER_URL + "/sarvam" + path;
+  return SARVAM_PROXY_BASE_URL + path;
+}
+function sarvamHeaders(extra) {
+  const base = USE_WORKER
+    ? { "x-pilot-token": CLIENT_TOKEN, "x-user-hash": USER_HASH }
+    : { "api-subscription-key": SARVAM_KEY };
+  return Object.assign({}, base, extra || {});
 }
 
 // v5.3.2: Sarvam's OPTIONS preflight returns HTTP 400 on cynical-spec.github.io
@@ -7835,7 +7956,7 @@ async function transliterateToDevanagari(text, langCode) {
     const _tStart = performance.now();
     const res = await fetch(sarvamUrl('/transliterate'), {
       method: 'POST',
-      headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
+      headers: sarvamHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         input: text.length > 950 ? text.substring(0, 950) : text,
         source_language_code: target,
@@ -7916,9 +8037,15 @@ async function speakElevenLabs(text, opts) {
   try {
     const _t = performance.now();
     const speakText = (opts && opts.ttsText) || text;
-    const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + voiceId + '/stream?optimize_streaming_latency=4&output_format=mp3_44100_128', {
+    const elUrl = USE_WORKER
+      ? WORKER_URL + '/elevenlabs/v1/text-to-speech/' + voiceId + '/stream?optimize_streaming_latency=4&output_format=mp3_44100_128'
+      : 'https://api.elevenlabs.io/v1/text-to-speech/' + voiceId + '/stream?optimize_streaming_latency=4&output_format=mp3_44100_128';
+    const elHeaders = USE_WORKER
+      ? { 'x-pilot-token': CLIENT_TOKEN, 'x-user-hash': USER_HASH, 'Content-Type': 'application/json' }
+      : { 'xi-api-key': key, 'Content-Type': 'application/json' };
+    const res = await fetch(elUrl, {
       method: 'POST',
-      headers: { 'xi-api-key': key, 'Content-Type': 'application/json' },
+      headers: elHeaders,
       body: JSON.stringify({
         text: speakText.length > 800 ? speakText.substring(0, 800) : speakText,
         model_id: 'eleven_flash_v2_5',
@@ -8148,7 +8275,7 @@ async function speak(text, opts) {
     const _enablePreprocess = targetLangCode.startsWith('hi') || targetLangCode.startsWith('en');
     const res = await fetch(sarvamUrl('/text-to-speech'), {
       method: 'POST',
-      headers: { 'api-subscription-key': SARVAM_KEY, 'Content-Type': 'application/json' },
+      headers: sarvamHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         inputs: [speakText.length > 500 ? speakText.substring(0, 500) : speakText],
         target_language_code: targetLangCode,
