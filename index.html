@@ -8191,7 +8191,7 @@ async function transcribeWithSarvam(audioBlob) {
     const fd = new FormData();
     fd.append('file', uploadBlob, 'rec.' + uploadExt);
     fd.append('model', 'saarika:v2.5');
-    fd.append('language_code', ST.currentLanguage || 'hi-IN');
+    fd.append('language_code', 'unknown'); // v6.7.7: auto-detect
     fd.append('with_timestamps', 'false');
     const res = await fetch(sarvamUrl('/speech-to-text'), {
       method: 'POST',
@@ -8206,7 +8206,15 @@ async function transcribeWithSarvam(audioBlob) {
     }
     const data = await res.json();
     const txt = (data.transcript || '').trim();
-    if (!txt) console.warn('[Sarvam STT] empty transcript', data);
+    // v6.7.7: pin detected language for downstream TTS routing
+    if (data.language_code && /^[a-z]{2}-[A-Z]{2}$/.test(data.language_code)) {
+      ST.currentLanguage = data.language_code;
+      console.info('[Sarvam STT] detected', data.language_code);
+    }
+    if (!txt) {
+      console.warn('[Sarvam STT] empty transcript', data);
+      showToast('Kuch sunaai nahi diya — thoda zor se bolein');
+    }
     return txt;
   } catch (e) {
     console.error('[Sarvam STT] failed', e);
