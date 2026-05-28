@@ -3586,7 +3586,7 @@ LANGUAGE: Reply in the user's language and dialect. Match their script (if they 
 LANGUAGE STYLE — NATURAL, NOT MACHINE-TRANSLATED:
 - Hinglish: write like a real Mumbai/Delhi dadi who naturally code-mixes. Keep everyday English words English ("cup", "doctor", "sugar", "BP", "step", "minute", "blood test", "wifi") — do NOT translate them into archaic Hindi like "kappa", "vaidya", "shakkar", "raktchaap". Use the word the user would use.
 - Devanagari: write modern conversational Hindi (the kind in a Mumbai newspaper), not Shuddh/Sanskritised Hindi. Common borrowed words can stay in Devanagari but keep the borrowed form ("कप", "डॉक्टर", "मिनट").
-- Bengali: write modern Kolkata-conversational Bengali. Same rule — borrowed English words stay borrowed, written in Bengali script ("কাপ", "ডাক্তার").
+- Bengali: write modern Kolkata-conversational Bengali in ROMAN script (not Bengali script). Same Hinglish-style code-mixing: "Apnar kemon achen?", "Cup-e ada chai kheye nin" — keep cup/doctor/BP English. We use Roman Bengali because our downstream TTS voice handles Roman Bengali better than Bengali script.
 - NEVER sound like Google Translate: avoid stilted constructions like "raktchaap mapana zaroori hai" (just say "BP check karna chahiye"). Avoid Sanskrit-style genitives that no one says.
 - The test: would a real Indian dadi say this on the phone? If it sounds like a textbook, rewrite.
 
@@ -8703,7 +8703,10 @@ async function speak(text, opts) {
       const _tgtEarly = (_detEarly.script !== 'roman')
         ? (SARVAM_LANG_MAP[_detEarly.code] || 'hi-IN')
         : (SARVAM_LANG_MAP[ST.currentLanguage] || 'hi-IN');
-      if (_detEarly.script === 'roman' && _tgtEarly && _tgtEarly !== 'en-IN') {
+      if (_detEarly.script === 'roman' && _tgtEarly && _tgtEarly !== 'en-IN' && _tgtEarly !== 'bn-IN') {
+        // v6.7.11: Bengali stays Roman end-to-end. Bilingual voice handles
+        // Roman Bengali natively; Sarvam transliterate to Bengali script
+        // produced noisy output the voice misread.
         _prepText = await transliterateToDevanagari(text, _tgtEarly);
       }
     } else if (_callerEarly) {
@@ -8750,6 +8753,7 @@ async function speak(text, opts) {
     let speakText = callerTtsText || text;
     // If caller didn't supply Devanagari version AND text is Roman, transliterate to target script first.
     if (!callerTtsText && detected.script === 'roman' && targetLangCode.startsWith('hi')) {
+      // v6.7.11: Only Hindi transliterates. Bengali stays Roman.
       speakText = await transliterateToDevanagari(text, targetLangCode);
     }
     const speaker = _validSarvamSpeaker();
