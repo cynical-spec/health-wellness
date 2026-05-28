@@ -24,30 +24,45 @@ html[lang="hi"] input,
 html[lang="hi"] textarea {
   font-family: var(--font-devanagari);
 }
-/* v6.7: language toggle (अ / A) — small floating pill at top-right of home. */
+/* ── v6.7.1: global language toggle (अ / A) ────────────────────────
+   Fixed top-right on every screen. Sits ABOVE the safe-area inset so
+   it floats clear of notches and headers. Small + circular so it
+   doesn't compete with primary CTAs. Toggling is the office boy's
+   single lever to switch script preference at any moment. */
 .ss-lang-toggle {
-  position: absolute;
-  top: 16px;
-  right: 14px;
-  z-index: 50;
-  width: 36px;
-  height: 36px;
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  right: 12px;
+  z-index: 9100; /* above feedback button (9000), under modals */
+  width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  border: 1.5px solid var(--surface2);
-  background: var(--surface);
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--text);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   font-family: var(--font-devanagari);
   cursor: pointer;
-  transition: transform .1s, border-color .15s, background .15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition:
+    transform 0.1s,
+    border-color 0.15s,
+    background 0.15s;
 }
 .ss-lang-toggle:hover { border-color: var(--primary); }
 .ss-lang-toggle:active { transform: scale(.92); }
-.screen:not(#s-home) .ss-lang-toggle { display: none; }
+/* Hide on the full-screen voice overlay — would clash with the
+   minimalist voice UI. Onboarding keeps the toggle so users can
+   switch script during the introduction itself. */
+body:has(#voice-overlay.active) .ss-lang-toggle {
+  display: none;
+}
 
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -2110,7 +2125,6 @@ body:has(.screen.active#s-onboard) .ss-feedback-btn{display:none}
       <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     </button>
     <button class="hdr-btn" style="width:36px;height:36px;background:var(--surface2);border-radius:50%;font-size:14px;font-weight:700;color:var(--text)">N</button>
-    <button id="ss-lang-toggle" class="ss-lang-toggle" onclick="toggleLang()" aria-label="Switch language" data-i18n-aria="lang_toggle_aria_to_en">अ</button>
   </div>
   <div class="body" id="home-body">
 
@@ -2256,27 +2270,27 @@ body:has(.screen.active#s-onboard) .ss-feedback-btn{display:none}
       <div class="talk-card-chip-rail" id="talk-chip-rail"></div>
     </div>
     <div class="exit-section">
-      <div class="exit-section-lbl">Aaj kya karna hai?</div>
+      <div class="exit-section-lbl" data-i18n="hub_aaj_kya">Aaj kya karna hai?</div>
       <div class="exit-grid">
         <button class="exit-tile tile-nushka" onclick="goToFeature('nushke')" aria-label="Tabiyat poochho">
           <div class="exit-tile-emoji">🌿</div>
-          <div class="exit-tile-title">Tabiyat poochho</div>
-          <div class="exit-tile-sub">Sir dard, sardi, pet — Dadi se kahein</div>
+          <div class="exit-tile-title" data-i18n="exit_tabiyat_title">Tabiyat poochho</div>
+          <div class="exit-tile-sub" data-i18n="exit_tabiyat_sub">Sir dard, sardi, pet — Dadi se kahein</div>
         </button>
         <button class="exit-tile tile-wellness" onclick="goToFeature('wellness')" aria-label="Tan-Man ke saath">
           <div class="exit-tile-emoji">🧘</div>
-          <div class="exit-tile-title">Tan-Man ke saath</div>
-          <div class="exit-tile-sub">Saans, neend, energy — chhote skills</div>
+          <div class="exit-tile-title" data-i18n="exit_tanman_title">Tan-Man ke saath</div>
+          <div class="exit-tile-sub" data-i18n="exit_tanman_sub">Saans, neend, energy — chhote skills</div>
         </button>
         <button class="exit-tile tile-lab" onclick="startFeature('lab')" aria-label="Report samjho">
           <div class="exit-tile-emoji">🧪</div>
-          <div class="exit-tile-title">Report samjho</div>
-          <div class="exit-tile-sub">Photo ya PDF — asaan zubaan</div>
+          <div class="exit-tile-title" data-i18n="exit_report_title">Report samjho</div>
+          <div class="exit-tile-sub" data-i18n="exit_report_sub">Photo ya PDF — asaan zubaan</div>
         </button>
         <button class="exit-tile tile-dawai" onclick="startFeature('rx')" aria-label="Dawai ka time">
           <div class="exit-tile-emoji">💊</div>
-          <div class="exit-tile-title">Dawai ka time</div>
-          <div class="exit-tile-sub">Parchi scan · reminder · ghar mangao</div>
+          <div class="exit-tile-title" data-i18n="exit_dawai_title">Dawai ka time</div>
+          <div class="exit-tile-sub" data-i18n="exit_dawai_sub">Parchi scan · reminder · ghar mangao</div>
         </button>
       </div>
     </div>
@@ -2297,40 +2311,40 @@ body:has(.screen.active#s-onboard) .ss-feedback-btn{display:none}
 <div class="bs-overlay" id="bs-overlay" onclick="closeToolsSheet()"></div>
 <div class="bs-sheet" id="bs-sheet">
   <div class="bs-handle"></div>
-  <div class="bs-title">Sehat Tools</div>
+  <div class="bs-title" data-i18n="bs_title">Sehat Tools</div>
   <button class="bs-row" onclick="closeToolsSheet();startFeature('nushke')">
     <div class="bs-row-icon" style="background:rgba(30,204,176,.15);color:#1eccb0">🌿</div>
-    <div class="bs-row-text"><div class="bs-row-name">Ghar ke Nushke</div><div class="bs-row-sub">Koi takleef? Dadi batayegi</div></div>
+    <div class="bs-row-text"><div class="bs-row-name" data-i18n="bs_nushke_title">Ghar ke Nushke</div><div class="bs-row-sub" data-i18n="bs_nushke_sub">Koi takleef? Dadi batayegi</div></div>
   </button>
   <div class="bs-divider"></div>
   <button class="bs-row" onclick="closeToolsSheet();startFeature('lab')">
     <div class="bs-row-icon" style="background:rgba(30,204,176,.15);color:#1eccb0">🧪</div>
-    <div class="bs-row-text"><div class="bs-row-name">Lab Report Padho</div><div class="bs-row-sub">Apni report ka asaan matlab</div></div>
+    <div class="bs-row-text"><div class="bs-row-name" data-i18n="bs_lab_title">Lab Report Padho</div><div class="bs-row-sub" data-i18n="bs_lab_sub">Apni report ka asaan matlab</div></div>
   </button>
   <div class="bs-divider"></div>
   <button class="bs-row" onclick="closeToolsSheet();startFeature('rx')">
     <div class="bs-row-icon" style="background:rgba(251,146,60,.15);color:#fb923c">💊</div>
-    <div class="bs-row-text"><div class="bs-row-name">Dawai parchi · reminder · order</div><div class="bs-row-sub">Scan, yaad dilao, ghar mangao</div></div>
+    <div class="bs-row-text"><div class="bs-row-name" data-i18n="bs_dawai_title">Dawai parchi · reminder · order</div><div class="bs-row-sub" data-i18n="bs_dawai_sub">Scan, yaad dilao, ghar mangao</div></div>
   </button>
   <div class="bs-divider"></div>
   <button class="bs-row" onclick="closeToolsSheet();startFeature('bazaar')">
     <div class="bs-row-icon" style="background:rgba(168,85,247,.16);color:#a855f7">🗂</div>
-    <div class="bs-row-text"><div class="bs-row-name">Mera Sehat</div><div class="bs-row-sub">Reminders · Orders · Reports</div></div>
+    <div class="bs-row-text"><div class="bs-row-name" data-i18n="tri_rail_mera_sehat">Mera Sehat</div><div class="bs-row-sub" data-i18n="bs_reminders_sub">Reminders · Orders · Reports</div></div>
   </button>
   <div class="bs-divider"></div>
   <button class="bs-row" onclick="closeToolsSheet();startFeature('meal')">
     <div class="bs-row-icon" style="background:rgba(251,146,60,.15);color:#fb923c">🍽️</div>
-    <div class="bs-row-text"><div class="bs-row-name">Meal Planning</div><div class="bs-row-sub">Ghar ke khaane ka 3-din plan</div></div>
+    <div class="bs-row-text"><div class="bs-row-name" data-i18n="bs_meal_title">Meal Planning</div><div class="bs-row-sub" data-i18n="bs_meal_sub">Ghar ke khaane ka 3-din plan</div></div>
   </button>
   <div class="bs-divider"></div>
   <button class="bs-row" onclick="closeToolsSheet();startFeature('family')">
     <div class="bs-row-icon" style="background:rgba(107,33,168,.18);color:#a855f7">👨‍👩‍👧</div>
-    <div class="bs-row-text"><div class="bs-row-name">Parivaar</div><div class="bs-row-sub">Sab ke liye ek jagah dekhbhal</div></div>
+    <div class="bs-row-text"><div class="bs-row-name" data-i18n="tri_rail_parivaar">Parivaar</div><div class="bs-row-sub" data-i18n="bs_parivaar_sub">Sab ke liye ek jagah dekhbhal</div></div>
   </button>
   <div class="bs-divider"></div>
   <button class="bs-row disabled">
     <div class="bs-row-icon" style="background:rgba(255,255,255,.06);color:#888">💬</div>
-    <div class="bs-row-text"><div class="bs-row-name">Sehat Charcha</div><div class="bs-row-sub">Apke jaise logo se milo</div></div>
+    <div class="bs-row-text"><div class="bs-row-name" data-i18n="bs_charcha_title">Sehat Charcha</div><div class="bs-row-sub" data-i18n="bs_charcha_sub">Apke jaise logo se milo</div></div>
     <div class="bs-row-tag">Jald aa raha hai</div>
   </button>
   <div class="bs-divider"></div>
@@ -2562,13 +2576,13 @@ body:has(.screen.active#s-onboard) .ss-feedback-btn{display:none}
   <button class="voice-close" onclick="stopVoice()" aria-label="Band karein">
     <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
   </button>
-  <div class="voice-state-pill" id="voice-state-pill">Sun rahi hoon</div>
+  <div class="voice-state-pill" id="voice-state-pill" data-i18n="voice_listening">Sun rahi hoon</div>
   <div class="voice-vid" id="voice-vid" aria-hidden="true"><span class="voice-pulse-ring"></span><span class="voice-pulse-ring"></span><span class="voice-pulse-ring"></span><span class="voice-pulse-core">👵🏽</span></div>
   <div class="voice-bars" id="voice-bars">
     <div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div>
   </div>
   <div class="voice-transcript-area" id="voice-transcript-area"></div>
-  <div class="voice-hint" id="voice-hint">Bolein... ya rukne ke liye band karein</div>
+  <div class="voice-hint" id="voice-hint" data-i18n="voice_hint">Bolein... ya rukne ke liye band karein</div>
   <button class="voice-stop" onclick="stopVoice()"><span class="voice-stop-dot"></span>Band karein</button>
   <!-- Legacy refs kept so other code that touches them doesn't break -->
   <p class="voice-txt" id="voice-txt"></p>
@@ -2578,10 +2592,10 @@ body:has(.screen.active#s-onboard) .ss-feedback-btn{display:none}
 <!-- ══════════════ REMINDER OVERLAY ══════════════ -->
 <div id="reminder-ov">
   <div class="reminder-glow"><svg viewBox="0 0 24 24" width="48" height="48" fill="none"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9zM13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-  <div class="reminder-ov-title" id="rov-title">Dawai ka Waqt!</div>
-  <div class="reminder-ov-sub" id="rov-sub">Aapki dawai lene ka waqt ho gaya</div>
+  <div class="reminder-ov-title" id="rov-title" data-i18n="reminder_title">Dawai ka Waqt!</div>
+  <div class="reminder-ov-sub" id="rov-sub" data-i18n="reminder_sub">Aapki dawai lene ka waqt ho gaya</div>
   <div class="reminder-ov-actions">
-    <button class="reminder-snooze" onclick="snoozeReminder()">10 min baad</button>
+    <button class="reminder-snooze" onclick="snoozeReminder()" data-i18n="reminder_snooze">10 min baad</button>
     <button class="reminder-done" onclick="dismissReminder()">Li Li</button>
   </div>
 </div>
@@ -2664,6 +2678,8 @@ body:has(.screen.active#s-onboard) .ss-feedback-btn{display:none}
 
 <!-- ══════════════ TOAST ══════════════ -->
 <div id="toast"></div>
+<!-- v6.7.1: global Devanagari/Hinglish toggle — sibling of every screen -->
+<button id="ss-lang-toggle" class="ss-lang-toggle" onclick="toggleLang()" aria-label="Switch language" data-i18n-aria="lang_toggle_aria_to_en">अ</button>
 <!-- v6.6: WhatsApp feedback floating button — bottom-right on every screen -->
 <button id="ss-feedback-btn" class="ss-feedback-btn" aria-label="Kuch problem hai?" title="Kuch problem hai?" data-i18n-aria="feedback_aria" onclick="openFeedbackWA()">
   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -2775,6 +2791,122 @@ const LANG = {
   // ── Language toggle button ──
   lang_toggle_aria_to_en: { hi: "English mein dikhayein", en: "Switch to English" },
   lang_toggle_aria_to_hi: { hi: "देवनागरी में दिखाएं", en: "Switch to Devanagari" },
+
+  // ── v6.7.1: full-app sweep — hub tiles, sub-labels, section headers ──
+  // ── Hub: exit-tile row (the 4 big squares at the top of the hub) ──
+  exit_tabiyat_title: { hi: "तबीयत पूछो", en: "Tabiyat poochho" },
+  exit_tabiyat_sub: { hi: "सिर दर्द, सर्दी, पेट — दादी से कहें", en: "Sir dard, sardi, pet — Dadi se kahein" },
+  exit_tanman_title: { hi: "तन-मन के साथ", en: "Tan-Man ke saath" },
+  exit_tanman_sub: { hi: "साँस, नींद, ऊर्जा — छोटे स्किल्स", en: "Saans, neend, energy — chhote skills" },
+  exit_report_title: { hi: "रिपोर्ट समझो", en: "Report samjho" },
+  exit_report_sub: { hi: "फोटो या PDF — आसान ज़ुबान", en: "Photo ya PDF — asaan zubaan" },
+  exit_dawai_title: { hi: "दवाई का समय", en: "Dawai ka time" },
+  exit_dawai_sub: { hi: "पर्ची स्कैन · रिमाइंडर · घर मँगाओ", en: "Parchi scan · reminder · ghar mangao" },
+  // Hub: smaller utility tiles
+  exit_aur_kuch: { hi: "और कुछ?", en: "Aur kuch?" },
+  exit_dadi_kahani_title: { hi: "दादी की कहानी", en: "Dadi ki kahani" },
+  exit_dadi_kahani_sub: { hi: "2 मिनट · रोज़ नई कहानी", en: "2 min · roz nayi kahani" },
+  exit_doctor_title: { hi: "डॉक्टर से बात", en: "Doctor se baat" },
+  exit_doctor_sub: { hi: "कॉल · प्रैक्टो · 1mg", en: "Call · Practo · 1mg" },
+  // Hub: today's intent
+  hub_aaj_kya: { hi: "आज क्या करना है?", en: "Aaj kya karna hai?" },
+  hub_aur_dekho: { hi: "और देखो — वेलनेस और बाकी तकलीफ़", en: "Aur dekho — wellness aur baaki takleef" },
+  // Hub: sunita-takleef carousel
+  sun_energy: { hi: "ऊर्जा", en: "Energy" },
+  sun_mann_shanti: { hi: "मन शांति", en: "Mann shanti" },
+  sun_pachhan: { hi: "पाचन", en: "Pachhan" },
+  sun_immunity: { hi: "इम्यूनिटी", en: "Immunity" },
+  sun_aur_takleef: { hi: "और तकलीफ़", en: "Aur takleef" },
+  sun_ghutno_dard: { hi: "घुटनों का दर्द", en: "Ghutno dard" },
+  sun_bukhar: { hi: "बुखार", en: "Bukhar" },
+  sun_tension: { hi: "टेंशन", en: "Tension" },
+  sun_saans_galay: { hi: "साँस/गला", en: "Saans/galay" },
+  // Hub: aaj behtar feel
+  tri_aaj_behtar: { hi: "आज बेहतर महसूस करो", en: "Aaj behtar feel karo" },
+  tri_thakaan_kam: { hi: "थकान कम", en: "Thakaan kam" },
+  tri_gehri_neend: { hi: "गहरी, सुकून", en: "Gehri, sukoon" },
+  tri_pet_halka: { hi: "पेट हल्का", en: "Pet halka" },
+  tri_stress_kam: { hi: "स्ट्रेस कम", en: "Stress kam" },
+  tri_roz_nikhar: { hi: "रोज़ निखर", en: "Roz nikhar" },
+  tri_chamak: { hi: "चमक", en: "Chamak" },
+  tri_vajan: { hi: "वज़न", en: "Vajan" },
+  tri_sehat_saath: { hi: "सेहत के साथ", en: "Sehat ke saath" },
+  tri_padhai_kaam: { hi: "पढ़ाई/काम", en: "Padhai/kaam" },
+  tri_strong_rahein: { hi: "स्ट्रॉन्ग रहें", en: "Strong rahein" },
+  // Hub: koi takleef hai
+  tri_koi_takleef: { hi: "कोई तकलीफ़ है?", en: "Koi takleef hai?" },
+  tri_sir_dard: { hi: "सिर दर्द", en: "Sir dard" },
+  tri_headache_sub: { hi: "सिरदर्द, माइग्रेन", en: "Headache, migraine" },
+  tri_sardi_khansi: { hi: "सर्दी खाँसी", en: "Sardi khansi" },
+  tri_cold_cough: { hi: "ज़ुकाम, खाँसी", en: "Cold, cough" },
+  tri_pet_dard: { hi: "पेट दर्द", en: "Pet dard" },
+  tri_acidity_gas: { hi: "एसिडिटी, गैस, दर्द", en: "Acidity, gas, dard" },
+  tri_neend_nahi: { hi: "नींद नहीं", en: "Neend nahi" },
+  tri_achhi_neend: { hi: "अच्छी नींद", en: "Achhi neend" },
+  tri_ghutno_jod: { hi: "घुटने/जोड़", en: "Ghutno/jod" },
+  tri_joints_knees: { hi: "जोड़, घुटने", en: "Joints, knees" },
+  tri_bukhar_sub: { hi: "तेज़ ताप", en: "Tez taap" },
+  tri_tension_anxiety: { hi: "एंग्ज़ायटी, स्ट्रेस", en: "Anxiety, stress" },
+  tri_throat_breath: { hi: "गला, साँस", en: "Throat, breath" },
+  // Hub: aur kya kar sakte ho (rail)
+  tri_aur_kya: { hi: "और क्या कर सकते हो", en: "Aur kya kar sakte ho" },
+  tri_rail_mera_sehat: { hi: "मेरी सेहत", en: "Mera Sehat" },
+  tri_rail_mera_sehat_sub: { hi: "2 मिनट · सुनो", en: "2 min · Suno" },
+  tri_rail_saans: { hi: "साँस करें", en: "Saans karein" },
+  tri_rail_saans_sub: { hi: "2 मिनट · ट्राय", en: "2 min · Try" },
+  tri_rail_meal: { hi: "खाने का प्लान", en: "Meal plan" },
+  tri_rail_meal_sub: { hi: "3-दिन का", en: "3-din ka" },
+  tri_rail_parivaar: { hi: "परिवार", en: "Parivaar" },
+  tri_rail_parivaar_sub: { hi: "सब एक जगह", en: "Sab ek jagah" },
+  // Hub: talk-card greeting/sample
+  talk_card_app_name: { hi: "सेहत साथी", en: "Sehat Saathi" },
+  talk_card_input_placeholder: { hi: "अपनी बात लिखें या बोलें…", en: "Apni baat likhein ya bolein…" },
+  // Hub: stories preview
+  hs_nushka_title: { hi: "घर का नुस्खा", en: "Ghar ka Nushka" },
+  hs_nushka_sub: { hi: "अदरक चाय · 2 दिन में फ़र्क़", en: "Adrak chai · 2 din mein farak" },
+  hs_doctor_sub: { hi: "डॉ. प्रिया · 2 मिनट", en: "Dr. Priya · 2 min" },
+  hs_tanman_title: { hi: "तन-मन", en: "Tan-Man" },
+  hs_tanman_sub: { hi: "अनुलोम-विलोम", en: "Anulom-vilom" },
+  // Sehat Tools bottom sheet
+  bs_title: { hi: "सेहत टूल्स", en: "Sehat Tools" },
+  bs_nushke_title: { hi: "घर के नुस्खे", en: "Ghar ke Nushke" },
+  bs_nushke_sub: { hi: "कोई तकलीफ़? दादी बताएगी", en: "Koi takleef? Dadi batayegi" },
+  bs_lab_title: { hi: "लैब रिपोर्ट पढ़ो", en: "Lab Report Padho" },
+  bs_lab_sub: { hi: "अपनी रिपोर्ट का आसान मतलब", en: "Apni report ka asaan matlab" },
+  bs_dawai_title: { hi: "दवाई पर्ची · रिमाइंडर · ऑर्डर", en: "Dawai parchi · reminder · order" },
+  bs_dawai_sub: { hi: "स्कैन, याद दिलाओ, घर मँगाओ", en: "Scan, yaad dilao, ghar mangao" },
+  bs_reminders_sub: { hi: "रिमाइंडर · ऑर्डर · रिपोर्ट", en: "Reminders · Orders · Reports" },
+  bs_meal_title: { hi: "मील प्लानिंग", en: "Meal Planning" },
+  bs_meal_sub: { hi: "घर के खाने का 3-दिन प्लान", en: "Ghar ke khaane ka 3-din plan" },
+  bs_parivaar_title: { hi: "परिवार", en: "Parivaar" },
+  bs_parivaar_sub: { hi: "सब के लिए एक जगह देखभाल", en: "Sab ke liye ek jagah dekhbhal" },
+  bs_charcha_title: { hi: "सेहत चर्चा", en: "Sehat Charcha" },
+  bs_charcha_sub: { hi: "आप जैसे लोगों से मिलो", en: "Apke jaise logo se milo" },
+  // Hub header (top)
+  hub_app_name: { hi: "सेहत साथी", en: "Sehat Saathi" },
+  // Common quick-reply chips
+  chip_aur_batao: { hi: "और बताओ", en: "Aur batao" },
+  chip_doctor_kab: { hi: "डॉक्टर कब मिलें?", en: "Doctor kab milein?" },
+  chip_dadi_kahani: { hi: "दादी की कहानी सुनें", en: "Dadi ki kahani sunein" },
+  // Voice overlay
+  voice_listening: { hi: "सुन रही हूँ", en: "Sun rahi hoon" },
+  voice_band_karein: { hi: "बंद करें", en: "Band karein" },
+  voice_hint: { hi: "बोलें... या रुकने के लिए बंद करें", en: "Bolein… ya rukne ke liye band karein" },
+  // Reminder overlay
+  reminder_title: { hi: "दवाई का वक़्त!", en: "Dawai ka Waqt!" },
+  reminder_sub: { hi: "आपकी दवाई लेने का वक़्त हो गया", en: "Aapki dawai lene ka waqt ho gaya" },
+  reminder_snooze: { hi: "10 मिनट बाद", en: "10 min baad" },
+  reminder_taken: { hi: "ले ली", en: "Le li" },
+  // Followup chips (used in injectFollowups, contextual per chat ctx)
+  chip_bas_suno: { hi: "बस सुनो", en: "Bas suno" },
+  chip_doctor_baat: { hi: "डॉक्टर से बात करें", en: "Doctor se baat karein" },
+  chip_aaj_nushka: { hi: "आज का नुस्खा", en: "Aaj ka nushka" },
+  chip_lab_report: { hi: "लैब रिपोर्ट", en: "Lab report" },
+  chip_dawai: { hi: "दवाई", en: "Dawai" },
+  chip_aur_tips: { hi: "और टिप्स", en: "Aur tips" },
+  chip_plan_banao: { hi: "प्लान बनाओ", en: "Plan banao" },
+  chip_try_kiya: { hi: "ट्राय किया", en: "Try kiya" },
+  chip_wapas_hub: { hi: "वापस हब", en: "Wapas hub" },
 };
 function getLang() {
   try {
@@ -4823,30 +4955,34 @@ function refreshScoreChip() {
   if (stEl) stEl.textContent = streak;
 }
 
-// Inject 2-3 contextual follow-up chips after bot reply
+// v6.7.1: chip arrays use LANG keys so they re-translate on toggle.
+// Each entry is a key into LANG; t(key) yields the visible label, which
+// is ALSO what we send back into handleFollowup() so chat history matches
+// what the user actually tapped.
 function injectFollowups(ctx, msgsContainer) {
   const followups = {
-    nushke:    ['Aur batao', 'Doctor kab milein?', 'Dadi ki kahani sunein'],
-    tension:   ['Bas suno', 'Saans karein', 'Doctor se baat karein'],
-    mood_tension: ['Bas suno', 'Saans karein', 'Doctor se baat karein'],
-    mood_theek:   ['Aaj ka nushka', 'Saans karein', 'Dadi ki kahani'],
-    mood_takleef: ['Aur batao', 'Lab report', 'Dawai'],
-    wellness:  ['Aur tips', 'Saans karein', 'Plan banao'],
-    tip:       ['Aur tips', 'Try kiya', 'Saans karein'],
-    general:   ['Aur batao', 'Saans karein', 'Wapas hub']
+    nushke: ["chip_aur_batao", "chip_doctor_kab", "chip_dadi_kahani"],
+    tension: ["chip_bas_suno", "tri_rail_saans", "chip_doctor_baat"],
+    mood_tension: ["chip_bas_suno", "tri_rail_saans", "chip_doctor_baat"],
+    mood_theek: ["chip_aaj_nushka", "tri_rail_saans", "exit_dadi_kahani_title"],
+    mood_takleef: ["chip_aur_batao", "chip_lab_report", "chip_dawai"],
+    wellness: ["chip_aur_tips", "tri_rail_saans", "chip_plan_banao"],
+    tip: ["chip_aur_tips", "chip_try_kiya", "tri_rail_saans"],
+    general: ["chip_aur_batao", "tri_rail_saans", "chip_wapas_hub"],
   };
   const list = followups[ctx] || followups.general;
-  const row = document.createElement('div');
-  row.className = 'msg-row bot followup-row';
-  const wrap = document.createElement('div');
-  wrap.className = 'followup-chips';
-  for (const label of list) {
-    const btn = document.createElement('button');
-    btn.className = 'followup-chip';
-    btn.textContent = label;
+  const row = document.createElement("div");
+  row.className = "msg-row bot followup-row";
+  const wrap = document.createElement("div");
+  wrap.className = "followup-chips";
+  for (const k of list) {
+    const btn = document.createElement("button");
+    btn.className = "followup-chip";
+    btn.setAttribute("data-i18n", k);
+    btn.textContent = t(k);
     btn.onclick = () => {
       row.remove();
-      handleFollowup(label, ctx);
+      handleFollowup(t(k), ctx);
     };
     wrap.appendChild(btn);
   }
