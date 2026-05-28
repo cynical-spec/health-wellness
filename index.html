@@ -11276,10 +11276,17 @@ function showMoveStep(idx) {
     const lottieUrl = (_moveSkill.lottie && _moveSkill.lottie[idx]) || null;
     renderStepAnim(animKey, lottieUrl);
   }
-  // v4.2: prefer pre-translated Devanagari tts[] for clean read-aloud (avoids
-  // ambiguous Roman words like "choddo" being pronounced incorrectly).
-  const sayText = (_moveSkill.tts && _moveSkill.tts[idx]) || _moveSkill.steps[idx];
-  speak(_moveSkill.steps[idx], { quiet: true, ttsText: sayText });
+  // v6.7.15 FIX: when tts[] is missing, do NOT force the Roman step as
+  // ttsText — that bypassed speak()'s auto-transliterate path and the
+  // Indic voice pronounced Roman characters as if they were Devanagari,
+  // producing the "Chinese-Hindi-translation-voice" effect. Pass ttsText
+  // only when a Devanagari version exists; otherwise let speak() do its
+  // pre-transliterate path.
+  const _ttsOpts = { quiet: true };
+  if (_moveSkill.tts && _moveSkill.tts[idx]) {
+    _ttsOpts.ttsText = _moveSkill.tts[idx];
+  }
+  speak(_moveSkill.steps[idx], _ttsOpts);
   if (_moveTimer) clearTimeout(_moveTimer);
   _moveTimer = setTimeout(() => {
     if (idx < _moveSkill.steps.length - 1) showMoveStep(idx + 1);
