@@ -37,6 +37,8 @@ jobs:
           # v6.5: Anthropic (Claude) — PRIMARY in the cascade. Defaults the
           # model to claude-sonnet-4-5 when the secret is unset.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+          ELEVENLABS_VOICE_ID_INDIC: ${{ secrets.ELEVENLABS_VOICE_ID_INDIC }}
           ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
           # v6.6 (pilot): unified Cloudflare Worker proxy. When set, ALL
           # upstream API calls route through it and the browser only sees the
@@ -65,6 +67,8 @@ jobs:
           html = html.replace("REPLACE_WITH_ELEVENLABS_KEY", eleven)
           html = html.replace("REPLACE_WITH_CEREBRAS_KEY", cerebras)
           html = html.replace("REPLACE_WITH_ANTHROPIC_KEY", anthropic)
+          html = html.replace("REPLACE_WITH_ELEVENLABS_VOICE_ID", os.environ.get("ELEVENLABS_VOICE_ID","").strip())
+          html = html.replace("REPLACE_WITH_ELEVENLABS_VOICE_ID_INDIC", os.environ.get("ELEVENLABS_VOICE_ID_INDIC","").strip())
           html = html.replace("REPLACE_WITH_ANTHROPIC_MODEL", anthropic_model)
           html = html.replace("REPLACE_WITH_WORKER_URL", worker_url)
           html = html.replace("REPLACE_WITH_CLIENT_TOKEN", client_token)

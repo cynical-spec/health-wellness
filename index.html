@@ -2694,7 +2694,11 @@ const OPENAI_API_KEY = "REPLACE_WITH_YOUR_KEY";
 const GROQ_API_KEY = "REPLACE_WITH_GROQ_KEY";
 const CEREBRAS_API_KEY = "REPLACE_WITH_CEREBRAS_KEY"; // paste your Cerebras key here (starts with csk-)
 const SARVAM_KEY = "REPLACE_WITH_SARVAM_KEY";  // Sarvam STT (Saarika) + TTS (Bulbul)
-const ELEVENLABS_KEY = "REPLACE_WITH_ELEVENLABS_KEY";  // v5.3.2: build-time injection (GitHub Secret ELEVEN_KEYS). Falls back to localStorage 'ss_elevenlabs_key' if user pasted one manually.
+const ELEVENLABS_KEY = "REPLACE_WITH_ELEVENLABS_KEY";
+// v6.7.10: voice IDs per language family. Placeholders get substituted
+// by deploy.yml from secrets ELEVENLABS_VOICE_ID / ELEVENLABS_VOICE_ID_INDIC.
+const ELEVENLABS_VOICE_ID = "REPLACE_WITH_ELEVENLABS_VOICE_ID";
+const ELEVENLABS_VOICE_ID_INDIC = "REPLACE_WITH_ELEVENLABS_VOICE_ID_INDIC";  // v5.3.2: build-time injection (GitHub Secret ELEVEN_KEYS). Falls back to localStorage 'ss_elevenlabs_key' if user pasted one manually.
 // v6.5: Anthropic Claude — NOT OpenAI-compatible. Separate system field,
 // content as array, x-api-key header. Promoted to PRIMARY in cascade.
 const ANTHROPIC_API_KEY = "REPLACE_WITH_ANTHROPIC_KEY";
@@ -8476,7 +8480,20 @@ async function speakElevenLabs(text, opts) {
   const key = localKey && localKey.length >= 20 ? localKey : injectedKey;
   // v6.6.1: Worker mode → real key is server-side; client doesn't need one.
   if (!key && !(typeof USE_WORKER !== 'undefined' && USE_WORKER)) return false;
-  const voiceId = localStorage.getItem('ss_elevenlabs_voice') || 'EXAVITQu4vr4xnSDxMaL'; // Sarah default
+  // v6.7.10: per-language voice picker.
+  // Sarah (EXAVITQu4vr4xnSDxMaL) → English.
+  // FDQcYNtvPtQjNlTyU3du → Hindi + Bengali + every other Indic language.
+  // Either ID overridable via the placeholders the workflow substitutes
+  // from secrets ELEVENLABS_VOICE_ID and ELEVENLABS_VOICE_ID_INDIC.
+  const _lang = ((typeof ST !== 'undefined' && ST && ST.currentLanguage) || 'hi-IN').split('-')[0];
+  const _voiceEn = (typeof ELEVENLABS_VOICE_ID === 'string' && !ELEVENLABS_VOICE_ID.includes('REPLACE') && ELEVENLABS_VOICE_ID.length >= 8)
+    ? ELEVENLABS_VOICE_ID
+    : 'EXAVITQu4vr4xnSDxMaL';
+  const _voiceIndic = (typeof ELEVENLABS_VOICE_ID_INDIC === 'string' && !ELEVENLABS_VOICE_ID_INDIC.includes('REPLACE') && ELEVENLABS_VOICE_ID_INDIC.length >= 8)
+    ? ELEVENLABS_VOICE_ID_INDIC
+    : 'FDQcYNtvPtQjNlTyU3du';
+  const _lsVoice = localStorage.getItem('ss_elevenlabs_voice');
+  const voiceId = _lsVoice ? _lsVoice : (_lang === 'en' ? _voiceEn : _voiceIndic);
   if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
   try {
     const _t = performance.now();
