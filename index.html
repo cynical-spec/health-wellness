@@ -10,6 +10,46 @@
 <script src="https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.min.js" defer></script>
 <style>
 
+/* v6.7: Noto Sans Devanagari from Google Fonts — display=swap so system
+   stack paints immediately and the Devanagari upgrade slots in without
+   blocking paint. Powers Hindi-primary UI per the morning spec. */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap");
+:root {
+  --font-devanagari: "Noto Sans Devanagari", -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+html[lang="hi"] body,
+html[lang="hi"] .bubble,
+html[lang="hi"] button,
+html[lang="hi"] input,
+html[lang="hi"] textarea {
+  font-family: var(--font-devanagari);
+}
+/* v6.7: language toggle (अ / A) — small floating pill at top-right of home. */
+.ss-lang-toggle {
+  position: absolute;
+  top: 16px;
+  right: 14px;
+  z-index: 50;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--surface2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--font-devanagari);
+  cursor: pointer;
+  transition: transform .1s, border-color .15s, background .15s;
+}
+.ss-lang-toggle:hover { border-color: var(--primary); }
+.ss-lang-toggle:active { transform: scale(.92); }
+.screen:not(#s-home) .ss-lang-toggle { display: none; }
+
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
   --bg:#0a0a0a;--surface:#1a1a1a;--surface2:rgba(255,255,255,0.10);
@@ -2070,12 +2110,13 @@ body:has(.screen.active#s-onboard) .ss-feedback-btn{display:none}
       <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     </button>
     <button class="hdr-btn" style="width:36px;height:36px;background:var(--surface2);border-radius:50%;font-size:14px;font-weight:700;color:var(--text)">N</button>
+    <button id="ss-lang-toggle" class="ss-lang-toggle" onclick="toggleLang()" aria-label="Switch language" data-i18n-aria="lang_toggle_aria_to_en">अ</button>
   </div>
   <div class="body" id="home-body">
 
     <!-- Assistants row -->
     <div class="home-section">
-      <h3 class="home-section-title">Your Assistants</h3>
+      <h3 class="home-section-title" data-i18n="home_assistants">Your Assistants</h3>
       <div class="assistants-row" id="assistants-row">
         <!-- Sehat Saathi — LIVE -->
         <div class="assistant-card" onclick="enterHub()">
@@ -2116,11 +2157,11 @@ body:has(.screen.active#s-onboard) .ss-feedback-btn{display:none}
     </div>
 
     <!-- Quick Actions -->
-    <div class="section-hdr"><h3>Quick Actions</h3></div>
+    <div class="section-hdr"><h3 data-i18n="home_quick_actions">Quick Actions</h3></div>
     <div class="qa-grid" id="qa-grid"><!-- JS renders --></div>
 
     <!-- Updates -->
-    <div class="section-hdr"><h3>Updates</h3><button class="see-all" onclick="showComingSoon()">Aur dekho</button></div>
+    <div class="section-hdr"><h3 data-i18n="home_updates">Updates</h3><button class="see-all" onclick="showComingSoon()">Aur dekho</button></div>
 
     <!-- Cricket card -->
     <div class="update-card">
@@ -2311,23 +2352,23 @@ body:has(.screen.active#s-onboard) .ss-feedback-btn{display:none}
         <div class="hdr-online"></div>
       </div>
       <div class="hdr-text">
-        <h2>Sehat Saathi</h2>
-        <p id="chat-ctx-label">Ghar ke Nushke</p>
+        <h2 data-i18n="chat_app_name">Sehat Saathi</h2>
+        <p id="chat-ctx-label" data-i18n="chat_subtitle_nushke">Ghar ke Nushke</p>
       </div>
     </div>
-    <button class="hdr-btn" onclick="clearChat()">
+    <button class="hdr-btn" onclick="clearChat()" aria-label="Nayi baat" data-i18n-aria="chat_new_aria">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" style="opacity:.8"><path d="M4 20h4l10.5-10.5a2.121 2.121 0 00-3-3L5 17v3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 6.5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
   </div>
   <div class="chat-messages" id="chat-msgs"></div>
   <div class="bar">
     <div class="bar-inner">
-      <input class="bar-input" id="chat-input" placeholder="Apni baat likhein..." onkeydown="chatKey(event)">
+      <input class="bar-input" id="chat-input" placeholder="Apni baat likhein..." data-i18n="chat_input_placeholder" onkeydown="chatKey(event)">
       <button class="bar-speak" id="chat-speak" onclick="toggleVoice('chat')">
         <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M12 2a1 1 0 00-1 1v18a1 1 0 002 0V3a1 1 0 00-1-1zM4 9a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1zm4-3a1 1 0 00-1 1v10a1 1 0 102 0V7a1 1 0 00-1-1zm12 3a1 1 0 00-1 1v4a1 1 0 002 0v-4a1 1 0 00-1-1zm-4-3a1 1 0 00-1 1v10a1 1 0 002 0V7a1 1 0 00-1-1z" fill="currentColor"/></svg>
-        <span id="chat-speak-lbl">Speak</span>
+        <span id="chat-speak-lbl" data-i18n="chat_speak">Speak</span>
       </button>
-      <button class="bar-send" onclick="chatSend()">
+      <button class="bar-send" onclick="chatSend()" aria-label="Bhejein" data-i18n-aria="chat_send_aria">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
@@ -2624,9 +2665,9 @@ body:has(.screen.active#s-onboard) .ss-feedback-btn{display:none}
 <!-- ══════════════ TOAST ══════════════ -->
 <div id="toast"></div>
 <!-- v6.6: WhatsApp feedback floating button — bottom-right on every screen -->
-<button id="ss-feedback-btn" class="ss-feedback-btn" aria-label="Kuch problem hai?" title="Kuch problem hai?" onclick="openFeedbackWA()">
+<button id="ss-feedback-btn" class="ss-feedback-btn" aria-label="Kuch problem hai?" title="Kuch problem hai?" data-i18n-aria="feedback_aria" onclick="openFeedbackWA()">
   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  <span class="ss-feedback-lbl">Problem?</span>
+  <span class="ss-feedback-lbl" data-i18n="feedback_label">Problem?</span>
 </button>
 
 
@@ -2649,6 +2690,146 @@ const WORKER_URL = "REPLACE_WITH_WORKER_URL".replace(/\/$/, "");
 const CLIENT_TOKEN = "REPLACE_WITH_CLIENT_TOKEN";
 const USE_WORKER = !!(WORKER_URL && WORKER_URL.length > 10 && !WORKER_URL.includes("REPLACE"));
 if (USE_WORKER) { console.info("[worker] routing all upstream calls via", WORKER_URL); }
+
+
+// ── v6.7: i18n — Devanagari primary, Hinglish-Roman secondary ──
+// Pre-context: morning spec said every UI string in Devanagari, with a
+// toggle. This is the lightweight implementation: a LANG registry of
+// {hi, en} pairs, a t(key) lookup, and applyLanguage() that walks the
+// DOM rewriting any [data-i18n="key"] node. Static fallback (Hinglish)
+// renders even without JS; runtime upgrades to Devanagari at load.
+// Choice persists in localStorage.
+//
+// SCOPE NOTE: AYUSH/CCRAS user-facing strings are CLEANED here — neither
+// the hi nor en column references AYUSH/Ayurvedic/CCRAS/Ministry. The
+// system prompts + knowledge base still reference them internally (Dadi
+// needs to know where her remedies come from) — that's invisible to users.
+const LANG = {
+  // ── Home (s-home) ──
+  home_assistants: { hi: "आपके साथी", en: "Aapke Saathi" },
+  home_quick_actions: { hi: "तुरंत काम", en: "Turant Kaam" },
+  home_updates: { hi: "नया क्या है", en: "Naya Kya hai" },
+  // ── Hub (s-hub) ──
+  hub_aap_ki_aadat: { hi: "आज की आदत", en: "Aaj ki aadat" }, // was "AYUSH aadat" — cleaned
+  hub_meri_sehat: { hi: "मेरी सेहत", en: "Meri Sehat" },
+  hub_saans: { hi: "साँस करें", en: "Saans karein" },
+  hub_meal: { hi: "खाने का प्लान", en: "Meal Plan" },
+  hub_parivaar: { hi: "परिवार", en: "Parivaar" },
+  hub_sehat_tools: { hi: "सेहत टूल्स", en: "Sehat Tools" },
+  // ── Chat (s-chat) ──
+  chat_app_name: { hi: "सेहत साथी", en: "Sehat Saathi" },
+  chat_subtitle_nushke: { hi: "घर के नुस्खे", en: "Ghar ke Nushke" },
+  chat_subtitle_general: { hi: "सेहत साथी", en: "Sehat Saathi" },
+  chat_input_placeholder: { hi: "अपनी बात लिखें…", en: "Apni baat likhein…" },
+  chat_speak: { hi: "बोलें", en: "Bolein" },
+  chat_send_aria: { hi: "भेजें", en: "Bhejein" },
+  chat_new_aria: { hi: "नई बात", en: "Nayi baat" },
+  chat_more: { hi: "और बताओ", en: "Aur batao" },
+  chat_doctor: { hi: "डॉक्टर कब मिलें?", en: "Doctor kab milein?" },
+  chat_dadi_story: { hi: "दादी की कहानी सुनें", en: "Dadi ki kahani sunein" },
+  // ── Hub header ──
+  hub_back_aria: { hi: "वापस घर", en: "Back to home" },
+  // ── WhatsApp feedback button ──
+  feedback_label: { hi: "दिक्कत?", en: "Problem?" },
+  feedback_aria: { hi: "कुछ दिक्कत है?", en: "Kuch problem hai?" },
+  // ── Daily cap message ──
+  daily_cap_msg: {
+    hi: "बेटा, आज के लिए दादी से बहुत बात हो गई 🌙 कल सुबह फिर मिलें — मैं यहीं हूँ। तब तक आराम करें और पानी पीते रहें।",
+    en: "Beta, aaj ke liye Dadi se bahut baat ho gayi 🌙 Kal subah phir milein — main yahin hoon. Tab tak aaram karein aur paani peete rahein.",
+  },
+  // ── Onboarding bubbles (Dadi voice) ──
+  ob_greeting: {
+    hi: "नमस्ते बेटा 🙏 मैं दादी हूँ — आपकी सेहत साथी।<br><br>2 मिनट में थोड़ी सी पहचान हो जाए, फिर आगे हम बात करते हैं। ठीक है?",
+    en: "Namaste beta 🙏 Main Dadi hoon — aap ki Sehat Saathi.<br><br>2 minute mein thodi si pehchaan ho jaaye, phir aage hum baat karte hain. Theek hai?",
+  },
+  ob_scope_q: { hi: "सबसे पहले बताओ — सेहत साथी किसके लिए चाहिए?", en: "Sabse pehle bataao — Sehat Saathi kiske liye chahiye?" },
+  ob_scope_self: { hi: "सिर्फ अपने लिए", en: "Sirf apne liye" },
+  ob_scope_family: { hi: "परिवार के लिए", en: "Parivaar ke liye" },
+  ob_scope_household: { hi: "पूरे घर के लिए", en: "Poore ghar ke liye" },
+  ob_name_q: { hi: "अच्छा बेटा। आपका नाम क्या है?", en: "Acha beta. Aapka naam kya hai?" },
+  ob_age_q: { hi: "और उमर क्या है?", en: "Aur umar kya hai?" },
+  ob_sex_q: { hi: "आप पुरुष हो या स्त्री?", en: "Aap purush ho ya stree?" },
+  ob_sex_male: { hi: "पुरुष", en: "Purush" },
+  ob_sex_female: { hi: "स्त्री", en: "Stree" },
+  ob_sex_other: { hi: "अन्य", en: "Anya" },
+  ob_weight_q: { hi: "वजन कितना है? (किलो में)", en: "Vajan kitna hai? (kg mein)" },
+  ob_height_q: { hi: "लंबाई (cm)? <em>वैकल्पिक है, छोड़ सकते हो।</em>", en: "Lambai (cm)? <em>Optional hai, chhod sakte ho.</em>" },
+  ob_height_skip: { hi: "छोड़ दो", en: "Chhod do" },
+  ob_chronic_q: { hi: "आखिरी सवाल — कोई पुरानी बीमारी है?", en: "Last sawaal — koi purani bimari hai?" },
+  ob_chronic_none: { hi: "कुछ नहीं", en: "Kuch nahi" },
+  ob_chronic_diabetes: { hi: "शुगर (डायबिटीज़)", en: "Sugar (diabetes)" },
+  ob_chronic_bp: { hi: "बीपी (हाई)", en: "BP (high)" },
+  ob_chronic_both: { hi: "शुगर + बीपी दोनों", en: "Sugar + BP dono" },
+  ob_chronic_other: { hi: "और कुछ", en: "Aur kuch" },
+  ob_chronic_what: { hi: "बताओ, क्या है?", en: "Batao, kya hai?" },
+  ob_chronic_placeholder: { hi: "थायरॉइड, दमा, और कुछ…", en: "Thyroid, dama, kuch aur…" },
+  ob_done_named: { hi: "बस हो गया, ✨", en: "Bas ho gaya! ✨" },
+  ob_done_generic: { hi: "बस हो गया! ✨", en: "Bas ho gaya! ✨" },
+  ob_cta_add_family: { hi: "परिवार जोड़ें →", en: "Parivaar add karein →" },
+  ob_cta_later: { hi: "बाद में, सेहत साथी खोलें", en: "Baad mein, Sehat Saathi kholein" },
+  ob_cta_open: { hi: "सेहत साथी खोलें →", en: "Sehat Saathi kholein →" },
+  ob_skip: { hi: "बाद में", en: "Baad mein" },
+  // ── Toast / common ──
+  toast_coming_soon: { hi: "जल्द आ रहा है", en: "Jald aa raha hai" },
+  common_back: { hi: "वापस", en: "Back" },
+  // ── Language toggle button ──
+  lang_toggle_aria_to_en: { hi: "English mein dikhayein", en: "Switch to English" },
+  lang_toggle_aria_to_hi: { hi: "देवनागरी में दिखाएं", en: "Switch to Devanagari" },
+};
+function getLang() {
+  try {
+    const v = localStorage.getItem("ss_lang");
+    return v === "en" ? "en" : "hi"; // default: Devanagari
+  } catch (_) {
+    return "hi";
+  }
+}
+function setLang(v) {
+  try {
+    localStorage.setItem("ss_lang", v === "en" ? "en" : "hi");
+  } catch (_) {}
+}
+function t(key) {
+  const e = LANG[key];
+  if (!e) return key; // fail-loud: missing key returns the key itself
+  return e[getLang()] || e.hi || key;
+}
+function applyLanguage() {
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const k = el.getAttribute("data-i18n");
+    const v = t(k);
+    if (el.tagName === "INPUT" && el.placeholder !== undefined) {
+      el.placeholder = v.replace(/<[^>]+>/g, "");
+    } else {
+      el.innerHTML = v;
+    }
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+    const k = el.getAttribute("data-i18n-aria");
+    const v = t(k).replace(/<[^>]+>/g, "");
+    el.setAttribute("aria-label", v);
+    if (el.hasAttribute("title")) el.setAttribute("title", v);
+  });
+  document.documentElement.setAttribute("lang", getLang() === "hi" ? "hi" : "hi-Latn");
+}
+function toggleLang() {
+  setLang(getLang() === "hi" ? "en" : "hi");
+  applyLanguage();
+  const btn = document.getElementById("ss-lang-toggle");
+  if (btn) {
+    btn.textContent = getLang() === "hi" ? "A" : "अ";
+    btn.setAttribute(
+      "aria-label",
+      t(getLang() === "hi" ? "lang_toggle_aria_to_en" : "lang_toggle_aria_to_hi"),
+    );
+  }
+  try { trackEvent("lang_toggle", { to: getLang() }); } catch (_) {}
+}
+window.t = t;
+window.LANG = LANG;
+window.applyLanguage = applyLanguage;
+window.toggleLang = toggleLang;
+window.getLang = getLang;
 
 
 // ── v6.6: WhatsApp feedback button handler ──
@@ -4224,7 +4405,7 @@ function renderHubStories(){
   // 7) Aaj ki AYUSH practice (always shows)
   html += `<button class="hs-circle" onclick="goTo('s-breathwork')">
     <div class="hs-ring muted"><span>🪴</span></div>
-    <div class="hs-name">AYUSH aadat</div>
+    <div class="hs-name" data-i18n="hub_aap_ki_aadat">${t("hub_aap_ki_aadat")}</div>
   </button>`;
 
   el.innerHTML = html;
@@ -4538,7 +4719,7 @@ const TIP_CONTENTS = {
   tip_walk: { title: 'Khaane ke baad walk', body: 'Dopahar ke khaane ke baad seedhe na baitho. Bas das minute dheere dheere ghar mein chal lo. Khaana paacheya jaayega aur dopahar ki susti bhi nahi aayegi.', say: 'दोपहर के खाने के बाद सीधे ना बैठो। बस दस मिनट धीरे धीरे घर में चल लो।' },
   tip_nap: { title: 'Sirf 20 minute ki neend', body: 'Dopahar mein neend aaye toh 20 minute ki choti neend lo — alarm laga ke. Zyada lagi toh raat ko neend nahi aayegi. Yeh ek puraana Indian rivaaj hai — sahi tarike se kiya gaya.', say: 'दोपहर में नींद आए तो बीस मिनट की छोटी नींद लो, अलार्म लगा के।' },
   tip_eve_walk: { title: 'Sham ki walk', body: 'Sham 6 baje ke around 15 minute ki walk lo. Khali pet par nahi — thoda kuch khaake. Yeh din bhar ki tension ko utaarti hai aur raat ko gehri neend laati hai.', say: 'शाम छह बजे के आसपास पंद्रह मिनट की वॉक लो — दिन भर की टेंशन उतर जाएगी।' },
-  tip_screenfree: { title: 'Khaane se pehle screen band', body: 'Khaane se 30 minute pehle phone, TV, laptop sab band kar do. Khaana achhe se chabaake khao. Paachan dugna ho jaata hai — Ayurved mein iska bahut zikr hai.', say: 'खाने से तीस मिनट पहले फोन, टीवी, लैपटॉप सब बंद कर दो।' },
+  tip_screenfree: { title: 'Khaane se pehle screen band', body: 'Khaane se 30 minute pehle phone, TV, laptop sab band kar do. Khaana achhe se chabaake khao. Paachan dugna ho jaata hai — yeh purana gharelu tarika hai.', say: 'खाने से तीस मिनट पहले फोन, टीवी, लैपटॉप सब बंद कर दो।' },
   tip_haldi: { title: 'Haldi wala doodh', body: 'Sone se pehle ek glass garam doodh, chutki haldi, thoda gud. Saans ki naliyaa saaf, badan halka, aur neend bhi gehri. Mere ghar mein har raat yahi banta tha.', say: 'सोने से पहले एक ग्लास गरम दूध में चुटकी हल्दी, और थोड़ा गुड़ डाल के पियो।' }
 };
 
@@ -6079,10 +6260,10 @@ const MEDICINE_CATALOG = {
   benadryl100:    { brand:'Benadryl Cough Syrup',        mfr:'J&J',      mrp:135, price:115, pack:'100 ml',  emoji:'🍼', generic:'Diphenhydramine + Ammonium Chloride' },
   vicks:          { brand:'Vicks Vaporub',               mfr:'P&G',      mrp:165, price:148, pack:'25 g',    emoji:'🫙', generic:'Camphor + Menthol + Eucalyptus' },
   // v5.3: Ayurvedic long-term SKUs — upsold inline after a Focus Mode "Bahut behtar" answer
-  'ayur-bramhi':      { brand:'Himalaya Brahmi 60 tab',         mfr:'Himalaya',   mrp:170, price:153, pack:'60 tab', emoji:'🌿', generic:'Bacopa monnieri 250 mg · AYUSH' },
-  'ayur-sitopaladi':  { brand:'Baidyanath Sitopaladi Churan',   mfr:'Baidyanath', mrp:120, price:108, pack:'60 gm',  emoji:'🌾', generic:'Sitopaladi Churan · AYUSH' },
-  'ayur-hingvashtak': { brand:'Dabur Hingwashtak Churan',       mfr:'Dabur',      mrp:95,  price:82,  pack:'50 gm',  emoji:'🟡', generic:'Hingwashtak Churan · AYUSH' },
-  'ayur-ashwagandha': { brand:'Patanjali Ashwagandha 60 cap',   mfr:'Patanjali',  mrp:175, price:144, pack:'60 cap', emoji:'🪴', generic:'Withania somnifera 500 mg · AYUSH' }
+  'ayur-bramhi':      { brand:'Himalaya Brahmi 60 tab',         mfr:'Himalaya',   mrp:170, price:153, pack:'60 tab', emoji:'🌿', generic:'Bacopa monnieri 250 mg' },
+  'ayur-sitopaladi':  { brand:'Baidyanath Sitopaladi Churan',   mfr:'Baidyanath', mrp:120, price:108, pack:'60 gm',  emoji:'🌾', generic:'Sitopaladi Churan' },
+  'ayur-hingvashtak': { brand:'Dabur Hingwashtak Churan',       mfr:'Dabur',      mrp:95,  price:82,  pack:'50 gm',  emoji:'🟡', generic:'Hingwashtak Churan' },
+  'ayur-ashwagandha': { brand:'Patanjali Ashwagandha 60 cap',   mfr:'Patanjali',  mrp:175, price:144, pack:'60 cap', emoji:'🪴', generic:'Withania somnifera 500 mg' }
 };
 
 // — Photo-OCR templates for Lab Reports (when Vision unavailable) —
@@ -8347,6 +8528,10 @@ function showComingSoon() { showToast('Jald aa raha hai'); }
 
 // ── Init ──
 window.addEventListener('load', () => {
+  // v6.7: apply chosen language to every [data-i18n] node in the static
+  // markup before anything else paints. Default is Devanagari unless the
+  // user previously toggled to English.
+  try { applyLanguage(); } catch (e) { console.warn('[i18n] applyLanguage failed', e); }
   reloadSavedReminders();
   ST.userProfile = loadProfile();
   ST.recentFeatures = loadRecentFeatures();
@@ -8592,7 +8777,7 @@ const REMEDY_EXPERIENCES = {
       finishLine: "Bas beta, ho gaya. Thodi der aaraam karo. Subah tak farak dikhega.",
       finishLineHi: "बस बेटा, हो गया। थोड़ी देर आराम करो। सुबह तक फ़र्क दिखेगा।",
       citation:
-        "Yeh nushka Central Government ke Ayurvedic research (CCRAS) ke mutabik hai — Ministry of Health ne ise validate kiya hai. 2-3 din mein farak na pade toh paas ke doctor se milein.",
+        "2-3 din mein farak na pade toh paas ke doctor se milein.",
     },
     // Key matches REMEDY_KITS["adrak-chai"] so the existing recipe-card play
     // button (onclick="openRemedy('adrak-chai')") routes here automatically.
@@ -8654,7 +8839,7 @@ const REMEDY_EXPERIENCES = {
       finishLine: "Beta, garam-garam pi liya. Ab thoda aaraam karo. Galay khulega.",
       finishLineHi: "बेटा, गरम गरम पी लिया। अब थोड़ा आराम करो। गला खुलेगा।",
       citation:
-        "Adrak ka use sardi-khansi ke liye CCRAS (Govt of India) ke Ayurvedic Home Remedies booklet mein documented hai. Agar 2-3 din mein farak na pade toh doctor se milein.",
+        "Agar 2-3 din mein farak na pade toh doctor se milein.",
     },
 
     // ───────────────────────────────────────────────────────────────────────
@@ -10139,7 +10324,7 @@ function injectRemedyCard(text, msgsContainer) {
       <div class="recipe-card-info">
         <div class="recipe-card-title">${kit.title}</div>
         <div class="recipe-card-ing">${kit.ingredients}</div>
-        <div class="recipe-card-meta"><span class="recipe-card-tag">AYUSH</span>${kit.steps.length} steps · ${Math.round(kit.durSec/60)} min</div>
+        <div class="recipe-card-meta">${kit.steps.length} steps · ${Math.round(kit.durSec/60)} min</div>
       </div>
     </button>`;
   msgsContainer.appendChild(row);
@@ -11259,7 +11444,7 @@ function showAyurUpsell(symptom){
   slot.innerHTML = `<div class="ayur-upsell">
     <div class="ayur-upsell-head">
       <div class="ayur-upsell-emoji">${cat.emoji}</div>
-      <div class="ayur-upsell-brand">${cat.brand}<span class="ayur-tag">AYUSH</span></div>
+      <div class="ayur-upsell-brand">${cat.brand}</div>
     </div>
     <div class="ayur-upsell-copy">${flow.ayurCopy}</div>
     <div class="ayur-upsell-pricing">
