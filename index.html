@@ -8090,19 +8090,12 @@ async function convHandleTranscript(transcript) {
     // v5.5.4: instead of auto-launching the skill (which caused 2-voice overlap
     // + felt jarring), OFFER it conversationally. v5.5.5: only check the BOT
     // reply now — explicit user requests took the fast-path above.
-    try {
-      if (typeof _isRedirectReply === 'function' && _isRedirectReply(lastBotText)) {
-        console.info('[voice-skill] redirect reply — skipping skill offer');
-        return;
-      }
-      const botSkill = _detectSkillForVoice(lastBotText);
-      if (botSkill) {
-        console.info('[voice-skill] AI suggested →', botSkill.kind, botSkill.key, '· offering confirmation');
-        await _offerVoiceSkillConfirmation(botSkill);
-        return;
-      }
-      console.info('[voice-skill] no skill in this turn');
-    } catch(e) { console.warn('[voice] skill confirmation failed', e); }
+    // v6.7.16: auto voice-skill confirmation REMOVED.
+    // It auto-asked "Step-by-step bataati hoon. Haan ya nahi?" after every
+    // Dadi reply that mentioned a remedy, adding a duplicate bubble + card
+    // and cutting the chat. The card itself is the affordance — tap to
+    // open the walkthrough. No need to also speak the prompt.
+    console.info('[voice-skill] auto-confirmation disabled by v6.7.16');
   } else {
     // Hub: route the transcript through the hub flow → opens chat → AI replies
     setVoiceState('thinking');
