@@ -8418,11 +8418,9 @@ let _elevenLabsBlocked = _persistedBlock || !_hasAnyElKey;
 let _elevenLabsBlockedReason = !_hasAnyElKey ? 'no-key-available' : (_persistedBlock ? 'previously-blocked' : '');
 
 async function speakElevenLabs(text, opts) {
-  // v6.7.5: skip ElevenLabs for non-Hindi/English Indic languages —
-  // Sarah is Hindi/English-tuned and sounds awkward in Bengali/Tamil.
-  // Returning false makes speak() fall through to Sarvam's native voice.
-  const _ttsLang = ((typeof ST !== 'undefined' && ST && ST.currentLanguage) || 'hi-IN').split('-')[0];
-  if (_ttsLang && _ttsLang !== 'hi' && _ttsLang !== 'en') return false;
+  // v6.7.6: non-Hindi bailout reverted — eleven_flash_v2_5 handles ~32
+  // languages incl. Bengali/Tamil/Marathi etc. Voice quality depends on
+  // VOICE chosen, not on model. Sarvam stays as fallback on actual failure.
   // v6.6.1: USE_WORKER bypasses the block flag — the Worker proxy
   // handles auth, so a key-related block from a previous direct-call
   // session shouldn't gate Worker-routed attempts.
