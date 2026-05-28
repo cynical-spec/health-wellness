@@ -2043,6 +2043,13 @@ body:not(.focus) .focus-home{display:none}
 .ss-feedback-lbl{white-space:nowrap}
 @media (max-width:340px){.ss-feedback-lbl{display:none}.ss-feedback-btn{padding:12px;border-radius:50%}}
 #voice-overlay.active ~ .ss-feedback-btn,.screen#voice-overlay.active + .ss-feedback-btn{bottom:120px}
+
+.ss-feedback-btn{position:fixed;right:14px;bottom:96px;z-index:9000;display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border:none;border-radius:24px;background:#25d366;color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(37,211,102,.45),0 1px 2px rgba(0,0,0,.1);transition:transform .12s ease,box-shadow .2s ease}
+.ss-feedback-btn:active{transform:scale(.94)}
+.ss-feedback-lbl{white-space:nowrap}
+@media (max-width:340px){.ss-feedback-lbl{display:none}.ss-feedback-btn{padding:12px;border-radius:50%}}
+body:has(#voice-overlay.active) .ss-feedback-btn,
+body:has(.screen.active#s-onboard) .ss-feedback-btn{display:none}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
@@ -8018,12 +8025,25 @@ function _markTtsStart(audioEl) {
 // persist the block too so we don't waste cycles on a known-dead key.
 const _localElKey = (typeof localStorage !== 'undefined' ? (localStorage.getItem('ss_elevenlabs_key') || '') : '');
 const _hasUserElKey = _localElKey && _localElKey.length >= 20;
+// v6.6.1: build-time injected key also unlocks ElevenLabs; so does
+// USE_WORKER (real key lives on the Worker, browser doesn't need one).
+const _hasInjectedElKey = (typeof ELEVENLABS_KEY === 'string' && !ELEVENLABS_KEY.includes('REPLACE') && ELEVENLABS_KEY.length >= 20);
+const _hasAnyElKey = _hasUserElKey || _hasInjectedElKey || (typeof USE_WORKER !== 'undefined' && USE_WORKER);
+// v6.6.1: clear any stale block flag from pre-Worker days when CORS
+// was broken. With the Worker handling auth we expect ElevenLabs to
+// work; if it doesn't, we'll re-set the flag downstream.
+if (typeof USE_WORKER !== 'undefined' && USE_WORKER) {
+  try { localStorage.removeItem('ss_eleven_blocked'); } catch(e){}
+}
 const _persistedBlock = (typeof localStorage !== 'undefined' && localStorage.getItem('ss_eleven_blocked') === '1');
-let _elevenLabsBlocked = _persistedBlock || !_hasUserElKey;
-let _elevenLabsBlockedReason = !_hasUserElKey ? 'opt-in-required' : (_persistedBlock ? 'previously-blocked' : '');
+let _elevenLabsBlocked = _persistedBlock || !_hasAnyElKey;
+let _elevenLabsBlockedReason = !_hasAnyElKey ? 'no-key-available' : (_persistedBlock ? 'previously-blocked' : '');
 
 async function speakElevenLabs(text, opts) {
-  if (_elevenLabsBlocked) return false;
+  // v6.6.1: USE_WORKER bypasses the block flag — the Worker proxy
+  // handles auth, so a key-related block from a previous direct-call
+  // session shouldn't gate Worker-routed attempts.
+  if (_elevenLabsBlocked && !(typeof USE_WORKER !== 'undefined' && USE_WORKER)) return false;
   // v5.3.2: prefer build-time injected key (GitHub Secret ELEVEN_KEYS),
   // fall back to user-pasted localStorage key. Sarvam TTS CORS preflight
   // started failing on cynical-spec.github.io so ElevenLabs is now the
@@ -8031,7 +8051,8 @@ async function speakElevenLabs(text, opts) {
   const injectedKey = (typeof ELEVENLABS_KEY === 'string' && !ELEVENLABS_KEY.includes('REPLACE') && ELEVENLABS_KEY.length >= 20) ? ELEVENLABS_KEY : '';
   const localKey = localStorage.getItem('ss_elevenlabs_key') || '';
   const key = localKey && localKey.length >= 20 ? localKey : injectedKey;
-  if (!key) return false;
+  // v6.6.1: Worker mode → real key is server-side; client doesn't need one.
+  if (!key && !(typeof USE_WORKER !== 'undefined' && USE_WORKER)) return false;
   const voiceId = localStorage.getItem('ss_elevenlabs_voice') || 'EXAVITQu4vr4xnSDxMaL'; // Sarah default
   if (_currentAudio) { try { _currentAudio.pause(); } catch(e){} _currentAudio = null; }
   try {
