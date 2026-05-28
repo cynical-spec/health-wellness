@@ -8091,6 +8091,10 @@ async function convHandleTranscript(transcript) {
     // + felt jarring), OFFER it conversationally. v5.5.5: only check the BOT
     // reply now — explicit user requests took the fast-path above.
     try {
+      if (typeof _isRedirectReply === 'function' && _isRedirectReply(lastBotText)) {
+        console.info('[voice-skill] redirect reply — skipping skill offer');
+        return;
+      }
       const botSkill = _detectSkillForVoice(lastBotText);
       if (botSkill) {
         console.info('[voice-skill] AI suggested →', botSkill.kind, botSkill.key, '· offering confirmation');
@@ -8220,6 +8224,7 @@ async function transcribeWithSarvam(audioBlob) {
     // silence/noise. Reject the known patterns + ultra-short fragments.
     if (txt) {
       const HALL = [
+        // YouTube intro/outro
         /\bhello everyone\b/i,
         /\bwelcome to (my|the) channel\b/i,
         /\bthanks for watching\b/i,
@@ -8231,6 +8236,14 @@ async function transcribeWithSarvam(audioBlob) {
         /\bsee you in the next (video|one)\b/i,
         /\bthis is .{0,40} reporting\b/i,
         /^\s*(bbc|nhk|cnn|reuters|bloomberg)\s+(news)?\s*[.,]?\s*$/i,
+        // v6.7.12: news-clip Whisper hallucinations
+        /\b(the )?(indian|us|uk|chinese|russian) government[''']?s\b/i,
+        /\bdecision to (impose|implement|approve|reject)\b/i,
+        /\bsupreme court (of|ruled|held|said)\b/i,
+        /\bin the .{0,30} case\b/i,
+        /\baccording to (reuters|reports|sources|officials)\b/i,
+        /\bprime minister .{0,20} (said|announced|met)\b/i,
+        /\b(parliament|lok sabha|rajya sabha) (passed|approved|debated)\b/i,
       ];
       if (HALL.some((r) => r.test(txt))) {
         console.warn('[Sarvam STT] HALLUCINATION rejected:', txt);
@@ -10607,10 +10620,26 @@ function detectRemedy(text) {
     }
     return best ? [best.key, best.kit] : null;
   }
+// v6.7.12: dedupe + redirect-context guard.
+let _lastShownRemedyKey = null;
+let _lastShownRemedyAt = 0;
+function _isRedirectReply(text) {
+  if (!text) return false;
+  return /\b(wrong number|got the wrong|i'?m sehat saathi[^.]{0,40}(for health|dadi)|all the best (for|with) your (video|channel)|i can(no|')?t help|not (a |the )?(health|medical)|warna all the best)\b/i.test(text);
+}
+function _isDuplicateRemedy(key) {
+  if (!key) return false;
+  if (_lastShownRemedyKey === key && Date.now() - _lastShownRemedyAt < 5000) return true;
+  return false;
+}
 function injectRemedyCard(text, msgsContainer) {
+  if (_isRedirectReply(text)) { console.info('[remedy-card] redirect reply — skipping'); return; }
   const r = detectRemedy(text);
   if (!r) return;
   const [key, kit] = r;
+  if (_isDuplicateRemedy(key)) { console.info('[remedy-card] duplicate', key, '— skipping'); return; }
+  _lastShownRemedyKey = key;
+  _lastShownRemedyAt = Date.now();
   const row = document.createElement('div');
   row.className = 'msg-row bot video-card-row';
   row.innerHTML = `
