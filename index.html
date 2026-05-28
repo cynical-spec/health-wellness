@@ -8205,11 +8205,37 @@ async function transcribeWithSarvam(audioBlob) {
       return '';
     }
     const data = await res.json();
-    const txt = (data.transcript || '').trim();
+    let txt = (data.transcript || '').trim();
     // v6.7.7: pin detected language for downstream TTS routing
     if (data.language_code && /^[a-z]{2}-[A-Z]{2}$/.test(data.language_code)) {
       ST.currentLanguage = data.language_code;
       console.info('[Sarvam STT] detected', data.language_code);
+    }
+    // v6.7.9: Whisper-family hallucination filter. saarika:v2.5 is
+    // Whisper-based and regurgitates YouTube/news boilerplate when fed
+    // silence/noise. Reject the known patterns + ultra-short fragments.
+    if (txt) {
+      const HALL = [
+        /\bhello everyone\b/i,
+        /\bwelcome to (my|the) channel\b/i,
+        /\bthanks for watching\b/i,
+        /\bthank you for watching\b/i,
+        /\b(don't|do not) forget to (like|subscribe|hit)\b/i,
+        /\bsubscribe to (my|the|our) channel\b/i,
+        /\b(today I am|today I'm) going to (talk|show|tell)\b/i,
+        /\bhit (that|the) (like|subscribe) button\b/i,
+        /\bsee you in the next (video|one)\b/i,
+        /\bthis is .{0,40} reporting\b/i,
+        /^\s*(bbc|nhk|cnn|reuters|bloomberg)\s+(news)?\s*[.,]?\s*$/i,
+      ];
+      if (HALL.some((r) => r.test(txt))) {
+        console.warn('[Sarvam STT] HALLUCINATION rejected:', txt);
+        try { trackEvent && trackEvent('stt_hallucination', { len: txt.length }); } catch (_) {}
+        txt = '';
+      } else if (txt.length < 3) {
+        console.warn('[Sarvam STT] too-short transcript rejected:', txt);
+        txt = '';
+      }
     }
     if (!txt) {
       console.warn('[Sarvam STT] empty transcript', data);
@@ -8431,12 +8457,12 @@ let _elevenLabsBlocked = _persistedBlock || !_hasAnyElKey;
 let _elevenLabsBlockedReason = !_hasAnyElKey ? 'no-key-available' : (_persistedBlock ? 'previously-blocked' : '');
 
 async function speakElevenLabs(text, opts) {
-  // v6.7.8: hybrid routing — ElevenLabs (Sarah) for Hindi/English, Sarvam
-  // Bulbul native voices for Bengali/Tamil/Marathi/etc. Trades voice
-  // consistency for native-feel per language: Bengali aunty hears a
-  // native Bengali voice instead of Sarah-doing-her-best-Bengali.
-  const _lang = ((typeof ST !== 'undefined' && ST && ST.currentLanguage) || 'hi-IN').split('-')[0];
-  if (_lang && _lang !== 'hi' && _lang !== 'en') return false;
+  // v6.7.9: v6.7.8 hybrid (Sarvam for non-Hindi) reverted. Sarvam Bulbul's
+  // 'manisha' speaker is Hindi-trained — asked to render Bengali phonemes
+  // it produced "alien yelling" not natural Bengali. Sarah-doing-Bengali
+  // (via v6.7.6 transliterate path) is a better floor: timbre stays
+  // American but phonology is recognisably Bengali. ElevenLabs handles
+  // all languages again; Sarvam stays as failure fallback only.
   // v6.6.1: USE_WORKER bypasses the block flag — the Worker proxy
   // handles auth, so a key-related block from a previous direct-call
   // session shouldn't gate Worker-routed attempts.
