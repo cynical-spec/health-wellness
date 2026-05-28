@@ -2906,7 +2906,55 @@ const LANG = {
   chip_aur_tips: { hi: "और टिप्स", en: "Aur tips" },
   chip_plan_banao: { hi: "प्लान बनाओ", en: "Plan banao" },
   chip_try_kiya: { hi: "ट्राय किया", en: "Try kiya" },
-  chip_wapas_hub: { hi: "वापस हब", en: "Wapas hub" },
+      chip_wapas_hub: { hi: "वापस हब", en: "Wapas hub" },
+
+    // ── v6.7.2: dynamic hub surfaces (rendered by runtime.js, not static JSX) ──
+    warm_namaste: { hi: "नमस्ते", en: "Namaste" },
+    warm_tod_subah: { hi: "सुबह", en: "Subah" },
+    warm_tod_dopahar: { hi: "दोपहर", en: "Dopahar" },
+    warm_tod_shaam: { hi: "शाम", en: "Shaam" },
+    warm_tod_raat: { hi: "रात", en: "Raat" },
+    warm_baj_rahe: { hi: "बज रहे हैं।", en: "baj rahe hain." },
+    warm_baj_rahe_ke: { hi: "के", en: "ke" },
+    warm_ask_morning: { hi: "चाय पी ली? आज के लिए तैयार हो?", en: "Chai pi li? Aaj ke liye taiyaar ho?" },
+    warm_ask_noon: { hi: "खाना समय पर खाया? थोड़ा साँस ले लो।", en: "Khaana time pe khaya? Thoda saans le lo." },
+    warm_ask_evening: { hi: "दिन कैसा रहा? थोड़ा हल्का महसूस करें?", en: "Din kaisa raha? Thoda halka feel karein?" },
+    warm_ask_night: { hi: "रात हो गई। नींद से पहले गहरी साँस?", en: "Raat ho gayi. Neend ke pehle gehri saans?" },
+    warm_set_name: { hi: "अपना नाम जोड़ें", en: "apna naam jodein" },
+    ac_recall_prefix: { hi: "पिछली बार आपने कहा था:", en: "Pichli baar aapne kaha tha:" },
+    ac_recall_suffix: { hi: "आज कैसा है?", en: "Aaj kaisa hai?" },
+    ac_returner: { hi: "कुछ दिन हो गए। सब ठीक? आज कैसे महसूस कर रहे हैं?", en: "Kuch din ho gaye. Sab theek? Aaj kaise feel kar rahe hain?" },
+    ac_tod_morning: { hi: "सुबह की शुरुआत — एक गिलास गरम पानी + नींबू से दिन हल्का शुरू करें?", en: "Subah ki shuruaat — ek glass garam paani + nimbu se din halka shuru karein?" },
+    ac_tod_noon: { hi: "खाने के बाद 10 मिनट वॉक पेट हल्का रखता है। ट्राय करें?", en: "Khaane ke baad 10 minute walk pet halka rakhta hai. Try karein?" },
+    ac_tod_evening: { hi: "दिन की थकान उतारने के लिए 5 मिनट अनुलोम-विलोम — साथ करें?", en: "Din thakaan utaarne ke liye 5 minute Anulom-Vilom — saath karein?" },
+    ac_tod_night: { hi: "सोने से पहले गहरी 4-4-4 साँस — नींद गहरी आती है।", en: "Sone se pehle gehri 4-4-4 saans — neend gehri aati hai." },
+    ac_btn_theek: { hi: "ठीक है", en: "Theek hai" },
+    ac_btn_aur_batao: { hi: "और बताओ →", en: "Aur batao →" },
+    ac_btn_sab_badhiya: { hi: "सब बढ़िया", en: "Sab badhiya" },
+    ac_btn_thoda_batao: { hi: "थोड़ा बताओ →", en: "Thoda batao →" },
+    ac_btn_chalo_karein: { hi: "चलो करें", en: "Chalo karein" },
+    ac_btn_baad_mein: { hi: "बाद में", en: "Baad mein" },
+    hub_chip_sir_dard: { hi: "सिर दर्द", en: "Sir dard" },
+    hub_chip_sardi_khansi: { hi: "सर्दी-खाँसी", en: "Sardi-khansi" },
+    hub_chip_pet_dikkat: { hi: "पेट की दिक्कत", en: "Pet ki dikkat" },
+    hub_chip_neend_nahi: { hi: "नींद नहीं", en: "Neend nahi" },
+    hub_chip_tension: { hi: "टेंशन", en: "Tension" },
+    hub_try_prefix: { hi: "ट्राय:", en: "Try:" },
+    hs_kaisa_hai_ab: { hi: "कैसा है अब?", en: "Kaisa hai ab?" },
+    hs_kaisa_hai: { hi: "कैसा है?", en: "Kaisa hai?" },
+    hs_din_streak_suffix: { hi: "-दिन स्ट्रीक", en: "-din streak" },
+    hs_streak_shuru: { hi: "स्ट्रीक शुरू", en: "Streak shuru" },
+    hs_streak_toast: { hi: "दिन का स्ट्रीक 🔥", en: "din ka streak 🔥" },
+    hs_streak_start_toast: { hi: "आज से स्ट्रीक शुरू करें", en: "Aaj se streak shuru karein" },
+    hs_score_prefix: { hi: "स्कोर", en: "Score" },
+    hs_score_toast_prefix: { hi: "सेहत स्कोर:", en: "Sehat Score:" },
+    hs_aaj_kahani: { hi: "आज की कहानी", en: "Aaj ki kahani" },
+    hs_subah_rasm: { hi: "सुबह का रस्म", en: "Subah ka rasm" },
+    hs_paani_done: { hi: "पानी done", en: "Paani done" },
+    hs_paani_peeyo: { hi: "पानी पीयो", en: "Paani peeyo" },
+    hs_saans_karo: { hi: "साँस करो", en: "Saans karo" },
+    hs_raat_dua: { hi: "रात की दुआ", en: "Raat ki dua" },
+    safar_title: { hi: "आज का सफ़र", en: "Aaj ka safar" },
 };
 function getLang() {
   try {
@@ -2955,7 +3003,14 @@ function toggleLang() {
       t(getLang() === "hi" ? "lang_toggle_aria_to_en" : "lang_toggle_aria_to_hi"),
     );
   }
-  try { trackEvent("lang_toggle", { to: getLang() }); } catch (_) {}
+try {
+  const hubActive = document.querySelector('#s-hub.active');
+  if (hubActive && typeof initHubDynamic === 'function') {
+    initHubDynamic();
+  }
+} catch (e) {}
+try {
+trackEvent('lang_toggle', { to: getLang() }); } catch (_) {}
 }
 window.t = t;
 window.LANG = LANG;
@@ -3930,7 +3985,7 @@ function goToFeature(f) {
 }
 function startFeature(f) {
   trackFeature(f);
-  if (f === 'nushke') { ST.chatCtx = 'nushke'; ST.chatHistory = []; ST.isFirstMsg = true; goTo('s-chat'); document.getElementById('chat-ctx-label').textContent = 'Ghar ke Nushke'; renderNushkeStart(); }
+  if (f === 'nushke') { ST.chatCtx = 'nushke'; ST.chatHistory = []; ST.isFirstMsg = true; goTo('s-chat'); { const lbl = document.getElementById('chat-ctx-label'); if (lbl) { lbl.setAttribute('data-i18n', 'chat_subtitle_nushke'); lbl.textContent = t('chat_subtitle_nushke'); } } renderNushkeStart(); }
   else if (f === 'medicine') { startRx(); }                  // legacy alias → new RX flow
   else if (f === 'rx') { startRx(); }
   else if (f === 'bazaar') { startBazaar(); }
@@ -4041,26 +4096,11 @@ const PERSONA_MODE_LBL = { dadi: 'Dadi mode', maa: 'Maa mode', saathi: 'Saathi m
 
 /* === v6.0/v6.1 warm landing helpers — synced from apps/health === */
 const HUB_CHIPS = [
-    {
-      label: "Sir dard",
-      ai: "🤕 Sir dard ho raha hai. Ek ghar ka nuska + kab doctor ke paas jaayein — short, Hinglish.",
-    },
-    {
-      label: "Sardi-khansi",
-      ai: "🤧 Sardi aur khansi ke liye Dadi ka ek ghar ka nuska batao — short, Hinglish.",
-    },
-    {
-      label: "Pet ki dikkat",
-      ai: "🤢 Pet mein gas/acidity ho rahi hai, ek ghar ka tarika batao — Hinglish, short.",
-    },
-    {
-      label: "Neend nahi",
-      ai: "😴 Raat ko neend nahi aati — ek ghar ka tarika + raat ka ritual batao — Hinglish, short.",
-    },
-    {
-      label: "Tension",
-      ai: "😰 Tension aur chinta lagi hai, kya karein? — short, Hinglish, warm.",
-    },
+    { labelKey: 'hub_chip_sir_dard', ai: '🤕 Sir dard ho raha hai. Ek ghar ka nuska + kab doctor ke paas jaayein — short, Hinglish.' },
+    { labelKey: 'hub_chip_sardi_khansi', ai: '🤧 Sardi aur khansi ke liye Dadi ka ek ghar ka nuska batao — short, Hinglish.' },
+    { labelKey: 'hub_chip_pet_dikkat', ai: '🤢 Pet mein gas/acidity ho rahi hai, ek ghar ka tarika batao — Hinglish, short.' },
+    { labelKey: 'hub_chip_neend_nahi', ai: '😴 Raat ko neend nahi aati — ek ghar ka tarika + raat ka ritual batao — Hinglish, short.' },
+    { labelKey: 'hub_chip_tension', ai: '😰 Tension aur chinta lagi hai, kya karein? — short, Hinglish, warm.' },
   ];
 
 const HUB_PROMPTS_BY_TOD = {
@@ -4109,27 +4149,21 @@ let _hubPlaceholderIdx = 0;
 
 function getTodWarm() {
     const h = new Date().getHours();
-    if (h >= 5 && h < 12) return { bucket: "morning", emoji: "🌅", label: "Subah" };
-    if (h >= 12 && h < 16) return { bucket: "noon", emoji: "☀️", label: "Dopahar" };
-    if (h >= 16 && h < 19) return { bucket: "evening", emoji: "🌇", label: "Shaam" };
-    return { bucket: "night", emoji: "🌙", label: "Raat" };
+    if (h >= 5 && h < 12) return { bucket: 'morning', emoji: '🌅', labelKey: 'warm_tod_subah' };
+    if (h >= 12 && h < 16) return { bucket: 'noon', emoji: '☀️', labelKey: 'warm_tod_dopahar' };
+    if (h >= 16 && h < 19) return { bucket: 'evening', emoji: '🌇', labelKey: 'warm_tod_shaam' };
+    return { bucket: 'night', emoji: '🌙', labelKey: 'warm_tod_raat' };
   }
 
 function getWarmGreeting(tod, name) {
-    const who = name ? ", " + name : "";
+    const who = name ? ', ' + name : '';
     const h = new Date().getHours();
     const time = h % 12 === 0 ? 12 : h % 12;
-    const meridian = h < 12 ? "subah" : h < 17 ? "dopahar" : h < 20 ? "shaam" : "raat";
-    const ask = {
-      morning: "Chai pi li? Aaj ke liye taiyaar ho?",
-      noon: "Khaana time pe khaya? Thoda saans le lo.",
-      evening: "Din kaisa raha? Thoda halka feel karein?",
-      night: "Raat ho gayi. Neend ke pehle gehri saans?",
-    }[tod.bucket];
+    const askKey = { morning: 'warm_ask_morning', noon: 'warm_ask_noon', evening: 'warm_ask_evening', night: 'warm_ask_night' }[tod.bucket];
     return {
-      title: "Namaste" + who,
-      time: tod.label + " ke " + time + " baj rahe hain.",
-      ask: ask,
+      title: t('warm_namaste') + who,
+      time: t(tod.labelKey) + ' ' + t('warm_baj_rahe_ke') + ' ' + time + ' ' + t('warm_baj_rahe'),
+      ask: t(askKey),
     };
   }
 
@@ -4153,65 +4187,42 @@ function renderWarmHero() {
   }
 
 function pickActiveChoice() {
-    // 1. Recent unresolved complaint — pull last user line from chatHistory
     const hist = (ST.chatHistory || []).slice().reverse();
-    const lastUser = hist.find((m) => m && m.role === "user");
+    const lastUser = hist.find((m) => m && m.role === 'user');
     if (lastUser && lastUser.content) {
-      // Trim to first sentence / 80 chars for the recall blurb
-      const snippet = String(lastUser.content)
-        .split(/[.!?।\n]/)[0]
-        .trim()
-        .slice(0, 80);
+      const snippet = String(lastUser.content).split(/[.!?।\n]/)[0].trim().slice(0, 80);
       if (snippet) {
         return {
-          kind: "recall",
-          icon: "💭",
-          text: 'Pichli baar aapne kaha tha: "' + snippet + '". Aaj kaisa hai?',
-          primary: { label: "Theek hai", action: "ac_resolve" },
-          secondary: { label: "Aur batao →", action: "ac_continue" },
+          kind: 'recall', icon: '💭',
+          text: t('ac_recall_prefix') + ' "' + snippet + '". ' + t('ac_recall_suffix'),
+          primary: { label: t('ac_btn_theek'), action: 'ac_resolve' },
+          secondary: { label: t('ac_btn_aur_batao'), action: 'ac_continue' },
         };
       }
     }
-    // 2. Returner — last visit > 3 days ago
     try {
-      const last = parseInt(localStorage.getItem("ss_last_visit") || "0", 10);
+      const last = parseInt(localStorage.getItem('ss_last_visit') || '0', 10);
       if (last && Date.now() - last > 3 * 24 * 60 * 60 * 1000) {
         return {
-          kind: "returner",
-          icon: "👋",
-          text: "Kuch din ho gaye. Sab theek? Aaj kaise feel kar rahe hain?",
-          primary: { label: "Sab badhiya", action: "ac_resolve" },
-          secondary: { label: "Thoda batao →", action: "ac_continue" },
+          kind: 'returner', icon: '👋',
+          text: t('ac_returner'),
+          primary: { label: t('ac_btn_sab_badhiya'), action: 'ac_resolve' },
+          secondary: { label: t('ac_btn_thoda_batao'), action: 'ac_continue' },
         };
       }
     } catch (e) {}
-    // 3. Time-of-day default
     const tod = getTodWarm();
     const todMap = {
-      morning: {
-        icon: "🍵",
-        text: "Subah ki shuruaat — ek glass garam paani + nimbu se din halka shuru karein?",
-      },
-      noon: {
-        icon: "🚶",
-        text: "Khaane ke baad 10 minute walk pet halka rakhta hai. Try karein?",
-      },
-      evening: {
-        icon: "🧘",
-        text: "Din thakaan utaarne ke liye 5 minute Anulom-Vilom — saath karein?",
-      },
-      night: {
-        icon: "🌙",
-        text: "Sone se pehle gehri 4-4-4 saans — neend gehri aati hai.",
-      },
+      morning: { icon: '🍵', textKey: 'ac_tod_morning' },
+      noon: { icon: '🚶', textKey: 'ac_tod_noon' },
+      evening: { icon: '🧘', textKey: 'ac_tod_evening' },
+      night: { icon: '🌙', textKey: 'ac_tod_night' },
     };
-    const t = todMap[tod.bucket];
+    const tc = todMap[tod.bucket];
     return {
-      kind: "tod",
-      icon: t.icon,
-      text: t.text,
-      primary: { label: "Chalo karein", action: "ac_do_tod" },
-      secondary: { label: "Baad mein", action: "ac_dismiss" },
+      kind: 'tod', icon: tc.icon, text: t(tc.textKey),
+      primary: { label: t('ac_btn_chalo_karein'), action: 'ac_do_tod' },
+      secondary: { label: t('ac_btn_baad_mein'), action: 'ac_dismiss' },
     };
   }
 
@@ -4271,19 +4282,18 @@ function handleActiveChoice(action) {
   }
 
 function renderHubChipRail() {
-    const el = document.getElementById("talk-chip-rail");
+    const el = document.getElementById('talk-chip-rail');
     if (!el) return;
     el.innerHTML = HUB_CHIPS.map(
-      (c, i) =>
-        '<button class="talk-chip" onclick="tapHubChip(' + i + ')">' + c.label + "</button>",
-    ).join("");
+      (c, i) => '<button class="talk-chip" data-i18n="' + c.labelKey + '" onclick="tapHubChip(' + i + ')">' + t(c.labelKey) + '</button>'
+    ).join('');
   }
 
 function tapHubChip(i) {
     const c = HUB_CHIPS[i];
     if (!c) return;
-    if (typeof triSymptomTap === "function") {
-      triSymptomTap(c.label, c.ai);
+    if (typeof triSymptomTap === 'function') {
+      triSymptomTap(t(c.labelKey), c.ai);
     }
   }
 
@@ -4300,7 +4310,7 @@ function startHubPlaceholderRotation() {
     const apply = () => {
       // Don't override while user is typing.
       if (input.value && input.value.length > 0) return;
-      input.placeholder = "Try: " + pool[_hubPlaceholderIdx % pool.length];
+      input.placeholder = t('hub_try_prefix') + ' ' + pool[_hubPlaceholderIdx % pool.length];
       _hubPlaceholderIdx++;
     };
     apply();
@@ -4365,7 +4375,7 @@ function renderSafarPath() {
     }).join("");
     const completed = SAFAR_STEPS.filter((s) => done[s.id] || now >= s.whenHour + 2).length;
     el.innerHTML =
-      '<div class="safar-hdr"><span class="safar-title">Aaj ka safar</span><span class="safar-count">' +
+      '<div class="safar-hdr"><span class="safar-title" data-i18n="safar_title">' + t('safar_title') + '</span><span class="safar-count">' +
       completed +
       "/" +
       SAFAR_STEPS.length +
@@ -4387,7 +4397,7 @@ function initHubDynamic() {
     if (profile && profile.name) {
       nameEl.textContent = ', ' + profile.name;
     } else {
-      nameEl.innerHTML = ' <span style="color:rgba(255,255,255,.45);text-decoration:underline;cursor:pointer" onclick="askName()">apna naam jodein</span>';
+      nameEl.innerHTML = ' <span style="color:rgba(255,255,255,.45);text-decoration:underline;cursor:pointer" onclick="askName()" data-i18n="warm_set_name">' + t('warm_set_name') + '</span>';
     }
   }
   // v3.2: Render TOD carousel + refresh header score chip
@@ -4415,6 +4425,8 @@ function initHubDynamic() {
   try { renderHubChipRail(); } catch (e) {}
   try { startHubPlaceholderRotation(); } catch (e) {}
   try { localStorage.setItem('ss_last_visit', String(Date.now())); } catch (e) {}
+// v6.7.2: apply i18n to any data-i18n attrs the dynamic renderers emitted
+try { if (typeof applyLanguage === 'function') applyLanguage(); } catch (e) {}
 }
 
 // ── v5.2: Sunita-archetype simplified home (Miller's Law) ──
@@ -4456,10 +4468,10 @@ function renderHubStories(){
   const activeOrder = orders.find(o => (o.statusIdx || 0) < 4);
   // Time-of-day habit slot
   const hour = new Date().getHours();
-  const habitSlot = hour < 11 ? { emoji:'🌅', name:'Subah ka rasm', cmd:'startFeature(\'breathe\')' }
-                   : hour < 17 ? { emoji:'💧', name:dots.paani?'Paani done':'Paani peeyo', cmd:'storiesTapDot(\'paani\')', done: !!dots.paani }
-                   : hour < 21 ? { emoji:'🌬', name:'Saans karo',  cmd:'startFeature(\'breathe\')' }
-                                : { emoji:'🌙', name:'Raat ki dua', cmd:'playStory(\'general\')' };
+  const habitSlot = hour < 11 ? { emoji:'🌅', name:t('hs_subah_rasm'), cmd:"startFeature('breathe')" }
+                   : hour < 17 ? { emoji:'💧', name:dots.paani?t('hs_paani_done'):t('hs_paani_peeyo'), cmd:"storiesTapDot('paani')", done: !!dots.paani }
+                   : hour < 21 ? { emoji:'🌬', name:t('hs_saans_karo'),  cmd:"startFeature('breathe')" }
+                                : { emoji:'🌙', name:t('hs_raat_dua'), cmd:"playStory('general')" };
 
   let html = '';
 
@@ -4469,7 +4481,7 @@ function renderHubStories(){
     const flow = FOCUS_FLOWS[focusDue.symptom] || {};
     html += `<button class="hs-circle" onclick="openFocusValidate()">
       <div class="hs-ring due"><span>${flow.emoji || '🤕'}</span></div>
-      <div class="hs-name">Kaisa hai ab?</div>
+      <div class="hs-name">${t('hs_kaisa_hai_ab')}</div>
     </button>`;
   }
 
@@ -4480,33 +4492,33 @@ function renderHubStories(){
     const label = (due.displayText || 'tabiyat').split(' ').slice(0, 2).join(' ');
     html += `<button class="hs-circle" onclick="openCheckin('${due.id}')">
       <div class="hs-ring due"><span>${emoji}</span></div>
-      <div class="hs-name">Kaisa hai?</div>
+      <div class="hs-name">${t('hs_kaisa_hai')}</div>
     </button>`;
   }
 
   // 1) Streak
   if (streak > 0) {
-    html += `<button class="hs-circle" onclick="showToast('${streak} din ka streak \\u{1F525}')">
+    html += `<button class="hs-circle" onclick="showToast('${streak} ' + t('hs_streak_toast'))">
       <div class="hs-ring streak"><span>🔥</span><span class="hs-ring-num" style="border-color:#fb923c;color:#fb923c">${streak}</span></div>
-      <div class="hs-name">${streak}-din streak</div>
+      <div class="hs-name">${streak}${t('hs_din_streak_suffix')}</div>
     </button>`;
   } else {
-    html += `<button class="hs-circle" onclick="showToast('Aaj se streak shuru karein')">
+    html += `<button class="hs-circle" onclick="showToast(t('hs_streak_start_toast'))">
       <div class="hs-ring muted"><span>🔥</span></div>
-      <div class="hs-name">Streak shuru</div>
+      <div class="hs-name">${t('hs_streak_shuru')}</div>
     </button>`;
   }
 
   // 2) Score
-  html += `<button class="hs-circle" onclick="showToast('Sehat Score: ${score} / 100')">
+  html += `<button class="hs-circle" onclick="showToast(t('hs_score_toast_prefix') + ' ' + score + ' / 100')">
     <div class="hs-ring green"><span>💚</span></div>
-    <div class="hs-name">Score ${score}</div>
+    <div class="hs-name">${t('hs_score_prefix')} ${score}</div>
   </button>`;
 
   // 3) Aaj ki Kahani (Dadi's story)
   html += `<button class="hs-circle" onclick="playStory('general')">
     <div class="hs-ring purple"><span>📖</span></div>
-    <div class="hs-name">Aaj ki kahani</div>
+    <div class="hs-name">${t('hs_aaj_kahani')}</div>
   </button>`;
 
   // 4) Time-of-day habit
@@ -4904,7 +4916,7 @@ function askCommonQ(question) {
   ST.chatHistory = [];
   ST.isFirstMsg = true;
   goTo('s-chat');
-  document.getElementById('chat-ctx-label').textContent = 'Ghar ke Nushke';
+  { const lbl = document.getElementById('chat-ctx-label'); if (lbl) { lbl.setAttribute('data-i18n', 'chat_subtitle_nushke'); lbl.textContent = t('chat_subtitle_nushke'); } }
   setTimeout(() => {
     document.getElementById('chat-msgs').innerHTML = '';
     addMsg('user', question, false);
