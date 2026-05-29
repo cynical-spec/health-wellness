@@ -23,68 +23,61 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Inject API keys
+      - name: Inject Worker config (NO upstream API keys)
+        # SECURITY: upstream API keys are NEVER injected into the published
+        # HTML. The browser only gets the Worker URL + the shared CLIENT_TOKEN;
+        # all real keys live server-side on the Cloudflare Worker. The old
+        # direct-key substitution leaked keys into the consumer page source.
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          SARVAM_KEY: ${{ secrets.SARVAM_KEY }}
-          ELEVEN_KEYS: ${{ secrets.ELEVEN_KEYS }}
-          # v6.3: Cerebras Cloud — secondary LLM after Anthropic. Accept either
-          # secret name so whichever was set in repo settings works without
-          # renaming.
-          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
-          NEXT_PUBLIC_CEREBRAS_KEY: ${{ secrets.NEXT_PUBLIC_CEREBRAS_KEY }}
-          # v6.5: Anthropic (Claude) — PRIMARY in the cascade. Defaults the
-          # model to claude-sonnet-4-5 when the secret is unset.
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Non-secret presentation config (voice IDs, model name) only.
           ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
           ELEVENLABS_VOICE_ID_INDIC: ${{ secrets.ELEVENLABS_VOICE_ID_INDIC }}
           ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
-          # v6.6 (pilot): unified Cloudflare Worker proxy. When set, ALL
-          # upstream API calls route through it and the browser only sees the
-          # shared CLIENT_TOKEN — real keys live on the Worker. If unset, the
-          # direct key substitutions above keep the legacy direct-from-browser
-          # path working as a fallback.
+          # Required: the Worker proxy URL + shared client token.
           WORKER_URL: ${{ secrets.WORKER_URL }}
           CLIENT_TOKEN: ${{ secrets.CLIENT_TOKEN }}
         run: |
           python3 - <<'PYEOF'
-          import os
-          oai      = os.environ.get("OPENAI_API_KEY","").strip()
-          groq     = os.environ.get("GROQ_API_KEY","").strip()
-          sarvam   = os.environ.get("SARVAM_KEY","").strip()
-          eleven   = os.environ.get("ELEVEN_KEYS","").strip()
-          cerebras = os.environ.get("CEREBRAS_API_KEY","").strip() or os.environ.get("NEXT_PUBLIC_CEREBRAS_KEY","").strip()
-          anthropic       = os.environ.get("ANTHROPIC_API_KEY","").strip()
-          anthropic_model = os.environ.get("ANTHROPIC_MODEL","").strip() or "claude-sonnet-4-5"
+          import os, re, sys
           worker_url      = os.environ.get("WORKER_URL","").strip()
           client_token    = os.environ.get("CLIENT_TOKEN","").strip()
+          anthropic_model = os.environ.get("ANTHROPIC_MODEL","").strip() or "claude-sonnet-4-5"
+          voice           = os.environ.get("ELEVENLABS_VOICE_ID","").strip()
+          voice_indic     = os.environ.get("ELEVENLABS_VOICE_ID_INDIC","").strip()
+
+          # Hard gate: we no longer ship keys, so the Worker is mandatory.
+          if not worker_url or not client_token:
+              sys.exit("FATAL: WORKER_URL and CLIENT_TOKEN secrets are required "
+                       "(API keys are no longer injected). Set them in repo Secrets.")
+
           with open("index.html","r") as f:
               html = f.read()
-          html = html.replace("REPLACE_WITH_YOUR_KEY", oai)
-          html = html.replace("REPLACE_WITH_GROQ_KEY", groq)
-          html = html.replace("REPLACE_WITH_SARVAM_KEY", sarvam)
-          html = html.replace("REPLACE_WITH_ELEVENLABS_KEY", eleven)
-          html = html.replace("REPLACE_WITH_CEREBRAS_KEY", cerebras)
-          html = html.replace("REPLACE_WITH_ANTHROPIC_KEY", anthropic)
-          html = html.replace("REPLACE_WITH_ELEVENLABS_VOICE_ID", os.environ.get("ELEVENLABS_VOICE_ID","").strip())
-          html = html.replace("REPLACE_WITH_ELEVENLABS_VOICE_ID_INDIC", os.environ.get("ELEVENLABS_VOICE_ID_INDIC","").strip())
+
+          # Blank out every upstream-key placeholder — keys must NEVER reach HTML.
+          for ph in ("REPLACE_WITH_YOUR_KEY","REPLACE_WITH_GROQ_KEY",
+                     "REPLACE_WITH_SARVAM_KEY","REPLACE_WITH_ELEVENLABS_KEY",
+                     "REPLACE_WITH_CEREBRAS_KEY","REPLACE_WITH_ANTHROPIC_KEY"):
+              html = html.replace(ph, "")
+
+          # Inject only non-secret config + the Worker plumbing.
+          html = html.replace("REPLACE_WITH_ELEVENLABS_VOICE_ID", voice)
+          html = html.replace("REPLACE_WITH_ELEVENLABS_VOICE_ID_INDIC", voice_indic)
           html = html.replace("REPLACE_WITH_ANTHROPIC_MODEL", anthropic_model)
           html = html.replace("REPLACE_WITH_WORKER_URL", worker_url)
           html = html.replace("REPLACE_WITH_CLIENT_TOKEN", client_token)
+
+          # Defense-in-depth: abort the deploy if a real upstream-key prefix
+          # somehow appears in the output (catches future regressions).
+          leak = re.search(r"sk-ant-[A-Za-z0-9_\-]{6}|gsk_[A-Za-z0-9]{6}|csk-[A-Za-z0-9]{6}", html)
+          if leak:
+              sys.exit("FATAL: an API-key-like string was found in index.html "
+                       "after injection — aborting deploy to avoid a key leak.")
+
           with open("index.html","w") as f:
               f.write(html)
-          print(
-              "Injected.",
-              "OpenAI:",     bool(oai),
-              "Groq:",       bool(groq),
-              "Sarvam:",     bool(sarvam),
-              "ElevenLabs:", bool(eleven),
-              "Cerebras:",   bool(cerebras),
-              "Anthropic:",  bool(anthropic), "(model:", anthropic_model + ")",
-              "Worker:",     bool(worker_url),
-              "ClientToken:", bool(client_token),
-          )
+          print("Injected Worker config only — NO upstream keys. "
+                "Worker:", bool(worker_url), "ClientToken:", bool(client_token),
+                "(model:", anthropic_model + ")")
           PYEOF
 
       - uses: actions/configure-pages@v5
