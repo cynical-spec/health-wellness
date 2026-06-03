@@ -7610,7 +7610,7 @@ body:not(.focus) .focus-home {
 <!-- ══════════════ ONBOARDING SCREEN ══════════════ -->
 <div class="screen" id="s-onboard">
   <div class="hdr">
-    <button class="hdr-btn" onclick="skipOnboarding()" aria-label="Back">
+    <button class="hdr-btn" onclick="onboardBack()" aria-label="Back">
       <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M15 20a1 1 0 01-.71-.29l-7-7a1 1 0 010-1.42l7-7a1.005 1.005 0 011.42 1.42L9.41 12l6.3 6.29a1 1 0 01-.71 1.71z" fill="currentColor"/></svg>
     </button>
     <div class="hdr-center"><div class="hdr-text"><h2>Sehat Saathi</h2><p style="color:var(--text2)">Aap ko jaanne ke liye</p></div></div>
@@ -7801,6 +7801,7 @@ body:not(.focus) .focus-home {
   </div>
   <div class="voice-transcript-area" id="voice-transcript-area"></div>
   <div class="voice-hint" id="voice-hint" data-i18n="voice_hint">Bolein... ya rukne ke liye band karein</div>
+  <div class="voice-actions"><button class="voice-send" onclick="sendVoiceNow()" data-i18n="voice_send" aria-label="Bhej do">Bhej do →</button></div>
   <button class="voice-stop" onclick="stopVoice()"><span class="voice-stop-dot"></span>Band karein</button>
   <!-- Legacy refs kept so other code that touches them doesn't break -->
   <p class="voice-txt" id="voice-txt"></p>
@@ -8000,10 +8001,11 @@ if (!window.__SS_LOADED__) {
       hi: "नमस्ते 🙏 मैं सेहत साथी हूँ — आपका सेहत का दोस्त।<br><br>2 मिनट में थोड़ी सी पहचान हो जाए, फिर आगे हम बात करते हैं। ठीक है?",
       en: "Namaste 🙏 Main Sehat Saathi hoon — aapka sehat ka dost.<br><br>2 minute mein thodi si pehchaan ho jaaye, phir aage hum baat karte hain. Theek hai?",
     },
-    ob_scope_q: { hi: "सबसे पहले बताओ — सेहत साथी किसके लिए चाहिए?", en: "Sabse pehle bataao — Sehat Saathi kiske liye chahiye?" },
-    ob_scope_self: { hi: "सिर्फ अपने लिए", en: "Sirf apne liye" },
-    ob_scope_family: { hi: "परिवार के लिए", en: "Parivaar ke liye" },
-    ob_scope_household: { hi: "पूरे घर के लिए", en: "Poore ghar ke liye" },
+    ob_scope_q: { hi: "सेहत साथी किसके लिए? — अपने लिए या घर में किसी और के लिए?", en: "Sehat Saathi kiske liye? — apne liye ya ghar mein kisi aur ke liye?" },
+    ob_scope_self: { hi: "अपने लिए", en: "Apne liye" },
+    ob_scope_other: { hi: "घर में किसी और के लिए", en: "Ghar mein kisi aur ke liye" },
+    ob_scope_family: { hi: "परिवार के लिए", en: "Parivaar ke liye" }, // legacy — kept to avoid breaking lingering refs; use ob_scope_other instead
+    ob_scope_household: { hi: "पूरे घर के लिए", en: "Poore ghar ke liye" }, // legacy — kept to avoid breaking lingering refs; use ob_scope_other instead
     ob_name_q: { hi: "अच्छा। आपका नाम क्या है?", en: "Acha. Aapka naam kya hai?" },
     ob_age_q: { hi: "और उमर क्या है?", en: "Aur umar kya hai?" },
     ob_sex_q: { hi: "आप पुरुष हो या स्त्री?", en: "Aap purush ho ya stree?" },
@@ -9040,10 +9042,12 @@ Rules for OPTIONS:
 - Always include a natural escape option as the last one: "कुछ और" (Hindi), "Aur kuch" (Roman), "আরও কিছু" (Bengali), "Something else" (English).
 - Output the OPTIONS line ONLY when you are ASKING a question. When you are GIVING a remedy/answer (not asking), do NOT output an OPTIONS line.
 - The word OPTIONS itself must never appear in your spoken sentence — it is a machine-readable control line only, stripped before display.
+- CRITICAL — DO NOT emit OPTIONS for these symptom topics: sir dard, sardi/khansi, pet ki takleef, neend, bukhar, kamar dard, tension/stress. The app's deterministic guided triage OWNS clarification for these — emitting OPTIONS for them creates duplicate competing bubbles. For these topics, give a short warm acknowledgement line ONLY (no question, no OPTIONS). The triage will take over automatically.
 Examples:
   Question: "कहाँ दर्द है?" → OPTIONS: जोड़ों में | पीठ में | पूरे शरीर में | कुछ और
   Question: "कब से हो रहा है?" → OPTIONS: आज से | कल से | हफ्ते भर से | कुछ और
   Question: "साथ में बुखार भी है?" → OPTIONS: हाँ, बुखार है | नहीं | पता नहीं | कुछ और
+  Symptom (no OPTIONS): "सिर दर्द है? — ठीक है, समझ आया। अभी guided तरीके से ठीक करते हैं।" [NO OPTIONS line]
 
 OUTPUT FORMAT (strict):
 First line: LANG:<code>  where <code> is one of hi, mr, bn, ta, te, kn, ml, gu, pa, en.
@@ -9336,15 +9340,10 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
                       },
                     },
                     {
-                      label: t("ob_scope_family"),
-                      onClick: (lbl) => {
-                        d.scope = "family";
-                        obUserBubble(lbl);
-                        setTimeout(() => renderOnboardStep(1), 350);
-                      },
-                    },
-                    {
-                      label: t("ob_scope_household"),
+                      // "Ghar mein kisi aur ke liye" — maps to scope "household"
+                      // so that showFamily (step 2) and isSunitaMode() (07-safar)
+                      // both fire correctly. Old "family" value collapsed here.
+                      label: t("ob_scope_other"),
                       onClick: (lbl) => {
                         d.scope = "household";
                         obUserBubble(lbl);
@@ -9631,6 +9630,14 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
     saveProfile(updated);
     goTo(ST.onboardReturnTo || "s-hub");
   }
+  function onboardBack() {
+    if (typeof ST !== "undefined" && ST.onboardStep > 0) {
+      renderOnboardStep(ST.onboardStep - 1);
+    } else {
+      skipOnboarding();
+    }
+  }
+  window.onboardBack = onboardBack;
 
   // ── v2: Feature Registry + Recent QA tracker ──
   const FEATURE_REGISTRY = {
@@ -11284,17 +11291,26 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
   };
 
   // ── Engine state ──
-  let _wt = null; // { exp, idx, timerId, paused, startedAtMs }
+  // _wt fields:
+  //   exp, idx, timerId, paused, startedAtMs, key
+  //   _stepRunning   — true while runWalkthroughStep is active (double-fire guard)
+  //   _speakAbortFn  — callable that cancels in-flight speech for the current step;
+  //                    set by runWalkthroughStep, called by walkthroughNext/closeWalkthrough
+  let _wt = null;
   // v6.2.1: published flag the voice loop reads to avoid echo-cycle (its own
   // TTS being captured by the mic and re-triggered through the fast-path).
   window._walkthroughOpen = false;
 
+  // openWalkthrough(key) — DETERMINISTIC entry point.
+  //
+  // Safe to call from chat, voice, home-flow, or baat (file 08/14) immediately
+  // after clarifying questions are answered.  Has no dependency on prior chat
+  // state.  Can be called multiple times; duplicate same-key calls while
+  // already running are silently dropped; a different-key call tears down the
+  // current walkthrough cleanly before starting the new one.
   function openWalkthrough(experienceKey) {
-    // v6.2.1: hard re-entry guard. If a walkthrough is already running and a
-    // duplicate trigger comes in (echo loop, double-tap CTA, fast-path firing
-    // mid-step), drop it on the floor instead of resetting idx to 0.
-    if (_wt && _wt.key === experienceKey) {
-      console.info("[walkthrough] already running, ignoring duplicate open for", experienceKey);
+    if (!experienceKey || typeof experienceKey !== "string") {
+      console.warn("[walkthrough] openWalkthrough: invalid key", experienceKey);
       return;
     }
     const exp = REMEDY_EXPERIENCES[experienceKey];
@@ -11302,6 +11318,19 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
       console.warn("[walkthrough] no experience for", experienceKey);
       return;
     }
+
+    // v6.2.1 re-entry guard: same key already playing → drop silently.
+    if (_wt && _wt.key === experienceKey) {
+      console.info("[walkthrough] already running, ignoring duplicate open for", experienceKey);
+      return;
+    }
+
+    // Different key already running → close it cleanly before opening the new one.
+    if (_wt) {
+      console.info("[walkthrough] switching from", _wt.key, "to", experienceKey);
+      closeWalkthrough();
+    }
+
     // WS1 safety gate: block → show modal and abort; warn → stash hits for
     // amber banner, proceed. Guard in case file 15 loaded after this one.
     if (typeof checkRemedySafety === "function") {
@@ -11318,32 +11347,55 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
         console.warn("[walkthrough] safety gate error:", e);
       }
     }
+
     // v6.2.1: ALWAYS kill voice before walkthrough opens, regardless of
     // _convActive. The recorder may be in mid-callback even after _convActive
     // flips, so we explicitly tear it down and also hide the voice overlay.
-    if (typeof stopVoice === "function") stopVoice();
-    if (typeof hideVoiceOverlay === "function") {
-      try {
-        hideVoiceOverlay();
-      } catch (e) {}
+    if (typeof stopVoice === "function") {
+      try { stopVoice(); } catch (e) {}
     }
+    if (typeof hideVoiceOverlay === "function") {
+      try { hideVoiceOverlay(); } catch (e) {}
+    }
+    // Cancel any stray in-flight TTS that might still be playing from chat.
+    _cancelCurrentSpeech();
+
     // Publish the flag BEFORE any DOM work, so a concurrent convHandleTranscript
     // sees walkthrough as open and skips its skill-detection pass.
     window._walkthroughOpen = true;
 
     const overlay = document.getElementById("wt-overlay");
-    const modal = overlay && overlay.querySelector(".wt-modal");
+    if (!overlay) {
+      console.warn("[walkthrough] #wt-overlay not found — cannot open", experienceKey);
+      window._walkthroughOpen = false;
+      return;
+    }
+    const modal = overlay.querySelector(".wt-modal");
     const finishEl = document.getElementById("wt-finish");
-    if (!overlay) return;
     if (modal) modal.classList.remove("finished");
     if (finishEl) finishEl.classList.remove("open");
     overlay.classList.add("open");
     overlay.setAttribute("aria-hidden", "false");
-    _wt = { exp, idx: 0, timerId: null, paused: false, key: experienceKey };
+
+    _wt = {
+      exp,
+      idx: 0,
+      timerId: null,
+      paused: false,
+      key: experienceKey,
+      _stepRunning: false,
+      _speakAbortFn: null,
+    };
+
     // Set top fields once — use locName for hi-mode Devanagari title/subtitle
-    const _locName = typeof locName === "function" ? locName : (o) => o.title;
+    const _locName = typeof locName === "function" ? locName : function (o) { return o.title; };
     setText("wt-title", _locName(exp));
-    const _wtSubtitle = (typeof locName === "function" && window.ST && window.ST.currentLanguage && window.ST.currentLanguage.startsWith("hi") && exp.subtitleHi) ? exp.subtitleHi : exp.subtitle;
+    const _wtSubtitle = (
+      typeof locName === "function" &&
+      window.ST && window.ST.currentLanguage &&
+      window.ST.currentLanguage.startsWith("hi") &&
+      exp.subtitleHi
+    ) ? exp.subtitleHi : exp.subtitle;
     setText("wt-subtitle", _wtSubtitle);
     renderWtDots();
     runWalkthroughStep();
@@ -11369,8 +11421,16 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
 
   function runWalkthroughStep() {
     if (!_wt) return;
+    // Double-fire guard: ignore re-entrant calls while a step is already being set up.
+    if (_wt._stepRunning) {
+      console.info("[walkthrough] runWalkthroughStep: already running step, ignoring re-entry");
+      return;
+    }
+    _wt._stepRunning = true;
+
     const step = _wt.exp.steps[_wt.idx];
     if (!step) {
+      _wt._stepRunning = false;
       finishWalkthrough();
       return;
     }
@@ -11387,10 +11447,12 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
 
     // Render the inline SVG (or hosted Lottie/video) for this step.
     // Priority: (1) hosted video, (2) Lottie URL, (3) inline kitchen SVG, (4) emoji.
+    // Hosted media (video/lottie) is tried BEFORE the svg fallback, so that
+    // authored assets render when present without any schema change.
     const stage = document.getElementById("wt-anim");
     if (stage) {
       if (step.videoUrl) {
-        // Hosted video path — only rendered when videoUrl is actually set.
+        // Hosted video — try first; onerror falls back to emoji inline.
         stage.innerHTML =
           '<video src="' +
           step.videoUrl +
@@ -11399,6 +11461,7 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
           ' onerror="this.parentElement.innerHTML=\'<div style=&quot;font-size:60px;opacity:.5&quot;>🌿</div>\'">' +
           "</video>";
       } else if (step.lottieUrl && typeof window.lottie !== "undefined") {
+        // Hosted Lottie — try next; fall back to SVG then emoji on error.
         stage.innerHTML = "";
         try {
           window.lottie.loadAnimation({
@@ -11410,7 +11473,6 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
           });
         } catch (e) {
           console.warn("[walkthrough] lottie failed for", step.lottieUrl, e);
-          // Fall through to SVG/emoji below on next render; don't blank stage.
           if (step.svg && KITCHEN_SVG[step.svg]) {
             stage.innerHTML = KITCHEN_SVG[step.svg];
           } else {
@@ -11418,8 +11480,10 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
           }
         }
       } else if (step.svg && KITCHEN_SVG[step.svg]) {
+        // Authored inline kitchen SVG — the primary fallback when no hosted media.
         stage.innerHTML = KITCHEN_SVG[step.svg];
       } else {
+        // Last resort emoji placeholder.
         stage.innerHTML = '<div style="font-size:60px;opacity:.5">🌿</div>';
       }
     }
@@ -11427,15 +11491,75 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
     setText("wt-step-title", step.titleHi);
     setText("wt-step-line", step.lineHi);
     renderWtDots();
-    // Speak this step's Saathi line (Sarvam TTS via existing speak())
-    if (typeof speak === "function") {
-      speak(step.lineHi, { ttsText: step.sayHi || step.lineHi });
-    }
+
+    // ── Speech-completion-driven auto-advance (fixes the race/overlap bug) ──
+    //
+    // Contract with @awaaz (file 11): window.speak(text, opts) returns a Promise
+    // that resolves when TTS playback truly ends (or on error/abort). When that
+    // Promise resolves we schedule the next step, so audio NEVER overlaps.
+    //
+    // Safety net: if speak() doesn't return a Promise (legacy/no-key path), we
+    // fall back to a fixed durationSec timer — same behaviour as before the fix,
+    // but that path only activates when TTS is unavailable.
+    //
+    // A per-step abortFlag lets walkthroughNext (user tap) and closeWalkthrough
+    // cancel a pending auto-advance before it fires.
+    let _stepAborted = false;
+    _wt._speakAbortFn = function () {
+      _stepAborted = true;
+    };
+
     console.info("[walkthrough] step", step.ix, step.titleHi);
-    startWalkthroughTimer(step.durationSec);
+
+    if (typeof speak === "function") {
+      const speakResult = speak(step.lineHi, { ttsText: step.sayHi || step.lineHi });
+
+      // If speak() returns a real Promise, await it then auto-advance.
+      if (speakResult && typeof speakResult.then === "function") {
+        // Start the visual progress bar running for the expected duration —
+        // gives the user a time cue while audio plays.
+        startWalkthroughTimer(step.durationSec, /*autoAdvance=*/false);
+
+        speakResult.then(function () {
+          // Speech finished naturally — advance unless user already tapped next
+          // or the walkthrough was closed.
+          if (_stepAborted || !_wt || _wt.paused) return;
+          _wt._stepRunning = false;
+          _wt._speakAbortFn = null;
+          // Cancel the visual timer (we're advancing now) then move on.
+          if (_wt && _wt.timerId) {
+            clearTimeout(_wt.timerId);
+            _wt.timerId = null;
+          }
+          walkthroughNext();
+        }).catch(function (err) {
+          // TTS error / abort — fall back to timer-based advance so the
+          // walkthrough doesn't get stuck.
+          console.warn("[walkthrough] speak error/abort on step", step.ix, err);
+          if (_stepAborted || !_wt || _wt.paused) return;
+          _wt._stepRunning = false;
+          _wt._speakAbortFn = null;
+          walkthroughNext();
+        });
+      } else {
+        // speak() returned undefined/null — TTS unavailable or legacy path.
+        // Use the fixed durationSec timer as the only advance mechanism.
+        _wt._stepRunning = false;
+        startWalkthroughTimer(step.durationSec, /*autoAdvance=*/true);
+      }
+    } else {
+      // speak not available at all — timer only.
+      _wt._stepRunning = false;
+      startWalkthroughTimer(step.durationSec, /*autoAdvance=*/true);
+    }
   }
 
-  function startWalkthroughTimer(seconds) {
+  // startWalkthroughTimer(seconds, autoAdvance)
+  //   autoAdvance=true  → timer calls walkthroughNext() on expiry (TTS-unavailable path).
+  //   autoAdvance=false → timer drives the visual progress bar ONLY; auto-advance is
+  //                       handled by the speak() Promise in runWalkthroughStep.
+  //                       This prevents the race where the timer fires before TTS ends.
+  function startWalkthroughTimer(seconds, autoAdvance) {
     if (_wt && _wt.timerId) {
       clearTimeout(_wt.timerId);
       _wt.timerId = null;
@@ -11451,18 +11575,56 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
     }
     if (!_wt) return;
     _wt.startedAtMs = Date.now();
-    _wt.timerId = setTimeout(() => {
+    // When autoAdvance is explicitly false, the timer is visual-only.
+    // The speak() Promise is responsible for advancing the step.
+    if (autoAdvance === false) return;
+    _wt.timerId = setTimeout(function () {
       if (!_wt || _wt.paused) return;
       walkthroughNext();
     }, seconds * 1000);
   }
 
+  // _cancelCurrentSpeech — stop any in-flight Sarvam/Web Speech audio immediately.
+  // Called before advancing steps or closing the walkthrough so voices never overlap.
+  // Mirrors the teardown in closeWalkthrough but is safe to call at any point.
+  function _cancelCurrentSpeech() {
+    // Sarvam Bulbul writes the playing Audio element to window._currentAudio (file 11).
+    try {
+      if (typeof window._currentAudio !== "undefined" && window._currentAudio) {
+        window._currentAudio.pause();
+        window._currentAudio.src = "";
+        window._currentAudio = null;
+      }
+    } catch (e) {}
+    // Web Speech API fallback (used when Sarvam key absent)
+    try {
+      if (typeof window.speechSynthesis !== "undefined") {
+        window.speechSynthesis.cancel();
+      }
+    } catch (e) {}
+    // Reset the shared _isSpeaking flag so the pipeline is clean for the next step.
+    try {
+      if (typeof window._isSpeaking !== "undefined") window._isSpeaking = false;
+    } catch (e) {}
+  }
+
   function walkthroughNext() {
     if (!_wt) return;
+    // Cancel the current step's pending auto-advance (speak Promise callback)
+    // so it doesn't fire after we've already moved on.
+    if (typeof _wt._speakAbortFn === "function") {
+      _wt._speakAbortFn();
+      _wt._speakAbortFn = null;
+    }
+    // Cancel any lingering fixed timer.
     if (_wt.timerId) {
       clearTimeout(_wt.timerId);
       _wt.timerId = null;
     }
+    // Stop in-flight TTS immediately so the new step's audio doesn't overlap.
+    _cancelCurrentSpeech();
+    // Clear the double-fire guard so the next step can start.
+    _wt._stepRunning = false;
     _wt.idx++;
     runWalkthroughStep();
   }
@@ -11486,9 +11648,15 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
         fill.style.width = cs.width;
       }
     } else {
-      // Resume — compute remaining time from current step, restart timer
-      const step = _wt.exp.steps[_wt.idx];
-      if (step) startWalkthroughTimer(Math.max(2, Math.round(step.durationSec * 0.5)));
+      // Resume — restart the step fresh so audio plays and sequencing is clean.
+      // Abort any stale speak-Promise callback from before the pause, then
+      // re-run the step so it speaks again and advances properly.
+      if (typeof _wt._speakAbortFn === "function") {
+        _wt._speakAbortFn();
+        _wt._speakAbortFn = null;
+      }
+      _wt._stepRunning = false;
+      runWalkthroughStep();
     }
   }
   window.walkthroughPauseToggle = walkthroughPauseToggle;
@@ -11824,22 +11992,18 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
       overlay.classList.remove("open");
       overlay.setAttribute("aria-hidden", "true");
     }
-    if (_wt && _wt.timerId) {
-      clearTimeout(_wt.timerId);
+    if (_wt) {
+      // Abort any pending speak-Promise auto-advance for the current step.
+      if (typeof _wt._speakAbortFn === "function") {
+        try { _wt._speakAbortFn(); } catch (e) {}
+        _wt._speakAbortFn = null;
+      }
+      if (_wt.timerId) {
+        clearTimeout(_wt.timerId);
+      }
     }
-    // Stop any in-flight TTS audio too — Sarvam Bulbul writes to _currentAudio
-    if (typeof _currentAudio !== "undefined" && _currentAudio) {
-      try {
-        _currentAudio.pause();
-      } catch (e) {}
-      _currentAudio = null;
-    }
-    if (typeof window.speechSynthesis !== "undefined") {
-      try {
-        window.speechSynthesis.cancel();
-      } catch (e) {}
-    }
-    if (typeof _isSpeaking !== "undefined") _isSpeaking = false;
+    // Stop any in-flight TTS audio using the shared helper.
+    _cancelCurrentSpeech();
     _wt = null;
     // v6.2.1: release the gate so future voice transcripts route normally
     window._walkthroughOpen = false;
@@ -12754,21 +12918,39 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
   }
 
   // v4: Symptoms-triage tap — show the user's plain phrase, ask AI for a remedy
+  // SOS v1: when the symptom matches a deterministic flow, launch bubble-triage
+  // directly (skip the LLM call entirely for the first turn).
   function triSymptomTap(displayText, aiPrompt) {
     ST.chatCtx = "nushke";
     ST.chatHistory = [];
     ST.isFirstMsg = true;
-    ST._symptomTurnSeen = 0; // WS1: reset per-conversation symptom counter
+    ST._symptomTurnSeen = 0;
     trackFeature("nushke");
-    // v5.2: log the symptom so we can fire a 48h "kaisa hai?" check-in
     if (typeof pushCheckin === "function") pushCheckin(displayText, aiPrompt);
     goTo("s-chat");
     const lbl = document.getElementById("chat-ctx-label");
     if (lbl) lbl.textContent = "Ghar ke Nushke";
     setTimeout(() => {
-      document.getElementById("chat-msgs").innerHTML = "";
+      const msgs = document.getElementById("chat-msgs");
+      msgs.innerHTML = "";
       addMsg("user", displayText, false);
-      callAI(aiPrompt, getSystemPromptFor("nushke"));
+      if (ST.chatHistory) ST.chatHistory.push({ role: "user", content: displayText });
+
+      // Check for deterministic triage flow
+      const symptomKey = _detectSymptomKey(displayText) || _detectSymptomKey(aiPrompt);
+      if (symptomKey && typeof FOCUS_FLOWS !== "undefined" && FOCUS_FLOWS[symptomKey]) {
+        // Launch bubble-triage directly — no LLM call on first symptom turn
+        ST._symptomTurnSeen = 1;
+        _activeTriage = { key: symptomKey, stepIdx: 0, answers: {} };
+        const flow = FOCUS_FLOWS[symptomKey];
+        if (flow && flow.dadiOpener) {
+          addMsg("bot", flow.dadiOpener, false);
+        }
+        setTimeout(() => _renderNextTriageQuestion(msgs), 200);
+      } else {
+        // No deterministic flow — fall through to LLM
+        callAI(aiPrompt, getSystemPromptFor("nushke"));
+      }
     }, 100);
   }
 
@@ -12777,7 +12959,7 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
     ST.chatCtx = "wellness";
     ST.chatHistory = [];
     ST.isFirstMsg = true;
-    ST._symptomTurnSeen = 0; // WS1: reset per-conversation symptom counter
+    ST._symptomTurnSeen = 0;
     trackFeature("wellness");
     goTo("s-chat");
     const lbl = document.getElementById("chat-ctx-label");
@@ -12785,6 +12967,8 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
     setTimeout(() => {
       document.getElementById("chat-msgs").innerHTML = "";
       addMsg("user", displayText, false);
+      if (ST.chatHistory) ST.chatHistory.push({ role: "user", content: displayText });
+      // Wellness goals are free-text by nature — route through LLM
       callAI(aiPrompt, getSystemPromptFor("wellness"));
     }, 100);
   }
@@ -13240,28 +13424,30 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
     if (el) el.remove();
   }
 
-  // ── WS1: Guided-triage CTA ──────────────────────────────────────────────
-  // Keyword → FOCUS_FLOWS key map. Checked against the user's raw text.
-  // Maps common Hindi/Hinglish/Devanagari phrasings to FOCUS_FLOWS keys.
-  // Order matters: more specific patterns listed before broader ones.
+  // ── Unified Deterministic Bubble-Triage (SOS v1) ───────────────────────
+  // Single entry-point for symptom clarification. Replaces the two-mechanism
+  // problem (WS1 guided-CTA chip + LLM OPTIONS bubbles firing simultaneously).
+  //
+  // Decision rule — called from callAI after the bot reply is rendered:
+  //   - symptom key detected  → _launchDeterministicTriage (deterministic Q&A
+  //     bubbles, guaranteed openWalkthrough at the end)
+  //   - no symptom key        → LLM OPTIONS bubbles are allowed (free-text path)
+  //
+  // The triage runs entirely inside the chat via addQuickReplies so it looks
+  // identical in text-chat, voice-overlay, and hub entry modes.
+
+  // Keyword → FOCUS_FLOWS key map. Order matters: specifics before broad.
   const GUIDED_CTA_MAP = [
-    // sir dard / headache — must come before kamar/peeth to avoid false "dard" match
     { re: /\bsir\s*dard\b|headache|migraine|matha|माथा|सिर\s*दर्द|सिरदर्द|माइग्रेन/i, key: "sir-dard" },
-    // sardi-khansi
     { re: /sardi|khansi|cough|cold|zukam|nazla|ज़ुकाम|सर्दी|खाँसी|खांसी|नज़ला|जुकाम/i, key: "sardi-khansi" },
-    // pet / digestive
     { re: /\bpet\b|acidity|gas|loose\s*motion|dast|kabz|ulti|उल्टी|पेट|एसिडिटी|गैस|कब्ज़|कब्ज|दस्त/i, key: "pet" },
-    // neend
     { re: /neend|insomnia|sleep|jagta|जागता|नींद|नीँद|सोना|नहीं\s*सो/i, key: "neend" },
-    // bukhar
     { re: /bukhar|fever|taap|ताप|बुखार|बुखर/i, key: "bukhar" },
-    // kamar dard / back pain — kamar, peeth, back (not body-ache which has no flow)
     { re: /kamar|peeth|back\s*pain|कमर\s*दर्द|कमर|पीठ\s*दर्द|पीठ|कमरदर्द/i, key: "kamar-dard" },
-    // tension / anxiety / stress
     { re: /tension|stress|anxiety|ghabra|chinta|takleef|fikar|pareshan|तनाव|घबरा|चिंता|बेचैनी|फ़िकर/i, key: "tension" },
   ];
 
-  // Detects a symptom key from user text. Returns the FOCUS_FLOWS key or null.
+  // Returns the FOCUS_FLOWS key for a user message, or null.
   function _detectSymptomKey(userText) {
     if (!userText) return null;
     for (const entry of GUIDED_CTA_MAP) {
@@ -13270,54 +13456,185 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
     return null;
   }
 
-  // Inject a guided-triage chip under the bot reply when the user mentions a
-  // known symptom. Also increments ST._symptomTurnSeen so the remedy-card
-  // suppression logic (in addMsg) knows this is the first symptom turn.
-  // Pattern mirrors maybeAppendRemedyCta in file 09.
-  //
-  // v6.7.x fix: removed _symptomTurnSeen > 1 gate — chip now appears on EVERY
-  // symptom mention (not just the first). A per-render dedupe (_lastGuidedCtaKey)
-  // prevents the same key from being appended twice back-to-back. When the chip
-  // is injected, ST._guidedCtaActive is set so addMsg suppresses the generic
-  // injectFollowups chips for that turn.
-  let _lastGuidedCtaKey = null; // dedupe: reset per callAI round-trip
-  function maybeAppendGuidedCta(userText, msgsContainer) {
-    if (!userText || !msgsContainer) return;
-    const key = _detectSymptomKey(userText);
-    if (!key) return;
-    // Guard: FOCUS_FLOWS must have this key (new flows might not be loaded yet)
-    if (typeof FOCUS_FLOWS === "undefined" || !FOCUS_FLOWS[key]) return;
+  // Pick the top remedy key from a completed focus flow (first remedy-type step).
+  function _topRemedyKey(symptomKey, answers) {
+    if (typeof FOCUS_FLOWS === "undefined" || !FOCUS_FLOWS[symptomKey]) return null;
+    const flow = FOCUS_FLOWS[symptomKey];
+    const steps = flow.buildSteps(answers || {});
+    for (const s of steps) {
+      if (s.type === "remedy") return s.key;
+    }
+    // fall back: first step of any type
+    return steps.length ? steps[0].key : null;
+  }
 
-    // Track symptom turns for remedy-card suppression logic (addMsg uses this)
-    ST._symptomTurnSeen = (ST._symptomTurnSeen || 0) + 1;
+  // Internal triage state (one active triage at a time across all entry modes).
+  let _activeTriage = null; // { key, stepIdx, answers }
 
-    // Dedupe: skip if this exact key was just appended (same bot reply)
-    if (_lastGuidedCtaKey === key) return;
-    _lastGuidedCtaKey = key;
+  // Render the next triage question as addQuickReplies bubbles.
+  // Called on entry and after each answer.
+  function _renderNextTriageQuestion(msgsContainer) {
+    if (!_activeTriage) return;
+    const flow = FOCUS_FLOWS[_activeTriage.key];
+    if (!flow) return;
+    const qList = flow.qa;
+    const idx = _activeTriage.stepIdx;
 
-    // Localized chip label — falls back to Roman when locStr unavailable
-    const chipLabel =
+    if (idx >= qList.length) {
+      // All questions answered — finalize deterministically.
+      _finalizeTriageInChat(msgsContainer);
+      return;
+    }
+
+    const q = qList[idx];
+    // Show the question as a bot bubble first, then the options as chips.
+    addMsg("bot", q.q, false);
+
+    // Build option list — include a "Skip" escape that finalizes with current answers
+    const skipLabel =
       typeof locStr === "function"
-        ? locStr("🩺 Guided ilaj shuru karein", "🩺 गाइडेड इलाज शुरू करें")
-        : "🩺 Guided ilaj shuru karein";
+        ? locStr("Skip — Saathi chunega", "स्किप — साथी चुनेगा")
+        : "Skip — Saathi chunega";
+    const opts = [...q.opts, skipLabel];
 
+    // Replace the generic addQuickReplies so this row is uniquely addressable
+    const msgs = msgsContainer || document.getElementById("chat-msgs");
+    if (!msgs) return;
     const row = document.createElement("div");
-    row.className = "msg-row bot guided-cta-row";
-    const btn = document.createElement("button");
-    btn.className = "guided-cta-chip";
-    btn.textContent = chipLabel;
-    btn.onclick = () => {
-      row.remove();
-      if (typeof startFocus === "function") startFocus(key);
-    };
-    row.appendChild(btn);
-    msgsContainer.appendChild(row);
-    msgsContainer.scrollTop = msgsContainer.scrollHeight;
+    row.className = "msg-row bot";
+    row.id = "triage-qr-row";
+    const wrap = document.createElement("div");
+    wrap.className = "qr-wrap";
+    opts.forEach((opt) => {
+      const chip = document.createElement("button");
+      chip.className = "qr-chip";
+      chip.textContent = opt;
+      chip.onclick = () => {
+        const qrRow = document.getElementById("triage-qr-row");
+        if (qrRow) qrRow.remove();
+        if (opt === skipLabel) {
+          _activeTriage = null;
+          return;
+        }
+        // Record answer
+        if (_activeTriage) {
+          _activeTriage.answers[q.id] = opt;
+          _activeTriage.stepIdx++;
+          addMsg("user", opt, false);
+          // Save to chat history so the conversation is coherent
+          if (ST && ST.chatHistory) ST.chatHistory.push({ role: "user", content: opt });
+        }
+        _renderNextTriageQuestion(msgs);
+      };
+      wrap.appendChild(chip);
+    });
+    row.appendChild(wrap);
+    msgs.appendChild(row);
+    msgs.scrollTop = msgs.scrollHeight;
 
-    // Signal addMsg to suppress generic followup chips for this turn
+    // Suppress generic followup chips for this turn
     ST._guidedCtaActive = true;
   }
-  // ── End WS1 guided-triage CTA ────────────────────────────────────────────
+
+  // Called when all triage questions are answered.
+  // Fires openWalkthrough(topRemedyKey) deterministically.
+  function _finalizeTriageInChat(msgsContainer) {
+    if (!_activeTriage) return;
+    const key = _activeTriage.key;
+    const answers = _activeTriage.answers;
+    const flow = FOCUS_FLOWS[key];
+    _activeTriage = null;
+
+    // Early doctor escalation check
+    if (flow && flow.requiresDoctor && flow.requiresDoctor(answers)) {
+      const who = (ST && ST.userProfile && ST.userProfile.name) || "Aap";
+      if (typeof openDoctor === "function") {
+        addMsg("bot",
+          typeof locStr === "function"
+            ? locStr("Yeh symptoms doctor se milne ka signal hain.", "ये लक्षण डॉक्टर से मिलने का संकेत हैं।")
+            : "Yeh symptoms doctor se milne ka signal hain.",
+          false
+        );
+        setTimeout(() => openDoctor(who), 300);
+      }
+      return;
+    }
+
+    // Show a warm transition message
+    if (flow && flow.quote) {
+      addMsg("bot", flow.quote(answers), false);
+    }
+
+    // Save focus state (mirrors finalizeFocusStart logic in file 14)
+    if (typeof saveFocus === "function" && flow) {
+      const steps = flow.buildSteps(answers)
+        .map((s, i) => ({ ...s, status: i === 0 ? "current" : "pending" }));
+      saveFocus({
+        symptom: key,
+        startedAt: Date.now(),
+        qaAnswers: answers,
+        qaSkipped: false,
+        steps,
+        retryCount: 0,
+        validations: [],
+        resolved: false,
+        resolvedAt: null,
+      });
+    }
+
+    // GUARANTEED walkthrough card — route through openRemedy (WS1 safety gate) when
+    // available; fall back to openWalkthrough only if openRemedy is not yet loaded.
+    const remedyKey = _topRemedyKey(key, answers);
+    if (remedyKey && (typeof openRemedy === "function" || typeof openWalkthrough === "function")) {
+      // Set the focus step key so finishWalkthrough can mark it complete
+      window._activeFocusStepKey = remedyKey;
+      setTimeout(() => {
+        if (typeof openRemedy === "function") {
+          openRemedy(remedyKey);
+        } else {
+          openWalkthrough(remedyKey);
+        }
+      }, 400);
+    } else if (typeof startFocus === "function") {
+      // Fallback: legacy hub step-plan path (should not normally be reached)
+      startFocus(key);
+    }
+  }
+
+  // Public entry: detect symptom in userText and, if found, launch the
+  // deterministic bubble-triage instead of showing LLM OPTIONS.
+  // Returns true if triage was launched (caller must suppress OPTIONS rendering).
+  let _lastTriageKey = null; // per-callAI-roundtrip dedupe
+  function maybeAppendGuidedCta(userText, msgsContainer) {
+    if (!userText || !msgsContainer) return false;
+    const key = _detectSymptomKey(userText);
+    if (!key) return false;
+    if (typeof FOCUS_FLOWS === "undefined" || !FOCUS_FLOWS[key]) return false;
+
+    // Track symptom turns for remedy-card suppression logic in addMsg
+    ST._symptomTurnSeen = (ST._symptomTurnSeen || 0) + 1;
+
+    // Dedupe: only start a new triage if the key changed or triage isn't active
+    if (_activeTriage && _activeTriage.key === key) return true; // already running
+    _lastTriageKey = key;
+
+    // Initialize triage state
+    _activeTriage = { key, stepIdx: 0, answers: {} };
+
+    // Show the flow opener
+    const flow = FOCUS_FLOWS[key];
+    if (flow && flow.dadiOpener) {
+      addMsg("bot", flow.dadiOpener, false);
+    }
+
+    // Render first question as bubbles
+    setTimeout(() => _renderNextTriageQuestion(msgsContainer), 200);
+
+    // Suppress generic followups and LLM OPTIONS for this turn
+    ST._guidedCtaActive = true;
+    return true;
+  }
+  // ── End Unified Deterministic Bubble-Triage ──────────────────────────────
 
   function addQuickReplies(options, onSelect) {
     const msgs = document.getElementById("chat-msgs");
@@ -13640,18 +13957,24 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
         ST.isFirstMsg = false;
         addMsg("bot", cleanReply, isFirst);
         speak(cleanReply);
+        // v9: persist chat session after each AI turn
+        if (typeof saveChatSession === "function") saveChatSession();
         // v6.2: append "Saathi ke saath karein" CTA if the reply matches a known experience
         if (typeof maybeAppendRemedyCta === "function") maybeAppendRemedyCta(cleanReply);
-        // WS1: guided triage CTA — fires on symptom turn, BEFORE remedy on first mention
-        if (typeof maybeAppendGuidedCta === "function") maybeAppendGuidedCta(userText, document.getElementById("chat-msgs"));
 
-        // ── v8: Render tappable OPTIONS bubbles ─────────────────────────────
-        if (parsedOptions.length >= 2) {
-          // Flag: suppress the generic injectFollowups chips that addMsg schedules
-          // (mirrors the ST._guidedCtaActive pattern used by WS1 CTA suppression).
+        // Unified deterministic triage: when a known symptom is detected, launch
+        // the bubble-triage and SUPPRESS LLM OPTIONS for that turn.
+        // Returns true if triage was launched — in that case options are irrelevant.
+        const _triagedThisTurn =
+          typeof maybeAppendGuidedCta === "function"
+            ? maybeAppendGuidedCta(userText, document.getElementById("chat-msgs"))
+            : false;
+
+        // ── v8: Render tappable OPTIONS bubbles (free-text / non-symptom path) ─
+        // Only fires when NO deterministic triage was launched for this turn.
+        if (!_triagedThisTurn && parsedOptions.length >= 2) {
+          // Suppress generic injectFollowups chips (mirrors ST._guidedCtaActive pattern)
           ST._optionsActive = true;
-          // addMsg schedules injectFollowups at +1100ms reading ST._guidedCtaActive;
-          // set that flag too so the existing suppression path also fires.
           ST._guidedCtaActive = true;
           addQuickReplies(parsedOptions, function (answerText) {
             // User tapped an option — bubble it as their message and continue AI
@@ -14385,6 +14708,7 @@ Rules:
     ST.chatCtx = "community";
     ST.chatHistory = [];
     ST.isFirstMsg = true;
+    ST._chatSessionId = null; // v9: new session
     goTo("s-chat");
     // Update header
     document.getElementById("chat-ctx-label").textContent = `${peer.name} · ${peer.city}`;
@@ -14689,6 +15013,150 @@ Rules:
   window.selectNudgeKind = selectNudgeKind;
   window.saveNudgeReminder = saveNudgeReminder;
 
+  // ── v9: Chat session persistence ─────────────────────────────────────────
+  // Saves ST.chatHistory to localStorage after each turn, keyed by a timestamp
+  // and a short auto-title from the first user message. Keeps the 20 most recent
+  // sessions. Provides a restore entry-point that callers can surface in the UI.
+
+  const SAVED_SESSIONS_KEY = "ss_chat_sessions";
+  const MAX_SAVED_SESSIONS = 20;
+
+  function _autoTitle(history) {
+    // First user message, trimmed to 40 chars
+    const firstUser = history && history.find((m) => m.role === "user");
+    if (!firstUser || !firstUser.content) return "Baatcheet";
+    return firstUser.content.slice(0, 40) + (firstUser.content.length > 40 ? "…" : "");
+  }
+
+  // Save current ST.chatHistory as a named session. Called after each AI turn.
+  // The session is keyed by sessionId (set when session starts) so repeated
+  // saves within the same conversation overwrite rather than append.
+  function saveChatSession() {
+    try {
+      if (!ST.chatHistory || !ST.chatHistory.length) return;
+      if (!ST._chatSessionId) {
+        ST._chatSessionId = "s_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+      }
+      const sessions = loadChatSessions();
+      const existing = sessions.findIndex((s) => s.id === ST._chatSessionId);
+      const entry = {
+        id: ST._chatSessionId,
+        ts: Date.now(),
+        title: _autoTitle(ST.chatHistory),
+        ctx: ST.chatCtx || "general",
+        history: ST.chatHistory.slice(), // shallow copy
+      };
+      if (existing >= 0) {
+        sessions[existing] = entry;
+      } else {
+        sessions.unshift(entry);
+      }
+      // Cap at MAX_SAVED_SESSIONS
+      localStorage.setItem(SAVED_SESSIONS_KEY, JSON.stringify(sessions.slice(0, MAX_SAVED_SESSIONS)));
+    } catch (e) {
+      // Storage quota or parse error — fail silently
+    }
+  }
+
+  function loadChatSessions() {
+    try {
+      return JSON.parse(localStorage.getItem(SAVED_SESSIONS_KEY) || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Restore a saved session into the chat screen.
+  function restoreChatSession(sessionId) {
+    const sessions = loadChatSessions();
+    const entry = sessions.find((s) => s.id === sessionId);
+    if (!entry || !entry.history || !entry.history.length) return;
+
+    ST.chatHistory = entry.history.slice();
+    ST.chatCtx = entry.ctx || "general";
+    ST._chatSessionId = entry.id;
+    ST.isFirstMsg = false;
+
+    goTo("s-chat");
+    const lbl = document.getElementById("chat-ctx-label");
+    if (lbl) lbl.textContent = entry.ctx === "nushke" ? "Ghar ke Nushke"
+      : entry.ctx === "wellness" ? "Sehat banao"
+      : "Sehat Saathi";
+
+    setTimeout(() => {
+      const msgs = document.getElementById("chat-msgs");
+      if (!msgs) return;
+      msgs.innerHTML = "";
+      // Replay visible bubbles from history
+      for (const m of entry.history) {
+        if (m.role === "user") addMsg("user", m.content, false);
+        else if (m.role === "assistant") addMsg("bot", m.content, false);
+      }
+      showToast(
+        typeof locStr === "function"
+          ? locStr("Purani baatcheet wapas laaye", "पुरानी बातचीत वापस लाए")
+          : "Purani baatcheet wapas laaye"
+      );
+    }, 100);
+  }
+
+  // Render a "Previous conversations" list (lightweight sheet).
+  function showPreviousSessions() {
+    const sessions = loadChatSessions();
+    if (!sessions.length) {
+      showToast(
+        typeof locStr === "function"
+          ? locStr("Koi purani baatcheet nahi mili", "कोई पुरानी बातचीत नहीं मिली")
+          : "Koi purani baatcheet nahi mili"
+      );
+      return;
+    }
+
+    // Remove any stale overlay
+    const old = document.getElementById("prev-sessions-overlay");
+    if (old) old.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "prev-sessions-overlay";
+    overlay.style.cssText =
+      "position:fixed;inset:0;z-index:9997;display:flex;align-items:flex-end;justify-content:center;" +
+      "background:rgba(0,0,0,.55);";
+
+    const fmt = (ts) => new Date(ts).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    const listHtml = sessions.slice(0, 10).map((s) =>
+      `<button onclick="restoreChatSession('${s.id}')" style="` +
+      "display:block;width:100%;text-align:left;padding:12px 16px;background:#f5f8ff;" +
+      "border:none;border-bottom:1px solid #e2ecf7;cursor:pointer;font-size:13px;" +
+      `"><div style="font-weight:600;color:#0a1628">${s.title}</div>` +
+      `<div style="font-size:11px;color:#3a5070;margin-top:2px">${fmt(s.ts)} · ${s.ctx || "general"}</div>` +
+      `</button>`
+    ).join("");
+
+    overlay.innerHTML =
+      '<div style="background:#fff;border-radius:20px 20px 0 0;padding:20px 0 36px;width:100%;max-width:420px;max-height:70vh;overflow-y:auto;box-shadow:0 -4px 32px rgba(0,0,0,.4)">' +
+        '<div style="width:40px;height:4px;background:rgba(0,87,168,.2);border-radius:2px;margin:0 auto 16px;"></div>' +
+        '<div style="font-size:16px;font-weight:700;color:#0a1628;padding:0 16px 12px">' +
+          (typeof locStr === "function" ? locStr("Purani baatchitein", "पुरानी बातचीतें") : "Purani baatchitein") +
+        '</div>' +
+        listHtml +
+        '<button onclick="document.getElementById(\'prev-sessions-overlay\').remove()" ' +
+        'style="display:block;width:calc(100% - 32px);margin:16px 16px 0;padding:12px;background:#f4f7ff;' +
+        'border:1px solid #d0e2f7;border-radius:10px;color:#3a5070;font-size:14px;cursor:pointer;">' +
+          (typeof locStr === "function" ? locStr("Band karein", "बंद करें") : "Band karein") +
+        '</button>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+  }
+
+  // Expose globally so page markup and other partials can call these.
+  window.restoreChatSession = restoreChatSession;
+  window.showPreviousSessions = showPreviousSessions;
+  // ── End v9 session persistence ────────────────────────────────────────────
+
   // ── Chat input ──
   function chatSend() {
     const inp = document.getElementById("chat-input");
@@ -14737,6 +15205,7 @@ Rules:
     document.getElementById("chat-msgs").innerHTML = "";
     ST.chatHistory = [];
     ST.isFirstMsg = true;
+    ST._chatSessionId = null; // v9: new session starts on next message
     if (ST.chatCtx === "nushke") renderNushkeStart();
     else renderSymptomStart();
   }
@@ -14773,6 +15242,7 @@ Rules:
     ST.chatCtx = "general";
     ST.chatHistory = [];
     ST.isFirstMsg = true;
+    ST._chatSessionId = null; // v9: new session
     const ctxLbl = document.getElementById("chat-ctx-label");
     if (ctxLbl) ctxLbl.textContent = "Sehat Saathi";
     goTo("s-chat");
@@ -18032,8 +18502,20 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
       // v5.5.5: removed the 14s force-resolve which was cutting long bot TTS off
       // mid-sentence. Now we wait for _isSpeaking to transition true → false
       // (real audio finish) with a generous 60s safety net.
+      // SOS-fix-2: addMsg monkey-patch — robust version.
+      //   1. Guard against re-entrancy: capture origAddMsg once at the start and
+      //      restore exactly that reference in .finally() — never the current
+      //      window.addMsg (which could have been patched again by a race).
+      //   2. Restore always happens: .finally() runs regardless of resolve/reject.
+      //   3. In-patch calls to origAddMsg use .apply(this, arguments) so any
+      //      internal this-binding in the real addMsg is preserved.
+      //   4. replyHook is called inside the patch, not from the outer scope, so
+      //      it fires synchronously with the addMsg call rather than on next tick.
       await new Promise((resolve) => {
         let resolved = false;
+        let _patched = false; // re-entrancy guard: prevent double-patching
+        const _safeResolve = () => { if (!resolved) { resolved = true; resolve(); } };
+
         const replyHook = (role) => {
           if (role === "bot" && !resolved) {
             setVoiceState("speaking");
@@ -18041,40 +18523,41 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
             let started = false;
             const tick = () => {
               if (resolved) return;
-              if (Date.now() - start > 60000) {
-                resolved = true;
-                resolve();
-                return;
-              } // safety net
+              if (Date.now() - start > 60000) { _safeResolve(); return; } // safety net
               if (_isSpeaking) started = true;
-              if (started && !_isSpeaking) {
-                resolved = true;
-                resolve();
-                return;
-              }
+              if (started && !_isSpeaking) { _safeResolve(); return; }
               setTimeout(tick, 200);
             };
-            setTimeout(tick, 800); // let Sarvam fetch + audio start
+            setTimeout(tick, 800); // let fetch + audio start
           }
         };
-        // Patch addMsg only to detect when bot reply lands (mirror is handled inside addMsg itself)
+
+        // Capture the REAL addMsg now.  If window.addMsg is already patched
+        // (concurrent voice session — shouldn't happen but guard anyway), we
+        // skip patching to avoid chaining corrupted wrappers.
         const origAddMsg = window.addMsg;
-        window.addMsg = function (role, text, showBadge) {
-          if (role === "bot") lastBotText = text;
-          const r = origAddMsg.apply(this, arguments);
-          replyHook(role);
-          return r;
-        };
+        if (typeof origAddMsg === "function" && !_patched) {
+          _patched = true;
+          window.addMsg = function (role, text, showBadge) {
+            if (role === "bot") lastBotText = text;
+            const r = origAddMsg.apply(this, arguments);
+            replyHook(role);
+            return r;
+          };
+          // Mark the wrapper so we can detect stale patches.
+          window.addMsg._voicePatch = true;
+        }
+
         callAI(transcript, getSystemPromptFor(ST.chatCtx)).finally(() => {
-          // Restore addMsg
-          window.addMsg = origAddMsg;
-          // Safety net — if TTS never starts, resolve in 12s
-          setTimeout(() => {
-            if (!resolved) {
-              resolved = true;
-              resolve();
-            }
-          }, 12000);
+          // Restore — always use origAddMsg, not window.addMsg, so a race
+          // that swapped the wrapper again doesn't double-restore.
+          if (_patched) {
+            window.addMsg = origAddMsg;
+            _patched = false;
+          }
+          // Safety net — if TTS never starts (e.g. all keys missing), resolve
+          // after 12 s so the conversation loop can continue.
+          setTimeout(_safeResolve, 12000);
         });
       });
       // v6.7.16: auto voice-skill confirmation REMOVED. The flow was:
@@ -18488,7 +18971,7 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
   }
   window.prewarmTransliteration = prewarmTransliteration;
 
-  // v5.5 / v6.8: half-duplex helpers.
+  // v5.5 / v6.8 / SOS-fix-1: half-duplex helpers.
   //
   // _markTtsStart(audioEl)
   //   Sets _isSpeaking = true and wires a self-clearing "ended/error/abort"
@@ -18497,22 +18980,40 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
   //   object for the whole utterance).
   //
   // _markTtsDone()
-  //   Clears _isSpeaking after the 700ms grace period.  Use this as the
-  //   teardown callback for the LAST chunk in a multi-chunk sequence — the
-  //   chunk-sequencing promise owns the Audio element lifecycle, so we must
-  //   NOT also register a self-clearing listener on chunk 1 (which fires too
-  //   early, before the final chunk finishes).
+  //   Clears _isSpeaking after the 700ms grace period.  Idempotent — safe
+  //   to call multiple times (only the first call within a given speak() has
+  //   any effect because _isSpeaking goes false).
+  //   Use this as the teardown callback for the LAST chunk in a multi-chunk
+  //   sequence — the chunk-sequencing promise owns the Audio element lifecycle,
+  //   so we must NOT also register a self-clearing listener on chunk 1 (which
+  //   fires too early, before the final chunk finishes).
   //
   // RULE: for multi-chunk, call _markTtsStart() on the first chunk's Audio
   // element but then let _markTtsDone() clear the flag when the LAST chunk
   // ends.  The self-clearing listener registered by _markTtsStart is therefore
   // ONLY used by single-element paths and is harmlessly pre-empted by
   // _markTtsDone being called first.
+  //
+  // SOS-fix-1: _markTtsDone is idempotent and the _speakSafetyTimer below
+  // guarantees _isSpeaking can never stay true beyond 35 s regardless of
+  // how many chunks error/abort silently.
+  let _speakSafetyTimer = null; // cleared by _markTtsDone; set by _markTtsStart
   function _markTtsDone() {
+    clearTimeout(_speakSafetyTimer);
+    _speakSafetyTimer = null;
     setTimeout(() => { _isSpeaking = false; }, 700);
   }
   function _markTtsStart(audioEl) {
     _isSpeaking = true;
+    // Safety net: if nothing ever fires ended/error/abort (silent 429, broken
+    // blob URL, etc.) force-clear after 35 s so the mic is never locked forever.
+    clearTimeout(_speakSafetyTimer);
+    _speakSafetyTimer = setTimeout(() => {
+      if (_isSpeaking) {
+        console.warn("[voice-skill] _isSpeaking safety timeout fired — force-clearing");
+        _isSpeaking = false;
+      }
+    }, 35000);
     if (audioEl) {
       // Single-element path: self-clearing on terminal event.
       audioEl.addEventListener("ended", _markTtsDone, { once: true });
@@ -18785,9 +19286,10 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
               );
             }
           }
-          // If we failed before the last chunk ever played, make sure _isSpeaking
-          // is released so the mic-gate retry loop doesn't spin forever.
-          if (isFirst || isLast) markDone && markDone();
+          // SOS-fix-1: on ANY chunk fetch error (not just first/last), call
+          // markDone so _isSpeaking is cleared.  For a middle chunk the caller
+          // already set _isSpeaking=true on chunk-0 so we must release it here.
+          markDone && markDone();
           return false;
         }
         const blob = await res.blob();
@@ -18820,31 +19322,41 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
         // Wait for this chunk to finish before starting the next one.
         // Use onended for the sequencing resolve so _markTtsStart's
         // addEventListener("ended") listener can also fire independently.
+        // SOS-fix-1: ALL terminal events (ended / error / abort) on ANY chunk
+        // call markDone so _isSpeaking is guaranteed to clear.  For non-last
+        // chunks error/abort marks done immediately (middle-chunk silent 429
+        // scenario); for the last chunk it also resolves the outer speak()
+        // awaitable promise.
         await new Promise((resolve, reject) => {
           audio.onended = (e) => {
             try { URL.revokeObjectURL(url); } catch (e2) {}
-            // Last chunk: clear _isSpeaking after the grace period.
-            if (isLast) markDone && markDone();
+            // Every chunk calls markDone — idempotent, safe.
+            markDone && markDone();
             resolve();
           };
-          audio.addEventListener("error", (e) => {
+          const _onAudioTerminal = (e) => {
             try { URL.revokeObjectURL(url); } catch (e2) {}
-            if (isLast) markDone && markDone();
-            resolve(); // treat error as "done" so next chunk can try
-          }, { once: true });
+            // SOS-fix-1: error/abort on any chunk (middle or last) clears
+            // _isSpeaking so the mic-gate loop is never left spinning.
+            markDone && markDone();
+            resolve(); // treat as "done" so next chunk can try
+          };
+          audio.addEventListener("error", _onAudioTerminal, { once: true });
+          audio.addEventListener("abort", _onAudioTerminal, { once: true });
           audio.play().catch((playErr) => {
             if (playErr && playErr.name === "NotAllowedError") {
               // Sandboxed iframe / autoplay policy: arm the unlock so the next
               // user gesture (tap/key) retries playback. Normal environments
               // never reach this branch.
               console.warn("[ElevenLabs] autoplay blocked — queuing gesture-unlock", playErr);
-              // Autoplay blocked: _isSpeaking must be cleared so the retry loop
-              // doesn't spin — the audio won't play until a gesture, so we
-              // can't rely on "ended" firing.
-              if (isFirst || isLast) markDone && markDone();
+              // Autoplay blocked: "ended" will never fire, so clear _isSpeaking
+              // now to prevent the mic-gate retry loop from spinning.
+              markDone && markDone();
               _armAudioUnlock(audio);
               resolve(); // won't chain next chunk until gesture fires, that's fine
             } else {
+              // Unexpected play error: also clear _isSpeaking before rejecting.
+              markDone && markDone();
               reject(playErr);
             }
           });
@@ -18877,12 +19389,13 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
         }
         const isFirst = i === 0;
         const isLast = i === chunks.length - 1;
-        const ok = await _playChunk(chunks[i], isFirst, isLast, isLast ? _markTtsDone : null);
+        // SOS-fix-1: pass _markTtsDone to every chunk (not just the last).
+        // _playChunk calls markDone on any terminal event (ended/error/abort),
+        // and _markTtsDone is idempotent so calling it multiple times is safe.
+        const ok = await _playChunk(chunks[i], isFirst, isLast, _markTtsDone);
         if (!ok) {
-          // Hard error mid-sequence: _playChunk already called markDone if it
-          // was the first/last chunk, but guard for intermediate failures too.
-          if (!isFirst && !isLast) _markTtsDone();
-          break; // hard error (quota/auth) → stop, fall back to Sarvam
+          // Hard error (quota/auth): _playChunk already called markDone.
+          break; // stop chunking, fall back to Sarvam
         }
         anyOk = true;
       }
@@ -18921,6 +19434,22 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
     }
   }
 
+  // SOS-fix-3: speak() returns a Promise that RESOLVES when audio playback
+  // truly ends (final chunk "ended" event) or on any error/abort — so callers
+  // can `await speak(text, opts)` to sequence steps without overlap.
+  //
+  // Contract:
+  //   • Always resolves (never rejects) — error/abort → resolve; no throw.
+  //   • Resolves as soon as the last audio element fires "ended", "error", or
+  //     "abort", plus the 700 ms grace period baked into _markTtsDone.
+  //   • _isSpeaking is true from the first audio.play() until the Promise
+  //     resolves (or on autoplay-block / key-missing → resolves immediately).
+  //   • For multi-chunk ElevenLabs: resolves after the last chunk ends.
+  //   • For Sarvam fallback: resolves after the single WAV finishes.
+  //   • If text is empty or TTS is unavailable: resolves immediately.
+  //
+  // nuskha/kadam callers: `await speak(text, opts)` is safe to use between
+  // walkthrough steps — the next step will not start until TTS is fully done.
   async function speak(text, opts) {
     if (!text) return;
     // v6.7.6: pre-transliterate before EITHER engine. ElevenLabs Sarah pronounced
@@ -18959,7 +19488,11 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
       console.warn("[speak] pre-translit failed, using raw text", e);
     }
     // v3.7: ElevenLabs first if available — now with native-script input.
+    // SOS-fix-3: speakElevenLabs is already awaitable and returns true on
+    // successful playback (after the last chunk "ended"). If it returns true
+    // we are done — _isSpeaking has already been cleared by _markTtsDone.
     if (await speakElevenLabs(prepText, opts)) return;
+    // ── Sarvam fallback path ──
     // opts: { quiet, ttsText } — if ttsText provided, speak THAT (caller-supplied Devanagari) and skip transliteration.
     const quiet = opts && opts.quiet;
     const callerTtsText = opts && opts.ttsText;
@@ -19041,25 +19574,37 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
       );
       const data = await res.json();
       if (data.audios && data.audios[0]) {
-        _currentAudio = new Audio("data:audio/wav;base64," + data.audios[0]);
-        _markTtsStart(_currentAudio);
-        _currentAudio.play().catch((e) => {
-          if (e && e.name === "NotAllowedError") {
-            console.warn("[speak] autoplay blocked — queuing gesture-unlock", e);
-            // Autoplay blocked: "ended" will never fire, so clear _isSpeaking now
-            // to prevent the mic-gate retry loop from spinning indefinitely.
-            _isSpeaking = false;
-            _armAudioUnlock(_currentAudio);
-          } else {
-            console.warn("[speak] autoplay blocked", e);
-            _isSpeaking = false;
-          }
+        const sarvamAudio = new Audio("data:audio/wav;base64," + data.audios[0]);
+        _currentAudio = sarvamAudio;
+        _markTtsStart(sarvamAudio); // wires ended/error/abort → _markTtsDone
+        // SOS-fix-3: await Sarvam playback so speak() settles after audio ends.
+        await new Promise((resolve) => {
+          const _done = () => resolve();
+          sarvamAudio.addEventListener("ended", _done, { once: true });
+          sarvamAudio.addEventListener("error", _done, { once: true });
+          sarvamAudio.addEventListener("abort", _done, { once: true });
+          sarvamAudio.play().catch((e) => {
+            if (e && e.name === "NotAllowedError") {
+              console.warn("[speak] autoplay blocked — queuing gesture-unlock", e);
+              // Autoplay blocked: "ended" will never fire, so clear _isSpeaking now
+              // to prevent the mic-gate retry loop from spinning indefinitely.
+              _isSpeaking = false;
+              _armAudioUnlock(sarvamAudio);
+            } else {
+              console.warn("[speak] autoplay error", e);
+              _isSpeaking = false;
+            }
+            resolve(); // resolve immediately on play() failure
+          });
         });
       }
     } catch (e) {
       console.error("[Sarvam TTS] failed", e);
     }
   }
+  // SOS-fix-3: expose speak on window so file-07 / file-13 callers can
+  // `await window.speak(text, opts)` between walkthrough/move steps.
+  window.speak = speak;
 
   // ── Updates audio ──
   function playUpdateAudio(btn, type) {
@@ -21810,7 +22355,15 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
   }
   let _moveSkill = null,
     _moveStepIdx = 0,
-    _moveTimer = null;
+    _moveTimer = null,
+    // v6.7.16: abort token — incremented on every openMovement/closeMovement/
+    // moveNextStep so an async speak() continuation from a previous step never
+    // fires after the session has been cancelled or advanced by a tap.
+    _moveGeneration = 0,
+    // v6.7.16: voice pin — locked once per session in openMovement so every
+    // step uses the identical Indic voice and the voice never flips mid-session.
+    _moveVoiceId = null;
+
   function openMovement(key) {
     _moveSkill = MOVEMENT_SKILLS[key];
     if (!_moveSkill) return;
@@ -21826,6 +22379,15 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
     try {
       window.speechSynthesis && window.speechSynthesis.cancel();
     } catch (e) {}
+    // v6.7.16: invalidate any in-flight async continuation from a previous session.
+    _moveGeneration++;
+    // v6.7.16: pin the session voice once here. _pickElevenVoice is owned by
+    // @awaaz (file 11). If it isn't loaded yet, fall back gracefully to null
+    // (speak() will pick its own default, but at least it stays consistent
+    // within this session because we pass the same voiceId every call).
+    _moveVoiceId =
+      typeof _pickElevenVoice === "function" ? _pickElevenVoice() : null;
+
     _moveStepIdx = 0;
     document.getElementById("move-ov").classList.add("on");
     document.getElementById("move-ov-title").textContent = (typeof locName === "function" ? locName(_moveSkill) : _moveSkill.title);
@@ -21836,9 +22398,19 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
     document.getElementById("move-ov-next").textContent = "Aage badho";
     showMoveStep(0);
   }
-  function showMoveStep(idx) {
+
+  // v6.7.16: async step runner. Speech-completion drives auto-advance so audio
+  // from step N can never overlap with step N+1. Tap-to-advance still works —
+  // it increments _moveGeneration, which makes the awaiting continuation a
+  // no-op when it eventually resolves.
+  async function showMoveStep(idx) {
     if (!_moveSkill || idx >= _moveSkill.steps.length) return;
     _moveStepIdx = idx;
+
+    // Snapshot the generation token for this invocation. If it changes while
+    // we are awaiting speak(), we know we were superseded and must not advance.
+    const myGen = _moveGeneration;
+
     document.getElementById("move-ov-step").textContent = _moveSkill.steps[idx];
     const dots = document.querySelectorAll("#move-ov-progress .move-ov-progress-dot");
     dots.forEach((d, i) => d.classList.toggle("done", i <= idx));
@@ -21852,43 +22424,82 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
       const lottieUrl = (_moveSkill.lottie && _moveSkill.lottie[idx]) || null;
       renderStepAnim(animKey, lottieUrl);
     }
-    // v4.2: prefer pre-translated Devanagari tts[] for clean read-aloud.
-    // v6.7.15 FIX: when tts[] is missing, do NOT force the Roman step as
-    // ttsText — that bypassed speak()'s auto-transliterate path and the
-    // Indic voice ended up pronouncing Roman characters as if they were
-    // Devanagari ("Doodh garam karo" → mangled phonemes, sounded like a
-    // bad machine-translation voice). Now: only pass ttsText when a
-    // pre-translated Devanagari version exists; otherwise let speak()
-    // transliterate Roman → Devanagari and pick the right voice itself.
+
+    // v4.2 / v6.7.15 FIX: only pass ttsText when a pre-translated Devanagari
+    // version exists. Forcing Roman step text as ttsText bypasses speak()'s
+    // auto-transliterate path and produces the robotic "Chinese-Hindi" voice.
+    // v6.7.16: also pass the pinned voiceId so the voice stays consistent
+    // across all steps in this session.
     const _ttsOpts = { quiet: true };
     if (_moveSkill.tts && _moveSkill.tts[idx]) {
       _ttsOpts.ttsText = _moveSkill.tts[idx];
     }
-    speak(_moveSkill.steps[idx], _ttsOpts);
-    if (_moveTimer) clearTimeout(_moveTimer);
-    _moveTimer = setTimeout(() => {
-      if (idx < _moveSkill.steps.length - 1) showMoveStep(idx + 1);
-      else {
-        document.getElementById("move-ov-step").textContent =
-          "Bahut accha kiya! 💚 Roz karein, fark dikhega.";
-        document.getElementById("move-ov-next").textContent = "Done";
-        _moveSkill = null;
+    if (_moveVoiceId) {
+      _ttsOpts.voiceId = _moveVoiceId;
+    }
+
+    // Cancel any previous fallback timer — the async path is now in charge.
+    if (_moveTimer) {
+      clearTimeout(_moveTimer);
+      _moveTimer = null;
+    }
+
+    // Await speech completion (speak() returns a Promise per awaaz's contract).
+    // If speak() is not yet a real Promise (older build), the await resolves
+    // immediately and we fall through to the timer-based fallback below.
+    try {
+      const speakResult = speak(_moveSkill.steps[idx], _ttsOpts);
+      if (speakResult && typeof speakResult.then === "function") {
+        await speakResult;
       }
-    }, 9000);
+    } catch (e) {
+      // speak() rejection (network error, etc.) — still advance.
+      console.warn("[move] speak() error on step", idx, e);
+    }
+
+    // If superseded by tap or close, stop here — do not auto-advance.
+    if (_moveGeneration !== myGen) return;
+
+    // Auto-advance: speech has ended for real.
+    if (idx < _moveSkill.steps.length - 1) {
+      showMoveStep(idx + 1);
+    } else {
+      document.getElementById("move-ov-step").textContent =
+        "Bahut accha kiya! 💚 Roz karein, fark dikhega.";
+      document.getElementById("move-ov-next").textContent = "Done";
+      _moveSkill = null;
+    }
   }
+
   function moveNextStep() {
     if (!_moveSkill) {
       closeMovement();
       return;
     }
-    if (_moveTimer) clearTimeout(_moveTimer);
+    // v6.7.16: bump generation so the currently-awaiting speak() continuation
+    // becomes a no-op. Also cancel the legacy fallback timer defensively.
+    _moveGeneration++;
+    if (_moveTimer) {
+      clearTimeout(_moveTimer);
+      _moveTimer = null;
+    }
+    // Cancel any in-flight audio immediately so the next step starts clean.
+    if (_currentAudio) {
+      try { _currentAudio.pause(); } catch (e) {}
+      _currentAudio = null;
+    }
+    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
+
     if (_moveStepIdx < _moveSkill.steps.length - 1) showMoveStep(_moveStepIdx + 1);
     else closeMovement();
   }
+
   function closeMovement() {
     // v5.3: capture the just-closed skill BEFORE clearing _moveSkill so Focus Mode can mark its step done
     const closedKey =
       _moveSkill && (_moveSkill._focusKey || _moveSkill.key || _moveSkill.skillKey || null);
+    // v6.7.16: bump generation so any in-flight async step runner stops.
+    _moveGeneration++;
     if (_moveTimer) {
       clearTimeout(_moveTimer);
       _moveTimer = null;
@@ -21900,6 +22511,7 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
       } catch (e) {}
       _currentAudio = null;
     }
+    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
     // v5.4: tear down any active Lottie instance so it doesn't keep rendering off-screen
     if (_lottieInstance) {
       try {
@@ -21909,6 +22521,7 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
     }
     _moveSkill = null;
     _moveStepIdx = 0;
+    _moveVoiceId = null;
     // Hook into Focus Mode
     if (closedKey && typeof markFocusStepComplete === "function") {
       try {
@@ -23154,12 +23767,38 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
     ST._focusPendingSymptom = null;
     ST._focusQAStep = 0;
     ST._focusQAAnswers = {};
-    goTo("s-hub");
-    setTimeout(() => {
-      if (typeof applySunitaMode === "function") applySunitaMode();
-      renderFocusHome();
-      if (typeof renderHubStories === "function") renderHubStories();
-    }, 60);
+
+    // SOS v1: guaranteed walkthrough card — find the first remedy step and open
+    // the full-screen walkthrough player directly. Falls back to hub step-plan
+    // only if openWalkthrough is unavailable (e.g. file 07 not yet loaded).
+    const topRemedyStep = steps.find((s) => s.type === "remedy");
+    const topKey = topRemedyStep ? topRemedyStep.key : (steps[0] ? steps[0].key : null);
+
+    if (topKey && (typeof openRemedy === "function" || typeof openWalkthrough === "function")) {
+      window._activeFocusStepKey = topKey;
+      // Navigate to hub first so the overlay has a valid parent screen,
+      // then fire through openRemedy (WS1 safety gate) after a short settle delay.
+      // Fall back to openWalkthrough only if openRemedy is not yet loaded.
+      goTo("s-hub");
+      setTimeout(() => {
+        if (typeof applySunitaMode === "function") applySunitaMode();
+        renderFocusHome();
+        if (typeof renderHubStories === "function") renderHubStories();
+        if (typeof openRemedy === "function") {
+          openRemedy(topKey);
+        } else {
+          openWalkthrough(topKey);
+        }
+      }, 120);
+    } else {
+      // Fallback: legacy hub step-plan (no walkthrough player available)
+      goTo("s-hub");
+      setTimeout(() => {
+        if (typeof applySunitaMode === "function") applySunitaMode();
+        renderFocusHome();
+        if (typeof renderHubStories === "function") renderHubStories();
+      }, 60);
+    }
   }
 
   // — Focus home render (inside the hub, revealed by body.focus) —
