@@ -4634,6 +4634,13 @@ body:not(.focus) .focus-home {
   margin-top: 2px;
   line-height: 1.4;
 }
+.focus-step-helps {
+  font-size: 11.5px;
+  color: var(--jio-blue, #0057a8);
+  margin-top: 4px;
+  line-height: 1.45;
+  font-weight: 600;
+}
 .focus-step-status {
   font-size: 10px;
   font-weight: 700;
@@ -13537,7 +13544,8 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
   }
 
   // Called when all triage questions are answered.
-  // Fires openWalkthrough(topRemedyKey) deterministically.
+  // Hero flow: post warm acknowledgment, save focus, navigate to the plan view.
+  // The card opens ONLY when the user taps a step's "Shuru karein →".
   function _finalizeTriageInChat(msgsContainer) {
     if (!_activeTriage) return;
     const key = _activeTriage.key;
@@ -13560,14 +13568,10 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
       return;
     }
 
-    // Show a warm transition message
-    if (flow && flow.quote) {
-      addMsg("bot", flow.quote(answers), false);
-    }
-
     // Save focus state (mirrors finalizeFocusStart logic in file 14)
+    let steps = [];
     if (typeof saveFocus === "function" && flow) {
-      const steps = flow.buildSteps(answers)
+      steps = flow.buildSteps(answers)
         .map((s, i) => ({ ...s, status: i === 0 ? "current" : "pending" }));
       saveFocus({
         symptom: key,
@@ -13582,23 +13586,45 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
       });
     }
 
-    // GUARANTEED walkthrough card — route through openRemedy (WS1 safety gate) when
-    // available; fall back to openWalkthrough only if openRemedy is not yet loaded.
-    const remedyKey = _topRemedyKey(key, answers);
-    if (remedyKey && (typeof openRemedy === "function" || typeof openWalkthrough === "function")) {
-      // Set the focus step key so finishWalkthrough can mark it complete
-      window._activeFocusStepKey = remedyKey;
-      setTimeout(() => {
-        if (typeof openRemedy === "function") {
-          openRemedy(remedyKey);
-        } else {
-          openWalkthrough(remedyKey);
-        }
-      }, 400);
-    } else if (typeof startFocus === "function") {
-      // Fallback: legacy hub step-plan path (should not normally be reached)
-      startFocus(key);
+    // Show warm acknowledgment in chat — instant template, LLM-enhanced asynchronously.
+    // Use a unique stable id so _enhanceAckWithLLM can update both this bubble
+    // and the plan banner when the LLM reply lands.
+    const ackText = typeof _warmAckTemplate === "function"
+      ? _warmAckTemplate(key, answers)
+      : (flow && flow.quote ? flow.quote(answers) : "");
+
+    // Post the ack as a bot bubble with a stable id span inside
+    const msgs = msgsContainer || document.getElementById("chat-msgs");
+    if (msgs && ackText) {
+      const row = document.createElement("div");
+      row.className = "msg-row bot";
+      const bub = document.createElement("div");
+      bub.className = "bubble bot";
+      bub.id = "focus-ack-text";
+      bub.textContent = ackText;
+      row.appendChild(bub);
+      msgs.appendChild(row);
+      msgs.scrollTop = msgs.scrollHeight;
     }
+
+    // Reveal 3-step plan: navigate to hub and render renderFocusHome
+    setTimeout(() => {
+      if (typeof goTo === "function") goTo("s-hub");
+      setTimeout(() => {
+        if (typeof applySunitaMode === "function") applySunitaMode();
+        if (typeof renderFocusHome === "function") renderFocusHome();
+        if (typeof renderHubStories === "function") renderHubStories();
+        // Fire LLM enhancement — updates both the chat bubble and the plan banner
+        if (typeof _enhanceAckWithLLM === "function" && steps.length) {
+          const stepTitles = steps.map((s) => {
+            try {
+              return (typeof focusStepMeta === "function") ? focusStepMeta(s).title : (s.key || s.type);
+            } catch (e) { return s.key || s.type; }
+          });
+          _enhanceAckWithLLM(key, answers, stepTitles, "focus-ack-text");
+        }
+      }, 120);
+    }, 500);
   }
 
   // Public entry: detect symptom in userText and, if found, launch the
@@ -23768,36 +23794,327 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
     ST._focusQAStep = 0;
     ST._focusQAAnswers = {};
 
-    // SOS v1: guaranteed walkthrough card — find the first remedy step and open
-    // the full-screen walkthrough player directly. Falls back to hub step-plan
-    // only if openWalkthrough is unavailable (e.g. file 07 not yet loaded).
-    const topRemedyStep = steps.find((s) => s.type === "remedy");
-    const topKey = topRemedyStep ? topRemedyStep.key : (steps[0] ? steps[0].key : null);
+    // Hero flow: navigate to the plan view and show warm acknowledgment.
+    // The card opens ONLY when the user taps a step's "Shuru karein →".
+    goTo("s-hub");
+    setTimeout(() => {
+      if (typeof applySunitaMode === "function") applySunitaMode();
+      renderFocusHome();
+      if (typeof renderHubStories === "function") renderHubStories();
+      // Fire LLM enhancement for the plan banner (fire-and-forget)
+      const stepTitles = steps.map((s) => {
+        try { return focusStepMeta(s).title; } catch (e) { return s.key || s.type; }
+      });
+      _enhanceAckWithLLM(sym, answers, stepTitles, "focus-ack-text");
+    }, 120);
+  }
 
-    if (topKey && (typeof openRemedy === "function" || typeof openWalkthrough === "function")) {
-      window._activeFocusStepKey = topKey;
-      // Navigate to hub first so the overlay has a valid parent screen,
-      // then fire through openRemedy (WS1 safety gate) after a short settle delay.
-      // Fall back to openWalkthrough only if openRemedy is not yet loaded.
-      goTo("s-hub");
-      setTimeout(() => {
-        if (typeof applySunitaMode === "function") applySunitaMode();
-        renderFocusHome();
-        if (typeof renderHubStories === "function") renderHubStories();
-        if (typeof openRemedy === "function") {
-          openRemedy(topKey);
+  // — Warm acknowledgment helpers —
+
+  // Returns an instant, answer-aware warm line per symptom.
+  // Weaves in their actual answer labels without ever being blank.
+  function _warmAckTemplate(symptom, answers) {
+    const a = answers || {};
+    switch (symptom) {
+      case "sir-dard": {
+        const where = a.where || _locStr("sir mein", "सिर में");
+        const since = a.since || _locStr("kuch der se", "कुछ देर से");
+        const withVal = a.with;
+        let base = _locStr(
+          `Samajh gaya — ${since} ${where} dard ho raha hai.`,
+          `समझ गया — ${since} ${where} दर्द हो रहा है।`
+        );
+        if (withVal === "Tension" || withVal === "टेंशन") {
+          base += _locStr(
+            " Tension wala sir dard aksar andar ki thakan se hota hai — chinta mat karein.",
+            " टेंशन वाला सिर दर्द अक्सर अंदर की थकान से होता है — चिंता मत करें।"
+          );
+        } else if (withVal === "Mitli aati hai" || withVal === "मितली आती है") {
+          base += _locStr(
+            " Pet aur sir ka dono connection hota hai — dono ko saath theek karte hain.",
+            " पेट और सिर का दोनों connection होता है — दोनों को साथ ठीक करते हैं।"
+          );
         } else {
-          openWalkthrough(topKey);
+          base += _locStr(
+            " Aksar yeh tension ya paani ki kami se hota hai — ghabraiye mat.",
+            " अक्सर यह टेंशन या पानी की कमी से होता है — घबराइए मत।"
+          );
         }
-      }, 120);
-    } else {
-      // Fallback: legacy hub step-plan (no walkthrough player available)
-      goTo("s-hub");
-      setTimeout(() => {
-        if (typeof applySunitaMode === "function") applySunitaMode();
-        renderFocusHome();
-        if (typeof renderHubStories === "function") renderHubStories();
-      }, 60);
+        return base;
+      }
+      case "sardi-khansi": {
+        const type = a.type || _locStr("sardi-khansi", "सर्दी-खाँसी");
+        const throat = a.throat;
+        let base = _locStr(
+          `Samajh gaya — ${type} ho rahi hai.`,
+          `समझ गया — ${type} हो रही है।`
+        );
+        if (throat === "Haan, bahut" || throat === "हाँ, बहुत") {
+          base += _locStr(
+            " Gale mein bahut khich-khich hai — pehle gale ko sukoon dete hain.",
+            " गले में बहुत खिच-खिच है — पहले गले को सुकून देते हैं।"
+          );
+        } else {
+          base += _locStr(
+            " Mausam badla hoga. Ghar ke nushkon se jaldi aaram milega.",
+            " मौसम बदला होगा। घर के नुस्खों से जल्दी आराम मिलेगा।"
+          );
+        }
+        return base;
+      }
+      case "pet": {
+        const kind = a.kind || _locStr("pet ki takleef", "पेट की तकलीफ़");
+        const when = a.when;
+        let base = _locStr(
+          `Samajh gaya — ${kind} ho rahi hai.`,
+          `समझ गया — ${kind} हो रही है।`
+        );
+        if (when === "Khaane ke baad" || when === "खाने के बाद") {
+          base += _locStr(
+            " Khaane ke baad hoti hai — paachan ko thoda sahara dete hain.",
+            " खाने के बाद होती है — पाचन को थोड़ा सहारा देते हैं।"
+          );
+        } else {
+          base += _locStr(
+            " Pet ki shaanti se hi baki sab shaant hota hai — dheere-dheere theek karte hain.",
+            " पेट की शांति से ही बाकी सब शांत होता है — धीरे-धीरे ठीक करते हैं।"
+          );
+        }
+        return base;
+      }
+      case "bukhar": {
+        const since = a.since || _locStr("kuch der se", "कुछ देर से");
+        const level = a.level;
+        let base = _locStr(
+          `Samajh gaya — ${since} bukhar hai.`,
+          `समझ गया — ${since} बुखार है।`
+        );
+        if (level === "Halka (normal se thoda zyada)" || level === "हल्का (normal से थोड़ा ज़्यादा)") {
+          base += _locStr(
+            " Halka bukhar hai — ghar ke nushkon aur paani se aaram milega.",
+            " हल्का बुखार है — घर के नुस्खों और पानी से आराम मिलेगा।"
+          );
+        } else {
+          base += _locStr(
+            " Sharir andar se ladh raha hai — hum bahar se uska saath dete hain.",
+            " शरीर अंदर से लड़ रहा है — हम बाहर से उसका साथ देते हैं।"
+          );
+        }
+        return base;
+      }
+      case "kamar-dard": {
+        const cause = a.cause || _locStr("kamar dard", "कमर दर्द");
+        const since = a.since;
+        let base = _locStr(
+          `Samajh gaya — ${cause} ki wajah se kamar mein dard hai.`,
+          `समझ गया — ${cause} की वजह से कमर में दर्द है।`
+        );
+        if (since === "2-3 din se" || since === "2-3 दिन से") {
+          base += _locStr(
+            " 2-3 din ka dard thoda thaka deta hai — garm sek aur gentle movement se raahat milegi.",
+            " 2-3 दिन का दर्द थोड़ा थका देता है — गर्म सेंक और gentle movement से राहत मिलेगी।"
+          );
+        } else {
+          base += _locStr(
+            " Gentle movement aur garm sek se kaafi fark padega — dhairya rakho.",
+            " Gentle movement और गर्म सेंक से काफ़ी फर्क पड़ेगा — धैर्य रखो।"
+          );
+        }
+        return base;
+      }
+      case "tension": {
+        const kind = a.kind || _locStr("tension", "टेंशन");
+        const since = a.since;
+        let base = _locStr(
+          `Samajh gaya — ${kind} feel ho raha hai.`,
+          `समझ गया — ${kind} feel हो रहा है।`
+        );
+        if (since === "Kai hafte se" || since === "कई हफ्ते से") {
+          base += _locStr(
+            " Kai haftey se hai — aap akele nahi hain, chote chote kadam bade fark laate hain.",
+            " कई हफ्ते से है — आप अकेले नहीं हैं, छोटे-छोटे कदम बड़े फर्क लाते हैं।"
+          );
+        } else {
+          base += _locStr(
+            " Saans lene se shuru karte hain — andar ka bojh dheere-dheere halka hoga.",
+            " साँस लेने से शुरू करते हैं — अंदर का बोझ धीरे-धीरे हल्का होगा।"
+          );
+        }
+        return base;
+      }
+      case "neend": {
+        const kind = a.kind || _locStr("neend ki dikkat", "नींद की दिक्कत");
+        const screen = a.screen;
+        let base = _locStr(
+          `Samajh gaya — ${kind} ho rahi hai.`,
+          `समझ गया — ${kind} हो रही है।`
+        );
+        if (screen === "Haan, late tak" || screen === "हाँ, late तक") {
+          base += _locStr(
+            " Phone ki roshni neend ko rokti hai — aaj raat thoda alag karte hain.",
+            " Phone की रोशनी नींद को रोकती है — आज रात थोड़ा अलग करते हैं।"
+          );
+        } else {
+          base += _locStr(
+            " Neend seedha theek nahin hoti — andar se shaant karte hain toh neend khud aayegi.",
+            " नींद सीधे ठीक नहीं होती — अंदर से शांत करते हैं तो नींद खुद आएगी।"
+          );
+        }
+        return base;
+      }
+      default:
+        return _locStr(
+          "Samajh gaya — aapki takleef ka dhyan rakhna zaroori hai. Yeh 3 kadam milke karte hain.",
+          "समझ गया — आपकी तकलीफ़ का ध्यान रखना ज़रूरी है। ये 3 कदम मिलकर करते हैं।"
+        );
+    }
+  }
+
+  // Per-step "kaise madad karega" warm one-liners.
+  // Keyed by step.key; falls back by step.type.
+  function _stepHelps(step) {
+    const byKey = {
+      // acupressure
+      "yintang-stress":   _locStr("Yeh point tension ko seedha maatha se nikalta hai — 2 minute mein halkapan milega.", "यह point टेंशन को सीधे माथे से निकालता है — 2 मिनट में हल्कापन मिलेगा।"),
+      "li4-headache":     _locStr("Haath ka yeh point sir dard ki naadion ko shaant karta hai — dheere dabao.", "हाथ का यह point सिर दर्द की नाड़ियों को शांत करता है — धीरे दबाओ।"),
+      "gb20-neck":        _locStr("Gardan ke yeh do point gardan se uthte dard ki jad ko shaant karte hain.", "गर्दन के ये दो point गर्दन से उठते दर्द की जड़ को शांत करते हैं।"),
+      "lu7-cough":        _locStr("Yeh point gale aur seene ki nali ko kholta hai — khansi mein seedha fayda.", "यह point गले और सीने की नली को खोलता है — खाँसी में सीधा फायदा।"),
+      // remedies
+      "tulsi-kadha":      _locStr("Tulsi andar se immunity badhati hai — dard aur infection dono se ladti hai.", "तुलसी अंदर से immunity बढ़ाती है — दर्द और infection दोनों से लड़ती है।"),
+      "tulsi-kalimirch-kadha": _locStr("Tulsi aur kali mirch milkar sharir ka taap kam karte hain aur immunity majboot karti hai.", "तुलसी और काली मिर्च मिलकर शरीर का ताप कम करते हैं और immunity मज़बूत करती है।"),
+      "adrak-chai":       _locStr("Adrak ki garmahat sir dard ki muscles ko relax karti hai — ek ghut se fark milta hai.", "अदरक की गर्माहट सिर दर्द की muscles को relax करती है — एक घूँट से फर्क मिलता है।"),
+      "mulethi-kadha":    _locStr("Mulethi gale ki khich-khich ko lubricant ki tarah dhakta hai — sookhi khansi mein bahut aaram.", "मुलेठी गले की खिच-खिच को lubricant की तरह ढकता है — सूखी खाँसी में बहुत आराम।"),
+      "ajwain-bhaap":     _locStr("Ajwain ki bhap balgam ko naram karke bahar laati hai — ek baar mein hi farq lagega.", "अजवाइन की भाप बलगम को नरम करके बाहर लाती है — एक बार में ही फर्क लगेगा।"),
+      "namak-gargle":     _locStr("Namak ka paani gale ke bacteria ko nikalta hai — subah ek baar, raat ek baar kaafi hai.", "नमक का पानी गले के bacteria को निकालता है — सुबह एक बार, रात एक बार काफ़ी है।"),
+      "nimbu-shahad":     _locStr("Nimbu aur shahad milakar sharir ko andar se takat dete hain — pet aur gala dono ko.", "नींबू और शहद मिलाकर शरीर को अंदर से ताकत देते हैं — पेट और गला दोनों को।"),
+      "saunf-paani":      _locStr("Saunf pet ki jalan ko theek karti hai aur andar ki gas ko dheere bahar karti hai.", "सौंफ पेट की जलन को ठीक करती है और अंदर की गैस को धीरे बाहर करती है।"),
+      "jeera-paani":      _locStr("Jeera paachan shakti ka rajaa hai — gas aur acidity dono ko seedha theek karta hai.", "जीरा पाचन शक्ति का राजा है — गैस और एसिडिटी दोनों को सीधे ठीक करता है।"),
+      "sarso-tel-malish": _locStr("Garm sarson ka tel kamar ki muscles mein andar tak samata hai aur akdan door karta hai.", "गर्म सरसों का तेल कमर की muscles में अंदर तक समाता है और अकड़न दूर करता है।"),
+      "ajwain-til-potli": _locStr("Ajwain-til ki potli se nikli garmahat kamar ke andar ki takleef seedha kam karti hai.", "अजवाइन-तिल की पोटली से निकली गर्माहट कमर के अंदर की तकलीफ़ सीधे कम करती है।"),
+      "brahmi-chai":      _locStr("Brahmi dimag ke andar ki jaldi-jaldi ko dheema karti hai — ek pyali mein shaanti milti hai.", "ब्राह्मी दिमाग के अंदर की जल्दी-जल्दी को धीमा करती है — एक प्याली में शांति मिलती है।"),
+      "haldi-doodh":      _locStr("Haldi doodh sharir ko andar se shaant karta hai — neend ki nींv majboot hoti hai.", "हल्दी दूध शरीर को अंदर से शांत करता है — नींद की नींव मज़बूत होती है।"),
+      // movement / rest
+      "hydration":        _locStr("Paani sharir ka sabse puraana dawa hai — bukhar, dard, thakan sab mein pehle hydration.", "पानी शरीर का सबसे पुराना दवा है — बुखार, दर्द, थकान सब में पहले hydration।"),
+      "screen-break":     _locStr("Phone ki neeli roshni nींद ka signal rok deti hai — yeh break neend ke darwaze kholta hai.", "Phone की नीली रोशनी नींद का signal रोक देती है — यह break नींद के दरवाज़े खोलता है।"),
+      "malasana":         _locStr("Yeh pose pet ki gas ko neeche dhakelti hai — thoda awkward lagega par foran raahat milegi.", "यह pose पेट की गैस को नीचे धकेलती है — थोड़ा awkward लगेगा पर फौरन राहत मिलेगी।"),
+      "gardan":           _locStr("Gardan ki stretching kamar aur peeth ke tension ko seedha release karti hai.", "गर्दन की stretching कमर और पीठ के tension को सीधे release करती है।"),
+      "anulom-vilom":     _locStr("Naak se saans lena dimag aur seene dono ko oxygenate karta hai — tension aur khansi dono mein kaam aata hai.", "नाक से साँस लेना दिमाग और सीने दोनों को oxygenate करता है — टेंशन और खाँसी दोनों में काम आता है।"),
+      "shavasana":        _locStr("Lait ke full body relax karna sharir ko andar se theek karne ki jagah deta hai.", "लेट के full body relax करना शरीर को अंदर से ठीक करने की जगह देता है।"),
+      "meditation":       _locStr("Dimag ko thoda chup karaana hi sabse badi dawai hai — 10 minute mein bhari taazgi milegi.", "दिमाग को थोड़ा चुप कराना ही सबसे बड़ी दवाई है — 10 मिनट में भारी ताज़गी मिलेगी।"),
+      "journaling":       _locStr("Andar jo ghumat hai use kaagaz pe daalna dimag ka bojh seedha halka karta hai.", "अंदर जो घुमता है उसे कागज़ पर डालना दिमाग का बोझ सीधे हल्का करता है।"),
+      "vajrasana":        _locStr("Khaane ke baad yeh asan paachan ko tez karta hai — pet ki gas aur jalan dono mein kaam aata hai.", "खाने के बाद यह आसन पाचन को तेज़ करता है — पेट की गैस और जलन दोनों में काम आता है।"),
+      "bhramari":         _locStr("Muh band karke meen ki tarah awaaz karna nerve system ko turant shaant karta hai.", "मुँह बंद करके मधुमक्खी की तरह आवाज़ करना nerve system को तुरंत शांत करता है।"),
+    };
+    if (step && step.key && byKey[step.key]) return byKey[step.key];
+    // Fallback by type
+    if (step && step.type === "acupressure")
+      return _locStr("Yeh pressure point seedhe us jagah ka dard kam karta hai jahan takleef hai.", "यह pressure point सीधे उस जगह का दर्द कम करता है जहाँ तकलीफ़ है।");
+    if (step && step.type === "remedy")
+      return _locStr("Ghar ka yeh nushka sharir ko andar se theek karne mein madad karta hai.", "घर का यह नुस्खा शरीर को अंदर से ठीक करने में मदद करता है।");
+    return _locStr("Yeh kadam thakan aur dard ko seedha kam karta hai.", "यह कदम थकान और दर्द को सीधे कम करता है।");
+  }
+
+  // Async LLM enhancement: fires a short, warm LLM call and replaces the
+  // placeholder element text when it lands. Fire-and-forget — never blocks rendering.
+  async function _enhanceAckWithLLM(symptom, answers, stepTitles, targetElId) {
+    // Build a readable answers string
+    const answerLines = Object.entries(answers || {})
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(", ");
+    const stepsStr = (stepTitles || []).join(" → ");
+    const lang = (typeof locStr === "function")
+      ? locStr("Hinglish (Roman Hindi)", "Devanagari Hindi")
+      : "Hinglish";
+    const sysPrompt =
+      "You are Saathi, a warm Indian health companion. Reply in " + lang +
+      ". No bullet lists, no medical disclaimers, warm and human like a caring family member. 2-3 sentences only.";
+    const userPrompt =
+      "The person has: " + symptom + ". Their answers: " + (answerLines || "not provided") +
+      ". The plan: " + stepsStr +
+      ". In 2-3 warm sentences, acknowledge what they're going through and explain how these steps will help them feel better.";
+
+    // 6-second timeout
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = controller
+      ? setTimeout(() => controller.abort(), 6000)
+      : null;
+
+    // Determine fetch options — mirror the callAI provider cascade
+    const hasWorker = typeof USE_WORKER !== "undefined" && USE_WORKER;
+    const hasAnthropic = hasWorker ||
+      (typeof ANTHROPIC_API_KEY !== "undefined" && ANTHROPIC_API_KEY &&
+       ANTHROPIC_API_KEY.length > 20 && !ANTHROPIC_API_KEY.includes("REPLACE"));
+    const hasGroq = hasWorker ||
+      (typeof GROQ_API_KEY !== "undefined" && GROQ_API_KEY &&
+       GROQ_API_KEY.length > 20 && !GROQ_API_KEY.includes("REPLACE"));
+
+    let llmText = null;
+    try {
+      if (hasAnthropic) {
+        const url = hasWorker
+          ? (typeof WORKER_URL !== "undefined" ? WORKER_URL : "") + "/anthropic/v1/messages"
+          : "https://api.anthropic.com/v1/messages";
+        const headers = hasWorker
+          ? { "Content-Type": "application/json",
+              "x-pilot-token": (typeof CLIENT_TOKEN !== "undefined" ? CLIENT_TOKEN : ""),
+              "x-user-hash": (typeof USER_HASH !== "undefined" ? USER_HASH : "") }
+          : { "Content-Type": "application/json",
+              "x-api-key": ANTHROPIC_API_KEY,
+              "anthropic-version": "2023-06-01",
+              "anthropic-dangerous-direct-browser-access": "true" };
+        const body = JSON.stringify({
+          model: (typeof ANTHROPIC_MODEL !== "undefined" ? ANTHROPIC_MODEL : "claude-haiku-3-5"),
+          max_tokens: 120,
+          system: sysPrompt,
+          messages: [{ role: "user", content: userPrompt }],
+        });
+        const res = await fetch(url, {
+          method: "POST", headers, body,
+          ...(controller ? { signal: controller.signal } : {}),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          llmText = (data.content && data.content[0] && data.content[0].text || "").trim();
+        }
+      } else if (hasGroq) {
+        const url = hasWorker
+          ? (typeof WORKER_URL !== "undefined" ? WORKER_URL : "") + "/groq/openai/v1/chat/completions"
+          : "https://api.groq.com/openai/v1/chat/completions";
+        const headers = hasWorker
+          ? { "Content-Type": "application/json",
+              "x-pilot-token": (typeof CLIENT_TOKEN !== "undefined" ? CLIENT_TOKEN : ""),
+              "x-user-hash": (typeof USER_HASH !== "undefined" ? USER_HASH : "") }
+          : { "Content-Type": "application/json",
+              "Authorization": "Bearer " + GROQ_API_KEY };
+        const body = JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 120,
+          messages: [
+            { role: "system", content: sysPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        });
+        const res = await fetch(url, {
+          method: "POST", headers, body,
+          ...(controller ? { signal: controller.signal } : {}),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          llmText = (data.choices && data.choices[0] && data.choices[0].message &&
+                     data.choices[0].message.content || "").trim();
+        }
+      }
+    } catch (e) {
+      // Timeout or network error — template stays, no action needed
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+
+    if (llmText && llmText.length > 10) {
+      // Update ALL elements with this id (plan banner + any chat bubble copy)
+      document.querySelectorAll("#" + targetElId).forEach((el) => {
+        el.textContent = llmText;
+      });
     }
   }
 
@@ -23822,6 +24139,9 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
         ? `✓ ` + _locStr(`Saare ${f.steps.length} step pure huye`, `सारे ${f.steps.length} स्टेप पूरे हुए`)
         : `Step ${(currIdx >= 0 ? currIdx : doneCount) + 1} of ${f.steps.length}`;
 
+    // Warm acknowledgment: instant template, LLM-replaced when ready (stable id)
+    const warmAck = _warmAckTemplate(f.symptom, f.qaAnswers || {});
+
     let html = `<div class="focus-banner">
     <button class="focus-banner-pause" onclick="pauseFocusConfirm()" aria-label="Pause">✕</button>
     <div class="focus-banner-row">
@@ -23831,19 +24151,22 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
         <div class="focus-banner-progress">${progressLabel}</div>
       </div>
     </div>
-    <div class="focus-dadi-quote">${flow.quote ? flow.quote(f.qaAnswers || {}) : ""}</div>
+    <div class="focus-dadi-quote" id="focus-ack-text">${warmAck}</div>
   </div>`;
 
     html += `<div class="focus-stepper">`;
     f.steps.forEach((s, i) => {
       const meta = focusStepMeta(s);
+      const helpsLine = _stepHelps(s);
+      const isCurrent = s.status === "current";
       html += `<button class="focus-step-card ${s.status}" onclick="${s.status === "done" ? "replayFocusStep(" + i + ")" : "openFocusStep(" + i + ")"}">
       <div class="focus-step-num">${s.status === "done" ? "✓" : i + 1}</div>
       <div class="focus-step-info">
         <div class="focus-step-name">${meta.emoji} ${meta.title}</div>
         <div class="focus-step-sub">${meta.sub} · ${s.durMin || meta.durMin || 5} ${_locStr("min", "मिनट")}</div>
+        <div class="focus-step-helps">${helpsLine}</div>
       </div>
-      <div class="focus-step-status ${s.status}">${s.status === "done" ? _locStr("Done", "हो गया") : s.status === "current" ? _locStr("Shuru karein →", "शुरू करें →") : _locStr("Aage", "आगे")}</div>
+      <div class="focus-step-status ${s.status}">${s.status === "done" ? _locStr("Done ✓", "हो गया ✓") : isCurrent ? _locStr("Shuru karein →", "शुरू करें →") : _locStr("Aage", "आगे")}</div>
     </button>`;
     });
     html += `</div>`;
