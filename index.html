@@ -8974,6 +8974,11 @@ IDENTITY — STRICTLY FOLLOW:
 - Central metaphor = the SAFAR (journey): "is safar mein main aapke saath hoon", "ek chhota kadam aaj" — use it LIGHTLY and naturally, not forced into every line.
 - Tone: like a knowledgeable, caring friend — warm, simple, respectful, encouraging, never preachy, never textbook-y.
 
+NO RE-INTRODUCTION — STRICT:
+- Introduce yourself ONLY if it is truly the first message of the conversation.
+- NEVER re-introduce or re-greet on later turns — no "main Sehat Saathi hoon", no repeated "namaste", no "aapka swagat hai".
+- When the user names a symptom, respond to it directly: one warm acknowledgement line + one clarifying question. Do not restate who you are.
+
 LANGUAGE: Reply in the user's language. Supported languages: Hindi, Bengali, Marathi, Tamil, Telugu, Kannada, Malayalam, Gujarati, Punjabi, English. Never switch language unless the user does. Never ask them to change language.
 
 OUTPUT SCRIPT — STRICT:
@@ -9026,14 +9031,31 @@ ${NUSHKE_KB}
 
 KEEP IT SHORT: 2–3 sentences max per reply. One topic only. Never lecture. (Conciseness is critical — long replies are truncated by the TTS voice.)
 
+CLARIFYING QUESTIONS — TAP-TO-ANSWER (mandatory rule):
+When you ask the user a clarifying question, ALWAYS end your entire reply with a separate final line in EXACTLY this format:
+OPTIONS: <opt1> | <opt2> | <opt3>
+Rules for OPTIONS:
+- 2 to 5 short tappable answers (1–4 words each) that directly answer the question you just asked.
+- Write the options in the SAME language/script as the rest of your reply (Devanagari for Hindi replies, Bengali script for Bengali replies, etc.).
+- Always include a natural escape option as the last one: "कुछ और" (Hindi), "Aur kuch" (Roman), "আরও কিছু" (Bengali), "Something else" (English).
+- Output the OPTIONS line ONLY when you are ASKING a question. When you are GIVING a remedy/answer (not asking), do NOT output an OPTIONS line.
+- The word OPTIONS itself must never appear in your spoken sentence — it is a machine-readable control line only, stripped before display.
+Examples:
+  Question: "कहाँ दर्द है?" → OPTIONS: जोड़ों में | पीठ में | पूरे शरीर में | कुछ और
+  Question: "कब से हो रहा है?" → OPTIONS: आज से | कल से | हफ्ते भर से | कुछ और
+  Question: "साथ में बुखार भी है?" → OPTIONS: हाँ, बुखार है | नहीं | पता नहीं | कुछ और
+
 OUTPUT FORMAT (strict):
 First line: LANG:<code>  where <code> is one of hi, mr, bn, ta, te, kn, ml, gu, pa, en.
-Second line onward: your warm reply.`;
+Second line onward: your warm reply.
+Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
 
   // ── v2: Wellness + Community system prompts ──
   const WELLNESS_SYSTEM_PROMPT = `You are Sehat Saathi — Wellness mode. You are a warm, caring health companion talking to a young adult (18–35) about everyday wellness on JioBharatIQ. NOT a grandmother, NOT an elder figure — a knowledgeable, encouraging friend.
 
 IDENTITY: You are Sehat Saathi — neutral, warm, genderless. Never call yourself "Dadi", "Maa", or any age/gender role. Never use "beta" or "bachha". Address the user as "aap" or by their name if known.
+
+NO RE-INTRODUCTION — STRICT: Introduce yourself only on the very first message. Never re-greet or restate "main Sehat Saathi hoon" on follow-up turns. When the user names a topic, respond to it directly.
 
 LANGUAGE: Detect the user's language. For Hindi replies (LANG:hi), write the reply body in DEVANAGARI script — not Roman Hinglish. Common English terms (BP, sugar, doctor, step, minute) may stay in Latin. For Bengali replies (LANG:bn), write in NATIVE BENGALI SCRIPT (বাংলা / Unicode Bengali) — do NOT use Roman/Latin transliteration. Common English terms Bengalis say in English (BP, sugar, doctor, report) may remain Latin where natural. For English replies (LANG:en), plain English. Natural Hindi phrases in Devanagari: "आप कैसा feel कर रहे हैं", "हाँ", "बिल्कुल", "आराम से", "ख्याल रखना", "आपके साथ हूँ".
 
@@ -9049,11 +9071,15 @@ TONE — WARM SAATHI (NEVER preachy, NEVER cold):
 - NEVER use "bhai", "yaar", "buddy", "guys", "dude", "mate", "bro".
 - Speak like a caring, informed friend — gentle, direct, never aggressive.
 - Acknowledge modern context (gym, hostel, WFH, screen, lab, exam, college).
-- Open with warmth, not commands ("You should...").`;
+- Open with warmth, not commands ("You should...").
+
+CLARIFYING QUESTIONS — TAP-TO-ANSWER (mandatory):
+When you ask the user a clarifying question, end your reply with a separate final line: OPTIONS: <opt1> | <opt2> | ... (2–5 short tappable answers in the same language/script as your reply; last option always an escape like "कुछ और" / "Something else"). Only emit OPTIONS when asking a question — not when giving advice/tips. The OPTIONS line is machine-readable only; never say the word "OPTIONS" aloud.`;
 
   const COMMUNITY_BASE_PROMPT = `You are NOT an AI assistant. You are roleplaying as a fellow JioBharatIQ user — a real person sharing your own lived experience with health.
 
 CRITICAL RULES:
+- Introduce yourself ONLY on the very first message of the conversation. Never re-introduce or re-greet on follow-up turns.
 - You are a peer, NOT a doctor. Talk like a friend, not an expert.
 - Share your own story, struggles, and what HAS worked for you personally.
 - Use first-person ("main", "mera", "humne kiya"). Sound like a real WhatsApp neighbour.
@@ -9061,9 +9087,14 @@ CRITICAL RULES:
 - Keep replies under 4 sentences. Casual, warm, sometimes joke.
 - NEVER claim certainty. Use "shayad", "mere ghar mein", "doctor ne mujhe bola tha".
 
-LANGUAGE: Reply in user's language. For Hindi (LANG:hi), write the reply body in DEVANAGARI — not Roman Hinglish. Common English terms (BP, doctor, sugar) may stay Latin. For Bengali (LANG:bn), write in NATIVE BENGALI SCRIPT (বাংলা / Unicode Bengali) — do NOT use Roman/Latin transliteration. Common English terms Bengalis say in English (BP, sugar, doctor, report) may remain Latin where natural. Mix naturally where appropriate.`;
+LANGUAGE: Reply in user's language. For Hindi (LANG:hi), write the reply body in DEVANAGARI — not Roman Hinglish. Common English terms (BP, doctor, sugar) may stay Latin. For Bengali (LANG:bn), write in NATIVE BENGALI SCRIPT (বাংলা / Unicode Bengali) — do NOT use Roman/Latin transliteration. Common English terms Bengalis say in English (BP, sugar, doctor, report) may remain Latin where natural. Mix naturally where appropriate.
+
+CLARIFYING QUESTIONS — TAP-TO-ANSWER (mandatory):
+When you ask a clarifying question, end the reply with a separate final line: OPTIONS: <opt1> | <opt2> | ... (2–5 short tappable answers in the same language/script; last option always an escape like "कुछ और"). Only emit OPTIONS when asking — not when sharing your story. The OPTIONS line is machine-readable only; never say the word "OPTIONS" aloud.`;
 
   const TENSION_SYSTEM_PROMPT = `You are Sehat Saathi — Emotional Listening mode. The user just told you they are tense, low, or overwhelmed. Your job is to LISTEN, not to prescribe.
+
+NO RE-INTRODUCTION — STRICT: Introduce yourself only on the very first message. Never re-greet or restate "main Sehat Saathi hoon" on later turns. Jump straight into warm listening.
 
 CORE RULES:
 - DO NOT suggest food, drinks, or kitchen remedies as the first response. Don't mention haldi/ajwain/tulsi/etc unless the user specifically asks.
@@ -9075,9 +9106,13 @@ CORE RULES:
 
 LANGUAGE: Reply in user's language. For Hindi (LANG:hi), write the reply body in DEVANAGARI — not Roman Hinglish. Common English terms (BP, doctor) may stay Latin. For Bengali (LANG:bn), write in NATIVE BENGALI SCRIPT (বাংলা / Unicode Bengali) — do NOT use Roman/Latin transliteration. Common English terms Bengalis say in English (BP, sugar, doctor, report) may remain Latin where natural. Keep replies under 3 sentences. Tone is warm, patient, caring — like a trusted friend, not the doctor.
 
+CLARIFYING QUESTIONS — TAP-TO-ANSWER (mandatory):
+When you ask the user a gentle open-ended question, end the reply with a separate final line: OPTIONS: <opt1> | <opt2> | ... (2–5 short tappable answers in the same language/script; last option always an escape like "कुछ और" / "Something else"). Only emit OPTIONS when asking a question — not when you're purely listening/validating. The OPTIONS line is machine-readable only; never say the word "OPTIONS" aloud.
+
 OUTPUT FORMAT (strict):
 First line: LANG:<code>
-Second line onward: your warm response.`;
+Second line onward: your warm response.
+Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
 
   // v6.6: prepends a profile context block so Saathi knows the user's name +
   // age + chronic condition. Lets it greet with "Namaste Sunita" and adjust
@@ -13207,14 +13242,23 @@ Second line onward: your warm response.`;
 
   // ── WS1: Guided-triage CTA ──────────────────────────────────────────────
   // Keyword → FOCUS_FLOWS key map. Checked against the user's raw text.
+  // Maps common Hindi/Hinglish/Devanagari phrasings to FOCUS_FLOWS keys.
+  // Order matters: more specific patterns listed before broader ones.
   const GUIDED_CTA_MAP = [
-    { re: /sir|headache|migraine|matha|माथा|सिर\s*दर्द/i, key: "sir-dard" },
-    { re: /sardi|khansi|cough|cold|zukam|ज़ुकाम|सर्दी|खाँसी/i, key: "sardi-khansi" },
-    { re: /\bpet\b|acidity|gas|loose|dast|पेट|एसिडिटी|गैस/i, key: "pet" },
-    { re: /neend|sleep|नींद/i, key: "neend" },
-    { re: /bukhar|fever|बुखार/i, key: "bukhar" },
-    { re: /kamar|back\s*pain|कमर\s*दर्द|कमर/i, key: "kamar-dard" },
-    { re: /tension|stress|anxiety|ghabra|तनाव|घबरा/i, key: "tension" },
+    // sir dard / headache — must come before kamar/peeth to avoid false "dard" match
+    { re: /\bsir\s*dard\b|headache|migraine|matha|माथा|सिर\s*दर्द|सिरदर्द|माइग्रेन/i, key: "sir-dard" },
+    // sardi-khansi
+    { re: /sardi|khansi|cough|cold|zukam|nazla|ज़ुकाम|सर्दी|खाँसी|खांसी|नज़ला|जुकाम/i, key: "sardi-khansi" },
+    // pet / digestive
+    { re: /\bpet\b|acidity|gas|loose\s*motion|dast|kabz|ulti|उल्टी|पेट|एसिडिटी|गैस|कब्ज़|कब्ज|दस्त/i, key: "pet" },
+    // neend
+    { re: /neend|insomnia|sleep|jagta|जागता|नींद|नीँद|सोना|नहीं\s*सो/i, key: "neend" },
+    // bukhar
+    { re: /bukhar|fever|taap|ताप|बुखार|बुखर/i, key: "bukhar" },
+    // kamar dard / back pain — kamar, peeth, back (not body-ache which has no flow)
+    { re: /kamar|peeth|back\s*pain|कमर\s*दर्द|कमर|पीठ\s*दर्द|पीठ|कमरदर्द/i, key: "kamar-dard" },
+    // tension / anxiety / stress
+    { re: /tension|stress|anxiety|ghabra|chinta|takleef|fikar|pareshan|तनाव|घबरा|चिंता|बेचैनी|फ़िकर/i, key: "tension" },
   ];
 
   // Detects a symptom key from user text. Returns the FOCUS_FLOWS key or null.
@@ -13570,16 +13614,54 @@ Second line onward: your warm response.`;
           }
           reply = reply.replace(/^LANG:\s*[a-z]{2,3}\s*\n/i, "").trim();
         }
-        ST.chatHistory.push({ role: "assistant", content: reply });
+        // ── v8: Parse and strip trailing OPTIONS line ──────────────────────
+        // Tolerant match: case-insensitive, optional leading newline/spaces,
+        // captures everything after "OPTIONS:" on the last line of the reply.
+        const optionsMatch = reply.match(/\n?\s*OPTIONS:\s*(.+)\s*$/i);
+        let parsedOptions = [];
+        let cleanReply = reply;
+        if (optionsMatch) {
+          // Strip the OPTIONS line from the displayed / spoken text
+          cleanReply = reply.slice(0, optionsMatch.index).trim();
+          // Split on "|", trim each token, drop empties, cap at 5
+          parsedOptions = optionsMatch[1]
+            .split("|")
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .slice(0, 5);
+        }
+        // ── /v8 parse ───────────────────────────────────────────────────────
+
+        // Push clean reply (without OPTIONS line) into chat history so subsequent
+        // turns see natural conversation, not control syntax.
+        ST.chatHistory.push({ role: "assistant", content: cleanReply });
         hideThinking();
         const isFirst = ST.isFirstMsg;
         ST.isFirstMsg = false;
-        addMsg("bot", reply, isFirst);
-        speak(reply);
+        addMsg("bot", cleanReply, isFirst);
+        speak(cleanReply);
         // v6.2: append "Saathi ke saath karein" CTA if the reply matches a known experience
-        if (typeof maybeAppendRemedyCta === "function") maybeAppendRemedyCta(reply);
+        if (typeof maybeAppendRemedyCta === "function") maybeAppendRemedyCta(cleanReply);
         // WS1: guided triage CTA — fires on symptom turn, BEFORE remedy on first mention
         if (typeof maybeAppendGuidedCta === "function") maybeAppendGuidedCta(userText, document.getElementById("chat-msgs"));
+
+        // ── v8: Render tappable OPTIONS bubbles ─────────────────────────────
+        if (parsedOptions.length >= 2) {
+          // Flag: suppress the generic injectFollowups chips that addMsg schedules
+          // (mirrors the ST._guidedCtaActive pattern used by WS1 CTA suppression).
+          ST._optionsActive = true;
+          // addMsg schedules injectFollowups at +1100ms reading ST._guidedCtaActive;
+          // set that flag too so the existing suppression path also fires.
+          ST._guidedCtaActive = true;
+          addQuickReplies(parsedOptions, function (answerText) {
+            // User tapped an option — bubble it as their message and continue AI
+            addMsg("user", answerText, false);
+            ST._optionsActive = false;
+            callAI(answerText, getSystemPromptFor(ST.chatCtx));
+          });
+        }
+        // ── /v8 options bubbles ──────────────────────────────────────────────
+
         return; // success
       } catch (e) {
         lastErr = "🌐 " + p.url.split("/")[2] + " tak connection nahi bana";
@@ -13719,31 +13801,51 @@ Second line onward: your warm response.`;
   window.callVisionJSON = callVisionJSON;
 
   // ── Nushke flow ──
+  // Each entry: label = Roman (routing value + en display), labelHi = Devanagari
+  // display label, focusKey = FOCUS_FLOWS key if a guided flow exists (else null).
   const NUSHKE_CATS = [
-    "Sardi-Khansi",
-    "Pet ki Takleef",
-    "Sir Dard",
-    "Neend ki Dikkat",
-    "Badan Dard",
-    "Tension-Chinta",
-    "Bukhar",
-    "Skin Problem",
-    "Saans ki Dikkat",
-    "Dehydration",
+    { label: "Sardi-Khansi",    labelHi: "सर्दी-खाँसी",      focusKey: "sardi-khansi" },
+    { label: "Pet ki Takleef",  labelHi: "पेट की तकलीफ़",    focusKey: "pet" },
+    { label: "Sir Dard",        labelHi: "सिर दर्द",          focusKey: "sir-dard" },
+    { label: "Neend ki Dikkat", labelHi: "नींद की दिक्कत",   focusKey: "neend" },
+    { label: "Badan Dard",      labelHi: "बदन दर्द",          focusKey: null },
+    { label: "Tension-Chinta",  labelHi: "टेंशन/चिंता",      focusKey: "tension" },
+    { label: "Bukhar",          labelHi: "बुखार",             focusKey: "bukhar" },
+    { label: "Skin Problem",    labelHi: "स्किन प्रॉब्लम",   focusKey: null },
+    { label: "Saans ki Dikkat", labelHi: "साँस की दिक्कत",   focusKey: null },
+    { label: "Dehydration",     labelHi: "पानी की कमी",       focusKey: null },
   ];
 
   function renderNushkeStart() {
     const msgs = document.getElementById("chat-msgs");
     msgs.innerHTML = "";
-    addMsg(
-      "bot",
-      "Kaunsi takleef ke liye nushka chahiye? Neeche se choose karo ya khud likhein 👇",
-      false,
+    const bubble = (typeof locStr === "function")
+      ? locStr(
+          "Kaunsi takleef ke liye nushka chahiye? Neeche se choose karo ya khud likhein 👇",
+          "कौन सी तकलीफ़ के लिए नुस्ख़ा चाहिए? नीचे से चुनें या खुद लिखें 👇",
+        )
+      : "Kaunsi takleef ke liye nushka chahiye? Neeche se choose karo ya khud likhein 👇";
+    addMsg("bot", bubble, false);
+
+    // Build display labels — Devanagari in hi mode, Roman in en mode
+    const chipLabels = NUSHKE_CATS.map((c) =>
+      (typeof locStr === "function") ? locStr(c.label, c.labelHi) : c.label
     );
-    addQuickReplies(NUSHKE_CATS, (cat) => {
-      const clean = cat.replace(/^[^\s]+\s/, "");
-      addMsg("user", cat, false);
-      callAI(clean + " ke baare mein ghar ka nushka chahiye");
+
+    addQuickReplies(chipLabels, (displayLabel) => {
+      // Reverse-map display label → NUSHKE_CATS entry by matching either form
+      const entry = NUSHKE_CATS.find(
+        (c) => c.label === displayLabel || c.labelHi === displayLabel
+      );
+      const routingLabel = entry ? entry.label : displayLabel;
+      addMsg("user", displayLabel, false);
+      // If this symptom has a guided flow, launch it instead of plain LLM call
+      if (entry && entry.focusKey && typeof startFocus === "function" &&
+          typeof FOCUS_FLOWS !== "undefined" && FOCUS_FLOWS[entry.focusKey]) {
+        startFocus(entry.focusKey);
+      } else {
+        callAI(routingLabel + " ke baare mein ghar ka nushka chahiye");
+      }
     });
   }
 
@@ -23626,6 +23728,781 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
     window.addEventListener("load", _initPrototypes);
   }
 } // end __SS_LOADED__ guard
+  // ══════════════════════════════════════════════════════════════════════════
+  // 15-safety-contraindications.js — Remedy × Medical Condition Safety Gate
+  //
+  // WS1 core: curated SAFETY_TABLE mapping remedyKey -> { conditionLabel ->
+  // { severity, note } }, normaliser for freeform chronic strings, and
+  // checkRemedySafety() called by openRemedy (file 12) + openWalkthrough
+  // (file 07) before opening any remedy experience.
+  //
+  // Philosophy: CONSERVATIVE but not paranoid. "warn" = proceed with amber
+  // banner; "block" = clear contraindication, do not open, show modal.
+  // When unsure: warn + "doctor se poochein". Reserve block for textbook
+  // contraindications (e.g., arandi tel / castor oil in pregnancy).
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ── 1. Canonical condition labels ──
+  const CONDITION_LABELS = [
+    "Diabetes",
+    "BP High",
+    "Heart Problem",
+    "Thyroid",
+    "Arthritis",
+    "Asthma",
+    "Kidney Issue",
+    "Pregnancy",
+    "Liver Issue",
+    "Acidity/GERD",
+  ];
+
+  // ── 2. SAFETY_TABLE ──
+  // remedyKey -> { "Condition Label" -> { severity: "warn"|"block", note: "<Hindi/Hinglish>" } }
+  // Covers all 12 REMEDY_EXPERIENCES keys + most common REMEDY_KITS keys.
+  const SAFETY_TABLE = {
+
+    // ── REMEDY_EXPERIENCES keys ──────────────────────────────────────────────
+
+    "haldi-doodh": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Gud ya shahad mila ho to sugar badh sakti hai — diabetes mein plain ya stevia ke saath lein, doctor se poochein.",
+      },
+      "Thyroid": {
+        severity: "warn",
+        note: "Haldi thyroid medicines ka absorption prabhavit kar sakti hai — dawai lene ke 2 ghante baad lein.",
+      },
+      "Liver Issue": {
+        severity: "warn",
+        note: "Zyada haldi liver par load daal sakti hai — sirf chutki bhar matra mein lein, doctor se poochein.",
+      },
+    },
+
+    "adrak-chai": {
+      "Acidity/GERD": {
+        severity: "warn",
+        note: "Khali pet adrak wali chai acidity badha sakti hai — khaane ke baad lein ya kam matra mein lein.",
+      },
+      "BP High": {
+        severity: "warn",
+        note: "Zyada adrak blood pressure thoda aur badha sakta hai — 1-2 slice se zyada na lein, doctor se poochein.",
+      },
+      "Heart Problem": {
+        severity: "warn",
+        note: "Blood thinner dawai le rahe ho to adrak ka asar badh sakta hai — doctor se poochein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Adrak kidney par thoda extra kaam dalta hai — zyada na piyein, doctor se poochein.",
+      },
+    },
+
+    "jeera-paani": {
+      "Acidity/GERD": {
+        severity: "warn",
+        note: "Khali pet jeera paani GERD mein kabhi-kabhi jalan de sakta hai — thoda thanda karke lein.",
+      },
+      "Pregnancy": {
+        severity: "warn",
+        note: "Pregnancy mein jeera saadharan matra mein safe maana jaata hai, par zyada na lein — doctor se poochein.",
+      },
+      "Diabetes": {
+        severity: "warn",
+        note: "Jeera paani sugar kam kar sakta hai — agar dawai le rahe ho to doctor se poochein.",
+      },
+    },
+
+    "tulsi-kadha": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Tulsi blood sugar ka asar kar sakti hai — agar dawai chal rahi ho to doctor se poochein.",
+      },
+      "Pregnancy": {
+        severity: "warn",
+        note: "Tulsi ki zyada matra pregnancy mein safe nahi ho sakti — doctor se poochein.",
+      },
+      "Thyroid": {
+        severity: "warn",
+        note: "Tulsi thyroid function prabhavit kar sakti hai — doctor se poochein.",
+      },
+      "BP High": {
+        severity: "warn",
+        note: "Tulsi BP thoda kam kar sakti hai — agar BP ki dawai le rahe ho to doctor se poochein.",
+      },
+    },
+
+    "methi-paani": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Methi blood sugar kaafi kam kar sakti hai — dawai chal rahi ho to dose adjust ho sakta hai, doctor se poochein.",
+      },
+      "Pregnancy": {
+        severity: "block",
+        note: "Pregnancy mein methi ke daane safe nahi hain — contractions trigger kar sakte hain, bilkul mat lein.",
+      },
+      "Thyroid": {
+        severity: "warn",
+        note: "Methi thyroid medicines ka absorption rok sakti hai — dawai se 2 ghante ka antar rakhein.",
+      },
+      "Liver Issue": {
+        severity: "warn",
+        note: "Liver ki takleef ho to methi ka zyada sevan theek nahi — doctor se poochein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Kidney issue ho to methi ka zyada sevan na karein — doctor se poochein.",
+      },
+    },
+
+    "nimbu-shahad": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Shahad sugar badha sakta hai — diabetes mein shahad chhod ke sirf nimbu-paani lein, doctor se poochein.",
+      },
+      "Acidity/GERD": {
+        severity: "warn",
+        note: "Nimbu (citrus) khali pet GERD mein jalan de sakta hai — khaane ke baad ya thoda paani mila ke lein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Nimbu mein high oxalate hota hai jo kidney stones ka risk badha sakta hai — doctor se poochein.",
+      },
+    },
+
+    "dalchini-shahad": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Dalchini blood sugar kam kar sakti hai aur shahad sugar badha sakta hai — net asar uncertain, doctor se poochein.",
+      },
+      "Liver Issue": {
+        severity: "warn",
+        note: "Zyada dalchini liver enzymes badha sakti hai — thodi matra mein lein, doctor se poochein.",
+      },
+      "Pregnancy": {
+        severity: "warn",
+        note: "Pregnancy mein zyada dalchini uterus stimulate kar sakti hai — saadharan matra thik hai, par doctor se poochein.",
+      },
+      "BP High": {
+        severity: "warn",
+        note: "Dalchini BP medications ka asar badha sakti hai — doctor se poochein.",
+      },
+    },
+
+    "tulsi-shahad": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Shahad sugar badha sakta hai — diabetes mein kam matra mein lein ya chhodein, doctor se poochein.",
+      },
+      "Pregnancy": {
+        severity: "warn",
+        note: "Tulsi ki zyada matra pregnancy mein safe nahi ho sakti — doctor se poochein.",
+      },
+    },
+
+    "lasun-shahad": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Shahad sugar badha sakta hai — diabetes mein shahad ki jagah plain lasun lein, doctor se poochein.",
+      },
+      "BP High": {
+        severity: "warn",
+        note: "Lasun BP medications ke saath milke blood pressure zyada gira sakta hai — doctor se poochein.",
+      },
+      "Acidity/GERD": {
+        severity: "warn",
+        note: "Khali pet kaccha lasun GERD mein jalan de sakta hai — khaane ke saath lein.",
+      },
+      "Heart Problem": {
+        severity: "warn",
+        note: "Lasun blood thinner hai — agar heart ki dawai chal rahi ho to doctor se poochein.",
+      },
+      "Liver Issue": {
+        severity: "warn",
+        note: "Zyada lasun liver par asardar ho sakta hai — saadharan matra mein lein, doctor se poochein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Kidney issue ho to roz kaccha lasun na lein — doctor se poochein.",
+      },
+    },
+
+    "saunf-paani": {
+      "Pregnancy": {
+        severity: "warn",
+        note: "Saunf saadharan mein safe hai, par zyada matra pregnancy mein theek nahi — doctor se poochein.",
+      },
+      "Diabetes": {
+        severity: "warn",
+        note: "Saunf blood sugar prabhavit kar sakti hai — zyada na lein, doctor se poochein.",
+      },
+    },
+
+    "dhaniya-paani": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Dhaniya blood sugar kaafi thoda kam kar sakta hai — dawai chal rahi ho to doctor se poochein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Kidney issue mein dhaniya paani ki matra saadharan rakhein — doctor se poochein.",
+      },
+    },
+
+    "neem-haldi-paste": {
+      // Topical — lower systemic risk; warn only where absorption matters
+      "Pregnancy": {
+        severity: "warn",
+        note: "Neem ki zyada topical matra pregnancy mein avoid karein — doctor se poochein.",
+      },
+      "Liver Issue": {
+        severity: "warn",
+        note: "Neem internally na lein — sirf skin par lagaen; liver issue ho to doctor se poochein.",
+      },
+    },
+
+    // ── Common REMEDY_KITS keys (non-experience remedies) ──────────────────
+
+    "ajwain-bhaap": {
+      "Asthma": {
+        severity: "warn",
+        note: "Bhaap (steam) asthma mein airways zyada tight kar sakti hai — doctor ki salah se lein.",
+      },
+      "BP High": {
+        severity: "warn",
+        note: "Zyada bhaap BP badha sakti hai — 5 minute se zyada na lein.",
+      },
+    },
+
+    "mulethi-kadha": {
+      "BP High": {
+        severity: "warn",
+        note: "Mulethi (licorice) blood pressure badha sakti hai — BP patients saadharan matra mein hi lein, doctor se poochein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Mulethi kidney ke liye strenuous ho sakti hai — doctor se poochein.",
+      },
+      "Heart Problem": {
+        severity: "warn",
+        note: "Mulethi heart arrhythmia ka risk badha sakti hai — doctor se poochein.",
+      },
+      "Pregnancy": {
+        severity: "warn",
+        note: "Pregnancy mein mulethi ki zyada matra avoid karein — doctor se poochein.",
+      },
+      "Liver Issue": {
+        severity: "warn",
+        note: "Liver issue mein mulethi saadharan matra mein lein — doctor se poochein.",
+      },
+    },
+
+    "namak-gargle": {
+      "BP High": {
+        severity: "warn",
+        note: "Namak paani gargle karte waqt thoda namak andar ja sakta hai — BP high ho to doctor se poochein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Kidney disease mein extra sodium avoid karein — gargle ke baad paani andar mat lein.",
+      },
+    },
+
+    "anjeer-doodh": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Anjeer mein natural sugar zyada hai — diabetes mein ek se zyada na lein, doctor se poochein.",
+      },
+    },
+
+    "arandi-kabz": {
+      "Pregnancy": {
+        severity: "block",
+        note: "Pregnancy mein arandi tel (castor oil) bilkul mat lein — labour trigger kar sakta hai.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Arandi tel kidney par stress daal sakta hai — doctor se poochein.",
+      },
+      "Heart Problem": {
+        severity: "warn",
+        note: "Severe purgative — heart problem mein doctor se poochein pehle.",
+      },
+    },
+
+    "amla-murabba": {
+      "Acidity/GERD": {
+        severity: "warn",
+        note: "Amla khali pet acidity badha sakta hai — khaane ke baad lein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Amla mein oxalate hai jo kidney stones ka risk badha sakta hai — doctor se poochein.",
+      },
+    },
+
+    "palak-juice": {
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Palak mein oxalate zyada hai — kidney stones ka risk badha sakta hai, doctor se poochein.",
+      },
+      "Thyroid": {
+        severity: "warn",
+        note: "Palak jaise cruciferous/greens thyroid function prabhavit kar sakte hain — zyada roz na lein.",
+      },
+      "Arthritis": {
+        severity: "warn",
+        note: "Kuch arthritis types mein high-oxalate foods pain badha sakte hain — doctor se poochein.",
+      },
+    },
+
+    "neem-paani": {
+      "Pregnancy": {
+        severity: "warn",
+        note: "Neem internally pregnancy mein safe nahi — gargle ya skin use tak limit karein, doctor se poochein.",
+      },
+      "Liver Issue": {
+        severity: "warn",
+        note: "Neem ka internal sevan liver issue mein avoid karein — sirf baahri istemal karein.",
+      },
+    },
+
+    "shahad-adrak-paste": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Shahad sugar badha sakta hai — diabetes mein shahad chhod ke sirf adrak ras lein.",
+      },
+      "Acidity/GERD": {
+        severity: "warn",
+        note: "Adrak khali pet GERD mein jalan de sakta hai — khaane ke baad lein.",
+      },
+    },
+
+    "kali-mirch-doodh": {
+      "Acidity/GERD": {
+        severity: "warn",
+        note: "Kali mirch GERD mein jalan bada sakti hai — kam matra mein lein.",
+      },
+      "Diabetes": {
+        severity: "warn",
+        note: "Gud mila ho to sugar badh sakti hai — diabetes mein plain ya gud chhod ke lein, doctor se poochein.",
+      },
+    },
+
+    "methi-pisi-jod": {
+      "Pregnancy": {
+        severity: "block",
+        note: "Pregnancy mein methi paste bhi andar nahi jaani chahiye — skin se bhi kuch absorption ho sakta hai, doctor se poochein.",
+      },
+      "Thyroid": {
+        severity: "warn",
+        note: "Methi thyroid medicines ko prabhavit kar sakti hai — topical use mein risk kam hai, par doctor se poochein.",
+      },
+    },
+
+    "methi-dahi-mask": {
+      "Pregnancy": {
+        severity: "warn",
+        note: "Methi ka topical istemal pregnancy mein generally safe hai, par doctor se ek baar poochein.",
+      },
+    },
+
+    "ashwagandha-doodh": {
+      "Thyroid": {
+        severity: "warn",
+        note: "Ashwagandha thyroid hormones badha sakti hai — thyroid ki dawai chal rahi ho to doctor se poochein.",
+      },
+      "Pregnancy": {
+        severity: "block",
+        note: "Pregnancy mein ashwagandha nahi leni chahiye — miscarriage ka risk ho sakta hai.",
+      },
+      "Liver Issue": {
+        severity: "warn",
+        note: "Kuch cases mein ashwagandha liver enzymes prabhavit karta hai — doctor se poochein.",
+      },
+      "BP High": {
+        severity: "warn",
+        note: "Ashwagandha BP medications ka asar badha sakta hai — doctor se poochein.",
+      },
+    },
+
+    "brahmi-chai": {
+      "Thyroid": {
+        severity: "warn",
+        note: "Brahmi thyroid function prabhavit kar sakti hai — thyroid ki dawai ke saath lene se pehle doctor se poochein.",
+      },
+      "Pregnancy": {
+        severity: "warn",
+        note: "Pregnancy mein brahmi ki safety confirm nahi hai — doctor se poochein.",
+      },
+    },
+
+    "saunth-chai": {
+      "Acidity/GERD": {
+        severity: "warn",
+        note: "Saunth (dry ginger) GERD mein jalan bada sakti hai — khaane ke baad lein.",
+      },
+      "Diabetes": {
+        severity: "warn",
+        note: "Gud mila ho to sugar badh sakti hai — diabetes mein plain lein ya gud chhod dein.",
+      },
+      "BP High": {
+        severity: "warn",
+        note: "Zyada adrak/saunth BP medications se interact kar sakti hai — doctor se poochein.",
+      },
+    },
+
+    "elaichi-paani": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Shahad mila ho to sugar badh sakti hai — diabetes mein shahad chhod ke lein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Zyada elaichi kidney par extra kaam daal sakti hai — saadharan matra hi lein.",
+      },
+    },
+
+    "sarso-tel-malish": {
+      // External topical — minimal systemic
+      "Asthma": {
+        severity: "warn",
+        note: "Sarso tel ki strong smell asthma mein airways irritate kar sakti hai — acche se hawa aane wali jagah mein use karein.",
+      },
+    },
+
+    "haldi-doodh-jod": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Gud ya shahad mila ho to sugar badh sakti hai — diabetes mein plain ya chhoti matra mein lein.",
+      },
+      "Liver Issue": {
+        severity: "warn",
+        note: "Zyada haldi liver par load daal sakti hai — saadharan matra rakhein, doctor se poochein.",
+      },
+    },
+
+    "isabgol-doodh": {
+      "Diabetes": {
+        severity: "warn",
+        note: "Isabgol blood sugar aur medicines ka absorption prabhavit kar sakta hai — dawai se 2 ghante ka antar rakhein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Kidney issue ho to isabgol ke saath zyada paani zaroori hai — doctor se poochein.",
+      },
+    },
+
+    "ajwain-namak-chura": {
+      "BP High": {
+        severity: "warn",
+        note: "Kala namak mein sodium hai — BP high ho to bahut kam matra lein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Extra sodium kidney ke liye theek nahi — thodi matra mein hi lein.",
+      },
+    },
+
+    "kala-namak-nimbu": {
+      "BP High": {
+        severity: "warn",
+        note: "Namak BP badha sakta hai — BP patients sirf chutki bhar namak lein ya avoid karein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Namak aur nimbu (oxalate) kidney ke liye saadharan matra se zyada theek nahi.",
+      },
+      "Acidity/GERD": {
+        severity: "warn",
+        note: "Nimbu citrus GERD mein jalan de sakta hai — khaane ke baad ya thoda paani mila ke lein.",
+      },
+    },
+
+    "haldi-namak-garara": {
+      "BP High": {
+        severity: "warn",
+        note: "Gargle karte waqt thoda namak andar ja sakta hai — BP high ho to dhyan rakhein, andar mat lein.",
+      },
+      "Kidney Issue": {
+        severity: "warn",
+        note: "Extra sodium kidney ke liye theek nahi — gargle ke baad paani mat piyen, thuk dein.",
+      },
+    },
+
+    "eranda-tel-jod": {
+      "Pregnancy": {
+        severity: "block",
+        note: "Pregnancy mein eranda tel (castor oil) bilkul mat lein — topical bhi avoid karein, doctor se poochein.",
+      },
+    },
+
+    "jaiphal-doodh": {
+      "Pregnancy": {
+        severity: "warn",
+        note: "Zyada jaiphal pregnancy mein uterus stimulate kar sakta hai — sirf chutki bhar lein, doctor se poochein.",
+      },
+      "Liver Issue": {
+        severity: "warn",
+        note: "Zyada jaiphal liver toxic ho sakta hai — bas chutki bhar hi lein.",
+      },
+    },
+  };
+
+  // ── 3. _normalizeCondition(raw) ──
+  // Maps freeform chronic strings to canonical condition label(s).
+  // Returns array of matched canonical labels.
+  function _normalizeCondition(raw) {
+    if (!raw) return [];
+    const s = String(raw).toLowerCase();
+    const found = [];
+
+    // Diabetes / Sugar
+    if (/\b(diabet|sugar|madhumeha|type\s*[12]|t2dm|t1dm)\b/.test(s))
+      found.push("Diabetes");
+
+    // BP High
+    if (/\b(bp\s*high|high\s*bp|hypertension|blood\s*pressure|uchch\s*raktchap|bp\b|bpressure)\b/.test(s))
+      found.push("BP High");
+
+    // Heart
+    if (/\b(heart|cardiac|dil|angina|coronary|cad|hf|cad|myocard)\b/.test(s))
+      found.push("Heart Problem");
+
+    // Thyroid
+    if (/\b(thyroid|hypothyroid|hyperthyroid|tsh)\b/.test(s))
+      found.push("Thyroid");
+
+    // Arthritis
+    if (/\b(arthritis|rheumat|jod\s*dard|ghutna\s*dard|gout|jodo\s*ki\s*bimari)\b/.test(s))
+      found.push("Arthritis");
+
+    // Asthma
+    if (/\b(asthma|dama|bronchial|breathl?ess|saans\s*phool)\b/.test(s))
+      found.push("Asthma");
+
+    // Kidney
+    if (/\b(kidney|gurd[ae]|renal|kidney\s*stone|creatinine|ckd|nephr)\b/.test(s))
+      found.push("Kidney Issue");
+
+    // Pregnancy
+    if (/\b(pregn|garbhawati|garbhvati|expecting|prenatal|trimester|pregnant)\b/.test(s))
+      found.push("Pregnancy");
+
+    // Liver
+    if (/\b(liver|jigar|hepat|cirrhosis|fatty\s*liver|jaundice|piliya)\b/.test(s))
+      found.push("Liver Issue");
+
+    // Acidity / GERD
+    if (/\b(acidity|gerd|acid\s*reflux|jalan|ulcer|gastric|ibs|pet\s*ki\s*jalan|heartburn)\b/.test(s))
+      found.push("Acidity/GERD");
+
+    return found;
+  }
+
+  // ── 4. checkRemedySafety(remedyKey) ──
+  // Reads user's chronic condition(s) from profile, normalises them,
+  // looks up SAFETY_TABLE, and returns:
+  //   { level: "ok"|"warn"|"block", hits: [{condition, severity, note}] }
+  // "block" beats "warn" — highest severity wins for level.
+  // If no profile/condition or no table entry → { level:"ok", hits:[] }.
+  function checkRemedySafety(remedyKey) {
+    const noRisk = { level: "ok", hits: [] };
+    try {
+      const p =
+        (typeof ST !== "undefined" && ST.userProfile) ||
+        (typeof loadProfile === "function" && loadProfile());
+      if (!p) return noRisk;
+      const chronicRaw = p.chronic || "";
+      if (!chronicRaw) return noRisk;
+
+      const conditions = _normalizeCondition(chronicRaw);
+      if (!conditions.length) return noRisk;
+
+      const tableEntry = SAFETY_TABLE[remedyKey];
+      if (!tableEntry) return noRisk;
+
+      const hits = [];
+      for (const cond of conditions) {
+        if (tableEntry[cond]) {
+          hits.push({ condition: cond, ...tableEntry[cond] });
+        }
+      }
+      if (!hits.length) return noRisk;
+
+      const level = hits.some((h) => h.severity === "block") ? "block" : "warn";
+      return { level, hits };
+    } catch (e) {
+      console.warn("[safety] checkRemedySafety error:", e);
+      return noRisk;
+    }
+  }
+
+  // ── 5. showSafetyModal(hits) ──
+  // Shows a red (block) or amber (warn) modal with the safety note(s)
+  // and a "Doctor se baat karein" CTA.
+  // Called from openRemedy (file 12) and openWalkthrough (file 07).
+  function showSafetyModal(hits, level) {
+    if (!hits || !hits.length) return;
+    const isBlock = level === "block";
+
+    // Build note list
+    const noteLines = hits
+      .map(
+        (h) =>
+          '<div class="safety-modal-note">' +
+          '<span class="safety-modal-cond">' +
+          h.condition +
+          ":</span> " +
+          h.note +
+          "</div>",
+      )
+      .join("");
+
+    // Create or reuse overlay
+    let overlay = document.getElementById("safety-modal-overlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "safety-modal-overlay";
+      overlay.setAttribute("role", "alertdialog");
+      overlay.setAttribute("aria-modal", "true");
+      overlay.style.cssText =
+        "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;" +
+        "background:rgba(0,0,0,.55);";
+      document.body.appendChild(overlay);
+    }
+
+    const accentColor = isBlock ? "#dc2626" : "#d97706";
+    const headingText = isBlock
+      ? "Yeh nushka aapke liye safe nahi ho sakta"
+      : "Savdhani: Doctor se poochein";
+    const subText = isBlock
+      ? "Aapki sehat ki wajah se yeh nushka abhi band hai."
+      : "Aap yeh nushka istemal kar sakte hain — par pehle doctor se ek baar poochein.";
+
+    overlay.innerHTML =
+      '<div class="safety-modal" style="background:#1e293b;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5);border-top:4px solid ' +
+      accentColor +
+      ';">' +
+      '<div style="font-size:28px;margin-bottom:8px;">' +
+      (isBlock ? "🚫" : "⚠️") +
+      "</div>" +
+      '<div style="font-size:17px;font-weight:700;color:' +
+      accentColor +
+      ';margin-bottom:6px;">' +
+      headingText +
+      "</div>" +
+      '<div style="font-size:13px;color:#94a3b8;margin-bottom:12px;">' +
+      subText +
+      "</div>" +
+      '<div style="font-size:13px;color:#e2e8f0;line-height:1.6;margin-bottom:16px;">' +
+      noteLines +
+      "</div>" +
+      '<button onclick="if(typeof openDoctor===\'function\')openDoctor();document.getElementById(\'safety-modal-overlay\').style.display=\'none\';" ' +
+      'style="width:100%;padding:12px;background:' +
+      accentColor +
+      ";border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;\">" +
+      "Doctor se baat karein" +
+      "</button>" +
+      '<button onclick="document.getElementById(\'safety-modal-overlay\').style.display=\'none\';" ' +
+      'style="width:100%;padding:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#94a3b8;font-size:14px;cursor:pointer;">' +
+      "Band karein" +
+      "</button>" +
+      "</div>";
+
+    overlay.style.display = "flex";
+
+    // Close on backdrop click
+    overlay.onclick = function (e) {
+      if (e.target === overlay) overlay.style.display = "none";
+    };
+  }
+
+  // Expose for gate callers in files 12 and 07
+  window.checkRemedySafety = checkRemedySafety;
+  window._normalizeCondition = _normalizeCondition;
+  window.showSafetyModal = showSafetyModal;
+  // ══════════════════════════════════════════════════════════════════════════
+  // 16-media-manifest.js — WS2: Hosted-media manifest for remedy walkthroughs
+  //
+  // Provides a central lookup table (REMEDY_MEDIA) mapping remedyKey → Lottie
+  // and/or video assets hosted under /assets/remedies/ (GitHub Pages) or an
+  // override path from window.__SS_CONFIG__.mediaBase.
+  //
+  // Safe no-op today: REMEDY_MEDIA is empty. renderStepAnim in file 13 already
+  // cascades Lottie URL → SVG → emoji, so absent assets change nothing at all.
+  //
+  // Schema:
+  //   REMEDY_MEDIA[remedyKey] = {
+  //     lottie?: "filename.json",          // experience-level default
+  //     video?: "filename.mp4",            // experience-level default
+  //     steps?: {                           // per-step overrides (index 0-based)
+  //       [stepIdx]: { lottie?: "...", video?: "..." }
+  //     }
+  //   }
+  //
+  // API:
+  //   mediaUrl(file)                 → absolute-or-relative URL
+  //   remedyMediaFor(remedyKey, idx) → { lottieUrl, videoUrl } | null
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // — Base path. Relative so it works on both localhost:3004 and GitHub Pages.
+  //   Override via window.__SS_CONFIG__.mediaBase before the runtime loads.
+  const MEDIA_BASE =
+    (window.__SS_CONFIG__ && window.__SS_CONFIG__.mediaBase) || "assets/remedies/";
+
+  // — Asset map. Empty for WS2 (no assets hosted yet). Commented examples below
+  //   show both whole-experience and per-step shapes for when assets land.
+  const REMEDY_MEDIA = {
+    // ── Uncomment and fill as assets are uploaded to /assets/remedies/ ───────
+    //
+    // Whole-experience Lottie (plays for every step unless overridden):
+    // "haldi-doodh": { lottie: "haldi-doodh.json" },
+    //
+    // Per-step video override on step 0 only:
+    // "adrak-chai": { steps: { 0: { video: "adrak-chai-step1.mp4" } } },
+    //
+    // Both levels together (experience default + step 2 override):
+    // "tulsi-kadha": {
+    //   lottie: "tulsi-kadha.json",
+    //   steps: { 2: { lottie: "tulsi-kadha-finish.json" } }
+    // },
+    // ─────────────────────────────────────────────────────────────────────────
+  };
+
+  // — mediaUrl(file) — prepend MEDIA_BASE; pass through absolute http(s) URLs.
+  function mediaUrl(file) {
+    if (!file || typeof file !== "string") return "";
+    if (/^https?:\/\//i.test(file)) return file;
+    return MEDIA_BASE + file;
+  }
+
+  // — remedyMediaFor(remedyKey, stepIdx) — resolves media for a given step.
+  //   Step-level overrides experience-level. Returns null when nothing mapped
+  //   (the no-op case — renderStepAnim will fall through to SVG/emoji).
+  function remedyMediaFor(remedyKey, stepIdx) {
+    const entry = REMEDY_MEDIA[remedyKey];
+    if (!entry) return null;
+
+    // Merge experience-level defaults with per-step overrides.
+    const base = { lottie: entry.lottie || null, video: entry.video || null };
+    const stepOverride =
+      entry.steps && entry.steps[stepIdx] != null ? entry.steps[stepIdx] : {};
+
+    const lottie = stepOverride.lottie !== undefined ? stepOverride.lottie : base.lottie;
+    const video = stepOverride.video !== undefined ? stepOverride.video : base.video;
+
+    // Nothing mapped at either level — return null so callers skip gracefully.
+    if (!lottie && !video) return null;
+
+    return {
+      lottieUrl: lottie ? mediaUrl(lottie) : null,
+      videoUrl: video ? mediaUrl(video) : null,
+    };
+  }
+
+  // Expose on window so the GitHub-demo standalone page can also call these.
+  window.mediaUrl = mediaUrl;
+  window.remedyMediaFor = remedyMediaFor;
   // ══════════════════════════════════════════════════════════════════════════
   // 15-safety-contraindications.js — Remedy × Medical Condition Safety Gate
   //
