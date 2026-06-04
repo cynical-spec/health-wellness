@@ -9591,9 +9591,10 @@ CRITICAL — DO NOT RUSH TO REMEDIES:
 - Vary remedies — don't always say ajwain or haldi. Match the right ingredient to the right complaint.
 
 COMFORT + GUIDED ILAJ (v6.8 — WS1):
-- When a user names a symptom for the FIRST TIME in a conversation, acknowledge it warmly in ONE line ("Samajh aaya — yeh thodi takleef ki baat hai.") and then invite the guided step-by-step: "Ek guided ilaj shuru karein? Saathi sawal puchega aur sahi raasta dikhayega." Do NOT dump a full remedy on the first symptom mention.
+- When a user names a symptom for the FIRST TIME in a conversation, acknowledge it warmly in ONE line ("Samajh aaya — yeh thodi takleef ki baat hai.") and then invite the guided step-by-step: "Ek guided ilaj shuru karein? Saathi sawal puchegi aur sahi raasta dikhayegi." Do NOT dump a full remedy on the first symptom mention.
 - The app will automatically surface a "Guided ilaj shuru karein" chip below your reply — so you do NOT need to repeat a CTA if you have already offered one in prose.
 - Only after the user declines guided ilaj, or after 2 turns of clarification, give a direct remedy suggestion.
+- TEXT CHAT ONLY: This "guided ilaj" invitation and the chip are for TEXT chat ONLY. In a VOICE/spoken conversation, NEVER say "guided ilaj" or mention chips/buttons — just naturally ask ONE short clarifying question out loud (kab se, kahaan dard hai, kya aur takleef hai) and converse warmly.
 
 SERIOUS EMERGENCY (escalate immediately, NO remedy, NO question):
 Chest pain, breathing trouble, infant <3 months with fever, seizure, sudden worst-ever headache, vomiting blood, loss of consciousness, sudden face droop or arm weakness. Tell them warmly but firmly: doctor ke paas turant jao, der mat karo.
@@ -14484,7 +14485,19 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
     // context and mis-routes Bengali to the Hindi voice). Pin it so TTS voice
     // selection is correct regardless of the model, and instruct the model to
     // reply in that language with the right LANG: prefix.
+    // v6.9: detect voice overlay — spoken conversation needs different AI behaviour
+    const _voiceOv = document.getElementById("voice-ov");
+    const voiceModeActive = !!(_voiceOv && _voiceOv.classList.contains("on"));
+
     let _sysContent = systemOverride || SYSTEM_PROMPT;
+
+    // Inject a compact VOICE directive so the model skips visual affordances
+    // and converses naturally. Kept short to minimise token overhead.
+    if (voiceModeActive) {
+      _sysContent +=
+        "\n\nVOICE MODE: This is a spoken phone-like conversation. Do NOT mention 'guided ilaj', chips, buttons, or 'tap'. Naturally ask ONE short clarifying question at a time (kab se, kahaan, kya aur takleef hai) and reply warmly in 1-2 short spoken sentences. No lists.";
+    }
+
     const _inLang =
       typeof detectLang === "function"
         ? detectLang(userText)
@@ -14647,8 +14660,10 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
         // Unified deterministic triage: when a known symptom is detected, launch
         // the bubble-triage and SUPPRESS LLM OPTIONS for that turn.
         // Returns true if triage was launched — in that case options are irrelevant.
+        // v6.9: skip entirely in VOICE mode — tap affordances are meaningless there;
+        // the model already asks a spoken clarifying question via the VOICE directive.
         const _triagedThisTurn =
-          typeof maybeAppendGuidedCta === "function"
+          !voiceModeActive && typeof maybeAppendGuidedCta === "function"
             ? maybeAppendGuidedCta(userText, document.getElementById("chat-msgs"))
             : false;
 
@@ -19506,10 +19521,23 @@ const BREATH_PHASES = [
         }
         // v6.9: release processing lock AFTER TTS has fully ended.
         _convProcessing = false;
-        // After reply finishes, resume listening
+        // half-duplex guard: wait an additional 600ms after _convProcessing is
+        // cleared before re-opening the mic/sidecar. Layered timing:
+        //   _markTtsDone → 700ms grace → _isSpeaking=false
+        //   convListenOnce polls every 250ms after that (so first open is ~750ms
+        //   after last audio sample). This 600ms delay sits on top of that and
+        //   adds a speaker-tail / acoustic-echo absorption window, preventing
+        //   the reverb of Saathi's last word from being captured as the next user
+        //   utterance.  Total worst-case dead time: ~1350ms — imperceptible for
+        //   a conversational turn but airtight against echo capture.
+        // State pill stays "speaking" (set earlier) until we actually go to
+        // "listening" so the user sees the correct state during the gap.
         if (_convActive) {
-          setVoiceState("listening");
-          _convResumeTimer = setTimeout(convListenOnce, 350);
+          _convResumeTimer = setTimeout(() => {
+            if (!_convActive) return;
+            setVoiceState("listening");
+            _convResumeTimer = setTimeout(convListenOnce, 200);
+          }, 600);
         }
       };
 
@@ -19580,10 +19608,15 @@ const BREATH_PHASES = [
       // Sarvam remains the authoritative STT engine. Wrapped in try/catch so
       // any unsupported browser (older iOS WebViews, Firefox without the API)
       // silently falls back to the current behaviour with zero errors.
+      // half-duplex re-arm guard: do NOT start the sidecar if Saathi is still
+      // speaking or a processing turn is in flight. convListenOnce already gates
+      // at the top, but this inner check protects against a race where the gate
+      // was passed and _isSpeaking became true between the gate check and here
+      // (e.g. a concurrent speak() call from another code path).
       try {
         const SpeechRecognitionAPI =
           window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognitionAPI) {
+        if (SpeechRecognitionAPI && !_isSpeaking && !_convProcessing) {
           const recogLang =
             _RECOGNITION_LANG_MAP[ST.currentLanguage] || "hi-IN";
           const recog = new SpeechRecognitionAPI();
@@ -19748,10 +19781,14 @@ const BREATH_PHASES = [
         }
       }, 7000);
     });
-    // Now resume listening for the user's yes/no
+    // Now resume listening for the user's yes/no — same half-duplex guard as
+    // the main loop: 600ms delay before switching pill + re-arming the mic.
     if (_convActive) {
-      setVoiceState("listening");
-      _convResumeTimer = setTimeout(convListenOnce, 350);
+      _convResumeTimer = setTimeout(() => {
+        if (!_convActive) return;
+        setVoiceState("listening");
+        _convResumeTimer = setTimeout(convListenOnce, 200);
+      }, 600);
     }
   }
 
@@ -20360,7 +20397,28 @@ const BREATH_PHASES = [
     _speakSafetyTimer = null;
     setTimeout(() => { _isSpeaking = false; }, 700);
   }
+  // half-duplex: kill the webkitSpeechRecognition sidecar the moment TTS starts
+  // so it can't transcribe Saathi's own spoken reply. Called at every TTS start site.
+  function _killSidecarForTts() {
+    try {
+      if (_convRecognition) {
+        _convRecognition.onresult = null;
+        _convRecognition.onerror = null;
+        _convRecognition.onend = null;
+        _convRecognition.abort();
+        _convRecognition = null;
+      }
+    } catch (e) {}
+    // Also remove any interim live-transcript node that may have been left behind
+    try {
+      const interimNode = document.querySelector("#voice-transcript-area .voice-line.interim");
+      if (interimNode) interimNode.remove();
+    } catch (e) {}
+  }
   function _markTtsStart(audioEl) {
+    // Kill sidecar FIRST — before setting _isSpeaking — so there is zero window
+    // during which the sidecar is alive and _isSpeaking is already true.
+    _killSidecarForTts();
     _isSpeaking = true;
     // Safety net: if nothing ever fires ended/error/abort (silent 429, broken
     // blob URL, etc.) force-clear after 35 s so the mic is never locked forever.
@@ -20524,6 +20582,11 @@ const BREATH_PHASES = [
 
   async function speakElevenLabs(text, opts) {
     if (_elevenLabsBlocked && !USE_WORKER) return false;
+    // half-duplex: kill the recognition sidecar immediately when TTS is about to
+    // start, even before the first fetch completes.  _markTtsStart (called inside
+    // _playChunk) also calls _killSidecarForTts but that fires later after audio
+    // loads; this call closes the gap between "TTS fetch starts" and "audio plays".
+    _killSidecarForTts();
     // v6.7.9: v6.7.8 hybrid (Sarvam for non-Hindi) reverted.
     //   Reason: Sarvam Bulbul's "manisha" speaker is Hindi-trained; when
     //   asked to render Bengali phonemes via cross-language mapping it
@@ -20888,6 +20951,9 @@ const BREATH_PHASES = [
       ) {
         speakText = await transliterateToDevanagari(text, targetLangCode);
       }
+      // half-duplex: kill sidecar before Sarvam TTS fetch so it can't transcribe
+      // the tail of any previous recording or the upcoming TTS audio.
+      _killSidecarForTts();
       const speaker = _validSarvamSpeaker();
       const _t0 = performance.now();
       // v5.5.4: log the actual target language so users can verify routing.
