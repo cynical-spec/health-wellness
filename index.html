@@ -19521,23 +19521,25 @@ const BREATH_PHASES = [
         }
         // v6.9: release processing lock AFTER TTS has fully ended.
         _convProcessing = false;
-        // half-duplex guard: wait an additional 600ms after _convProcessing is
-        // cleared before re-opening the mic/sidecar. Layered timing:
-        //   _markTtsDone → 700ms grace → _isSpeaking=false
-        //   convListenOnce polls every 250ms after that (so first open is ~750ms
-        //   after last audio sample). This 600ms delay sits on top of that and
-        //   adds a speaker-tail / acoustic-echo absorption window, preventing
-        //   the reverb of Saathi's last word from being captured as the next user
-        //   utterance.  Total worst-case dead time: ~1350ms — imperceptible for
-        //   a conversational turn but airtight against echo capture.
-        // State pill stays "speaking" (set earlier) until we actually go to
-        // "listening" so the user sees the correct state during the gap.
+        // v7.0: TARGET ~250ms total dead time after TTS ends.
+        // Echo is already prevented by _killSidecarForTts() + the mic+sidecar
+        // being fully closed DURING TTS playback. Only a short acoustic-tail
+        // window is needed here — not the old ~1.5s layered delay.
+        //
+        // Timing breakdown (v7.0):
+        //   _markTtsDone → 150ms grace → _isSpeaking=false
+        //   _convResumeTimer: 150ms → setVoiceState("listening") immediately
+        //   + 100ms → convListenOnce()
+        //   Total: ~250-300ms after last audio sample. Pill shows "Sun rahi
+        //   hoon" at ~150ms so the user sees the state flip before mic opens.
         if (_convActive) {
           _convResumeTimer = setTimeout(() => {
             if (!_convActive) return;
+            // Flip pill to listening IMMEDIATELY so user sees "Sun rahi hoon"
+            // before the mic actually opens (short 100ms gap below).
             setVoiceState("listening");
-            _convResumeTimer = setTimeout(convListenOnce, 200);
-          }, 600);
+            _convResumeTimer = setTimeout(convListenOnce, 100);
+          }, 150);
         }
       };
 
@@ -19555,7 +19557,7 @@ const BREATH_PHASES = [
         let aboveThreshFrames = 0; // v5.5: consecutive loud frames before flipping speechSeen
         const SILENCE_THRESHOLD = 18; // v5.5: raised 14→18 — less sensitive to ambient hum (fans, traffic, AC)
         const SPEECH_CONFIRM_FRAMES = 3; // v5.5: need 3 frames (~300ms) above threshold to count as speech (filters single-frame spikes / room noise pops)
-        const SILENCE_HANG_MS = 1500; // 1.5s of silence after speech → stop
+        const SILENCE_HANG_MS = 1100; // v7.0: reduced 1500ms→1100ms — snappier auto-send after speech stops
         const MAX_RECORD_MS = 25000; // hard cap 25s
         const NO_SPEECH_TIMEOUT = 6000; // stop if no speech detected at all in 6s
         const tick = () => {
@@ -19781,14 +19783,14 @@ const BREATH_PHASES = [
         }
       }, 7000);
     });
-    // Now resume listening for the user's yes/no — same half-duplex guard as
-    // the main loop: 600ms delay before switching pill + re-arming the mic.
+    // Now resume listening for the user's yes/no — v7.0: same 150ms+100ms
+    // timing as the main loop so the confirmation prompt feels equally snappy.
     if (_convActive) {
       _convResumeTimer = setTimeout(() => {
         if (!_convActive) return;
         setVoiceState("listening");
-        _convResumeTimer = setTimeout(convListenOnce, 200);
-      }, 600);
+        _convResumeTimer = setTimeout(convListenOnce, 100);
+      }, 150);
     }
   }
 
@@ -20438,7 +20440,10 @@ const BREATH_PHASES = [
   function _markTtsDone() {
     clearTimeout(_speakSafetyTimer);
     _speakSafetyTimer = null;
-    setTimeout(() => { _isSpeaking = false; }, 700);
+    // v7.0: reduced grace 700ms→150ms. Echo is already prevented by the sidecar-
+    // kill (_killSidecarForTts) and the mic being fully closed DURING TTS. A long
+    // post-playback grace only adds dead time without extra protection.
+    setTimeout(() => { _isSpeaking = false; }, 150);
   }
   // half-duplex: kill the webkitSpeechRecognition sidecar the moment TTS starts
   // so it can't transcribe Saathi's own spoken reply. Called at every TTS start site.
