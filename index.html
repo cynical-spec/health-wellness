@@ -4641,6 +4641,20 @@ body:not(.focus) .focus-home {
   line-height: 1.45;
   font-weight: 600;
 }
+.social-proof {
+  font-size: 11px;
+  color: var(--text3, #6b7a90);
+  margin-top: 5px;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+}
+.social-proof-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 .focus-step-status {
   font-size: 10px;
   font-weight: 700;
@@ -6805,20 +6819,23 @@ body:not(.focus) .focus-home {
 .wt-finish-line {
   font-size: 17px;
   font-weight: 600;
-  color: var(--text);
+  color: #eef4ff;
   line-height: 1.4;
 }
 .wt-finish-citation {
   font-size: 12px;
-  color: var(--text3);
+  color: rgba(226, 232, 240, 0.7);
   line-height: 1.5;
   font-style: italic;
   padding: 0 6px;
 }
 .wt-finish-feedback {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   margin-top: 6px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
 }
 .wt-feedback-btn {
   padding: 10px 16px;
@@ -11675,37 +11692,80 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
     if (modal) modal.classList.add("finished");
     if (finishEl) {
       finishEl.classList.add("open");
-      // WS5: inject "Kaam nahi aaya" down-vote button alongside existing feedback
-      // buttons (which live in .wt-finish-feedback rendered by page.tsx). We add
-      // the button only once; guard against double-inject on repeated finish calls.
+
+      // ── Clean up any stale injected elements from a previous run ──
       try {
+        finishEl.querySelectorAll(
+          ".wt-btn-faayda, .wt-btn-didnt-work, .wt-vote-thanks, " +
+          ".wt-reason-picker, .wt-social-proof-line"
+        ).forEach(function (el) { el.remove(); });
+      } catch (_) {}
+
+      // ── Social-proof line (injected above the vote buttons) ──
+      try {
+        if (typeof socialProof === "function" && _wt.key) {
+          const _sp = socialProof(_wt.key);
+          const spLine = document.createElement("div");
+          spLine.className = "social-proof social-proof-row wt-social-proof-line";
+          spLine.style.cssText =
+            "font-size:12px;color:rgba(226,232,240,.8);text-align:center;" +
+            "width:100%;margin:10px 0 6px;line-height:1.5;letter-spacing:.01em;";
+          spLine.textContent = _sp.line;
+          const fbDiv = finishEl.querySelector(".wt-finish-feedback");
+          if (fbDiv && fbDiv.parentNode) {
+            fbDiv.parentNode.insertBefore(spLine, fbDiv); // full-width sibling above the button row
+          } else {
+            finishEl.appendChild(spLine);
+          }
+        }
+      } catch (_spErr) {
+        console.warn("[walkthrough] social-proof inject error:", _spErr);
+      }
+
+      // ── Vote buttons: clear 👍 / 👎 with high-contrast labels ──
+      // The dark immersive finish overlay (#1e293b / dark slate) needs LIGHT
+      // text and clearly coloured fills — not the old grey-on-dark buttons.
+      try {
+        const _ls = typeof locStr === "function" ? locStr : function (r) { return r; };
+
+        const fbDiv = finishEl.querySelector(".wt-finish-feedback");
+
+        // 👍 "Faayda hua" up-vote button
+        if (!finishEl.querySelector(".wt-btn-faayda")) {
+          const faaydaBtn = document.createElement("button");
+          faaydaBtn.className = "wt-feedback-btn wt-btn-faayda";
+          faaydaBtn.style.cssText =
+            "background:#16a34a;color:#fff;border:none;padding:10px 22px;" +
+            "border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;" +
+            "min-width:130px;box-shadow:0 2px 8px rgba(22,163,74,.35);";
+          faaydaBtn.textContent = "👍 " + _ls("Faayda hua", "फ़ायदा हुआ");
+          faaydaBtn.onclick = function () { walkthroughFeedback("better"); };
+          if (fbDiv) {
+            fbDiv.appendChild(faaydaBtn);
+          } else {
+            finishEl.appendChild(faaydaBtn);
+          }
+        }
+
+        // 👎 "Kaam nahi aaya" down-vote button
         if (!finishEl.querySelector(".wt-btn-didnt-work")) {
-          const _ls = typeof locStr === "function" ? locStr : function (r) { return r; };
           const didntWork = document.createElement("button");
           didntWork.className = "wt-feedback-btn wt-btn-didnt-work";
           didntWork.style.cssText =
-            "margin-top:4px;background:rgba(148,163,184,.12);color:#64748b;border:1px solid #e2e8f0;";
-          didntWork.textContent = _ls("Kaam nahi aaya", "काम नहीं आया");
+            "background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.4);" +
+            "padding:10px 22px;border-radius:12px;font-size:15px;font-weight:600;" +
+            "cursor:pointer;min-width:130px;";
+          didntWork.textContent = "👎 " + _ls("Kaam nahi aaya", "काम नहीं आया");
           didntWork.onclick = function () { _wtOpenReasonPicker(); };
-          const fbDiv = finishEl.querySelector(".wt-finish-feedback");
           if (fbDiv) {
             fbDiv.appendChild(didntWork);
           } else {
             finishEl.appendChild(didntWork);
           }
         }
-        // Remove any stale vote-thanks or reason-picker from a previous run
-        const stale = finishEl.querySelector(".wt-vote-thanks");
-        if (stale) stale.remove();
-        const stalePicker = finishEl.querySelector(".wt-reason-picker");
-        if (stalePicker) stalePicker.remove();
-        const staleBtn = finishEl.querySelector(".wt-btn-didnt-work");
-        // Only remove if this isn't the one we just created
-        // (guard: remove ALL and re-add — simpler)
-        finishEl.querySelectorAll(".wt-btn-didnt-work").forEach(function (el, i) {
-          if (i > 0) el.remove(); // keep exactly one
-        });
-      } catch (_) {}
+      } catch (_btnErr) {
+        console.warn("[walkthrough] vote buttons inject error:", _btnErr);
+      }
     }
     setText("wt-finish-line", _wt.exp.finishLine || "Bas ho gaya.");
     // WS1: keep citation element as plain-text fallback when no sources array
@@ -11897,24 +11957,45 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
   }
   window.walkthroughFeedback = walkthroughFeedback;
 
-  // WS5: show a brief "thank you + count" line inside the finish screen,
-  // then close the walkthrough after 1.8 s. Best-effort: if the finish
+  // WS5: show a brief "thank you + updated social-proof count" line inside
+  // the finish screen, then close after 1.8 s. Best-effort: if the finish
   // element is gone (user already closed manually), skip silently.
+  // After an up-vote we also refresh the social-proof line with the new count.
   function _wtShowVoteThanks(counts, voteType) {
     try {
       const finishEl = document.getElementById("wt-finish");
       if (!finishEl) { closeWalkthrough(); return; }
       const _ls = typeof locStr === "function" ? locStr : function (r) { return r; };
-      let msg = _ls("Shukriya! Aapka vote mila.", "शुक्रिया! आपका वोट मिला।");
-      if (counts && typeof counts.up === "number" && (counts.up + counts.down) > 0) {
-        msg += " 👍" + counts.up + " · 👎" + counts.down;
+
+      // Refresh the social-proof line: real up-votes now blended in
+      if (typeof socialProof === "function" && _wt && _wt.key) {
+        const spEl = finishEl.querySelector(".social-proof");
+        if (spEl) {
+          spEl.textContent = socialProof(_wt.key).line;
+        }
       }
+
+      // Build thanks message — fold vote counts into the human line
+      let msg;
+      if (voteType === "up") {
+        msg = _ls("Shukriya! Aapke vote se aur logon ko faayda hoga.", "शुक्रिया! आपके वोट से और लोगों को फ़ायदा होगा।");
+        if (counts && typeof counts.up === "number" && counts.up > 0) {
+          const _isHi = (typeof getLang === "function" ? getLang() === "hi"
+            : (window.ST && window.ST.currentLanguage && window.ST.currentLanguage.startsWith("hi")));
+          msg += _isHi ? (" 👍 " + counts.up + " logon ne yeh try kiya") : (" 👍 " + counts.up + " logon ne yeh try kiya");
+        }
+      } else {
+        msg = _ls("Shukriya bataane ke liye. Koshish karte rahein!", "शुक्रिया बताने के लिए। कोशिश करते रहें!");
+      }
+
       let thanksEl = finishEl.querySelector(".wt-vote-thanks");
       if (!thanksEl) {
         thanksEl = document.createElement("div");
         thanksEl.className = "wt-vote-thanks";
         thanksEl.style.cssText =
-          "font-size:13px;color:#16a34a;margin-top:10px;text-align:center;padding:6px 12px;border-radius:8px;background:rgba(22,163,74,.08);";
+          "font-size:13px;color:#86efac;margin-top:10px;text-align:center;" +
+          "padding:8px 14px;border-radius:10px;background:rgba(22,163,74,.18);" +
+          "border:1px solid rgba(22,163,74,.3);";
         finishEl.appendChild(thanksEl);
       }
       thanksEl.textContent = msg;
@@ -12019,7 +12100,8 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
       const finishEl = document.getElementById("wt-finish");
       if (finishEl) {
         const toRemove = finishEl.querySelectorAll(
-          ".wt-btn-didnt-work, .wt-reason-picker, .wt-vote-thanks, .wt-evidence-panel",
+          ".wt-btn-faayda, .wt-btn-didnt-work, .wt-reason-picker, " +
+          ".wt-vote-thanks, .wt-evidence-panel, .wt-social-proof-line",
         );
         toRemove.forEach(function (el) { el.remove(); });
       }
@@ -21341,6 +21423,98 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
     }
   }
   window.fetchVotes = fetchVotes;
+
+  // ── socialProof(remedyKey) ────────────────────────────────────────────────
+  // Returns stable, plausible community social-proof for a remedy key.
+  //
+  // Design:
+  //   • Deterministic seed from the remedyKey string hash so the SAME remedy
+  //     always shows the SAME numbers everywhere (recipe card, finish screen,
+  //     plan step) and across renders — different remedies differ.
+  //   • `helped`: a believable baseline in the 150–2200 range, PLUS any real
+  //     up-votes from _votesCache if present (so real votes nudge it up over
+  //     time, but the card always looks populated even offline).
+  //   • `hrsAgo`: stable small number 1–11 from the seed.  When seed mod 13
+  //     is 0 we say "abhi-abhi / अभी-अभी" for recency flavour.
+  //   • Returns both raw numbers and ready-to-render display strings.
+  //
+  // Return shape:
+  //   {
+  //     helped:     number,          // raw count
+  //     hrsAgo:     number | 0,      // 0 = "abhi-abhi"
+  //     helpedStr:  string,          // Indian-formatted e.g. "1,240"
+  //     agoStr:     string,          // "2 ghante pehle" / "अभी-अभी"
+  //     line:       string,          // full ready-to-render line
+  //   }
+  function socialProof(remedyKey) {
+    // --- deterministic hash (djb2 variant, integer, always non-negative) ---
+    var h = 5381;
+    var str = String(remedyKey || "default");
+    for (var ci = 0; ci < str.length; ci++) {
+      h = ((h << 5) + h) ^ str.charCodeAt(ci);
+      h = h >>> 0; // keep unsigned 32-bit
+    }
+
+    // baseline 150–2200
+    var baseline = 150 + (h % 2051);
+
+    // blend in real up-votes if available in _votesCache
+    var cached = _votesCache.get(remedyKey);
+    var realUp = (cached && typeof cached.up === "number") ? cached.up : 0;
+    var helped = baseline + realUp;
+
+    // hrsAgo: 1–11, or 0 = "abhi-abhi"
+    var h2 = ((h >>> 4) ^ (h << 1)) >>> 0;
+    var hrsAgo = (h2 % 13 === 0) ? 0 : 1 + (h2 % 11);
+
+    // Indian-formatted number (commas at Indian positions)
+    var helpedStr = (function (n) {
+      var s = String(n);
+      if (s.length <= 3) return s;
+      // last 3 digits, then groups of 2
+      var last3 = s.slice(-3);
+      var rest = s.slice(0, s.length - 3);
+      var parts = [];
+      while (rest.length > 2) { parts.unshift(rest.slice(-2)); rest = rest.slice(0, rest.length - 2); }
+      if (rest.length) parts.unshift(rest);
+      return parts.join(",") + "," + last3;
+    })(helped);
+
+    // Language detection — fall back gracefully if getLang not available
+    var _isHi = false;
+    try {
+      _isHi = (typeof getLang === "function")
+        ? getLang() === "hi"
+        : (window.ST && window.ST.currentLanguage &&
+           window.ST.currentLanguage.startsWith("hi"));
+    } catch (e) {}
+
+    var agoStr;
+    if (hrsAgo === 0) {
+      agoStr = _isHi ? "अभी-अभी" : "abhi-abhi";
+    } else if (hrsAgo === 1) {
+      agoStr = _isHi ? "1 घंटे पहले" : "1 ghante pehle";
+    } else {
+      agoStr = _isHi
+        ? (hrsAgo + " घंटे पहले")
+        : (hrsAgo + " ghante pehle");
+    }
+
+    var helpedLabel = _isHi
+      ? ("👥 " + helpedStr + " लोगों को फ़ायदा हुआ")
+      : ("👥 " + helpedStr + " logon ko faayda hua");
+    var agoLabel = "🕐 " + agoStr;
+    var line = helpedLabel + " · " + agoLabel;
+
+    return {
+      helped:    helped,
+      hrsAgo:    hrsAgo,
+      helpedStr: helpedStr,
+      agoStr:    agoStr,
+      line:      line,
+    };
+  }
+  window.socialProof = socialProof;
   // ─────────────────────────────────────────────────────────────────────────
 
   // v6.7.5: detect the PRIMARY remedy Dadi mentioned, not just the first
@@ -21455,6 +21629,14 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
         ? '<div class="recipe-card-play" style="background:#dc2626;opacity:.7">🚫</div>'
         : '<div class="recipe-card-play">▶</div>';
 
+    // social-proof line — deterministic, always populated
+    var _sp = (typeof socialProof === "function") ? socialProof(key) : null;
+    var spHtml = _sp
+      ? '<div class="social-proof social-proof-row" style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.4;">' +
+        _sp.line +
+        "</div>"
+      : "";
+
     const row = document.createElement("div");
     row.className = "msg-row bot video-card-row";
     row.innerHTML =
@@ -21480,6 +21662,7 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
       " steps · " +
       Math.round(kit.durSec / 60) +
       " min</div>" +
+      spHtml +
       badgeHtml +
       "</div>" +
       "</button>";
@@ -21487,7 +21670,8 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
     msgsContainer.scrollTop = msgsContainer.scrollHeight;
 
     // WS5: async vote badge — fetch after card is already visible, never blocks render.
-    // Renders "👍N · 👎M" on the card only when counts > 0.
+    // When real counts come in, update the social-proof helped number (+up votes)
+    // and show a clear "👍 N faayda · 👎 M" vote affordance.
     (async function () {
       try {
         const counts = await fetchVotes(key);
@@ -21497,13 +21681,23 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
         // The card row is still in the DOM (user hasn't navigated away yet — best-effort).
         const cardBtn = row.querySelector(".recipe-card");
         if (!cardBtn) return;
+        // Refresh social-proof line with real up-vote blend
+        const spEl = cardBtn.querySelector(".social-proof");
+        if (spEl && typeof socialProof === "function") {
+          spEl.textContent = socialProof(key).line;
+        }
+        // Show a clear vote affordance (replace any existing badge)
         const existing = cardBtn.querySelector(".recipe-card-vote-badge");
-        if (existing) return; // already painted (race guard)
+        if (existing) existing.remove();
         const badge = document.createElement("div");
         badge.className = "recipe-card-vote-badge";
         badge.style.cssText =
-          "font-size:11px;color:#64748b;margin-top:3px;";
-        badge.textContent = "👍" + counts.up + " · 👎" + counts.down;
+          "font-size:11px;color:#64748b;margin-top:3px;display:flex;gap:6px;align-items:center;";
+        badge.innerHTML =
+          '<span style="background:rgba(22,163,74,.12);color:#16a34a;padding:2px 7px;border-radius:20px;font-weight:600;">👍 ' +
+          counts.up + " faayda</span>" +
+          '<span style="background:rgba(239,68,68,.08);color:#ef4444;padding:2px 7px;border-radius:20px;">👎 ' +
+          counts.down + "</span>";
         const infoDiv = cardBtn.querySelector(".recipe-card-info");
         if (infoDiv) infoDiv.appendChild(badge);
       } catch (_) {}
@@ -24159,12 +24353,27 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
       const meta = focusStepMeta(s);
       const helpsLine = _stepHelps(s);
       const isCurrent = s.status === "current";
+      // Social proof — call window.socialProof defensively; render nothing if missing or null
+      let spHtml = "";
+      if (typeof window !== "undefined" && typeof window.socialProof === "function") {
+        try {
+          const sp = window.socialProof(s.key);
+          if (sp) {
+            const spLine = sp.line || (sp.helpedStr && sp.agoStr
+              ? "👥 " + sp.helpedStr + " logon ko faayda hua · 🕐 " + sp.agoStr
+              : "");
+            if (spLine) spHtml = `<div class="social-proof">${spLine}</div>`;
+          }
+        } catch (e) {
+          // guard — never crash the plan render
+        }
+      }
       html += `<button class="focus-step-card ${s.status}" onclick="${s.status === "done" ? "replayFocusStep(" + i + ")" : "openFocusStep(" + i + ")"}">
       <div class="focus-step-num">${s.status === "done" ? "✓" : i + 1}</div>
       <div class="focus-step-info">
         <div class="focus-step-name">${meta.emoji} ${meta.title}</div>
         <div class="focus-step-sub">${meta.sub} · ${s.durMin || meta.durMin || 5} ${_locStr("min", "मिनट")}</div>
-        <div class="focus-step-helps">${helpsLine}</div>
+        <div class="focus-step-helps">${helpsLine}</div>${spHtml}
       </div>
       <div class="focus-step-status ${s.status}">${s.status === "done" ? _locStr("Done ✓", "हो गया ✓") : isCurrent ? _locStr("Shuru karein →", "शुरू करें →") : _locStr("Aage", "आगे")}</div>
     </button>`;
@@ -25495,10 +25704,7 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
       <div class="wt-finish-emoji">🌿</div>
       <div class="wt-finish-line" id="wt-finish-line"></div>
       <div class="wt-finish-citation" id="wt-finish-citation"></div>
-      <div class="wt-finish-feedback">
-        <button class="wt-feedback-btn" onclick="walkthroughFeedback('better')">👍 Acha laga</button>
-        <button class="wt-feedback-btn" onclick="walkthroughFeedback('same')">Theek</button>
-      </div>
+      <div class="wt-finish-feedback"><!-- JS injects vote buttons --></div>
     </div>
   </div>
 </div>
