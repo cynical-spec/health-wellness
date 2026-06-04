@@ -20177,11 +20177,54 @@ const BREATH_PHASES = [
         /\baccording to (reuters|reports|sources|officials)\b/i,
         /\bprime minister .{0,20} (said|announced|met)\b/i,
         /\b(parliament|lok sabha|rajya sabha) (passed|approved|debated)\b/i,
+        // v6.7.13: podcast/show/media-intro hallucinations (case-insensitive).
+        // Triggered by: "Hi everyone, welcome back to another episode of the
+        // Business Analysis of India program." — none of the above matched.
+        /\bhi everyone\b/i,
+        /\bwelcome back\b/i,
+        /\b(another|this|an) episode\b/i,
+        /\bepisode of\b/i,
+        /\bback to (another|the|my)\b/i,
+        /\bbusiness analysis\b/i,
+        /\bpodcast\b/i,
+        /\bmy name is\b/i,
+        /\bin (this|today'?s|the last) (video|episode|session)\b/i,
+        /\blet'?s (get started|dive|begin)\b/i,
+        /\bwithout further ado\b/i,
+        /\bstay tuned\b/i,
+        /\bin this video\b/i,
+        /\btoday we'?re going to\b/i,
+        /\bi hope you (enjoy|like) (this|the) (video|episode)\b/i,
       ];
       if (txt && HALLUCINATION_PATTERNS.some((re) => re.test(txt))) {
-        console.warn("[Sarvam STT] HALLUCINATION rejected:", txt);
+        console.warn("[Sarvam STT] HALLUCINATION rejected (pattern):", txt);
         try { trackEvent("stt_hallucination", { len: txt.length }); } catch (_) {}
         txt = "";
+      }
+      // v6.7.13: General English-media heuristic — the real fix for novel
+      // hallucinations that escape the phrase list. Whisper hallucinates long,
+      // fluent, pure-English boilerplate (podcasts, news, YouTube) on
+      // silence/noise. This app is HINDI-FIRST: real user input is short
+      // Hindi/Hinglish OR contains health keywords even in English.
+      // Reject only when ALL four conditions hold simultaneously:
+      //   1. No Devanagari characters (not a Hindi transcript)
+      //   2. Six or more whitespace-separated words (long enough to be boilerplate)
+      //   3. Not a known health/Hinglish keyword (would be genuine user input)
+      //   4. Still has text to evaluate (not already cleared above)
+      // Short English ("yes", "okay", "fever since morning") passes because it
+      // either has <6 words or contains a health keyword. Err toward keeping
+      // genuine health input; err toward dropping media boilerplate.
+      if (txt) {
+        const HAS_DEVANAGARI = /[ऀ-ॿ]/.test(txt);
+        const WORD_COUNT = txt.trim().split(/\s+/).length;
+        // Health/Hinglish words that prove the transcript is a genuine user query
+        // even when it arrives in pure-Latin script.
+        const HEALTH_KEYWORD_RE = /\b(dard|sir|sar|pet|bukhar|fever|khansi|cough|sardi|cold|neend|sleep|tabiyat|doctor|dawai|medicine|gas|acidity|bp|sugar|headache|pain|tension|thanda|garam|ulti|vomit|kabz|constipation|diarrhea|loose motion|weakness|kamzori|chakkar|dizzy|chest|breathing|saans|allergy|rash|itching|khujli|swelling|sujan|joint|ghutna|back|kamar|eye|aankh|ear|kaan|throat|gala|nose|naak|bleed|khoon|urine|peshab|weight|wajan|diabetes|thyroid|anemia|infection|wound|chot|burn|jalan)\b/i;
+        if (!HAS_DEVANAGARI && WORD_COUNT >= 6 && !HEALTH_KEYWORD_RE.test(txt)) {
+          console.warn("[Sarvam STT] HALLUCINATION rejected (English-media heuristic, words=" + WORD_COUNT + "):", txt);
+          try { trackEvent("stt_hallucination", { len: txt.length, reason: "english_media" }); } catch (_) {}
+          txt = "";
+        }
       }
       // v6.7.9: also reject ultra-short transcripts that are almost always
       // background-noise misfires (single-word fragments from <1s of audio).
