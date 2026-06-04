@@ -4655,6 +4655,168 @@ body:not(.focus) .focus-home {
   gap: 6px;
   flex-wrap: wrap;
 }
+
+/* ── Family Care (fc-*) ── */
+.fc-card {
+  background: #fff;
+  border: 1px solid var(--border, #d0e2f7);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 87, 168, 0.06);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.fc-card:active {
+  transform: scale(0.985);
+}
+.fc-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.fc-card-head .fc-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text, #0a1628);
+}
+.fc-card-head .fc-sub {
+  font-size: 12px;
+  color: var(--text-secondary, #3a5070);
+}
+.fc-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #b9c6d8;
+}
+.fc-status-dot.ok {
+  background: var(--green, #00875a);
+}
+.fc-status-dot.warn {
+  background: var(--orange, #e85c00);
+}
+.fc-status-dot.bad {
+  background: #d92d20;
+}
+.fc-card-stats {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary, #3a5070);
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.fc-detail {
+  padding: 4px 2px 12px;
+}
+.fc-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.fc-detail-head .fc-name {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text, #0a1628);
+}
+.fc-back-btn {
+  background: #f4f7ff;
+  border: 1px solid var(--border, #d0e2f7);
+  color: var(--jio-blue, #0057a8);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.fc-section {
+  background: #fff;
+  border: 1px solid var(--border, #d0e2f7);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.fc-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text, #0a1628);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.fc-checkin {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.fc-checkin-chip {
+  border: 1.5px solid var(--border, #d0e2f7);
+  background: #f5f8ff;
+  color: var(--text, #0a1628);
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.fc-checkin-chip.ok.sel,
+.fc-checkin-chip.ok:active {
+  background: #e6f6ef;
+  border-color: var(--green, #00875a);
+  color: var(--green, #00875a);
+}
+.fc-checkin-chip.warn.sel,
+.fc-checkin-chip.warn:active {
+  background: #fff1e6;
+  border-color: var(--orange, #e85c00);
+  color: var(--orange, #e85c00);
+}
+.fc-checkin-chip.bad.sel,
+.fc-checkin-chip.bad:active {
+  background: #fde9e7;
+  border-color: #d92d20;
+  color: #d92d20;
+}
+.fc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid #eef3fb;
+  font-size: 13px;
+  color: var(--text, #0a1628);
+}
+.fc-row:first-of-type {
+  border-top: none;
+}
+.fc-row .fc-row-sub {
+  font-size: 11.5px;
+  color: var(--text-secondary, #3a5070);
+}
+.fc-add-btn {
+  margin-top: 10px;
+  width: 100%;
+  background: #f4f7ff;
+  border: 1px dashed var(--jio-blue, #0057a8);
+  color: var(--jio-blue, #0057a8);
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.fc-last-checkin {
+  font-size: 11.5px;
+  color: var(--text-secondary, #3a5070);
+}
 .focus-step-status {
   font-size: 10px;
   font-weight: 700;
@@ -7524,10 +7686,10 @@ body:not(.focus) .focus-home {
           <div class="exit-tile-title" data-i18n="exit_tanman_title">Tan-Man ke saath</div>
           <div class="exit-tile-sub" data-i18n="exit_tanman_sub">Saans, neend, energy — chhote skills</div>
         </button>
-        <button class="exit-tile tile-lab" onclick="startFeature('lab')" aria-label="Report samjho">
-          <div class="exit-tile-emoji">🧪</div>
-          <div class="exit-tile-title" data-i18n="exit_report_title">Report samjho</div>
-          <div class="exit-tile-sub" data-i18n="exit_report_sub">Photo ya PDF — asaan zubaan</div>
+        <button class="exit-tile tile-family" onclick="startFeature('family')" aria-label="Family Care">
+          <div class="exit-tile-emoji">👨‍👩‍👧</div>
+          <div class="exit-tile-title" data-i18n="fc_tile_title">Family Care</div>
+          <div class="exit-tile-sub" data-i18n="fc_tile_sub">Apno ka khayal rakhein</div>
         </button>
         <button class="exit-tile tile-dawai" onclick="startFeature('rx')" aria-label="Dawai ka time">
           <div class="exit-tile-emoji">💊</div>
@@ -7557,11 +7719,6 @@ body:not(.focus) .focus-home {
   <button class="bs-row" onclick="closeToolsSheet();startFeature('nushke')">
     <div class="bs-row-icon" style="background:rgba(30,204,176,.15);color:#1eccb0">🌿</div>
     <div class="bs-row-text"><div class="bs-row-name" data-i18n="bs_nushke_title">Ghar ke Nushke</div><div class="bs-row-sub" data-i18n="bs_nushke_sub">Koi takleef? Dadi batayegi</div></div>
-  </button>
-  <div class="bs-divider"></div>
-  <button class="bs-row" onclick="closeToolsSheet();startFeature('lab')">
-    <div class="bs-row-icon" style="background:rgba(30,204,176,.15);color:#1eccb0">🧪</div>
-    <div class="bs-row-text"><div class="bs-row-name" data-i18n="bs_lab_title">Lab Report Padho</div><div class="bs-row-sub" data-i18n="bs_lab_sub">Apni report ka asaan matlab</div></div>
   </button>
   <div class="bs-divider"></div>
   <button class="bs-row" onclick="closeToolsSheet();startFeature('rx')">
@@ -8257,6 +8414,25 @@ if (!window.__SS_LOADED__) {
     feature_cricket: { hi: "क्रिकेट स्कोर", en: "Cricket Score" },
     feature_astro: { hi: "रोज़ का राशिफल", en: "Daily Horoscope" },
     feature_bhajan: { hi: "भजन सुनो", en: "Bhajan Suno" },
+
+    // ── Family Care (s-family / file 10) ──
+    fc_tile_title:   { hi: "परिवार की देखभाल",              en: "Family Care" },
+    fc_tile_sub:     { hi: "अपनों का ख्याल रखें",           en: "Apno ka khayal rakhein" },
+    fc_add_member:   { hi: "नया सदस्य जोड़ें",               en: "Naya sadasya jodein" },
+    fc_checkin_q:    { hi: "आज कैसा महसूस कर रहे हैं?",     en: "Aaj kaise mehsoos kar rahe hain?" },
+    fc_status_ok:    { hi: "ठीक",                            en: "Theek" },
+    fc_status_warn:  { hi: "थोड़ी तकलीफ़",                   en: "Thodi takleef" },
+    fc_status_bad:   { hi: "बहुत तकलीफ़",                    en: "Bahut takleef" },
+    fc_meds:         { hi: "दवाइयाँ",                        en: "Dawaiyan" },
+    fc_reports:      { hi: "रिपोर्ट और पर्ची",               en: "Reports aur parchi" },
+    fc_add_report:   { hi: "रिपोर्ट जोड़ें",                  en: "Report add karein" },
+    fc_add_rx:       { hi: "पर्ची जोड़ें",                    en: "Parchi add karein" },
+    fc_add_med:      { hi: "दवाई जोड़ें",                    en: "Dawai add karein" },
+    fc_no_meds:      { hi: "कोई दवाई रिमाइंडर नहीं",         en: "Koi dawai reminder nahi" },
+    fc_no_reports:   { hi: "अभी कोई रिपोर्ट नहीं",           en: "Abhi koi report nahi" },
+    fc_edit:         { hi: "बदलें",                          en: "Badlein" },
+    fc_back:         { hi: "वापस",                           en: "Wapas" },
+    fc_last_checkin: { hi: "आख़िरी जाँच",                    en: "Aakhri jaanch" },
   };
   function getLang() {
     try {
@@ -9694,8 +9870,8 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
       svg: '<svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true"><path d="M12 6C12.3955 6 12.7822 5.8827 13.1111 5.66294C13.44 5.44318 13.6963 5.13082 13.8477 4.76537C13.9991 4.39992 14.0387 3.99778 13.9615 3.60982C13.8844 3.22186 13.6939 2.86549 13.4142 2.58579C13.1345 2.30608 12.7781 2.1156 12.3901 2.03843C12.0022 1.96126 11.6 2.00087 11.2346 2.15224C10.8691 2.30362 10.5568 2.55996 10.337 2.88886C10.1173 3.21776 9.99996 3.60444 9.99996 4C9.99996 4.53043 10.2107 5.03914 10.5857 5.41421C10.9608 5.78929 11.4695 6 12 6ZM18.76 17L12 18.72L5.23996 17C4.97474 16.9363 4.6951 16.9807 4.46256 17.1232C4.23001 17.2657 4.06361 17.4948 3.99996 17.76C3.93631 18.0252 3.98062 18.3049 4.12315 18.5374C4.26567 18.7699 4.49474 18.9363 4.75996 19L7.87996 19.78L6.75996 20C6.49474 20.0318 6.25303 20.1677 6.088 20.3777C5.92297 20.5878 5.84813 20.8548 5.87996 21.12C5.91178 21.3852 6.04766 21.6269 6.2577 21.792C6.46774 21.957 6.73474 22.0318 6.99996 22C7.07967 22.0096 7.16025 22.0096 7.23996 22L12 20.78L16.76 22C16.8914 22.0356 17.0287 22.0439 17.1635 22.0246C17.2983 22.0052 17.4277 21.9585 17.5438 21.8873C17.6599 21.8162 17.7603 21.7221 17.8387 21.6107C17.9171 21.4994 17.972 21.3733 18 21.24C18.0355 21.1086 18.0439 20.9712 18.0245 20.8364C18.0052 20.7017 17.9585 20.5722 17.8873 20.4561C17.8161 20.34 17.722 20.2397 17.6107 20.1613C17.4994 20.0828 17.3732 20.028 17.24 20L16.12 19.72L19.24 19C19.3713 18.9685 19.4951 18.9114 19.6044 18.832C19.7136 18.7527 19.8062 18.6525 19.8768 18.5374C19.9473 18.4223 19.9945 18.2943 20.0157 18.161C20.0368 18.0276 20.0315 17.8913 20 17.76C19.9684 17.6287 19.9114 17.5049 19.832 17.3956C19.7526 17.2863 19.6525 17.1938 19.5374 17.1232C19.4222 17.0526 19.2943 17.0054 19.1609 16.9843C19.0275 16.9631 18.8913 16.9685 18.76 17ZM4.99996 16C5.15683 16.0019 5.31164 15.964 5.44996 15.89L6.70996 15.26C7.41902 14.9043 7.95835 14.2823 8.20996 13.53L9.48996 9.68C9.55704 9.48138 9.68486 9.30887 9.85533 9.18684C10.0258 9.06482 10.2303 8.99946 10.44 9H11V17.41L12 17.66L13 17.41V9H13.56C13.7696 8.99946 13.9741 9.06482 14.1446 9.18684C14.3151 9.30887 14.4429 9.48138 14.51 9.68L15.79 13.53C16.0416 14.2823 16.5809 14.9043 17.29 15.26L18.55 15.89C18.6883 15.964 18.8431 16.0019 19 16C19.1846 15.9994 19.3655 15.9478 19.5226 15.8507C19.6797 15.7536 19.8069 15.6149 19.89 15.45C20.0086 15.2138 20.0289 14.9403 19.9464 14.6892C19.864 14.4381 19.6855 14.2299 19.45 14.11L18.19 13.48C18.0726 13.4209 17.968 13.3393 17.8822 13.2398C17.7964 13.1402 17.7311 13.0248 17.69 12.9L16.4 9.05C16.2009 8.45389 15.8198 7.93533 15.3102 7.56751C14.8006 7.19968 14.1884 7.00118 13.56 7H10.44C9.81151 7.00118 9.19929 7.19968 8.68972 7.56751C8.18016 7.93533 7.79897 8.45389 7.59996 9.05L6.30996 12.9C6.26881 13.0248 6.20347 13.1402 6.11768 13.2398C6.03188 13.3393 5.92732 13.4209 5.80996 13.48L4.54996 14.11C4.31443 14.2299 4.13594 14.4381 4.05349 14.6892C3.97105 14.9403 3.99135 15.2138 4.10996 15.45C4.19306 15.6149 4.3202 15.7536 4.47729 15.8507C4.63438 15.9478 4.81529 15.9994 4.99996 16Z" fill="white"/></svg>',
     },
     family: {
-      label: "Parivaar",
-      labelKey: "feature_family",
+      label: "Family Care",
+      labelKey: "fc_tile_title",
       bg: "rgba(57,0,173,.2)",
       color: "#3900ad",
       svg: '<svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true"><path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" fill="white"/><path d="M6 19C5.74 19 5.49 18.9 5.29 18.71C4.9 18.32 4.9 17.69 5.29 17.3L16.79 5.8C17.18 5.41 17.81 5.41 18.2 5.8C18.59 6.19 18.59 6.82 18.2 7.21L6.7 18.71C6.5 18.91 6.25 19 5.99 19H6Z" fill="white"/><path d="M18 9C19.6569 9 21 7.65685 21 6C21 4.34315 19.6569 3 18 3C16.3431 3 15 4.34315 15 6C15 7.65685 16.3431 9 18 9Z" fill="white"/><path d="M6 21C7.65685 21 9 19.6569 9 18C9 16.3431 7.65685 15 6 15C4.34315 15 3 16.3431 3 18C3 19.6569 4.34315 21 6 21Z" fill="white"/><path d="M18 15C17.41 15 16.86 15.18 16.39 15.48L8.52 7.61C8.82 7.14 9 6.59 9 6C9 4.34 7.66 3 6 3C4.34 3 3 4.34 3 6C3 7.66 4.34 9 6 9C6.33 9 6.63 8.94 6.93 8.84L15.17 17.08C15.07 17.37 15.01 17.68 15.01 18.01C15.01 19.67 16.35 21.01 18.01 21.01C19.67 21.01 21.01 19.67 21.01 18.01C21.01 16.35 19.67 15.01 18.01 15.01L18 15Z" fill="white"/></svg>',
@@ -9919,9 +10095,6 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
     } else if (f === "community") {
       goTo("s-community");
       renderCommunityList();
-    } else if (f === "lab") {
-      goTo("s-lab");
-      renderLabStep(0);
     }
   }
 
@@ -14337,11 +14510,51 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
     return isRx && !isLab;
   }
 
-  async function interpretLabPDF(pages, memberName) {
-    if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20 || OPENAI_API_KEY.includes("REPLACE")) {
-      throw new Error("NO_VISION_KEY"); // surfaced to user as friendly fallback
+  // Defensive parser for lab vision response.
+  // Accepts: bare JSON object, ```json fenced block, or JSON embedded in prose.
+  // Returns the parsed object if valid lab shape, or null if unparseable.
+  function _labParseVisionRaw(raw) {
+    if (!raw) return null;
+    // Strip markdown code fences
+    const cleaned = raw.replace(/```[a-z]*\n?/gi, "").replace(/```/g, "").trim();
+
+    // Strategy (a): parse whole cleaned string
+    try {
+      const parsed = JSON.parse(cleaned);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+    } catch (_) {}
+
+    // Strategy (b): find first balanced {...} block and parse it
+    const objMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (objMatch) {
+      try {
+        const parsed = JSON.parse(objMatch[0]);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+      } catch (_) {}
     }
-    const promptText = `You are a clinical lab report interpreter. Analyze this lab report image(s) for ${memberName || "the patient"}.
+
+    return null;
+  }
+
+  // interpretLabPDF: routes through callVisionJSON (Worker→Claude vision path),
+  // the same path used by rxOnPhoto/rxOnPdf in file 10. No direct OpenAI call.
+  // pages is the array from pdfToImages — we send the first page image only
+  // (callVisionJSON accepts one base64 image at a time; page 1 contains the header
+  // and most markers on a standard lab printout).
+  async function interpretLabPDF(pages, memberName) {
+    const visionFn = (typeof callVisionJSON === "function" && callVisionJSON) ||
+                     (window.callVisionJSON);
+    if (!visionFn) {
+      throw new Error("NO_VISION_KEY"); // caller shows template fallback
+    }
+
+    // pages[0] is a data URL ("data:image/jpeg;base64,<b64>") — strip the prefix
+    const firstPageDataURL = pages[0];
+    const b64 = firstPageDataURL.includes(",")
+      ? firstPageDataURL.split(",")[1]
+      : firstPageDataURL;
+
+    const promptText = `You are a clinical lab report interpreter. Analyze this lab report image for ${memberName || "the patient"}.
 
 OUTPUT VALID JSON ONLY (no markdown, no preamble) with this exact shape:
 {
@@ -14362,32 +14575,12 @@ Rules:
 - doctorAdvice should be specific to the abnormal findings if any.
 - If this is NOT a clinical lab report (e.g., it's a prescription), set reportType to "NOT_A_LAB_REPORT" and explain in summary.`;
 
-    const imageContent = pages.map((dataURL) => ({
-      type: "image_url",
-      image_url: { url: dataURL },
-    }));
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + OPENAI_API_KEY },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        max_tokens: 1500,
-        messages: [
-          {
-            role: "user",
-            content: [...imageContent, { type: "text", text: promptText }],
-          },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error("OpenAI error: " + res.status + " " + errText.substring(0, 100));
+    const raw = await visionFn(b64, promptText);
+    const parsed = _labParseVisionRaw(raw);
+    if (!parsed) {
+      throw new Error("LAB_PARSE_FAIL");
     }
-    const data = await res.json();
-    const raw = data.choices[0].message.content.trim();
-    return JSON.parse(raw);
+    return parsed;
   }
 
   function renderLabStep(step) {
@@ -15933,6 +16126,28 @@ Rules:
     }
   }
 
+  // ── Family Care entry points ──────────────────────────────────────────────
+  // Called by file 10 (Family Care MVP) to launch the lab flow pre-seeded to a
+  // specific family member, skipping the member-picker (step 0).
+  // step 1 is the upload step (photo / PDF / manual); step 0 is member selection.
+  window.startLabForMember = function startLabForMember(memberKey, memberLabel) {
+    ST.labData = ST.labData || {};
+    ST.labData.member = memberKey;
+    ST.labData.memberLabel = memberLabel;
+    goTo("s-lab");
+    renderLabStep(1);
+  };
+
+  // Returns the array of active reminders for the given family member.
+  // Matches on r.member === memberKey (RX/lab flow sets this) OR on
+  // r.who === memberName (legacy s-medicine flow stores a raw name string).
+  window.remindersForMember = function remindersForMember(memberKey, memberName) {
+    return loadReminders().filter(function (r) {
+      return r.member === memberKey ||
+             (r.who && memberName && r.who === memberName);
+    });
+  };
+
   // ══════════════ v5: PRESCRIPTION SCAN + REMINDER + ORDER FLOW ══════════════
   //
   // This is the end-to-end Bharat experience: scan/upload prescription → OCR mock
@@ -17120,6 +17335,30 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
     rems.slice(-ST.rxData.meds.length).forEach((rem) => {
       scheduleReminder(rem);
     });
+
+    // Persist prescription record per member (ss_prescriptions[memberKey])
+    try {
+      const rxMember = ST.rxData.member || "self";
+      const rxDate = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+      const rxRecord = {
+        date: rxDate,
+        memberLabel: ST.rxData.memberLabel || "Aap",
+        meds: ST.rxData.meds.map((mm) => ({
+          name: mm.name,
+          strength: mm.strength,
+          dose: mm.dose,
+          timing: mm.timing,
+          duration: mm.duration,
+          form: mm.form,
+          notes: mm.notes,
+        })),
+      };
+      const rxStore = _fcGet("ss_prescriptions");
+      if (!rxStore[rxMember]) rxStore[rxMember] = [];
+      rxStore[rxMember].unshift(rxRecord);
+      rxStore[rxMember] = rxStore[rxMember].slice(0, 10); // cap at 10 per member
+      localStorage.setItem("ss_prescriptions", JSON.stringify(rxStore));
+    } catch (_e) {}
     if (ST.rxData.channel === "whatsapp")
       showToast("WhatsApp reminders set — waqt pe message bhejenge");
     if (ST.rxData.channel === "voice")
@@ -17569,7 +17808,7 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
       html += `<div class="bz-empty">
       <div class="bz-empty-emoji">🧪</div>
       Koi lab report save nahi.<br>Photo ya PDF se padhwao.
-      <div style="margin-top:12px"><button class="rx-cta" onclick="startFeature('lab')" style="display:inline-block;width:auto;padding:10px 20px">Lab report jodein</button></div>
+      <div style="margin-top:12px"><button class="rx-cta" onclick="startFeature('family')" style="display:inline-block;width:auto;padding:10px 20px">Family Care mein report jodein</button></div>
     </div>`;
     } else {
       Object.keys(labReports).forEach((memKey) => {
@@ -17758,6 +17997,23 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
     localStorage.setItem("ss_family", JSON.stringify(f));
   }
 
+  // ── Family Care: per-member store helpers ──
+  // ss_family_wellbeing: { [memberKey]: { status:'ok'|'warn'|'bad', date:<string> } }
+  // ss_prescriptions:    { [memberKey]: [ { date, memberLabel, meds:[{name,strength,dose,timing,...}] } ] }
+  // These are the single source of truth; future cloud layer swaps only these two functions.
+  function _fcGet(storeName) {
+    try {
+      return JSON.parse(localStorage.getItem(storeName) || "{}");
+    } catch (e) {
+      return {};
+    }
+  }
+  function _fcSet(storeName, key, val) {
+    const store = _fcGet(storeName);
+    store[key] = val;
+    localStorage.setItem(storeName, JSON.stringify(store));
+  }
+
   const EMOJIS_BY_GENDER = { Male: "M", Female: "F", Other: "?" };
   const CONDITIONS = [
     "Diabetes",
@@ -17773,18 +18029,278 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
     "No condition",
   ];
 
+  // i18n helper with Hinglish fallbacks for Family Care keys
+  const _FC_FALLBACK = {
+    fc_tile_title: "Family Care",
+    fc_tile_sub: "Apno ki sehat dekhein",
+    fc_add_member: "+ Member jodein",
+    fc_checkin_q: "Aaj kaisa feel kar rahe hain?",
+    fc_status_ok: "Theek hain",
+    fc_status_warn: "Thodi takleef",
+    fc_status_bad: "Zyada takleef",
+    fc_meds: "Dawaiyaan",
+    fc_reports: "Reports aur Parchiyaan",
+    fc_add_report: "+ Report add karein",
+    fc_add_rx: "+ Parchi add karein",
+    fc_add_med: "+ Dawai add karein",
+    fc_no_meds: "Koi reminder nahi",
+    fc_no_reports: "Koi report nahi",
+    fc_edit: "Edit",
+    fc_back: "Wapas",
+    fc_last_checkin: "Aakhri check-in",
+  };
+  function _fct(key) {
+    if (typeof t === "function") {
+      const v = t(key);
+      if (v && v !== key) return v;
+    }
+    if (typeof locStr === "function") {
+      const v = locStr(_FC_FALLBACK[key] || key, _FC_FALLBACK[key] || key);
+      if (v) return v;
+    }
+    return _FC_FALLBACK[key] || key;
+  }
+
   function renderFamilyList() {
     const fam = loadFamily();
     const flow = document.getElementById("family-list");
+    if (!flow) return;
     if (fam.length === 0) {
-      flow.innerHTML = `<div class="empty-state"><div style="margin-bottom:8px;color:rgba(0,0,0,0.4)">${iconSvg("multiple_user", 48, "currentColor")}</div><p>Abhi koi family member add nahi hai.<br>Add karo aur personalized health tips pao.</p></div><button class="add-family-btn" onclick="showAddFamily()">Family Member Add Karo</button>`;
+      flow.innerHTML = `<div class="empty-state"><div style="margin-bottom:8px;color:rgba(0,0,0,0.4)">${typeof iconSvg === "function" ? iconSvg("multiple_user", 48, "currentColor") : ""}</div><p>Abhi koi family member add nahi hai.<br>Add karo aur personalized health tips pao.</p></div><button class="add-family-btn" onclick="showAddFamily()">${_fct("fc_add_member")}</button>`;
       return;
     }
-    let html = `<button class="add-family-btn" onclick="showAddFamily()">Aur member add karo</button>`;
+
+    const wellbeing = _fcGet("ss_family_wellbeing");
+    const prescriptions = _fcGet("ss_prescriptions");
+    const allRems = (typeof loadReminders === "function") ? loadReminders() : [];
+
+    let html = `<button class="add-family-btn" onclick="showAddFamily()">${_fct("fc_add_member")}</button>`;
     fam.forEach((m, i) => {
-      html += `<div class="family-member"><div class="family-avatar">${m.name[0].toUpperCase()}</div><div class="family-info"><div class="family-name">${m.name}</div><div class="family-meta">${m.age} saal • ${m.gender} • ${m.conditions || "Healthy"}</div>${m.phone ? `<div class="family-meta">${m.phone}</div>` : ""}</div><button style="background:none;border:none;cursor:pointer;color:var(--error);padding:8px" onclick="deleteFamily(${i})">${iconSvg("trash_clear", 20, "currentColor")}</button></div>`;
+      const memberKey = "fam_" + m.name;
+      const wb = wellbeing[memberKey] || null;
+      const dotClass = wb ? wb.status : "ok";
+      const lastCheckin = wb ? `${_fct("fc_last_checkin")}: ${wb.date}` : "";
+
+      // Count reminders for this member
+      const memRems = allRems.filter((r) => r.member === memberKey || r.who === m.name);
+      // Count reports + prescriptions
+      let labReportCount = 0;
+      try {
+        const lr = JSON.parse(localStorage.getItem("ss_lab_reports") || "{}");
+        labReportCount = (lr[memberKey] || []).length;
+      } catch (e) {}
+      const rxCount = ((prescriptions[memberKey] || []).length);
+      const totalReports = labReportCount + rxCount;
+
+      const condStr = Array.isArray(m.conditions) ? m.conditions.join(", ") : (m.conditions || "");
+      html += `<div class="fc-card" onclick="renderFamilyMember(${i})">
+        <div class="fc-card-head">
+          <div class="family-avatar" style="flex-shrink:0">${m.name[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0">
+            <div class="family-name">${m.name} · ${m.age} saal</div>
+            <div class="family-meta">${condStr || "Healthy"}</div>
+            ${lastCheckin ? `<div class="family-meta" style="font-size:10px;opacity:.7">${lastCheckin}</div>` : ""}
+          </div>
+          <span class="fc-status-dot ${dotClass}"></span>
+        </div>
+        <div class="fc-card-stats">
+          <span>💊 ${memRems.length}</span>
+          <span>📄 ${totalReports}</span>
+        </div>
+      </div>`;
     });
     flow.innerHTML = html;
+  }
+
+  // ── Member Detail view ──
+  function renderFamilyMember(idx) {
+    const fam = loadFamily();
+    const m = fam[idx];
+    if (!m) { renderFamilyList(); return; }
+    const flow = document.getElementById("family-list");
+    if (!flow) return;
+
+    const memberKey = "fam_" + m.name;
+    const memberLabel = m.name;
+    const condStr = Array.isArray(m.conditions) ? m.conditions.join(", ") : (m.conditions || "");
+
+    // Wellbeing
+    const wellbeing = _fcGet("ss_family_wellbeing");
+    const wb = wellbeing[memberKey] || null;
+    const dotClass = wb ? wb.status : "ok";
+
+    // Reminders for this member
+    let memRems = [];
+    if (typeof window.remindersForMember === "function") {
+      try { memRems = window.remindersForMember(memberKey, m.name) || []; } catch (e) {}
+    }
+    if (!memRems.length && typeof loadReminders === "function") {
+      const allRems = loadReminders();
+      memRems = allRems.filter((r) => r.member === memberKey || r.who === m.name);
+    }
+
+    // Lab reports
+    let labReports = [];
+    try {
+      const lr = JSON.parse(localStorage.getItem("ss_lab_reports") || "{}");
+      labReports = lr[memberKey] || [];
+    } catch (e) {}
+
+    // Prescriptions
+    const prescriptions = _fcGet("ss_prescriptions");
+    const memRx = prescriptions[memberKey] || [];
+
+    // Build HTML
+    let html = `<div class="fc-detail">
+      <div class="fc-detail-head">
+        <button class="fc-back-btn" onclick="renderFamilyList()">← ${_fct("fc_back")}</button>
+        <div style="flex:1;min-width:0">
+          <div class="family-name">${m.name} · ${m.age} saal</div>
+          <div class="family-meta">${condStr || "Healthy"}</div>
+        </div>
+        <span class="fc-status-dot ${dotClass}" id="fc-dot-${idx}"></span>
+        <button class="fc-back-btn" style="margin-left:8px" onclick="editFamilyMember(${idx})">${_fct("fc_edit")}</button>
+      </div>
+
+      <!-- Wellbeing Check-in -->
+      <div class="fc-section">
+        <div class="fc-section-title">${_fct("fc_checkin_q")}</div>
+        <div class="fc-checkin">
+          <button class="fc-checkin-chip ok${wb && wb.status === 'ok' ? ' selected' : ''}" onclick="fcCheckin(${idx},'ok')">${_fct("fc_status_ok")}</button>
+          <button class="fc-checkin-chip warn${wb && wb.status === 'warn' ? ' selected' : ''}" onclick="fcCheckin(${idx},'warn')">${_fct("fc_status_warn")}</button>
+          <button class="fc-checkin-chip bad${wb && wb.status === 'bad' ? ' selected' : ''}" onclick="fcCheckin(${idx},'bad')">${_fct("fc_status_bad")}</button>
+        </div>
+        ${wb ? `<div style="font-size:11px;color:var(--text3);margin-top:6px">${_fct("fc_last_checkin")}: ${wb.date}</div>` : ""}
+        ${wb && wb.status === "bad" ? `<button class="fc-add-btn" style="margin-top:10px;background:rgba(239,68,68,.15);color:#ef4444" onclick="typeof openDoctor==='function'?openDoctor():startFeature('chat')">Doctor se milein →</button>` : ""}
+      </div>
+
+      <!-- Medicines -->
+      <div class="fc-section">
+        <div class="fc-section-title">💊 ${_fct("fc_meds")}</div>`;
+
+    if (!memRems.length) {
+      html += `<div class="bz-empty" style="padding:12px 0">${_fct("fc_no_meds")}</div>`;
+    } else {
+      memRems.forEach((r) => {
+        html += `<div class="fc-row">
+          <span style="font-weight:600">${r.name}${r.strength ? " · " + r.strength : ""}</span>
+          <span style="color:var(--text2);font-size:11px">${r.timing || "-"} · ${r.time || "-"}</span>
+        </div>`;
+      });
+    }
+    html += `<button class="fc-add-btn" onclick="fcAddMed(${idx})">${_fct("fc_add_med")}</button>
+      </div>
+
+      <!-- Reports & Prescriptions -->
+      <div class="fc-section">
+        <div class="fc-section-title">📄 ${_fct("fc_reports")}</div>`;
+
+    if (!labReports.length && !memRx.length) {
+      html += `<div class="bz-empty" style="padding:12px 0">${_fct("fc_no_reports")}</div>`;
+    } else {
+      labReports.forEach((r, i) => {
+        html += `<div class="fc-row" onclick="viewPastLabReport('${memberKey}',${i});goTo('s-lab')">
+          <span style="font-weight:600">🧪 ${r.reportType || "Lab Report"}</span>
+          <span style="color:var(--text2);font-size:11px">${r.date || ""}</span>
+        </div>`;
+      });
+      memRx.forEach((rx, i) => {
+        const medsPreview = (rx.meds || []).slice(0, 2).map((mm) => mm.name).join(", ");
+        html += `<div class="fc-row">
+          <span style="font-weight:600">💊 Parchi · ${rx.date || ""}</span>
+          <span style="color:var(--text2);font-size:11px">${medsPreview}${(rx.meds||[]).length > 2 ? " ..." : ""}</span>
+        </div>`;
+      });
+    }
+    html += `<button class="fc-add-btn" onclick="fcAddReport(${idx})">${_fct("fc_add_report")}</button>
+        <button class="fc-add-btn" onclick="fcAddRx(${idx})">${_fct("fc_add_rx")}</button>
+      </div>
+    </div>`;
+
+    flow.innerHTML = html;
+  }
+
+  // ── Wellbeing check-in tap ──
+  function fcCheckin(idx, status) {
+    const fam = loadFamily();
+    const m = fam[idx];
+    if (!m) return;
+    const memberKey = "fam_" + m.name;
+    const today = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    _fcSet("ss_family_wellbeing", memberKey, { status, date: today });
+    if (typeof showToast === "function") showToast(`${m.name}: ${_fct("fc_status_" + status)}`);
+    // If bad, show doctor CTA (re-render will handle it)
+    renderFamilyMember(idx);
+  }
+
+  // ── Member detail CTAs ──
+  function fcAddMed(idx) {
+    const fam = loadFamily();
+    const m = fam[idx];
+    if (!m) return;
+    const memberKey = "fam_" + m.name;
+    rxSelectMember(memberKey, m.name);
+    startRx();
+  }
+
+  function fcAddReport(idx) {
+    const fam = loadFamily();
+    const m = fam[idx];
+    if (!m) return;
+    const memberKey = "fam_" + m.name;
+    const memberLabel = m.name;
+    if (typeof window.startLabForMember === "function") {
+      window.startLabForMember(memberKey, memberLabel);
+    } else {
+      startFeature("lab");
+    }
+  }
+
+  function fcAddRx(idx) {
+    const fam = loadFamily();
+    const m = fam[idx];
+    if (!m) return;
+    const memberKey = "fam_" + m.name;
+    rxSelectMember(memberKey, m.name);
+    startRx();
+  }
+
+  // ── Edit family member (pre-fill the add form) ──
+  function editFamilyMember(idx) {
+    const fam = loadFamily();
+    const m = fam[idx];
+    if (!m) return;
+    ST.familyAdd = { editIdx: idx, gender: m.gender || "Other" };
+    ST.condSelected = new Set(
+      (m.conditions || "").split(",").map((c) => c.trim()).filter(Boolean)
+    );
+    const flow = document.getElementById("family-list");
+    if (!flow) return;
+    flow.innerHTML = `
+    <button class="fc-back-btn" onclick="renderFamilyMember(${idx})" style="margin-bottom:14px">← ${_fct("fc_back")}</button>
+    <p class="flow-q" style="margin-bottom:20px">Member edit karo</p>
+    <div class="flow-tag">Naam *</div>
+    <input class="flow-input" id="fam-name" placeholder="Papa, Maa, Dadi..." value="${(m.name || "").replace(/"/g, "&quot;")}">
+    <div class="flow-tag">Aayu (saal) *</div>
+    <input class="flow-input" id="fam-age" type="number" placeholder="45" value="${m.age || ""}">
+    <div class="flow-tag">Gender *</div>
+    <div class="flow-choices" style="flex-direction:row;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+      <button class="flow-choice${m.gender === 'Male' ? ' selected' : ''}" style="flex:1;min-width:80px" onclick="selectGender(this,'Male')">Male</button>
+      <button class="flow-choice${m.gender === 'Female' ? ' selected' : ''}" style="flex:1;min-width:80px" onclick="selectGender(this,'Female')">Female</button>
+      <button class="flow-choice${(!m.gender || m.gender === 'Other') ? ' selected' : ''}" style="flex:1;min-width:80px" onclick="selectGender(this,'Other')">Other</button>
+    </div>
+    <div class="flow-tag">Height & Weight (optional)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <input class="flow-input" id="fam-height" placeholder="Height (cm)" style="margin:0" value="${m.height || ""}">
+      <input class="flow-input" id="fam-weight" placeholder="Weight (kg)" style="margin:0" value="${m.weight || ""}">
+    </div>
+    <div class="flow-tag">Koi beemari hai?</div>
+    <div class="conditions-grid">${CONDITIONS.map((c) => `<button class="cond-chip${ST.condSelected.has(c) ? ' selected' : ''}" onclick="toggleCond(this,'${c}')">${c}</button>`).join("")}</div>
+    <div class="flow-tag">Jio Phone Number (optional)</div>
+    <input class="flow-input" id="fam-phone" placeholder="9876543210" type="tel" value="${m.phone || ""}">
+    <button class="flow-next-btn" onclick="saveFamilyMember()">Save Karo</button>
+    <button class="flow-next-btn" style="background:var(--surface);color:var(--text)" onclick="renderFamilyMember(${idx})">${_fct("fc_back")}</button>
+  `;
   }
 
   function deleteFamily(i) {
@@ -17855,6 +18371,14 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
       phone: document.getElementById("fam-phone").value,
     };
     const fam = loadFamily();
+    const editIdx = ST.familyAdd && typeof ST.familyAdd.editIdx === "number" ? ST.familyAdd.editIdx : -1;
+    if (editIdx >= 0 && editIdx < fam.length) {
+      fam[editIdx] = member;
+      saveFamily(fam);
+      showToast(`${name} update ho gaye!`);
+      renderFamilyMember(editIdx);
+      return;
+    }
     fam.push(member);
     saveFamily(fam);
     showToast(`${name} add ho gaye!`);
@@ -17869,7 +18393,7 @@ Return [] ONLY if there is genuinely NO medicine or drug text anywhere in the im
         <div style="display:flex;flex-direction:column;gap:8px;max-width:320px;margin:0 auto">
           <button class="lab-cta" onclick="goToFeature('lab')">🧪 ${name} ki lab report jodein</button>
           <button class="lab-cta secondary" onclick="goToFeature('medicine')">💊 ${name} ke liye dawai reminder</button>
-          <button class="lab-cta secondary" onclick="renderFamilyList()">👨‍👩‍👧 Family list dekhein</button>
+          <button class="lab-cta secondary" onclick="renderFamilyList()">Family list dekhein</button>
           <button class="lab-cta secondary" onclick="goTo('s-hub')">← Wapas Sehat Saathi</button>
         </div>
       </div>`;
