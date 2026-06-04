@@ -3282,8 +3282,8 @@ body:has(#voice-overlay.active) .ss-lang-toggle {
 }
 .ob-bmi-num {
   font-size: 28px;
-  font-weight: 700;
-  color: #fff;
+  font-weight: 800;
+  color: var(--jio-blue, #0057a8);
   line-height: 1;
 }
 .ob-bmi-cat {
@@ -9862,6 +9862,7 @@ function _obField(opts) {
     'placeholder="' + _obEscape(opts.placeholder || "") + '" /></div>' +
     '<button class="ob-next">' + t("ob_btn_aage") + "</button>";
   const inp = wrap.querySelector(".ob-field");
+  if (opts.value) inp.value = opts.value;
   const btn = wrap.querySelector(".ob-next");
   const submit = () => {
     const v = inp.value.trim();
@@ -9916,6 +9917,7 @@ function renderOnboardStep(step) {
       type: "text",
       placeholder: "Sunita, Ramesh…",
       maxlength: 30,
+      value: d.name || "",
       onSubmit: (v) => {
         if (v) d.name = v;
         renderOnboardStep(2);
@@ -9939,6 +9941,7 @@ function renderOnboardStep(step) {
       inputmode: "numeric",
       placeholder: "32",
       maxlength: 3,
+      value: d.age || "",
       onSubmit: (v) => {
         if (v) d.age = v;
         renderOnboardStep(3);
@@ -9985,6 +9988,7 @@ function renderOnboardStep(step) {
       type: "number",
       inputmode: "numeric",
       placeholder: "65",
+      value: d.weight || "",
       onSubmit: (v) => {
         if (v) d.weight = v;
         renderOnboardStep(5);
@@ -10008,6 +10012,7 @@ function renderOnboardStep(step) {
       inputmode: "numeric",
       placeholder: "165",
       allowEmpty: true,
+      value: d.height || "",
       onSubmit: (v) => {
         if (v) d.height = v;
         renderOnboardStep(6);
