@@ -84,9 +84,9 @@ html[lang="hi"] textarea {
   --border-mid: rgba(0, 102, 204, 0.16);
   --input-bg: rgba(0, 102, 204, 0.05);
 }
-/* Keep full-screen overlays always dark in light mode */
+/* Keep full-screen overlays always dark in light mode.
+   (Voice overlay #voice-ov is intentionally LIGHT — excluded here.) */
 @media (prefers-color-scheme: light) {
-  #voice-ov,
   #reminder-ov,
   #checkin-ov,
   #bless-ov,
@@ -107,7 +107,6 @@ html[lang="hi"] textarea {
     --input-bg: rgba(255, 255, 255, 0.08);
   }
 }
-[data-theme="light"] #voice-ov,
 [data-theme="light"] #reminder-ov,
 [data-theme="light"] #checkin-ov,
 [data-theme="light"] #bless-ov,
@@ -1342,25 +1341,26 @@ body {
   }
 }
 .voice-line.user {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  background: #eef4ff;
+  color: var(--text, #0a1628);
   align-self: flex-end;
   max-width: 85%;
+  border: 1px solid var(--border, #d0e2f7);
   border-bottom-right-radius: 6px;
 }
 .voice-line.user .voice-line-lbl {
-  color: #22c55e;
+  color: var(--green, #00875a);
 }
 .voice-line.bot {
-  background: rgba(0, 102, 204, 0.18);
-  color: #fff;
+  background: rgba(0, 102, 204, 0.1);
+  color: var(--text, #0a1628);
   align-self: flex-start;
   max-width: 90%;
   border-bottom-left-radius: 6px;
-  border: 1px solid rgba(0, 102, 204, 0.32);
+  border: 1px solid rgba(0, 102, 204, 0.28);
 }
 .voice-line.bot .voice-line-lbl {
-  color: #0078e8;
+  color: var(--jio-blue, #0057a8);
 }
 .voice-line-lbl {
   display: block;
@@ -1383,11 +1383,11 @@ body {
    lighter/italic so it reads as provisional vs the final user line. */
 .voice-line.interim {
   align-self: flex-end;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px dashed rgba(255, 255, 255, 0.25);
-  color: var(--text2);
+  background: #f0f4fb;
+  border: 1px dashed var(--border, #d0e2f7);
+  color: var(--text-secondary, #3a5070);
   font-style: italic;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 /* WS4: Send-now button — lets the user submit before silence-detect fires */
 .voice-actions {
