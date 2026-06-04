@@ -8620,7 +8620,7 @@ const LANG = {
   chip_doctor_kab: { hi: "डॉक्टर कब मिलें?", en: "Doctor kab milein?" },
   chip_dadi_kahani: { hi: "एक कहानी सुनें", en: "Ek kahani sunein" },
   // Voice overlay
-  voice_listening: { hi: "सुन रहा हूँ", en: "Sun raha hoon" },
+  voice_listening: { hi: "सुन रही हूँ", en: "Sun rahi hoon" },
   voice_band_karein: { hi: "बंद करें", en: "Band karein" },
   voice_hint: {
     hi: "बोलें... या रुकने के लिए बंद करें",
@@ -9540,11 +9540,11 @@ CITATION (rare, conversational — never a footer): If you must mention the sour
   const SYSTEM_PROMPT = `You are Sehat Saathi — a warm, knowledgeable health companion who walks beside the user on their wellness journey. NOT a remedy machine. NOT a grandmother, NOT an elder figure. Just a caring, informed friend in their pocket.
 
 IDENTITY — STRICTLY FOLLOW:
-- You are Sehat Saathi: neutral, warm, genderless. Never refer to yourself as "Dadi", "Nani", "Maa", or any age/gender role.
-- Banned forever: "beta", "arey beta", "main batati hoon" (maternal framing), grandmother idioms, blessings like "jeete raho", any age or gender self-reference.
+- You are Sehat Saathi: a WOMAN. Warm, knowledgeable, caring friend — not a grandmother, not an elder, not a maternal figure.
+- Banned forever: "beta", "arey beta", grandmother idioms, blessings like "jeete raho", any maternal/elder-role framing.
 - Address the user as "aap". Use their name if you know it.
 - Central metaphor = the SAFAR (journey): "is safar mein main aapke saath hoon", "ek chhota kadam aaj" — use it LIGHTLY and naturally, not forced into every line.
-- Tone: like a knowledgeable, caring friend — warm, simple, respectful, encouraging, never preachy, never textbook-y.
+- Tone: like a knowledgeable, caring female friend — warm, simple, respectful, encouraging, never preachy, never textbook-y.
 
 NO RE-INTRODUCTION — STRICT:
 - Introduce yourself ONLY if it is truly the first message of the conversation.
@@ -9572,7 +9572,16 @@ STAY ON ONE TOPIC PER REPLY:
 
 YOUR PERSONALITY: Warm, listening, asks back. Vary your tone. Don't sound mechanical. Sometimes you just acknowledge ("achha", "samajh aaya", "haan"), sometimes you share a brief relatable observation. Don't use bullet lists.
 
-GRAMMAR — FIRST PERSON: You are Sehat Saathi. Use natural, clear Hindi/Hinglish. Avoid strongly gendered verb forms where possible — prefer neutral phrasing. If a gendered form is unavoidable in the language, that's fine, but never frame yourself as a female elder.
+GRAMMAR — FIRST PERSON (MANDATORY — NO EXCEPTIONS):
+You are a WOMAN. ALWAYS use FEMININE Hindi first-person grammar in every reply:
+- "main sun rahi hoon" (NEVER "sun raha hoon")
+- "samajh gayi" (NEVER "samajh gaya")
+- "main karungi" (NEVER "karunga")
+- "main bataaungi" (NEVER "bataaunga")
+- "main sakti hoon" (NEVER "sakta hoon")
+- "main soch rahi hoon" (NEVER "soch raha hoon")
+- "main yahan hoon" and similar neutral-safe forms are fine.
+This applies equally in Devanagari Hindi (रही हूँ / समझ गई / करूँगी / बता दूँगी / सकती हूँ) and in Hinglish (Roman script). MASCULINE forms (raha/gaya/karunga/bataaunga/sakta/soch raha) are BANNED in Saathi's first-person speech.
 
 CRITICAL — DO NOT RUSH TO REMEDIES:
 - If complaint is vague ("pet kharab hai", "tabiyat theek nahi", "neend nahi aati") — ASK 1-2 warm clarifying questions FIRST. Don't suggest haldi/ajwain in the first reply unless they describe a clear specific issue.
@@ -9627,7 +9636,7 @@ Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
   // ── v2: Wellness + Community system prompts ──
   const WELLNESS_SYSTEM_PROMPT = `You are Sehat Saathi — Wellness mode. You are a warm, caring health companion talking to a young adult (18–35) about everyday wellness on JioBharatIQ. NOT a grandmother, NOT an elder figure — a knowledgeable, encouraging friend.
 
-IDENTITY: You are Sehat Saathi — neutral, warm, genderless. Never call yourself "Dadi", "Maa", or any age/gender role. Never use "beta" or "bachha". Address the user as "aap" or by their name if known.
+IDENTITY: You are Sehat Saathi — a WOMAN. Warm, caring, knowledgeable. Never call yourself "Dadi", "Maa", or any age/gender role. Never use "beta" or "bachha". Address the user as "aap" or by their name if known. ALWAYS use feminine first-person Hindi grammar: "main soch rahi hoon", "samajh gayi", "main karungi", "main sakti hoon" — NEVER masculine forms (raha/gaya/karunga/sakta).
 
 NO RE-INTRODUCTION — STRICT: Introduce yourself only on the very first message. Never re-greet or restate "main Sehat Saathi hoon" on follow-up turns. When the user names a topic, respond to it directly.
 
@@ -9657,7 +9666,7 @@ CRITICAL RULES:
 - You are a peer, NOT a doctor. Talk like a friend, not an expert.
 - Share your own story, struggles, and what HAS worked for you personally.
 - Use first-person ("main", "mera", "humne kiya"). Sound like a real WhatsApp neighbour.
-- For clinical questions, redirect: "Doctor se milein — main bhi koshish kar rahi/raha hoon" or "Sehat Saathi mein ghar ke nushke try karein".
+- For clinical questions, redirect: "Doctor se milein — main bhi koshish kar rahi hoon" or "Sehat Saathi mein ghar ke nushke try karein".
 - Keep replies under 4 sentences. Casual, warm, sometimes joke.
 - NEVER claim certainty. Use "shayad", "mere ghar mein", "doctor ne mujhe bola tha".
 
@@ -12895,8 +12904,8 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
         say: "अच्छा। क्या तकलीफ हो रही है? नीचे से चुनो, या लिख के बताओ।",
       },
       tension: {
-        txt: "Hmm. Saath hoon. Niche se ek chunein, ya seedha jo bhi feel ho raha hai likh do — pehle koi salah nahi, sirf sun raha hoon.",
-        say: "हम्म। साथ हूं। नीचे से एक चुनो, या जो भी feel हो रहा है लिख दो। पहले कोई सलाह नहीं, सिर्फ सुन रहा हूं।",
+        txt: "Hmm. Saath hoon. Niche se ek chunein, ya seedha jo bhi feel ho raha hai likh do — pehle koi salah nahi, sirf sun rahi hoon.",
+        say: "हम्म। साथ हूं। नीचे से एक चुनो, या जो भी feel हो रहा है लिख दो। पहले कोई सलाह नहीं, सिर्फ सुन रही हूं।",
       },
     };
     const chips = {
@@ -15077,7 +15086,7 @@ function renderLabStep(step) {
         <div class="thinking-bub" style="display:inline-flex;background:var(--bold)">
           <div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
-        <p style="margin-top:18px;color:var(--text2);font-size:14px">Report padh raha hoon... thoda waqt lagega</p>
+        <p style="margin-top:18px;color:var(--text2);font-size:14px">Report padh rahi hoon... thoda waqt lagega</p>
       </div>`;
   } else if (step === 3) {
     // Result
@@ -15160,7 +15169,7 @@ async function handleLabUpload(e) {
       ST.labData.result = {
         reportType: "NOT_A_LAB_REPORT",
         summary:
-          "Yeh prescription lagti hai — abhi sirf lab reports interpret kar sakta hoon. Dawai ke liye Dawai Reminder use karein.",
+          "Yeh prescription lagti hai — abhi sirf lab reports interpret kar sakti hoon. Dawai ke liye Dawai Reminder use karein.",
       };
       renderLabStep(3);
       return;
@@ -15714,7 +15723,7 @@ function saveNudgeReminder() {
   scheduleReminder(rem);
 
   if (ov) ov.remove();
-  showToast(locStr("Theek hai, yaad dila dunga ⏰", "ठीक है, याद दिला दूँगा ⏰"));
+  showToast(locStr("Theek hai, yaad dila dungi ⏰", "ठीक है, याद दिला दूँगी ⏰"));
   trackEvent("nudge_reminder_set", { kind: rem.kind, time: rem.time });
 }
 
@@ -19246,6 +19255,13 @@ const BREATH_PHASES = [
   // + grace period". convListenOnce refuses to (re)open the mic while this is on, so
   // TTS coming out of the phone speaker doesn't get re-captured by the mic.
   let _isSpeaking = false;
+  // v6.9: half-duplex processing lock — true from the moment the recorder stops
+  // (onstop fires / sendVoiceNow called) through STT → AI reply → TTS finish.
+  // Cleared only AFTER the TTS resolves (or on error/abort/stopVoice).
+  // convListenOnce refuses to re-open the mic while either _convProcessing OR
+  // _isSpeaking is true, closing the ambient-pickup gap between utterance capture
+  // and TTS start that _isSpeaking alone did not cover.
+  let _convProcessing = false;
   // v5.5.4: conversational voice mode — confirmation flow for AI-suggested skills.
   // Carries state across turns inside convHandleTranscript.
   // Shape: { kind:'movement'|'remedy'|'acupressure', key, title } | null
@@ -19364,25 +19380,33 @@ const BREATH_PHASES = [
 
   async function convListenOnce() {
     if (!_convActive) return;
-    // v5.5: refuse to re-open the mic while TTS is still emitting — otherwise the
-    // speaker tail (browser AEC handles most of it, but room reverb leaks) gets
-    // re-transcribed and the AI starts talking to itself.
-    if (_isSpeaking) {
+    // v6.9: refuse to re-open the mic while a turn is being processed (STT +
+    // AI reply + TTS) OR while TTS is still emitting audio. _convProcessing
+    // covers the STT→AI→TTS window; _isSpeaking covers TTS playback itself
+    // (which _convProcessing also encompasses, but _isSpeaking may outlast
+    // _convProcessing by the 700ms grace period so both must be checked).
+    if (_convProcessing || _isSpeaking) {
       _speakingRetryCount++;
       if (_speakingRetryCount > _MAX_SPEAKING_RETRIES) {
-        // Safety valve: _isSpeaking is stuck (playback error / missed onended).
-        // Force-clear the flag and let the mic open so the user isn't locked out.
+        // Safety valve: one or both flags are stuck (playback error / missed
+        // onended / unhandled exception in convHandleTranscript).
+        // Force-clear both and let the mic open so the user isn't locked out.
         console.warn(
-          "[voice-skill] _isSpeaking stuck after " +
+          "[voice-skill] mic gate stuck after " +
             _speakingRetryCount +
-            " retries — force-clearing to unblock mic",
+            " retries (_convProcessing=" + _convProcessing +
+            " _isSpeaking=" + _isSpeaking +
+            ") — force-clearing to unblock mic",
         );
+        _convProcessing = false;
         _isSpeaking = false;
         _speakingRetryCount = 0;
         // Fall through to actually open the mic below.
       } else {
         console.info(
-          "[voice-skill] mic gated by _isSpeaking, retry " +
+          "[voice-skill] mic gated (_convProcessing=" + _convProcessing +
+            " _isSpeaking=" + _isSpeaking +
+            "), retry " +
             _speakingRetryCount +
             "/" +
             _MAX_SPEAKING_RETRIES +
@@ -19421,6 +19445,10 @@ const BREATH_PHASES = [
         if (e.data && e.data.size) _audioChunks.push(e.data);
       };
       _convRecorder.onstop = async () => {
+        // v6.9: set the processing lock immediately — BEFORE any async work.
+        // This closes the gap between recorder stop and TTS start where ambient
+        // speech could be picked up by a prematurely re-opened mic.
+        _convProcessing = true;
         // WS4: stop recognition sidecar and remove the interim node as soon as
         // the recorder fires onstop — before Sarvam returns the final transcript.
         try {
@@ -19443,21 +19471,41 @@ const BREATH_PHASES = [
         } catch (e) {}
         _convAudioCtx = null;
         const blob = new Blob(_audioChunks, { type: _convRecorder.mimeType || "audio/webm" });
-        if (!_convActive) return;
-        // If recording was too short, resume listening (user might have tapped before speaking)
+        if (!_convActive) {
+          // Voice was stopped externally while the recorder was draining — release lock.
+          _convProcessing = false;
+          return;
+        }
+        // If recording was too short, release lock and resume listening
+        // (user may have tapped before speaking).
         if (blob.size < 1500) {
+          _convProcessing = false;
           setTimeout(convListenOnce, 200);
           return;
         }
         setVoiceState("thinking");
-        const transcript = await transcribeWithSarvam(blob);
+        let transcript = "";
+        try {
+          transcript = await transcribeWithSarvam(blob);
+        } catch (sttErr) {
+          console.error("[conv] STT error", sttErr);
+        }
         if (!transcript) {
+          // STT returned nothing — release lock, go back to listening.
+          _convProcessing = false;
           setVoiceState("listening");
           if (_convActive) setTimeout(convListenOnce, 300);
           return;
         }
-        // Send to AI and play reply
-        await convHandleTranscript(transcript);
+        // Send to AI and play reply; convHandleTranscript awaits TTS end,
+        // so when it returns _isSpeaking is already false.
+        try {
+          await convHandleTranscript(transcript);
+        } catch (handleErr) {
+          console.error("[conv] convHandleTranscript error", handleErr);
+        }
+        // v6.9: release processing lock AFTER TTS has fully ended.
+        _convProcessing = false;
         // After reply finishes, resume listening
         if (_convActive) {
           setVoiceState("listening");
@@ -19989,6 +20037,9 @@ const BREATH_PHASES = [
       window.speechSynthesis && window.speechSynthesis.cancel();
     } catch (e) {}
     _isSpeaking = false;
+    // v6.9: release processing lock so the mic is never left stuck muted after
+    // the user taps "Band karein" or stopVoice() is called for any other reason.
+    _convProcessing = false;
     // v5.5.4: clear any pending skill confirmation so a future voice session
     // doesn't open with a stale offer.
     _pendingVoiceSkill = null;
@@ -25213,8 +25264,8 @@ const BREATH_PHASES = [
         const since = a.since || _locStr("kuch der se", "कुछ देर से");
         const withVal = a.with;
         let base = _locStr(
-          `Samajh gaya — ${since} ${where} dard ho raha hai.`,
-          `समझ गया — ${since} ${where} दर्द हो रहा है।`
+          `Samajh gayi — ${since} ${where} dard ho raha hai.`,
+          `समझ गई — ${since} ${where} दर्द हो रहा है।`
         );
         if (withVal === "Tension" || withVal === "टेंशन") {
           base += _locStr(
@@ -25238,8 +25289,8 @@ const BREATH_PHASES = [
         const type = a.type || _locStr("sardi-khansi", "सर्दी-खाँसी");
         const throat = a.throat;
         let base = _locStr(
-          `Samajh gaya — ${type} ho rahi hai.`,
-          `समझ गया — ${type} हो रही है।`
+          `Samajh gayi — ${type} ho rahi hai.`,
+          `समझ गई — ${type} हो रही है।`
         );
         if (throat === "Haan, bahut" || throat === "हाँ, बहुत") {
           base += _locStr(
@@ -25258,8 +25309,8 @@ const BREATH_PHASES = [
         const kind = a.kind || _locStr("pet ki takleef", "पेट की तकलीफ़");
         const when = a.when;
         let base = _locStr(
-          `Samajh gaya — ${kind} ho rahi hai.`,
-          `समझ गया — ${kind} हो रही है।`
+          `Samajh gayi — ${kind} ho rahi hai.`,
+          `समझ गई — ${kind} हो रही है।`
         );
         if (when === "Khaane ke baad" || when === "खाने के बाद") {
           base += _locStr(
@@ -25278,8 +25329,8 @@ const BREATH_PHASES = [
         const since = a.since || _locStr("kuch der se", "कुछ देर से");
         const level = a.level;
         let base = _locStr(
-          `Samajh gaya — ${since} bukhar hai.`,
-          `समझ गया — ${since} बुखार है।`
+          `Samajh gayi — ${since} bukhar hai.`,
+          `समझ गई — ${since} बुखार है।`
         );
         if (level === "Halka (normal se thoda zyada)" || level === "हल्का (normal से थोड़ा ज़्यादा)") {
           base += _locStr(
@@ -25298,8 +25349,8 @@ const BREATH_PHASES = [
         const cause = a.cause || _locStr("kamar dard", "कमर दर्द");
         const since = a.since;
         let base = _locStr(
-          `Samajh gaya — ${cause} ki wajah se kamar mein dard hai.`,
-          `समझ गया — ${cause} की वजह से कमर में दर्द है।`
+          `Samajh gayi — ${cause} ki wajah se kamar mein dard hai.`,
+          `समझ गई — ${cause} की वजह से कमर में दर्द है।`
         );
         if (since === "2-3 din se" || since === "2-3 दिन से") {
           base += _locStr(
@@ -25318,8 +25369,8 @@ const BREATH_PHASES = [
         const kind = a.kind || _locStr("tension", "टेंशन");
         const since = a.since;
         let base = _locStr(
-          `Samajh gaya — ${kind} feel ho raha hai.`,
-          `समझ गया — ${kind} feel हो रहा है।`
+          `Samajh gayi — ${kind} feel ho raha hai.`,
+          `समझ गई — ${kind} feel हो रहा है।`
         );
         if (since === "Kai hafte se" || since === "कई हफ्ते से") {
           base += _locStr(
@@ -25338,8 +25389,8 @@ const BREATH_PHASES = [
         const kind = a.kind || _locStr("neend ki dikkat", "नींद की दिक्कत");
         const screen = a.screen;
         let base = _locStr(
-          `Samajh gaya — ${kind} ho rahi hai.`,
-          `समझ गया — ${kind} हो रही है।`
+          `Samajh gayi — ${kind} ho rahi hai.`,
+          `समझ गई — ${kind} हो रही है।`
         );
         if (screen === "Haan, late tak" || screen === "हाँ, late तक") {
           base += _locStr(
@@ -25356,8 +25407,8 @@ const BREATH_PHASES = [
       }
       default:
         return _locStr(
-          "Samajh gaya — aapki takleef ka dhyan rakhna zaroori hai. Yeh 3 kadam milke karte hain.",
-          "समझ गया — आपकी तकलीफ़ का ध्यान रखना ज़रूरी है। ये 3 कदम मिलकर करते हैं।"
+          "Samajh gayi — aapki takleef ka dhyan rakhna zaroori hai. Yeh 3 kadam milke karte hain.",
+          "समझ गई — आपकी तकलीफ़ का ध्यान रखना ज़रूरी है। ये 3 कदम मिलकर करते हैं।"
         );
     }
   }
