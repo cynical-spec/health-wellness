@@ -8753,6 +8753,8 @@ const LANG = {
   fc_tile_sub: { hi: "अपनों का ख्याल रखें", en: "Apno ka khayal rakhein" },
   fc_add_member: { hi: "नया सदस्य जोड़ें", en: "Naya sadasya jodein" },
   fc_checkin_q: { hi: "आज कैसा महसूस कर रहे हैं?", en: "Aaj kaise mehsoos kar rahe hain?" },
+  fc_checkin_q_member: { hi: "{name} आज कैसे हैं?", en: "{name} aaj kaise hain?" },
+  fc_checkin_hint: { hi: "जैसा आप देख रहे हैं वैसा भरें", en: "Jaisa aap dekh rahe hain waisa bharein" },
   fc_status_ok: { hi: "ठीक", en: "Theek" },
   fc_status_warn: { hi: "थोड़ी तकलीफ़", en: "Thodi takleef" },
   fc_status_bad: { hi: "बहुत तकलीफ़", en: "Bahut takleef" },
@@ -18549,6 +18551,8 @@ const _FC_FALLBACK = {
   fc_tile_sub: "Apno ki sehat dekhein",
   fc_add_member: "+ Member jodein",
   fc_checkin_q: "Aaj kaisa feel kar rahe hain?",
+  fc_checkin_q_member: "{name} aaj kaise hain?",
+  fc_checkin_hint: "Jaisa aap dekh rahe hain waisa bharein",
   fc_status_ok: "Theek hain",
   fc_status_warn: "Thodi takleef",
   fc_status_bad: "Zyada takleef",
@@ -18811,14 +18815,15 @@ function renderFamilyMember(idx) {
 
       <!-- Wellbeing Check-in -->
       <div class="fc-section">
-        <div class="fc-section-title">${_fct("fc_checkin_q")}</div>
+        <div class="fc-section-title">${(_fct("fc_checkin_q_member") || "{name} aaj kaise hain?").replace("{name}", m.name)}</div>
+        <div class="fc-row-sub" style="font-size:11px;color:var(--text3);margin-bottom:10px">${_fct("fc_checkin_hint") || "Jaisa aap dekh rahe hain waisa bharein"}</div>
         <div class="fc-checkin">
           <button class="fc-checkin-chip ok${wb && wb.status === "ok" ? " selected" : ""}" onclick="fcCheckin(${idx},'ok')">${_fct("fc_status_ok")}</button>
           <button class="fc-checkin-chip warn${wb && wb.status === "warn" ? " selected" : ""}" onclick="fcCheckin(${idx},'warn')">${_fct("fc_status_warn")}</button>
           <button class="fc-checkin-chip bad${wb && wb.status === "bad" ? " selected" : ""}" onclick="fcCheckin(${idx},'bad')">${_fct("fc_status_bad")}</button>
         </div>
         ${wb ? `<div style="font-size:11px;color:var(--text3);margin-top:6px">${_fct("fc_last_checkin")}: ${wb.date}</div>` : ""}
-        ${wb && wb.status === "bad" ? `<button class="fc-add-btn" style="margin-top:10px;background:rgba(239,68,68,.15);color:#ef4444" onclick="typeof openDoctor==='function'?openDoctor():startFeature('chat')">Doctor se milein →</button>` : ""}
+        ${wb && wb.status === "bad" ? `<button class="fc-add-btn" style="margin-top:10px;background:rgba(239,68,68,.15);color:#ef4444" onclick="typeof openDoctor==='function'?openDoctor():startFeature('chat')">${m.name} ko doctor ko dikhana behtar →</button>` : ""}
       </div>
 
       <!-- Medicines -->
