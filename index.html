@@ -3134,6 +3134,41 @@ body {
   background: #d92d20;
 }
 
+/* ── Supporting YouTube video (animation → video) ── */
+.yt-video {
+  margin: 14px auto 6px;
+  width: 100%;
+  max-width: 480px;
+}
+.yt-video-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-align: center;
+  color: var(--text-secondary, #3a5070);
+}
+/* On the dark immersive walkthrough finish overlay, light text */
+#wt-finish .yt-video-label {
+  color: rgba(226, 232, 240, 0.85);
+}
+.yt-video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+.yt-video-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
 /* ── v6.6: WhatsApp feedback floating button ──────────────────────
    Bottom-right on every screen. WhatsApp green so office boys
    recognize it immediately. Compact, doesn't dominate the UI.
@@ -11275,6 +11310,7 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
       subtitle: "Zukaam ka gharelu nuska",
       subtitleHi: "ज़ुकाम का घरेलू नुस्खा",
       kindIcon: "🌿",
+      videoQuery: "हल्दी वाला दूध बनाने का तरीका gharelu nuskha",
       match: [
         "haldi-doodh",
         "haldi doodh",
@@ -11352,6 +11388,7 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
       subtitle: "Sardi-khansi ka gharelu nuska",
       subtitleHi: "सर्दी-खाँसी का घरेलू नुस्खा",
       kindIcon: "🫚",
+      videoQuery: "अदरक की चाय बनाने का तरीका sardi khansi gharelu nuskha",
       match: [
         "adrak-chai",
         "adrak ki chai",
@@ -11435,6 +11472,7 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
       subtitle: "Pet halka, gas ke liye",
       subtitleHi: "पेट हल्का, गैस के लिए",
       kindIcon: "🟤",
+      videoQuery: "जीरा पानी बनाने का तरीका pet gas gharelu nuskha",
       match: ["jeera paani", "जीरा पानी", "cumin water", "jeera water"],
       steps: [
         {
@@ -11483,6 +11521,7 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
       subtitle: "Sardi-khansi aur immunity ke liye",
       subtitleHi: "सर्दी-खाँसी और इम्यूनिटी के लिए",
       kindIcon: "🌿",
+      videoQuery: "तुलसी अदरक काढ़ा बनाने का तरीका sardi khansi",
       match: ["tulsi kadha", "तुलसी काढ़ा", "tulsi tea", "तुलसी चाय"],
       steps: [
         {
@@ -12334,7 +12373,7 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
       try {
         finishEl.querySelectorAll(
           ".wt-btn-faayda, .wt-btn-didnt-work, .wt-vote-thanks, " +
-          ".wt-reason-picker, .wt-social-proof-line"
+          ".wt-reason-picker, .wt-social-proof-line, .yt-video"
         ).forEach(function (el) { el.remove(); });
       } catch (_) {}
 
@@ -12539,6 +12578,44 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
         console.warn("[walkthrough] evidence panel error:", _evErr);
       }
     }
+    // YouTube supporting video — async, injected below the finish content.
+    // Flow: animation → finish screen → video (appears once ytSearch resolves).
+    // Cleans up any previous .yt-video from a prior run (idempotent).
+    // Uses exp.videoQuery (curated) → exp.titleHi → exp.title + " ghar ka nushka".
+    // Degrades gracefully: nothing shown if Worker absent or videoId null.
+    if (finishEl) {
+      const _ytExpKey = _wt.key;
+      const _ytExp = _wt.exp;
+      (async function () {
+        try {
+          const _ytFn = (typeof window.ytSearch === "function") ? window.ytSearch : null;
+          if (!_ytFn) return;
+          const _ytQuery = _ytExp.videoQuery ||
+            (_ytExp.titleHi ? _ytExp.titleHi : _ytExp.title) + " ghar ka nushka";
+          const _ytId = await _ytFn(_ytQuery);
+          if (!_ytId) return;
+          // Finish element still in DOM and open?
+          if (!finishEl.classList.contains("open")) return;
+          const old = finishEl.querySelector(".yt-video");
+          if (old) old.remove();
+          const ytDiv = document.createElement("div");
+          ytDiv.className = "yt-video";
+          ytDiv.innerHTML =
+            '<div class="yt-video-label">वीडियो में और अच्छे से देखें</div>' +
+            '<div class="yt-video-frame">' +
+            '<iframe src="https://www.youtube-nocookie.com/embed/' + _ytId +
+            '?rel=0&modestbranding=1&playsinline=1"' +
+            ' title="remedy video" frameborder="0"' +
+            ' allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"' +
+            ' allowfullscreen></iframe>' +
+            '</div>';
+          finishEl.appendChild(ytDiv);
+        } catch (_ytErr) {
+          console.warn("[walkthrough] yt inject error:", _ytErr);
+        }
+      })();
+    }
+
     if (typeof speak === "function") {
       speak(_wt.exp.finishLine, {
         ttsText: _wt.exp.finishLineHi || _wt.exp.finishLine,
@@ -12738,7 +12815,7 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
       if (finishEl) {
         const toRemove = finishEl.querySelectorAll(
           ".wt-btn-faayda, .wt-btn-didnt-work, .wt-reason-picker, " +
-          ".wt-vote-thanks, .wt-evidence-panel, .wt-social-proof-line",
+          ".wt-vote-thanks, .wt-evidence-panel, .wt-social-proof-line, .yt-video",
         );
         toRemove.forEach(function (el) { el.remove(); });
       }
@@ -21450,6 +21527,7 @@ const BREATH_PHASES = [
       emoji: "🥛",
       title: "Haldi wala doodh",
       titleHi: "हल्दी वाला दूध",
+      videoQuery: "हल्दी वाला दूध बनाने का तरीका gharelu nuskha",
       durSec: 180,
       ingredients: "1 cup doodh · ¼ chamach haldi · pinch kali mirch · ½ chamach gud",
       steps: [
@@ -21480,6 +21558,7 @@ const BREATH_PHASES = [
       emoji: "🌿",
       title: "Tulsi kadha",
       titleHi: "तुलसी काढ़ा",
+      videoQuery: "तुलसी अदरक काढ़ा बनाने का तरीका sardi khansi",
       durSec: 300,
       ingredients: "8-10 tulsi patte · ½ inch adrak · 4-5 kali mirch · 1 elaichi · 1 cup paani",
       steps: [
@@ -21495,6 +21574,7 @@ const BREATH_PHASES = [
       emoji: "🫚",
       title: "Adrak ki chai",
       titleHi: "अदरक की चाय",
+      videoQuery: "अदरक की चाय बनाने का तरीका sardi khansi gharelu nuskha",
       durSec: 240,
       ingredients: "1 inch adrak · ½ cup paani · ½ cup doodh · chai patti · gud",
       steps: [
@@ -21510,6 +21590,7 @@ const BREATH_PHASES = [
       emoji: "🟤",
       title: "Jeera paani",
       titleHi: "जीरा पानी",
+      videoQuery: "जीरा पानी बनाने का तरीका pet gas gharelu nuskha",
       durSec: 120,
       ingredients: "1 chamach jeera · 1 glass paani",
       steps: [
@@ -22975,6 +23056,41 @@ const BREATH_PHASES = [
       ],
     },
   };
+  // ── YouTube search helper ─────────────────────────────────────────────────
+  // ytSearch(query) — fetches the Worker /youtube/search route and returns a
+  // videoId string or null. Fully graceful: null on any failure, null when
+  // USE_WORKER is false (no Worker deployed yet), and client-side cached so
+  // the same query never hits the network twice per session.
+  //
+  // Exposed on window so file 07 (finishWalkthrough) can call it without
+  // importing this file explicitly.
+
+  const _ytCache = new Map(); // query → videoId | null
+
+  async function ytSearch(query) {
+    if (!USE_WORKER) return null;
+    if (!query) return null;
+    const q = String(query).trim();
+    if (!q) return null;
+    // Cache hit — avoids duplicate network calls when card + finish both query
+    if (_ytCache.has(q)) return _ytCache.get(q);
+    try {
+      const res = await fetch(
+        WORKER_URL + "/youtube/search?q=" + encodeURIComponent(q),
+        { headers: { "x-pilot-token": CLIENT_TOKEN } }
+      );
+      if (!res.ok) { _ytCache.set(q, null); return null; }
+      const data = await res.json();
+      const id = (data && data.videoId) ? String(data.videoId) : null;
+      _ytCache.set(q, id);
+      return id;
+    } catch (_) {
+      _ytCache.set(q, null);
+      return null;
+    }
+  }
+  window.ytSearch = ytSearch;
+
   // ── WS5: community vote helpers ──────────────────────────────────────────
   // submitVote + fetchVotes are best-effort: every error is silently swallowed
   // so nothing in the remedy/walkthrough flow can break if the Worker route is
@@ -23322,6 +23438,34 @@ const BREATH_PHASES = [
           counts.down + "</span>";
         const infoDiv = cardBtn.querySelector(".recipe-card-info");
         if (infoDiv) infoDiv.appendChild(badge);
+      } catch (_) {}
+    })();
+
+    // YouTube supporting video — async, additive, graceful if no videoId.
+    // Query: kit.videoQuery (curated) → kit.titleHi → kit.title + " gharelu nuskha".
+    // Clean up any previous .yt-video on the same row before injecting (idempotent).
+    (async function () {
+      try {
+        const _ytQuery = kit.videoQuery || (kit.titleHi ? kit.titleHi : kit.title) + " gharelu nuskha";
+        const _ytId = await ytSearch(_ytQuery);
+        if (!_ytId) return;
+        // Row still in DOM?
+        if (!row.isConnected) return;
+        const old = row.querySelector(".yt-video");
+        if (old) old.remove();
+        const ytDiv = document.createElement("div");
+        ytDiv.className = "yt-video";
+        ytDiv.innerHTML =
+          '<div class="yt-video-label">वीडियो में और अच्छे से देखें</div>' +
+          '<div class="yt-video-frame">' +
+          '<iframe src="https://www.youtube-nocookie.com/embed/' + _ytId +
+          '?rel=0&modestbranding=1&playsinline=1"' +
+          ' title="remedy video" frameborder="0"' +
+          ' allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"' +
+          ' allowfullscreen></iframe>' +
+          '</div>';
+        row.appendChild(ytDiv);
+        msgsContainer.scrollTop = msgsContainer.scrollHeight;
       } catch (_) {}
     })();
   }
