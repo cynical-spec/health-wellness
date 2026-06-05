@@ -21514,6 +21514,109 @@ const BREATH_PHASES = [
   //
   // nuskha/kadam callers: `await speak(text, opts)` is safe to use between
   // walkthrough steps — the next step will not start until TTS is fully done.
+  // v7.3: Detect whether the text should be spoken with Indian-English TTS.
+  // Returns true when the content is English / Hinglish-Latin (no Devanagari,
+  // no Bengali script) AND the session language is en-IN, OR when the text
+  // contains no Indic codepoints AND no Hinglish markers (i.e. pure English).
+  // Bengali (bn/bn-IN) is explicitly excluded — it stays on ElevenLabs WiaI.
+  // Hindi Devanagari is explicitly excluded — it stays on ElevenLabs yM93.
+  function _isEnglishContent(text) {
+    if (!text) return false;
+    // If the text contains Devanagari → Hindi path, not English.
+    if (/[ऀ-ॿ]/.test(text)) return false;
+    // If the text contains Bengali script → Bengali path, not English.
+    if (/[ঀ-৿]/.test(text)) return false;
+    // Any other Indic script (Tamil, Telugu, Gujarati, Punjabi, etc.) → not English either.
+    if (/[஀-௿]/.test(text)) return false; // Tamil
+    if (/[ఀ-౿]/.test(text)) return false; // Telugu
+    if (/[ಀ-೿]/.test(text)) return false; // Kannada
+    if (/[ഀ-ൿ]/.test(text)) return false; // Malayalam
+    if (/[઀-૿]/.test(text)) return false; // Gujarati
+    if (/[਀-੿]/.test(text)) return false; // Punjabi
+    // Session language is en-IN (set by Sarvam STT auto-detect when user
+    // spoke English) → treat as English regardless of Hinglish words present.
+    const lang = (ST && ST.currentLanguage) || "";
+    if (/^en(-IN)?$/i.test(lang)) return true;
+    // Text is Roman/Latin. Check whether it has Hinglish markers — if it has
+    // none, it's pure English. If it has Hinglish markers, it's Hinglish-Latin
+    // (mixed) — also route to Indian English for better accent than US.
+    // Either way return true: Sarvam en-IN handles both well.
+    return true;
+  }
+
+  // v7.3: Speak English / Hinglish-Latin text via Sarvam Bulbul with
+  // target_language_code "en-IN" and speaker "vidya" (the warm Saathi voice).
+  // Sarvam's Indian-English speakers have a genuine Indian accent, solving
+  // the US-accent complaint when Saathi speaks English.
+  // Returns true on success so speak() can short-circuit; false on error so
+  // speak() falls through to ElevenLabs as the next-best option.
+  async function speakSarvamEnglish(text) {
+    if (!USE_WORKER && (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes("REPLACE"))) {
+      return false; // no Sarvam key → fall through to ElevenLabs
+    }
+    _killSidecarForTts();
+    _stopRecorderForTts();
+    try {
+      const speakText = text.length > 500 ? text.substring(0, 500) : text;
+      const _t0 = performance.now();
+      console.info("[TTS-EN] Sarvam en-IN speaker=vidya chars=" + speakText.length);
+      const res = await fetch(sarvamUrl("/text-to-speech"), {
+        method: "POST",
+        headers: sarvamHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          inputs: [speakText],
+          target_language_code: "en-IN",
+          speaker: "vidya",
+          pitch: 0,
+          pace: 0.9,
+          loudness: 1.4,
+          speech_sample_rate: 22050,
+          enable_preprocessing: true,
+          model: "bulbul:v2",
+        }),
+      });
+      if (!res.ok) {
+        const errTxt = await res.text();
+        console.warn("[TTS-EN] Sarvam en-IN failed", res.status, errTxt);
+        return false; // fall through to ElevenLabs
+      }
+      const data = await res.json();
+      if (!data.audios || !data.audios[0]) {
+        console.warn("[TTS-EN] Sarvam en-IN returned no audio");
+        return false;
+      }
+      console.info("[TTS-EN] Sarvam en-IN", Math.round(performance.now() - _t0), "ms");
+      if (_currentAudio) {
+        try { _currentAudio.pause(); } catch (e) {}
+        _currentAudio = null;
+      }
+      const sarvamAudio = new Audio("data:audio/wav;base64," + data.audios[0]);
+      _currentAudio = sarvamAudio;
+      _markTtsStart(sarvamAudio);
+      await new Promise((resolve) => {
+        const _done = () => resolve();
+        sarvamAudio.addEventListener("ended", _done, { once: true });
+        sarvamAudio.addEventListener("error", _done, { once: true });
+        sarvamAudio.addEventListener("abort", _done, { once: true });
+        sarvamAudio.play().catch((e) => {
+          if (e && e.name === "NotAllowedError") {
+            console.warn("[TTS-EN] autoplay blocked — queuing gesture-unlock", e);
+            _isSpeaking = false;
+            _armAudioUnlock(sarvamAudio);
+          } else {
+            console.warn("[TTS-EN] play error", e);
+            _isSpeaking = false;
+          }
+          resolve();
+        });
+      });
+      return true;
+    } catch (e) {
+      console.warn("[TTS-EN] speakSarvamEnglish failed", e);
+      return false;
+    }
+  }
+
   async function speak(text, opts) {
     if (!text) return;
     // v6.7.6: pre-transliterate before EITHER engine. ElevenLabs Sarah pronounced
@@ -21550,6 +21653,27 @@ const BREATH_PHASES = [
       }
     } catch (e) {
       console.warn("[speak] pre-translit failed, using raw text", e);
+    }
+    // v7.3: ENGLISH / HINGLISH-LATIN INTERCEPT — route to Sarvam Bulbul
+    // en-IN (Indian-accented) BEFORE trying ElevenLabs (US-accented for English).
+    // Applies only when the text has no Devanagari and no Bengali script, i.e.
+    // the content is Roman/Latin (English or Hinglish-Latin).
+    // Hindi (Devanagari after pre-translit above) and Bengali (WiaI ElevenLabs
+    // path) are NOT intercepted — they continue to their existing engines.
+    // prepText may already be Devanagari after the transliteration block above
+    // if this is Hinglish → Hindi — in that case _isEnglishContent(prepText)
+    // returns false (Devanagari guard hits) and we fall through to ElevenLabs
+    // as before. We test the ORIGINAL text so the intercept decision is made on
+    // the raw input, not the already-transliterated form.
+    const callerTtsTextForEnCheck = opts && opts.ttsText;
+    const textForEnCheck = callerTtsTextForEnCheck || text;
+    if (_isEnglishContent(textForEnCheck)) {
+      // Use the pre-transliterated text for English TTS too — if it ended up as
+      // Devanagari (Hinglish that got transliterated to Hindi), _isEnglishContent
+      // above would have returned false already, so prepText here is still Roman.
+      if (await speakSarvamEnglish(prepText)) return;
+      // Sarvam English failed — fall through to ElevenLabs as backup.
+      console.info("[speak] Sarvam en-IN failed, falling back to ElevenLabs");
     }
     // v3.7: ElevenLabs first if available — now with native-script input.
     // SOS-fix-3: speakElevenLabs is already awaitable and returns true on
