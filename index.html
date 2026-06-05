@@ -1397,20 +1397,82 @@ body {
   right: 0;
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 .voice-send {
-  background: rgba(34, 197, 94, 0.18);
-  border: 1.5px solid rgba(34, 197, 94, 0.55);
-  color: #fff;
+  background: rgba(0, 135, 90, 0.12);
+  border: 1.5px solid rgba(0, 135, 90, 0.5);
+  color: var(--green, #00875a);
   border-radius: var(--radius-pill);
-  padding: 10px 22px;
+  padding: 10px 18px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 .voice-send:active {
   transform: scale(0.96);
+}
+/* ── Voice mic mute toggle (clean, visible) ── */
+.voice-mute {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--radius-pill);
+  padding: 11px 20px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    transform 0.1s;
+}
+.voice-mute:active {
+  transform: scale(0.96);
+}
+.voice-mute .vm-ico {
+  font-size: 17px;
+  line-height: 1;
+}
+.voice-mute .vm-ico-off {
+  display: none;
+}
+/* Listening — mic ON (green) */
+.voice-mute.listening {
+  background: #e6f6ef;
+  border-color: var(--green, #00875a);
+  color: var(--green, #00875a);
+}
+/* Saathi speaking — auto-muted (blue/neutral, mic off) */
+.voice-mute.speaking {
+  background: #eef2f8;
+  border-color: var(--border, #d0e2f7);
+  color: var(--text-secondary, #3a5070);
+}
+.voice-mute.speaking .vm-ico-on {
+  display: none;
+}
+.voice-mute.speaking .vm-ico-off {
+  display: inline;
+  opacity: 0.7;
+}
+/* Manually muted (red, mic off) */
+.voice-mute.muted {
+  background: #fdecea;
+  border-color: #d92d20;
+  color: #d92d20;
+}
+.voice-mute.muted .vm-ico-on {
+  display: none;
+}
+.voice-mute.muted .vm-ico-off {
+  display: inline;
 }
 /* Hint text at bottom while listening */
 .voice-hint {
@@ -8256,7 +8318,7 @@ body:not(.focus) .focus-home {
   </div>
   <div class="voice-transcript-area" id="voice-transcript-area"></div>
   <div class="voice-hint" id="voice-hint" data-i18n="voice_hint">Bolein... ya rukne ke liye band karein</div>
-  <div class="voice-actions"><button class="voice-send" onclick="sendVoiceNow()" data-i18n="voice_send" aria-label="Bhej do">Bhej do →</button></div>
+  <div class="voice-actions"><button id="voice-mute-btn" class="voice-mute listening" onclick="toggleVoiceMute()" aria-label="Mic mute toggle"><span class="vm-ico vm-ico-on" aria-hidden="true">🎤</span><span class="vm-ico vm-ico-off" aria-hidden="true">🔇</span><span id="voice-mute-label">Sun rahi hoon</span></button><button class="voice-send" onclick="sendVoiceNow()" data-i18n="voice_send" aria-label="Bhej do">Bhej do →</button></div>
   <button class="voice-stop" onclick="stopVoice()"><span class="voice-stop-dot"></span>Band karein</button>
   <!-- Legacy refs kept so other code that touches them doesn't break -->
   <p class="voice-txt" id="voice-txt"></p>
@@ -14657,6 +14719,113 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
         // v6.2: append "Saathi ke saath karein" CTA if the reply matches a known experience
         if (typeof maybeAppendRemedyCta === "function") maybeAppendRemedyCta(cleanReply);
 
+        // ── v9.1: Voice hero-card deterministic fallback ──────────────────────
+        // In voice mode the AI asks a short clarifying question and rarely names
+        // a remedy, so injectRemedyCard (fired at 80ms inside addMsg) finds
+        // nothing and NO card appears. This fallback ensures a tappable remedy
+        // card is ALWAYS surfaced for known symptoms — the hero experience.
+        //
+        // Logic:
+        //   1. Only runs when the voice overlay is open.
+        //   2. Waits 350ms (after the 80ms primary injectRemedyCard has fired).
+        //   3. If detectRemedy(cleanReply) returns null → no card from AI reply.
+        //   4. Detect symptom from the user's utterance via _detectSymptomKey.
+        //   5. Map symptom → best remedy key (FOCUS_FLOWS first step of type
+        //      "remedy", falling back to an explicit safe-default map).
+        //   6. Inject the card once per symptom per voice session.
+        //      Guard: ST._voiceRemedyShownSymptoms (Set) accumulates per session;
+        //      reset to an empty Set each time voiceModeActive is freshly true
+        //      AND the overlay was previously closed (overlay just re-opened).
+        if (voiceModeActive) {
+          // Lazy-init / reset the session guard when the overlay opens fresh.
+          // _voiceOv.classList.contains("on") is true right now; we detect a
+          // "new session" by checking ST._voiceOverlayWasOn: false means we
+          // just opened, true means we're continuing.
+          if (!ST._voiceOverlayWasOn) {
+            ST._voiceRemedyShownSymptoms = new Set();
+          }
+          ST._voiceOverlayWasOn = true;
+
+          // Explicit symptom → fallback-remedy map.
+          // Prefer keys whose kw list is matched by the key string itself
+          // (so injectRemedyCard(remedyKey, container) works without an extra
+          // wrapper — detectRemedy scans kw and the key contains the kw token).
+          // Verified: jeera-paani→"jeera", tulsi-kadha→"tulsi",
+          //           adrak-chai→"adrak", haldi-doodh→"haldi",
+          //           brahmi-chai→"brahmi", saunf-paani→"saunf",
+          //           dhaniya-paani→"dhaniya".
+          const VOICE_SYMPTOM_REMEDY_MAP = {
+            "pet":          "jeera-paani",
+            "sir-dard":     "tulsi-kadha",
+            "sardi-khansi": "adrak-chai",
+            "bukhar":       "tulsi-kadha",
+            "neend":        "haldi-doodh",
+            "tension":      "brahmi-chai",
+            "kamar-dard":   "saunf-paani",
+          };
+
+          const _voiceFallbackDelay = 350; // ms — after primary 80ms call settles
+          const _capturedUserText = userText; // close over for the setTimeout
+          const _capturedReply   = cleanReply;
+          setTimeout(function () {
+            // Re-check overlay is still open (user may have closed it).
+            const _ov = document.getElementById("voice-ov");
+            if (!_ov || !_ov.classList.contains("on")) {
+              ST._voiceOverlayWasOn = false; // overlay closed; reset for next session
+              return;
+            }
+            const voiceTa = document.getElementById("voice-transcript-area");
+            if (!voiceTa) return;
+
+            // Step 1: was a card already injected from the AI reply text?
+            if (typeof detectRemedy === "function" && detectRemedy(_capturedReply)) return;
+
+            // Step 2: detect symptom from what the user said.
+            const symptomKey = _detectSymptomKey(_capturedUserText);
+            if (!symptomKey) return;
+
+            // Step 3: guard — only once per symptom per voice session.
+            if (!ST._voiceRemedyShownSymptoms) ST._voiceRemedyShownSymptoms = new Set();
+            if (ST._voiceRemedyShownSymptoms.has(symptomKey)) return;
+
+            // Step 4: pick best remedy key.
+            // Try FOCUS_FLOWS first (first remedy-type step with empty answers).
+            let remedyKey = null;
+            if (typeof _topRemedyKey === "function") {
+              try { remedyKey = _topRemedyKey(symptomKey, {}); } catch (e) {}
+            }
+            // Validate: the key must (a) exist in REMEDY_KITS and (b) produce
+            // a detectRemedy hit when passed as text. If either check fails (e.g.
+            // sarso-tel-malish has a space in its kw that the hyphenated key won't
+            // match), fall through to the explicit safe-default map.
+            if (remedyKey) {
+              const _valid =
+                typeof REMEDY_KITS !== "undefined" &&
+                REMEDY_KITS[remedyKey] &&
+                typeof detectRemedy === "function" &&
+                detectRemedy(remedyKey) !== null;
+              if (!_valid) remedyKey = null;
+            }
+            if (!remedyKey) remedyKey = VOICE_SYMPTOM_REMEDY_MAP[symptomKey] || null;
+            if (!remedyKey) return;
+
+            // Step 5: inject card. injectRemedyCard(text, container) calls
+            // detectRemedy(text) internally. Passing the remedy key as text works
+            // because the key string contains a kw token (e.g. "jeera-paani"
+            // contains "jeera" which is in jeera-paani's kw list).
+            if (typeof injectRemedyCard === "function") {
+              injectRemedyCard(remedyKey, voiceTa);
+              ST._voiceRemedyShownSymptoms.add(symptomKey);
+              console.info("[voice-fallback] remedy card injected:", remedyKey, "for symptom:", symptomKey);
+            }
+          }, _voiceFallbackDelay);
+        } else {
+          // Voice overlay is not open — reset the session guard so the next
+          // voice session starts clean.
+          ST._voiceOverlayWasOn = false;
+        }
+        // ── /v9.1 voice hero-card fallback ───────────────────────────────────
+
         // Unified deterministic triage: when a known symptom is detected, launch
         // the bubble-triage and SUPPRESS LLM OPTIONS for that turn.
         // Returns true if triage was launched — in that case options are irrelevant.
@@ -19260,6 +19429,11 @@ const BREATH_PHASES = [
     bn: "bn-IN",
     en: "en-IN",
   };
+  // ── Mic mute state (manual user toggle) ──
+  // _convMuted = true means the user has explicitly silenced the mic.
+  // Auto-mute during TTS is handled separately by _isSpeaking / _convProcessing.
+  let _convMuted = false;
+
   // v6.8: retry counter for the _isSpeaking mic-gate loop. Reset to 0 every
   // time convListenOnce actually opens the mic (i.e. _isSpeaking is false and
   // we proceed).  Capped at MAX_SPEAKING_RETRIES (~5s) to prevent infinite
@@ -19296,6 +19470,8 @@ const BREATH_PHASES = [
     }
     _convActive = true;
     ST.isListening = true;
+    // Always start a fresh session in unmuted state.
+    _convMuted = false;
     // v4: clear transcript area each time the conversation starts
     const ta = document.getElementById("voice-transcript-area");
     if (ta) ta.innerHTML = "";
@@ -19332,6 +19508,74 @@ const BREATH_PHASES = [
     } catch (e) {}
   }
   window.sendVoiceNow = sendVoiceNow;
+
+  // ── updateMuteButton: sync #voice-mute-btn state + label to current mode ──
+  // States driven:
+  //   "listening"  — mic is open, not muted     → class "listening", label "Sun rahi hoon"
+  //   "speaking"   — Saathi is speaking / proc  → class "speaking",  label "Ruko…"
+  //   "muted"      — user manually muted        → class "muted",     label "Mute — bolne ke liye dabayein"
+  // The button's base class stays "voice-mute" at all times; state class is toggled.
+  function updateMuteButton() {
+    const btn = document.getElementById("voice-mute-btn");
+    const lbl = document.getElementById("voice-mute-label");
+    if (!btn) return;
+    btn.classList.remove("listening", "speaking", "muted");
+    let state, labelText;
+    if (_convMuted) {
+      state = "muted";
+      labelText = "Mute — bolne ke liye dabayein";
+    } else if (_isSpeaking || _convProcessing) {
+      state = "speaking";
+      labelText = "Ruko…";
+    } else {
+      state = "listening";
+      labelText = "Sun rahi hoon";
+    }
+    btn.classList.add(state);
+    if (lbl) lbl.textContent = labelText;
+  }
+
+  // ── toggleVoiceMute: flip _convMuted, stop/restart mic as needed ──
+  // Called by the #voice-mute-btn the owner adds in page.tsx.
+  function toggleVoiceMute() {
+    _convMuted = !_convMuted;
+    if (_convMuted) {
+      // User just muted: stop recording + sidecar but keep the session alive.
+      if (_convTickTimer) {
+        clearTimeout(_convTickTimer);
+        _convTickTimer = null;
+      }
+      try {
+        if (_convRecognition) {
+          _convRecognition.onresult = null;
+          _convRecognition.onerror = null;
+          _convRecognition.onend = null;
+          _convRecognition.abort();
+          _convRecognition = null;
+        }
+      } catch (e) {}
+      try {
+        if (_convRecorder && _convRecorder.state !== "inactive") {
+          _convRecorder.stop();
+        }
+      } catch (e) {}
+      try {
+        if (_convStream) _convStream.getTracks().forEach((t) => t.stop());
+        _convStream = null;
+      } catch (e) {}
+      try {
+        if (_convAudioCtx) { _convAudioCtx.close(); _convAudioCtx = null; }
+      } catch (e) {}
+      updateMuteButton();
+    } else {
+      // User just unmuted: restart listening immediately unless Saathi is speaking.
+      updateMuteButton();
+      if (_convActive && !_isSpeaking && !_convProcessing) {
+        setTimeout(convListenOnce, 100);
+      }
+    }
+  }
+  window.toggleVoiceMute = toggleVoiceMute;
 
   // v4: Append a line to the in-overlay live transcript area
   function appendVoiceLine(role, text, opts) {
@@ -19395,6 +19639,9 @@ const BREATH_PHASES = [
 
   async function convListenOnce() {
     if (!_convActive) return;
+    // Mute gate: if the user has manually muted, do not open the mic.
+    // toggleVoiceMute() will call convListenOnce() again when the user unmutes.
+    if (_convMuted) return;
     // v6.9: refuse to re-open the mic while a turn is being processed (STT +
     // AI reply + TTS) OR while TTS is still emitting audio. _convProcessing
     // covers the STT→AI→TTS window; _isSpeaking covers TTS playback itself
@@ -19464,6 +19711,13 @@ const BREATH_PHASES = [
         // This closes the gap between recorder stop and TTS start where ambient
         // speech could be picked up by a prematurely re-opened mic.
         _convProcessing = true;
+        // Mute gate: if the user muted mid-recording, discard captured audio.
+        // Do NOT process or send it — just release the lock and return.
+        if (_convMuted) {
+          _convProcessing = false;
+          updateMuteButton();
+          return;
+        }
         // WS4: stop recognition sidecar and remove the interim node as soon as
         // the recorder fires onstop — before Sarvam returns the final transcript.
         try {
@@ -20005,6 +20259,8 @@ const BREATH_PHASES = [
     if (state === "listening") _setBarsListening();
     else if (state === "thinking") _setBarsThinking();
     else if (state === "speaking") _setBarsThinking();
+    // Sync the mute button to the new voice state.
+    updateMuteButton();
   }
 
   function showVoiceOverlay(target) {
@@ -20082,7 +20338,10 @@ const BREATH_PHASES = [
     // v5.5.4: clear any pending skill confirmation so a future voice session
     // doesn't open with a stale offer.
     _pendingVoiceSkill = null;
+    // Clear manual mute so a new session always starts in listening state.
+    _convMuted = false;
     hideVoiceOverlay();
+    updateMuteButton();
   }
 
   async function transcribeWithSarvam(audioBlob) {
@@ -21232,7 +21491,7 @@ const BREATH_PHASES = [
       ],
     },
     "adrak-chai": {
-      kw: ["adrak", "ginger"],
+      kw: ["adrak", "ginger", "sardi", "jukam", "zukaam", "नाक बहना", "सर्दी"],
       emoji: "🫚",
       title: "Adrak ki chai",
       titleHi: "अदरक की चाय",
@@ -21247,7 +21506,7 @@ const BREATH_PHASES = [
       ],
     },
     "jeera-paani": {
-      kw: ["jeera", "cumin"],
+      kw: ["jeera", "cumin", "pet dard", "pet mein dard", "pait dard", "pet kharab", "pet ki takleef", "पेट दर्द", "पेट ख़राब"],
       emoji: "🟤",
       title: "Jeera paani",
       titleHi: "जीरा पानी",
@@ -21307,7 +21566,7 @@ const BREATH_PHASES = [
       ],
     },
     "namak-gargle": {
-      kw: ["namak", "salt water", "gargle", "garara"],
+      kw: ["namak", "salt water", "gargle", "garara", "gala kharab", "gale mein dard", "गला ख़राब", "sore throat", "throat pain"],
       emoji: "🧂",
       title: "Namak paani garara",
       titleHi: "नमक पानी गरारा",
@@ -21416,7 +21675,7 @@ const BREATH_PHASES = [
 
     // ── DIGESTION (12) — gas, acidity, bloating, constipation, loose motion ──
     "hing-paani": {
-      kw: ["hing", "asafoetida", "phulna"],
+      kw: ["hing", "asafoetida", "phulna", "gas", "pet phulna", "badhazmi", "अफारा", "गैस"],
       emoji: "⚪",
       title: "Hing wala paani",
       titleHi: "हींग वाला पानी",
@@ -21446,7 +21705,7 @@ const BREATH_PHASES = [
       ],
     },
     "nariyal-paani-dast": {
-      kw: ["nariyal pani", "coconut water", "dast", "dehydration"],
+      kw: ["nariyal pani", "coconut water", "dast", "dehydration", "loose motion", "दस्त", "diarrhea"],
       emoji: "🥥",
       title: "Nariyal paani — paani ki kami",
       titleHi: "नारियल पानी — पानी की कमी",
@@ -21491,7 +21750,7 @@ const BREATH_PHASES = [
       ],
     },
     "isabgol-doodh": {
-      kw: ["isabgol", "psyllium"],
+      kw: ["isabgol", "psyllium", "kabz", "constipation", "कब्ज़", "pet saaf nahi"],
       emoji: "🌾",
       title: "Isabgol doodh",
       titleHi: "इसबगोल दूध",
@@ -21521,7 +21780,7 @@ const BREATH_PHASES = [
       ],
     },
     "dhaniya-paani": {
-      kw: ["dhaniya", "coriander", "acidity", "ibs"],
+      kw: ["dhaniya", "coriander", "acidity", "ibs", "jalan", "khatti dakar", "सीने में जलन", "एसिडिटी"],
       emoji: "🌱",
       title: "Dhaniya beej paani",
       titleHi: "धनिया बीज पानी",
@@ -21598,7 +21857,7 @@ const BREATH_PHASES = [
 
     // ── RESPIRATORY (12) — cough, cold, sore throat, sinus, chest ──
     "shahad-adrak-paste": {
-      kw: ["shahad adrak", "honey ginger", "khansi"],
+      kw: ["shahad adrak", "honey ginger", "khansi", "sukhi khansi", "खांसी", "cough"],
       emoji: "🍯",
       title: "Shahad-adrak paste",
       titleHi: "शहद-अदरक पेस्ट",
@@ -21780,7 +22039,7 @@ const BREATH_PHASES = [
 
     // ── SLEEP & STRESS (8) ──
     "jaiphal-doodh": {
-      kw: ["jaiphal", "nutmeg", "neend", "insomnia"],
+      kw: ["jaiphal", "nutmeg", "neend", "insomnia", "neend nahi", "नींद नहीं आती", "sleep"],
       emoji: "🟤",
       title: "Jaiphal doodh — neend",
       titleHi: "जायफल दूध — नींद",
@@ -21795,7 +22054,7 @@ const BREATH_PHASES = [
       ],
     },
     "ashwagandha-doodh": {
-      kw: ["ashwagandha", "stress", "tension"],
+      kw: ["ashwagandha", "stress", "tension", "ghabrahat", "तनाव", "anxiety"],
       emoji: "🥛",
       title: "Ashwagandha doodh",
       titleHi: "अश्वगंधा दूध",
@@ -21947,7 +22206,7 @@ const BREATH_PHASES = [
       ],
     },
     "til-tel-malish": {
-      kw: ["til tel", "sesame oil", "body ache"],
+      kw: ["til tel", "sesame oil", "body ache", "badan dard", "बदन दर्द", "jodon mein dard"],
       emoji: "⚫",
       title: "Til tel malish",
       titleHi: "तिल तेल मालिश",
@@ -22238,7 +22497,7 @@ const BREATH_PHASES = [
 
     // ── FEVER & IMMUNITY (8) ──
     "tulsi-kalimirch-kadha": {
-      kw: ["tulsi kali mirch kadha", "bukhar", "fever"],
+      kw: ["tulsi kali mirch kadha", "bukhar", "fever", "बुखार", "taap"],
       emoji: "🌿",
       title: "Tulsi-kali mirch kadha — bukhar",
       titleHi: "तुलसी-काली मिर्च काढ़ा — बुखार",
@@ -22360,7 +22619,7 @@ const BREATH_PHASES = [
 
     // ── HEADACHE variants (5) ──
     "pudina-balm-sir": {
-      kw: ["pudina sir dard", "tension headache"],
+      kw: ["pudina sir dard", "tension headache", "sir dard", "sar dard", "सिर दर्द", "माथे में दर्द", "headache"],
       emoji: "🌿",
       title: "Pudina paste — sir dard",
       titleHi: "पुदीना पेस्ट — सिर दर्द",
