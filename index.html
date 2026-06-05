@@ -19550,6 +19550,18 @@ const BREATH_PHASES = [
   // _convMuted = true means the user has explicitly silenced the mic.
   // Auto-mute during TTS is handled separately by _isSpeaking / _convProcessing.
   let _convMuted = false;
+  // v7.2: _muteAfterProcess — set by toggleVoiceMute (muting) when the recorder
+  // is live at the time the user taps Mute.  The captured utterance is STILL
+  // processed (STT → AI → TTS); only the mic-reopen at the end of onstop is
+  // suppressed.  Reset to false once onstop completes or on stopVoice/unmute.
+  let _muteAfterProcess = false;
+  // v7.2: _sidecarLastInterim — last non-empty interim text from the
+  // webkitSpeechRecognition sidecar for the current recording turn.
+  // Updated on every recog.onresult; cleared when a new recording starts.
+  // Used as a fallback transcript when Sarvam STT returns empty but the
+  // sidecar DID capture something (user saw their words on-screen but they
+  // weren't sent).
+  let _sidecarLastInterim = "";
 
   // v6.8: retry counter for the _isSpeaking mic-gate loop. Reset to 0 every
   // time convListenOnce actually opens the mic (i.e. _isSpeaking is false and
@@ -19589,6 +19601,8 @@ const BREATH_PHASES = [
     ST.isListening = true;
     // Always start a fresh session in unmuted state.
     _convMuted = false;
+    _muteAfterProcess = false;
+    _sidecarLastInterim = "";
     // v4: clear transcript area each time the conversation starts
     const ta = document.getElementById("voice-transcript-area");
     if (ta) ta.innerHTML = "";
@@ -19701,38 +19715,61 @@ const BREATH_PHASES = [
 
   // ── toggleVoiceMute: flip _convMuted, stop/restart mic as needed ──
   // Called by the #voice-mute-btn the owner adds in page.tsx.
+  //
+  // v7.2 redesign:
+  //   MUTING with recorder active → set _muteAfterProcess so onstop processes
+  //     the captured audio (STT → AI → TTS) but does NOT reopen the mic after.
+  //     The utterance is NEVER discarded.  Stream/AudioCtx teardown is left to
+  //     onstop (it already does it via the captured `stream` closure reference).
+  //   MUTING with nothing recording → no audio to process; just silence the mic.
+  //   UNMUTING → clear _muteAfterProcess, resume listening if session is idle.
   function toggleVoiceMute() {
     _convMuted = !_convMuted;
     if (_convMuted) {
-      // User just muted: stop recording + sidecar but keep the session alive.
+      // Stop the silence-detect tick so it doesn't race with our stop() below.
       if (_convTickTimer) {
         clearTimeout(_convTickTimer);
         _convTickTimer = null;
       }
-      try {
-        if (_convRecognition) {
-          _convRecognition.onresult = null;
-          _convRecognition.onerror = null;
-          _convRecognition.onend = null;
-          _convRecognition.abort();
-          _convRecognition = null;
-        }
-      } catch (e) {}
-      try {
-        if (_convRecorder && _convRecorder.state !== "inactive") {
+      const recorderWasActive =
+        _convRecorder && _convRecorder.state !== "inactive";
+      if (recorderWasActive) {
+        // v7.2: recorder is live → submit the utterance, but keep mic off after.
+        // Set the flag BEFORE calling stop() so onstop sees it when it fires.
+        _muteAfterProcess = true;
+        // Stop the sidecar silently — onstop will also try, harmlessly.
+        try {
+          if (_convRecognition) {
+            _convRecognition.onresult = null;
+            _convRecognition.onerror = null;
+            _convRecognition.onend = null;
+            _convRecognition.abort();
+            _convRecognition = null;
+          }
+        } catch (e) {}
+        // Normal stop → onstop fires → STT → AI → TTS → mic stays off.
+        // Do NOT tear down _convStream / _convAudioCtx here; onstop does that
+        // via the captured `stream` closure variable.
+        try {
           _convRecorder.stop();
-        }
-      } catch (e) {}
-      try {
-        if (_convStream) _convStream.getTracks().forEach((t) => t.stop());
-        _convStream = null;
-      } catch (e) {}
-      try {
-        if (_convAudioCtx) { _convAudioCtx.close(); _convAudioCtx = null; }
-      } catch (e) {}
+        } catch (e) {}
+      } else {
+        // Nothing was recording (user muted between turns or mid-TTS).
+        // No utterance to submit — just keep mic closed.
+        // It is safe to tear down a stale stream here since onstop won't fire.
+        try {
+          if (_convStream) _convStream.getTracks().forEach((t) => t.stop());
+          _convStream = null;
+        } catch (e) {}
+        try {
+          if (_convAudioCtx) { _convAudioCtx.close(); _convAudioCtx = null; }
+        } catch (e) {}
+      }
       updateMuteButton();
     } else {
-      // User just unmuted: restart listening immediately unless Saathi is speaking.
+      // User just unmuted: clear any lingering _muteAfterProcess flag and
+      // restart listening immediately unless Saathi is still speaking/processing.
+      _muteAfterProcess = false;
       updateMuteButton();
       if (_convActive && !_isSpeaking && !_convProcessing) {
         setTimeout(convListenOnce, 100);
@@ -19867,6 +19904,8 @@ const BREATH_PHASES = [
       _convRecorder = mime
         ? new MediaRecorder(stream, { mimeType: mime })
         : new MediaRecorder(stream);
+      // v7.2: clear sidecar interim at the start of each new recording turn.
+      _sidecarLastInterim = "";
       _convRecorder.ondataavailable = (e) => {
         if (e.data && e.data.size) _audioChunks.push(e.data);
       };
@@ -19875,15 +19914,14 @@ const BREATH_PHASES = [
         // This closes the gap between recorder stop and TTS start where ambient
         // speech could be picked up by a prematurely re-opened mic.
         _convProcessing = true;
-        // Mute gate: if the user muted mid-recording, discard captured audio.
-        // Do NOT process or send it — just release the lock and return.
-        if (_convMuted) {
-          _convProcessing = false;
-          updateMuteButton();
-          return;
-        }
-        // WS4: stop recognition sidecar and remove the interim node as soon as
-        // the recorder fires onstop — before Sarvam returns the final transcript.
+        // v7.2: NO LONGER discard audio when _convMuted.
+        // Mute = "I'm done talking, process it, then keep mic off".
+        // The _muteAfterProcess flag (set by toggleVoiceMute) suppresses
+        // mic-reopen at the end of this handler instead of discarding here.
+
+        // WS4: stop recognition sidecar and capture the last interim text
+        // as a potential fallback before removing the interim node.
+        // (The sidecar was already writing to _sidecarLastInterim in onresult.)
         try {
           if (_convRecognition) {
             _convRecognition.stop();
@@ -19907,27 +19945,45 @@ const BREATH_PHASES = [
         if (!_convActive) {
           // Voice was stopped externally while the recorder was draining — release lock.
           _convProcessing = false;
+          _muteAfterProcess = false;
           return;
         }
-        // If recording was too short, release lock and resume listening
-        // (user may have tapped before speaking).
-        if (blob.size < 1500) {
+        // If recording was too short AND no sidecar interim captured anything,
+        // release lock and resume listening (user may have tapped before speaking).
+        if (blob.size < 1500 && !_sidecarLastInterim) {
           _convProcessing = false;
-          setTimeout(convListenOnce, 200);
+          _muteAfterProcess = false;
+          // If user muted before speaking (nothing captured at all), stay muted.
+          if (!_convMuted) setTimeout(convListenOnce, 200);
           return;
         }
         setVoiceState("thinking");
         let transcript = "";
-        try {
-          transcript = await transcribeWithSarvam(blob);
-        } catch (sttErr) {
-          console.error("[conv] STT error", sttErr);
+        if (blob.size >= 1500) {
+          try {
+            transcript = await transcribeWithSarvam(blob);
+          } catch (sttErr) {
+            console.error("[conv] STT error", sttErr);
+          }
         }
+        // v7.2: SIDECAR FALLBACK — if Sarvam returned empty but the
+        // webkitSpeechRecognition sidecar DID capture something for this
+        // turn, use that interim text so the user's words are never lost.
+        // The user saw the words on screen; they must be sent to the AI.
+        if (!transcript && _sidecarLastInterim) {
+          console.info("[conv] Sarvam empty — using sidecar interim fallback:", _sidecarLastInterim);
+          transcript = _sidecarLastInterim;
+        }
+        // Clear the sidecar interim for the next turn regardless.
+        _sidecarLastInterim = "";
         if (!transcript) {
-          // STT returned nothing — release lock, go back to listening.
+          // Both Sarvam STT and sidecar fallback returned nothing.
+          // Show the "didn't hear you" toast — this is the ONLY place it now fires.
+          showToast("Kuch sunaai nahi diya — thoda zor se bolein");
           _convProcessing = false;
+          _muteAfterProcess = false;
           setVoiceState("listening");
-          if (_convActive) setTimeout(convListenOnce, 300);
+          if (_convActive && !_convMuted) setTimeout(convListenOnce, 300);
           return;
         }
         // Send to AI and play reply; convHandleTranscript awaits TTS end,
@@ -19939,6 +19995,19 @@ const BREATH_PHASES = [
         }
         // v6.9: release processing lock AFTER TTS has fully ended.
         _convProcessing = false;
+        // v7.2: After reply: if the user muted (either _convMuted is still
+        // true, or _muteAfterProcess was set before we cleared _convMuted),
+        // stay muted — do NOT reopen the mic.  Show "Mute hai" in the pill.
+        // If not muted, resume listening as before.
+        const stayMuted = _convMuted || _muteAfterProcess;
+        _muteAfterProcess = false;
+        if (stayMuted) {
+          // Keep session alive but mic closed. Pill already shows "Mute hai"
+          // because setVoiceState("listening") checks _convMuted.
+          setVoiceState("listening");
+          updateMuteButton();
+          return;
+        }
         // v7.0: TARGET ~250ms total dead time after TTS ends.
         // Echo is already prevented by _killSidecarForTts() + the mic+sidecar
         // being fully closed DURING TTS playback. Only a short acoustic-tail
@@ -20067,6 +20136,8 @@ const BREATH_PHASES = [
               }
               interimStr = interimStr.trim();
               if (!interimStr) return;
+              // v7.2: persist last non-empty interim text for Sarvam-empty fallback.
+              _sidecarLastInterim = interimStr;
               const node = _getOrCreateInterimNode();
               if (node) {
                 node.textContent = interimStr;
@@ -20521,8 +20592,11 @@ const BREATH_PHASES = [
     // v5.5.4: clear any pending skill confirmation so a future voice session
     // doesn't open with a stale offer.
     _pendingVoiceSkill = null;
-    // Clear manual mute so a new session always starts in listening state.
+    // Clear manual mute and muteAfterProcess so a new session always starts
+    // in listening state.
     _convMuted = false;
+    _muteAfterProcess = false;
+    _sidecarLastInterim = "";
     hideVoiceOverlay();
     updateMuteButton();
   }
@@ -20678,10 +20752,9 @@ const BREATH_PHASES = [
       }
       if (!txt) {
         console.warn("[Sarvam STT] empty transcript", data);
-        // v6.7.7: empty-transcript usually means low input volume / silence /
-        // hallucination filter triggered. Give user actionable feedback
-        // instead of silently failing or hallucinating.
-        showToast("Kuch sunaai nahi diya — thoda zor se bolein");
+        // v7.2: toast moved to onstop — if the sidecar fallback succeeds,
+        // we must NOT show "kuch sunaai nahi diya" here (user DID say something).
+        // onstop shows the toast only after both Sarvam and sidecar return empty.
       }
       return txt;
     } catch (e) {
