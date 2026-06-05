@@ -87,6 +87,7 @@ html[lang="hi"] textarea {
 /* Keep full-screen overlays always dark in light mode.
    (Voice overlay #voice-ov is intentionally LIGHT — excluded here.) */
 @media (prefers-color-scheme: light) {
+  #wt-overlay,
   #reminder-ov,
   #checkin-ov,
   #bless-ov,
@@ -107,6 +108,7 @@ html[lang="hi"] textarea {
     --input-bg: rgba(255, 255, 255, 0.08);
   }
 }
+[data-theme="light"] #wt-overlay,
 [data-theme="light"] #reminder-ov,
 [data-theme="light"] #checkin-ov,
 [data-theme="light"] #bless-ov,
@@ -7141,13 +7143,13 @@ body:not(.focus) .focus-home {
 .wt-hdr-title {
   font-size: 19px;
   font-weight: 700;
-  color: var(--text);
+  color: #eef4ff;
   letter-spacing: -0.01em;
   line-height: 1.2;
 }
 .wt-hdr-sub {
   font-size: 12px;
-  color: var(--text3);
+  color: rgba(226, 232, 240, 0.7);
   margin-top: 3px;
 }
 .wt-step-counter {
@@ -7221,7 +7223,7 @@ body:not(.focus) .focus-home {
 .wt-caption-line {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text);
+  color: #eef4ff;
   line-height: 1.4;
 }
 
