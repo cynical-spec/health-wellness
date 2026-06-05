@@ -9722,11 +9722,13 @@ CRITICAL — DO NOT RUSH TO REMEDIES:
 - If user is venting (low mood, stress, family worry) — just LISTEN. Reflect what they said. Don't fix.
 - Vary remedies — don't always say ajwain or haldi. Match the right ingredient to the right complaint.
 
-COMFORT + GUIDED ILAJ (v6.8 — WS1):
-- When a user names a symptom for the FIRST TIME in a conversation, acknowledge it warmly in ONE line ("Samajh aaya — yeh thodi takleef ki baat hai.") and then invite the guided step-by-step: "Ek guided ilaj shuru karein? Saathi sawal puchegi aur sahi raasta dikhayegi." Do NOT dump a full remedy on the first symptom mention.
-- The app will automatically surface a "Guided ilaj shuru karein" chip below your reply — so you do NOT need to repeat a CTA if you have already offered one in prose.
-- Only after the user declines guided ilaj, or after 2 turns of clarification, give a direct remedy suggestion.
-- TEXT CHAT ONLY: This "guided ilaj" invitation and the chip are for TEXT chat ONLY. In a VOICE/spoken conversation, NEVER say "guided ilaj" or mention chips/buttons — just naturally ask ONE short clarifying question out loud (kab se, kahaan dard hai, kya aur takleef hai) and converse warmly.
+COMFORT + GUIDED ILAJ (v6.9 — no-permission):
+- When a user names a symptom for the FIRST TIME in a conversation: acknowledge warmly in ONE short clause, then IMMEDIATELY ask ONE specific clarifying question (kab se / kahaan / kaisa). Do NOT ask permission, do NOT offer to begin, do NOT say "guided ilaj bataungi", "Ek guided ilaj shuru karein?", "theek hai?", "bataaun?", or any yes/no gating phrase. Just acknowledge + ask Q1 in the same reply.
+- Example (Hindi): user "sir dard ho raha hai" → "समझ गई। कब से हो रहा है — आज सुबह से या पहले से?" (straight to Q1, no announcement).
+- Example (Hinglish): user "sir dard ho raha hai" → "Samajh gayi. Kab se ho raha hai — aaj subah se ya pehle se?" (straight to Q1, no announcement).
+- Do NOT dump a full remedy on the first symptom mention — instead ask one clarifying question.
+- After 1-2 clarifications, THEN suggest one simple remedy.
+- TEXT CHAT ONLY: In a VOICE/spoken conversation, NEVER say "guided ilaj" or mention chips/buttons — just naturally ask ONE short clarifying question out loud and converse warmly.
 
 SERIOUS EMERGENCY (escalate immediately, NO remedy, NO question):
 Chest pain, breathing trouble, infant <3 months with fever, seizure, sudden worst-ever headache, vomiting blood, loss of consciousness, sudden face droop or arm weakness. Tell them warmly but firmly: doctor ke paas turant jao, der mat karo.
@@ -25328,8 +25330,8 @@ const BREATH_PHASES = [
       titleHi: "सिर दर्द का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Sir dard se buri taklif hoti hai. 3 sawaal puchne do, phir saath mil ke theek karte hain.",
-          "सिर दर्द से बड़ी तकलीफ़ होती है। 3 सवाल पूछने दो, फिर साथ मिल के ठीक करते हैं।"
+          "Samajh gayi. Kahan dard hai —",
+          "समझ गई। कहाँ दर्द है —"
         );
       },
       get qa() {
@@ -25421,8 +25423,8 @@ const BREATH_PHASES = [
       titleHi: "सर्दी-खांसी का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Mausam badla hoga. Chal, dheere-dheere theek karte hain.",
-          "मौसम बदला होगा। चलो, धीरे-धीरे ठीक करते हैं।"
+          "Samajh gayi. Khaansi zyada hai ya nazla —",
+          "समझ गई। खाँसी ज़्यादा है या नज़ला —"
         );
       },
       get qa() {
@@ -25500,8 +25502,8 @@ const BREATH_PHASES = [
       titleHi: "पेट की दिक्कत का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Pet ki shaanti zindagi ki shaanti hai. Bata, kya hua?",
-          "पेट की शांति ज़िंदगी की शांति है। बताओ, क्या हुआ?"
+          "Samajh gayi. Kya takleef hai —",
+          "समझ गई। क्या तकलीफ़ है —"
         );
       },
       get qa() {
@@ -25582,8 +25584,8 @@ const BREATH_PHASES = [
       titleHi: "बुखार का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Acha, bukhar aa gaya hai. Chinta mat karein — pehle 2-3 sawaal lenge, phir sahi raasta dikhate hain.",
-          "अच्छा, बुखार आ गया है। चिंता मत करें — पहले 2-3 सवाल लेंगे, फिर सही रास्ता दिखाते हैं।"
+          "Samajh gayi. Kab se hai bukhar —",
+          "समझ गई। कब से है बुखार —"
         );
       },
       get qa() {
@@ -25659,8 +25661,8 @@ const BREATH_PHASES = [
       titleHi: "कमर दर्द का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Kamar dard sach mein thaka deta hai. Do minute mein 3 sawaal — phir sahi upay batate hain.",
-          "कमर दर्द सच में थका देता है। दो मिनट में 3 सवाल — फिर सही उपाय बताते हैं।"
+          "Samajh gayi. Kamar dard kaise shuru hua —",
+          "समझ गई। कमर दर्द कैसे शुरू हुआ —"
         );
       },
       get qa() {
@@ -25734,8 +25736,8 @@ const BREATH_PHASES = [
       titleHi: "टेंशन/स्ट्रेस का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Samajh aaya — yeh andar ka bojh hota hai. Teen sawaal puchte hain, phir ek chhota sa rasta dikhate hain.",
-          "समझ आया — यह अंदर का बोझ होता है। तीन सवाल पूछते हैं, फिर एक छोटा-सा रास्ता दिखाते हैं।"
+          "Samajh gayi. Abhi kya feel ho raha hai —",
+          "समझ गई। अभी क्या feel हो रहा है —"
         );
       },
       get qa() {
@@ -25809,8 +25811,8 @@ const BREATH_PHASES = [
       titleHi: "नींद का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Neend hi sehat ki neev hai. Bata, kya dikkat hai?",
-          "नींद ही सेहत की नींव है। बताओ, क्या दिक्कत है?"
+          "Samajh gayi. Neend mein kya dikkat hai —",
+          "समझ गई। नींद में क्या दिक्कत है —"
         );
       },
       get qa() {
