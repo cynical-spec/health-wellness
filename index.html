@@ -19604,25 +19604,72 @@ const BREATH_PHASES = [
   // before the 1.5s silence-detect fires. Stops the MediaRecorder which triggers
   // the existing onstop → Sarvam → convHandleTranscript chain unchanged.
   // Also stops the recognition sidecar so the interim node is cleaned up.
-  // Safe no-op if not currently recording.
+  //
+  // v7.1 HARDENED: must never be a silent no-op.
+  //   Case A: recorder is active → stop it normally (triggers onstop → STT).
+  //   Case B: recorder is inactive/null but _isSpeaking or _convProcessing is stuck
+  //           → force-clear both flags so the mic-gate unblocks, then kick
+  //             convListenOnce so the next recording can start. Toast feedback
+  //             given when there is genuinely no audio to submit.
+  //   Case C: not in a voice session at all → true no-op (voice not active).
   function sendVoiceNow() {
-    if (!_convRecorder || _convRecorder.state === "inactive") return;
-    // Stop the sidecar first — interim node will be removed in onstop anyway,
-    // but stopping here prevents a stray onresult firing after the recorder stops.
-    try {
-      if (_convRecognition) {
-        _convRecognition.stop();
-        _convRecognition = null;
+    // Not in a voice session — genuine no-op.
+    if (!_convActive) return;
+
+    // Case A: recorder is live → normal early-stop path.
+    if (_convRecorder && _convRecorder.state !== "inactive") {
+      // Stop the sidecar first — interim node will be removed in onstop anyway,
+      // but stopping here prevents a stray onresult firing after the recorder stops.
+      try {
+        if (_convRecognition) {
+          _convRecognition.stop();
+          _convRecognition = null;
+        }
+      } catch (e) {}
+      // Stop the tick timer so the silence-detect loop doesn't also call stop().
+      if (_convTickTimer) {
+        clearTimeout(_convTickTimer);
+        _convTickTimer = null;
       }
-    } catch (e) {}
-    // Stop the tick timer so the silence-detect loop doesn't also call stop().
-    if (_convTickTimer) {
-      clearTimeout(_convTickTimer);
-      _convTickTimer = null;
+      try {
+        _convRecorder.stop();
+      } catch (e) {}
+      return;
     }
-    try {
-      _convRecorder.stop();
-    } catch (e) {}
+
+    // Case B: recorder is not recording but _isSpeaking/_convProcessing is stuck,
+    // OR the user tapped while TTS was genuinely finishing. Force-clear the flags
+    // so the mic-gate unblocks, then restart listening after a short gap.
+    const wasStuck = _isSpeaking || _convProcessing;
+    if (wasStuck) {
+      console.warn(
+        "[sendVoiceNow] flags stuck (_isSpeaking=" + _isSpeaking +
+          " _convProcessing=" + _convProcessing + ") — force-clearing",
+      );
+      // Stop any still-playing audio so the user's next turn starts clean.
+      if (_currentAudio) {
+        try { _currentAudio.pause(); } catch (e) {}
+        _currentAudio = null;
+      }
+      clearTimeout(_speakSafetyTimer);
+      _speakSafetyTimer = null;
+      _isSpeaking = false;
+      _convProcessing = false;
+      updateMuteButton();
+      // If there is a resume timer already pending, cancel it — we are restarting now.
+      if (_convResumeTimer) {
+        clearTimeout(_convResumeTimer);
+        _convResumeTimer = null;
+      }
+      if (!_convMuted) {
+        setVoiceState("listening");
+        setTimeout(convListenOnce, 100);
+      }
+      return;
+    }
+
+    // Case C: nothing is recording and flags are clear — let the user know.
+    showToast("Kuch sunaai nahi diya — bolein phir se");
   }
   window.sendVoiceNow = sendVoiceNow;
 
@@ -20354,12 +20401,20 @@ const BREATH_PHASES = [
 
   function setVoiceState(state) {
     // state: 'listening' | 'thinking' | 'speaking'
+    // v7.1: when muted, never show "Sun rahi hoon" — reflect muted state instead.
+    // The pill shows "Mute" text and updateMuteButton() drives the button styling.
     const pill = document.getElementById("voice-state-pill");
     const hint = document.getElementById("voice-hint");
     if (pill) {
-      pill.classList.remove("thinking", "speaking");
+      pill.classList.remove("thinking", "speaking", "muted");
       if (state === "listening") {
-        pill.textContent = "Sun rahi hoon";
+        if (_convMuted) {
+          // Muted: don't claim we're listening.
+          pill.textContent = "Mute hai";
+          pill.classList.add("muted");
+        } else {
+          pill.textContent = "Sun rahi hoon";
+        }
       } else if (state === "thinking") {
         pill.textContent = "Soch rahi hoon";
         pill.classList.add("thinking");
@@ -20369,9 +20424,15 @@ const BREATH_PHASES = [
       }
     }
     if (hint) {
-      if (state === "listening") hint.textContent = "Bolein... ya rukne ke liye band karein";
-      else if (state === "thinking") hint.textContent = "Aapki baat samjh rahi hoon";
-      else if (state === "speaking") hint.textContent = "Suno... aap baad mein bhi bol sakte ho";
+      if (state === "listening") {
+        hint.textContent = _convMuted
+          ? "Mic band — bolne ke liye mute button dabayein"
+          : "Bolein... ya rukne ke liye band karein";
+      } else if (state === "thinking") {
+        hint.textContent = "Aapki baat samjh rahi hoon";
+      } else if (state === "speaking") {
+        hint.textContent = "Suno... aap baad mein bhi bol sakte ho";
+      }
     }
     if (state === "listening") _setBarsListening();
     else if (state === "thinking") _setBarsThinking();
@@ -20448,6 +20509,11 @@ const BREATH_PHASES = [
     try {
       window.speechSynthesis && window.speechSynthesis.cancel();
     } catch (e) {}
+    // v7.1: cancel watchdog + safety timers so they don't fire after session ends.
+    clearTimeout(_ttsWatchdogTimer);
+    _ttsWatchdogTimer = null;
+    clearTimeout(_speakSafetyTimer);
+    _speakSafetyTimer = null;
     _isSpeaking = false;
     // v6.9: release processing lock so the mic is never left stuck muted after
     // the user taps "Band karein" or stopVoice() is called for any other reason.
@@ -20786,16 +20852,21 @@ const BREATH_PHASES = [
   }
   window.prewarmTransliteration = prewarmTransliteration;
 
-  // v5.5 / v6.8 / SOS-fix-1: half-duplex helpers.
+  // v5.5 / v6.8 / SOS-fix-1 / v7.1: half-duplex helpers.
   //
   // _markTtsStart(audioEl)
   //   Sets _isSpeaking = true and wires a self-clearing "ended/error/abort"
   //   listener onto audioEl.  Use this for SINGLE-ELEMENT playback paths
   //   (Sarvam TTS, Web Speech, any caller that manages exactly one Audio
   //   object for the whole utterance).
+  //   v7.1: also stops the _convRecorder if it is somehow still running,
+  //   closing the half-duplex hole where the mic captures TTS audio.
+  //   v7.1: starts a 300ms watchdog poll that checks whether audio is
+  //   actually playing; if not (paused/ended/null with no new chunk queued)
+  //   it force-clears _isSpeaking so the mic-gate never spins 20 retries.
   //
   // _markTtsDone()
-  //   Clears _isSpeaking after the 700ms grace period.  Idempotent — safe
+  //   Clears _isSpeaking after the 150ms grace period.  Idempotent — safe
   //   to call multiple times (only the first call within a given speak() has
   //   any effect because _isSpeaking goes false).
   //   Use this as the teardown callback for the LAST chunk in a multi-chunk
@@ -20813,13 +20884,17 @@ const BREATH_PHASES = [
   // guarantees _isSpeaking can never stay true beyond 35 s regardless of
   // how many chunks error/abort silently.
   let _speakSafetyTimer = null; // cleared by _markTtsDone; set by _markTtsStart
+  let _ttsWatchdogTimer = null; // v7.1: watchdog — cleared by _markTtsDone
   function _markTtsDone() {
     clearTimeout(_speakSafetyTimer);
     _speakSafetyTimer = null;
+    // v7.1: cancel watchdog whenever TTS ends cleanly.
+    clearTimeout(_ttsWatchdogTimer);
+    _ttsWatchdogTimer = null;
     // v7.0: reduced grace 700ms→150ms. Echo is already prevented by the sidecar-
     // kill (_killSidecarForTts) and the mic being fully closed DURING TTS. A long
     // post-playback grace only adds dead time without extra protection.
-    setTimeout(() => { _isSpeaking = false; }, 150);
+    setTimeout(() => { _isSpeaking = false; updateMuteButton(); }, 150);
   }
   // half-duplex: kill the webkitSpeechRecognition sidecar the moment TTS starts
   // so it can't transcribe Saathi's own spoken reply. Called at every TTS start site.
@@ -20839,11 +20914,69 @@ const BREATH_PHASES = [
       if (interimNode) interimNode.remove();
     } catch (e) {}
   }
+  // v7.1: _stopRecorderForTts — stop the MediaRecorder if it is somehow still
+  // running when TTS is about to start. Prevents the half-duplex hole where
+  // mic audio is captured during TTS playback (the "Hello everyone" scenario).
+  // onstop will still fire on the recorder; _convProcessing is already true so
+  // that onstop's audio is discarded (blob.size < 1500 or the mute/inactive path).
+  function _stopRecorderForTts() {
+    try {
+      if (_convRecorder && _convRecorder.state !== "inactive") {
+        _convRecorder.stop();
+        console.info("[voice-skill] MediaRecorder stopped by _stopRecorderForTts (half-duplex)");
+      }
+    } catch (e) {}
+    // Also release the stream tracks so the browser mic indicator goes off
+    // while Saathi is speaking. A new stream is opened in the next convListenOnce.
+    try {
+      if (_convStream) {
+        _convStream.getTracks().forEach((t) => t.stop());
+        _convStream = null;
+      }
+    } catch (e) {}
+    try {
+      if (_convAudioCtx) { _convAudioCtx.close(); _convAudioCtx = null; }
+    } catch (e) {}
+  }
   function _markTtsStart(audioEl) {
     // Kill sidecar FIRST — before setting _isSpeaking — so there is zero window
     // during which the sidecar is alive and _isSpeaking is already true.
     _killSidecarForTts();
+    // v7.1: stop the MediaRecorder so mic audio is not captured during TTS.
+    _stopRecorderForTts();
     _isSpeaking = true;
+    // v7.1: watchdog — poll every 300ms while _isSpeaking is true.
+    // If _currentAudio is null, paused, or ended (and no new chunk is being
+    // loaded) force-clear _isSpeaking so the mic-gate unblocks promptly.
+    // The watchdog cancels itself as soon as it sees audio playing, then
+    // re-arms after each chunk so the multi-chunk path works correctly.
+    // It is also cancelled by _markTtsDone and by the 35s safety timer.
+    clearTimeout(_ttsWatchdogTimer);
+    let _watchdogArmed = true; // set false on first "audio is playing" observation
+    const _ttsWatchdog = () => {
+      if (!_isSpeaking) return; // already cleared by normal path
+      const isPlaying = _currentAudio && !_currentAudio.paused && !_currentAudio.ended;
+      if (isPlaying) {
+        _watchdogArmed = true; // audio confirmed playing — keep watching
+        _ttsWatchdogTimer = setTimeout(_ttsWatchdog, 300);
+        return;
+      }
+      if (!isPlaying && _watchdogArmed) {
+        // Saw at least one playing frame before; now audio has stopped.
+        // Give a single extra tick in case onended fires just after us.
+        _watchdogArmed = false;
+        _ttsWatchdogTimer = setTimeout(_ttsWatchdog, 350);
+        return;
+      }
+      // Two consecutive ticks with no audio playing after having seen it
+      // play (or never started in the first watchdog window):
+      // treat as stuck and force-clear.
+      console.warn(
+        "[voice-skill] watchdog: _isSpeaking=true but audio idle — force-clearing",
+      );
+      _markTtsDone();
+    };
+    _ttsWatchdogTimer = setTimeout(_ttsWatchdog, 600); // give audio 600ms to start
     // Safety net: if nothing ever fires ended/error/abort (silent 429, broken
     // blob URL, etc.) force-clear after 35 s so the mic is never locked forever.
     clearTimeout(_speakSafetyTimer);
@@ -20851,6 +20984,9 @@ const BREATH_PHASES = [
       if (_isSpeaking) {
         console.warn("[voice-skill] _isSpeaking safety timeout fired — force-clearing");
         _isSpeaking = false;
+        clearTimeout(_ttsWatchdogTimer);
+        _ttsWatchdogTimer = null;
+        updateMuteButton();
       }
     }, 35000);
     if (audioEl) {
@@ -20858,6 +20994,13 @@ const BREATH_PHASES = [
       audioEl.addEventListener("ended", _markTtsDone, { once: true });
       audioEl.addEventListener("error", _markTtsDone, { once: true });
       audioEl.addEventListener("abort", _markTtsDone, { once: true });
+      // v7.1: also clear on pause — iOS Safari sometimes fires pause instead
+      // of ended when the audio finishes (especially for short clips).
+      audioEl.addEventListener("pause", () => {
+        if (audioEl.ended || audioEl.currentTime >= (audioEl.duration || 0) - 0.05) {
+          _markTtsDone();
+        }
+      }, { once: true });
     } else {
       _markTtsDone(); /* unknown path → release after grace */
     }
@@ -21006,11 +21149,13 @@ const BREATH_PHASES = [
 
   async function speakElevenLabs(text, opts) {
     if (_elevenLabsBlocked && !USE_WORKER) return false;
-    // half-duplex: kill the recognition sidecar immediately when TTS is about to
-    // start, even before the first fetch completes.  _markTtsStart (called inside
-    // _playChunk) also calls _killSidecarForTts but that fires later after audio
-    // loads; this call closes the gap between "TTS fetch starts" and "audio plays".
+    // half-duplex: kill the recognition sidecar AND stop the MediaRecorder
+    // immediately when TTS is about to start, even before the first fetch
+    // completes.  _markTtsStart (called inside _playChunk) also calls both
+    // helpers but that fires later after audio loads; this call closes the gap
+    // between "TTS fetch starts" and "audio plays".
     _killSidecarForTts();
+    _stopRecorderForTts();
     // v6.7.9: v6.7.8 hybrid (Sarvam for non-Hindi) reverted.
     //   Reason: Sarvam Bulbul's "manisha" speaker is Hindi-trained; when
     //   asked to render Bengali phonemes via cross-language mapping it
@@ -21375,9 +21520,10 @@ const BREATH_PHASES = [
       ) {
         speakText = await transliterateToDevanagari(text, targetLangCode);
       }
-      // half-duplex: kill sidecar before Sarvam TTS fetch so it can't transcribe
-      // the tail of any previous recording or the upcoming TTS audio.
+      // half-duplex: kill sidecar + stop recorder before Sarvam TTS fetch so
+      // neither can capture the upcoming TTS audio.
       _killSidecarForTts();
+      _stopRecorderForTts();
       const speaker = _validSarvamSpeaker();
       const _t0 = performance.now();
       // v5.5.4: log the actual target language so users can verify routing.
