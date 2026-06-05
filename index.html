@@ -3135,6 +3135,41 @@ body {
 }
 
 /* ── Supporting YouTube video (animation → video) ── */
+/* Tap-to-reveal offer (shown first; lazy-loads the player on tap) */
+.yt-offer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  max-width: 480px;
+  margin: 12px auto 4px;
+  background: #f4f7ff;
+  border: 1.5px solid var(--border, #d0e2f7);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--jio-blue, #0057a8);
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s;
+}
+.yt-offer:active {
+  transform: scale(0.985);
+}
+.yt-offer .yt-offer-ico {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+/* On the dark immersive walkthrough finish overlay */
+#wt-finish .yt-offer {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #eef4ff;
+}
 .yt-video {
   margin: 14px auto 6px;
   width: 100%;
@@ -12373,7 +12408,7 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
       try {
         finishEl.querySelectorAll(
           ".wt-btn-faayda, .wt-btn-didnt-work, .wt-vote-thanks, " +
-          ".wt-reason-picker, .wt-social-proof-line, .yt-video"
+          ".wt-reason-picker, .wt-social-proof-line, .yt-offer, .yt-video"
         ).forEach(function (el) { el.remove(); });
       } catch (_) {}
 
@@ -12578,9 +12613,12 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
         console.warn("[walkthrough] evidence panel error:", _evErr);
       }
     }
-    // YouTube supporting video — async, injected below the finish content.
-    // Flow: animation → finish screen → video (appears once ytSearch resolves).
-    // Cleans up any previous .yt-video from a prior run (idempotent).
+    // YouTube tap-to-reveal offer — async, injected below the finish content.
+    // Flow: animation → finish screen → compact offer button (appears once
+    // ytSearch resolves).  The iframe is NOT auto-loaded; it is lazy-loaded
+    // only when the user taps the offer button.  This keeps the walkthrough
+    // finish screen unblocked — ANIMATION FIRST, video is secondary/optional.
+    // Cleans up any previous .yt-offer/.yt-video from a prior run (idempotent).
     // Uses exp.videoQuery (curated) → exp.titleHi → exp.title + " ghar ka nushka".
     // Degrades gracefully: nothing shown if Worker absent or videoId null.
     if (finishEl) {
@@ -12596,20 +12634,22 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
           if (!_ytId) return;
           // Finish element still in DOM and open?
           if (!finishEl.classList.contains("open")) return;
-          const old = finishEl.querySelector(".yt-video");
-          if (old) old.remove();
-          const ytDiv = document.createElement("div");
-          ytDiv.className = "yt-video";
-          ytDiv.innerHTML =
-            '<div class="yt-video-label">वीडियो में और अच्छे से देखें</div>' +
-            '<div class="yt-video-frame">' +
-            '<iframe src="https://www.youtube-nocookie.com/embed/' + _ytId +
-            '?rel=0&modestbranding=1&playsinline=1"' +
-            ' title="remedy video" frameborder="0"' +
-            ' allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"' +
-            ' allowfullscreen></iframe>' +
-            '</div>';
-          finishEl.appendChild(ytDiv);
+          // Remove any stale offer/player from a previous run (idempotent).
+          const oldOffer = finishEl.querySelector(".yt-offer");
+          if (oldOffer) oldOffer.remove();
+          const oldVideo = finishEl.querySelector(".yt-video");
+          if (oldVideo) oldVideo.remove();
+          // Render compact offer button — NO iframe loaded yet.
+          const btn = document.createElement("button");
+          btn.className = "yt-offer";
+          btn.setAttribute("data-ytid", _ytId);
+          btn.innerHTML =
+            '<span class="yt-offer-ico">🎬</span>' +
+            '<span>ये वीडियो भी आपको बेहतर महसूस करने में मदद करेगा — देखें</span>';
+          btn.onclick = function () {
+            if (typeof window.ytReveal === "function") window.ytReveal(btn, _ytId);
+          };
+          finishEl.appendChild(btn);
         } catch (_ytErr) {
           console.warn("[walkthrough] yt inject error:", _ytErr);
         }
@@ -12815,7 +12855,7 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
       if (finishEl) {
         const toRemove = finishEl.querySelectorAll(
           ".wt-btn-faayda, .wt-btn-didnt-work, .wt-reason-picker, " +
-          ".wt-vote-thanks, .wt-evidence-panel, .wt-social-proof-line, .yt-video",
+          ".wt-vote-thanks, .wt-evidence-panel, .wt-social-proof-line, .yt-offer, .yt-video",
         );
         toRemove.forEach(function (el) { el.remove(); });
       }
@@ -23255,6 +23295,42 @@ const BREATH_PHASES = [
   window.socialProof = socialProof;
   // ─────────────────────────────────────────────────────────────────────────
 
+  // ── ytReveal(btnEl, videoId) ──────────────────────────────────────────────
+  // Tap handler shared by both injection sites (recipe card in file 12 and
+  // walkthrough finish screen in file 07).  Replaces the compact .yt-offer
+  // button in place with the full iframe player — lazy-loaded only on user tap
+  // so no iframe is ever auto-loaded and the voice screen is never blocked.
+  // Exposed on window so file 07 can call it without importing this file.
+  //
+  // Markup produced on reveal:
+  //   <div class="yt-video">
+  //     <div class="yt-video-frame">
+  //       <iframe src="https://www.youtube-nocookie.com/embed/<ID>?rel=0&
+  //                    modestbranding=1&playsinline=1&autoplay=1" ...>
+  //       </iframe>
+  //     </div>
+  //   </div>
+  // (autoplay=1 is safe here — it is triggered by the explicit user tap.)
+  window.ytReveal = function ytReveal(btnEl, videoId) {
+    if (!btnEl || !videoId) return;
+    try {
+      const ytDiv = document.createElement("div");
+      ytDiv.className = "yt-video";
+      ytDiv.innerHTML =
+        '<div class="yt-video-frame">' +
+        '<iframe src="https://www.youtube-nocookie.com/embed/' + videoId +
+        '?rel=0&modestbranding=1&playsinline=1&autoplay=1"' +
+        ' title="remedy video" frameborder="0"' +
+        ' allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"' +
+        ' allowfullscreen></iframe>' +
+        '</div>';
+      // Swap: replace the offer button with the player in place.
+      btnEl.parentNode.replaceChild(ytDiv, btnEl);
+    } catch (e) {
+      console.warn("[ytReveal] failed:", e);
+    }
+  };
+
   // v6.7.5: detect the PRIMARY remedy Dadi mentioned, not just the first
   // remedy whose keyword happens to appear anywhere.
   // Bug it fixes: a reply about Jaiphal Doodh that incidentally mentions
@@ -23441,9 +23517,13 @@ const BREATH_PHASES = [
       } catch (_) {}
     })();
 
-    // YouTube supporting video — async, additive, graceful if no videoId.
+    // YouTube tap-to-reveal offer — async, additive, graceful if no videoId.
+    // TAP-TO-REVEAL pattern: only a compact offer button is shown initially;
+    // the iframe is lazy-loaded only when the user taps it (user-gesture path).
+    // This prevents the auto-embedded iframe from blocking/spamming the voice
+    // transcript area and keeps ANIMATION FIRST, video as secondary/optional.
     // Query: kit.videoQuery (curated) → kit.titleHi → kit.title + " gharelu nuskha".
-    // Clean up any previous .yt-video on the same row before injecting (idempotent).
+    // Cleans up any previous .yt-offer/.yt-video on the same row (idempotent).
     (async function () {
       try {
         const _ytQuery = kit.videoQuery || (kit.titleHi ? kit.titleHi : kit.title) + " gharelu nuskha";
@@ -23451,20 +23531,20 @@ const BREATH_PHASES = [
         if (!_ytId) return;
         // Row still in DOM?
         if (!row.isConnected) return;
-        const old = row.querySelector(".yt-video");
-        if (old) old.remove();
-        const ytDiv = document.createElement("div");
-        ytDiv.className = "yt-video";
-        ytDiv.innerHTML =
-          '<div class="yt-video-label">वीडियो में और अच्छे से देखें</div>' +
-          '<div class="yt-video-frame">' +
-          '<iframe src="https://www.youtube-nocookie.com/embed/' + _ytId +
-          '?rel=0&modestbranding=1&playsinline=1"' +
-          ' title="remedy video" frameborder="0"' +
-          ' allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"' +
-          ' allowfullscreen></iframe>' +
-          '</div>';
-        row.appendChild(ytDiv);
+        // Remove any stale offer/player from a previous run (idempotent).
+        const oldOffer = row.querySelector(".yt-offer");
+        if (oldOffer) oldOffer.remove();
+        const oldVideo = row.querySelector(".yt-video");
+        if (oldVideo) oldVideo.remove();
+        // Render compact offer button — NO iframe loaded yet.
+        const btn = document.createElement("button");
+        btn.className = "yt-offer";
+        btn.setAttribute("data-ytid", _ytId);
+        btn.innerHTML =
+          '<span class="yt-offer-ico">🎬</span>' +
+          '<span>ये वीडियो भी आपको बेहतर महसूस करने में मदद करेगा — देखें</span>';
+        btn.onclick = function () { window.ytReveal(btn, _ytId); };
+        row.appendChild(btn);
         msgsContainer.scrollTop = msgsContainer.scrollHeight;
       } catch (_) {}
     })();
