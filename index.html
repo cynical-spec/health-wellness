@@ -7069,15 +7069,15 @@ body:not(.focus) .focus-home {
   inset: 0;
   z-index: 9000;
   background:
-    radial-gradient(ellipse at top, rgba(34, 197, 94, 0.1), rgba(2, 6, 23, 0.92) 60%),
-    rgba(0, 0, 0, 0.88);
+    radial-gradient(ellipse at top, rgba(0, 102, 204, 0.22), rgba(4, 12, 34, 0.95) 58%),
+    rgba(3, 8, 24, 0.92);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: none;
   align-items: center;
   justify-content: center;
   padding: 16px;
-  animation: wt-fade-in 0.32s ease-out;
+  animation: wt-fade-in 0.38s ease-out;
 }
 .wt-overlay.open {
   display: flex;
@@ -7102,12 +7102,12 @@ body:not(.focus) .focus-home {
   flex-direction: column;
   gap: 14px;
   padding: 16px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(20, 24, 36, 0.96), rgba(8, 10, 18, 0.98));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(15, 28, 58, 0.97), rgba(6, 14, 34, 0.99));
+  border: 1px solid rgba(120, 170, 255, 0.12);
   box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(34, 197, 94, 0.08);
+    0 30px 80px rgba(0, 10, 40, 0.6),
+    0 0 0 1px rgba(0, 102, 204, 0.1);
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -7156,7 +7156,7 @@ body:not(.focus) .focus-home {
 .wt-step-counter {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(34, 197, 94, 0.85);
+  color: rgba(120, 180, 255, 0.88);
   margin-top: 6px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -7171,16 +7171,47 @@ body:not(.focus) .focus-home {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
+  border-radius: 20px;
   background: radial-gradient(
     ellipse at center,
-    rgba(34, 197, 94, 0.06),
-    rgba(255, 255, 255, 0.02)
+    rgba(0, 102, 204, 0.1),
+    rgba(8, 18, 42, 0.4)
   );
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(120, 170, 255, 0.08);
   overflow: hidden;
 }
+/* breathing Saathi orb — the persistent calm presence behind the focal art */
+.wt-stage::before {
+  content: "";
+  position: absolute;
+  width: 64%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 44%,
+    rgba(77, 163, 255, 0.42),
+    rgba(0, 102, 204, 0.14) 54%,
+    transparent 72%
+  );
+  filter: blur(3px);
+  pointer-events: none;
+  z-index: 0;
+  animation: wt-orb-breathe 6s ease-in-out infinite;
+}
+@keyframes wt-orb-breathe {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
 .wt-anim {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   display: flex;
@@ -7191,21 +7222,34 @@ body:not(.focus) .focus-home {
   max-width: 90%;
   max-height: 90%;
 }
+.wt-anim.enter {
+  animation: wt-anim-in 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes wt-anim-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 .wt-stage-glow {
   position: absolute;
   inset: -20%;
-  background: radial-gradient(ellipse at center, rgba(34, 197, 94, 0.15), transparent 60%);
+  background: radial-gradient(ellipse at center, rgba(0, 102, 204, 0.18), transparent 60%);
   pointer-events: none;
   opacity: 0.6;
-  animation: wt-glow-breathe 4s ease-in-out infinite;
+  animation: wt-glow-breathe 6s ease-in-out infinite;
 }
 @keyframes wt-glow-breathe {
   0%,
   100% {
-    opacity: 0.4;
+    opacity: 0.35;
   }
   50% {
-    opacity: 0.7;
+    opacity: 0.65;
   }
 }
 
@@ -7213,19 +7257,32 @@ body:not(.focus) .focus-home {
   text-align: center;
   padding: 0 8px;
 }
+.wt-caption.enter {
+  animation: wt-cap-in 0.5s ease-out;
+}
+@keyframes wt-cap-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .wt-caption-step {
   font-size: 12px;
-  font-weight: 600;
-  color: rgba(34, 197, 94, 0.9);
-  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: rgba(120, 180, 255, 0.92);
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
 .wt-caption-line {
-  font-size: 16px;
+  font-size: 16.5px;
   font-weight: 600;
   color: #eef4ff;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 .wt-timer {
@@ -7236,7 +7293,7 @@ body:not(.focus) .focus-home {
 }
 .wt-timer-fill {
   height: 100%;
-  background: linear-gradient(90deg, #22c55e, #14b8a6);
+  background: linear-gradient(90deg, #0066cc, #14b8a6);
   width: 0%;
   border-radius: 999px;
   transition: width 1s linear;
@@ -7257,12 +7314,12 @@ body:not(.focus) .focus-home {
     transform 0.25s;
 }
 .wt-dot.active {
-  background: #22c55e;
+  background: #4da3ff;
   transform: scale(1.4);
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+  box-shadow: 0 0 8px rgba(0, 102, 204, 0.55);
 }
 .wt-dot.done {
-  background: rgba(34, 197, 94, 0.5);
+  background: rgba(77, 163, 255, 0.5);
 }
 
 .wt-controls {
@@ -7297,10 +7354,11 @@ body:not(.focus) .focus-home {
 }
 .wt-btn-next {
   flex: 1;
-  padding: 13px 14px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #22c55e, #14b8a6);
+  padding: 14px 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0066cc, #14b8a6);
   color: #fff;
+  box-shadow: 0 6px 18px rgba(0, 102, 204, 0.3);
 }
 .wt-btn-done {
   padding: 13px 14px;
@@ -12363,38 +12421,46 @@ function renderHubMore() {
     "tulsi-shahad": {
       title: "Tulsi-shahad",
       titleHi: "तुलसी-शहद",
-      subtitle: "Khansi aur galay ke liye",
-      subtitleHi: "खाँसी और गले के लिए",
+      subtitle: "Gala kharaash ka nushka",
+      subtitleHi: "गला खराश का नुस्खा",
       kindIcon: "🌿",
-      match: ["tulsi shahad", "तुलसी शहद", "tulsi honey"],
+      match: ["tulsi shahad", "तुलसी शहद", "tulsi honey", "gala kharaash", "गला खराश", "गले में खराश"],
       steps: [
         {
           ix: 1,
-          durationSec: 25,
-          titleHi: "Tulsi patte kuto",
-          lineHi: "5-6 tulsi patte halka kuto taaki rass nikle.",
-          sayHi: "पांच छह तुलसी पत्ते हल्का कूटो ताकि रस निकले।",
+          durationSec: 8,
+          titleHi: "तुलसी के पत्ते तोड़ें",
+          lineHi: "पाँच-छह ताज़े तुलसी पत्ते धीरे से तोड़ लें। इन्हें साफ़ पानी से हल्के हाथ से धोएँ।",
+          sayHi: "पाँच छह ताज़े तुलसी पत्ते धीरे से तोड़ लें। इन्हें साफ़ पानी से हल्के हाथ से धोएँ।",
           svg: "leaf-grind",
         },
         {
           ix: 2,
-          durationSec: 25,
-          titleHi: "Shahad ke saath mix karo",
-          lineHi: "Ek chamach shahad daal ke acche se mila lo.",
-          sayHi: "एक चम्मच शहद डाल के अच्छे से मिला लो।",
+          durationSec: 9,
+          titleHi: "धीरे-धीरे रस निकालें",
+          lineHi: "पत्तों को हथेली में रख कर हल्के से मसलें — बस इतना कि रस टपकने लगे। ज़ोर मत लगाइए।",
+          sayHi: "पत्तों को हथेली में रख कर हल्के से मसलें — बस इतना कि रस टपकने लगे। ज़ोर मत लगाइए।",
           svg: "spoon-stir",
         },
         {
           ix: 3,
-          durationSec: 30,
-          titleHi: "Dheere dheere chaato",
-          lineHi: "Mooh mein rakh ke dheere dheere chaato. Din mein 2-3 baar.",
-          sayHi: "मुंह में रख के धीरे धीरे चाटो। दिन में दो तीन बार।",
+          durationSec: 9,
+          titleHi: "शहद मिलाएँ",
+          lineHi: "एक चम्मच शुद्ध शहद उस रस में मिलाएँ। धीरे-धीरे हिलाएँ ताकि दोनों अच्छे से घुल जाएँ।",
+          sayHi: "एक चम्मच शुद्ध शहद उस रस में मिलाएँ। धीरे धीरे हिलाएँ ताकि दोनों अच्छे से घुल जाएँ।",
+          svg: "spoon-haldi-pour",
+        },
+        {
+          ix: 4,
+          durationSec: 10,
+          titleHi: "धीरे से चाटें, आराम करें",
+          lineHi: "अब इसे एकदम धीरे-धीरे चाटें — गले पर टिकने दें। फिर आँखें बंद करें, एक लंबी साँस लें। दिन में दो-तीन बार यही करें।",
+          sayHi: "अब इसे एकदम धीरे धीरे चाटें — गले पर टिकने दें। फिर आँखें बंद करें, एक लंबी साँस लें। दिन में दो तीन बार यही करें।",
           svg: "drink-rest",
         },
       ],
-      finishLine: "Galay ki khich-khich kam hogi.",
-      finishLineHi: "गले की खिच खिच कम होगी।",
+      finishLine: "Galay ki khich-khich dheere-dheere shant hogi. Aaraam karein.",
+      finishLineHi: "गले की खिच-खिच धीरे-धीरे शांत होगी। आराम करें।",
       // WS1: curated evidence sources
       sources: [
         {
@@ -12754,6 +12820,64 @@ function renderHubMore() {
     dotsEl.innerHTML = html;
   }
 
+  // ── _wtChime() ───────────────────────────────────────────────────────────
+  // Plays a soft, meditative two-note tone via WebAudio — no audio asset.
+  // Pattern: a quiet sine wave for the first note (lower), then a triangle
+  // wave for the second (slightly higher), both with a smooth fade-out.
+  // Gain is intentionally very low (~0.06) to stay calming, not alarming.
+  // AudioContext is lazily created and reused (one per session) so we don't
+  // exhaust the browser's context limit.
+  // Also fires a gentle 12 ms haptic vibration if the device supports it.
+  let _wtAudioCtx = null;
+  function _wtChime() {
+    try {
+      // Haptic — a single very short pulse, barely perceptible.
+      if (typeof navigator !== "undefined" &&
+          typeof navigator.vibrate === "function") {
+        navigator.vibrate(12);
+      }
+    } catch (_hErr) {}
+
+    try {
+      const AudioContextCtor =
+        (typeof window !== "undefined" &&
+          (window.AudioContext || window.webkitAudioContext));
+      if (!AudioContextCtor) return;
+
+      if (!_wtAudioCtx || _wtAudioCtx.state === "closed") {
+        _wtAudioCtx = new AudioContextCtor();
+      }
+      // Resume if suspended (autoplay policy may have suspended it).
+      const ctx = _wtAudioCtx;
+      if (ctx.state === "suspended") {
+        ctx.resume().catch(function () {});
+      }
+
+      const now = ctx.currentTime;
+
+      // Helper: play one tone — type, frequency (Hz), start offset (s), duration (s).
+      function _tone(type, freq, startOffset, dur) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now + startOffset);
+        // Soft attack, then smooth exponential fade-out so it breathes, not beeps.
+        gain.gain.setValueAtTime(0, now + startOffset);
+        gain.gain.linearRampToValueAtTime(0.06, now + startOffset + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + startOffset + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + startOffset);
+        osc.stop(now + startOffset + dur + 0.05);
+      }
+
+      // Note 1: low-pitched sine (like a soft singing bowl strike), 0.55 s.
+      _tone("sine", 432, 0, 0.55);
+      // Note 2: slightly higher triangle (marimba-like overtone), starts at 0.3 s.
+      _tone("triangle", 576, 0.30, 0.45);
+    } catch (_chErr) {}
+  }
+
   function runWalkthroughStep() {
     if (!_wt) return;
     // Double-fire guard: ignore re-entrant calls while a step is already being set up.
@@ -12826,6 +12950,30 @@ function renderHubMore() {
     setText("wt-step-title", step.titleHi);
     setText("wt-step-line", step.lineHi);
     renderWtDots();
+
+    // ── Step entrance animation re-trigger ──
+    // Remove `enter`, force reflow, re-add `enter` so the CSS keyframes
+    // (`wt-anim-in` on .wt-anim, `wt-cap-in` on .wt-caption) restart on
+    // every step transition, giving each step its own float-in feel.
+    try {
+      const _animEl = document.getElementById("wt-anim");
+      if (_animEl) {
+        _animEl.classList.remove("enter");
+        void _animEl.offsetWidth;
+        _animEl.classList.add("enter");
+      }
+      const _capEl = document.querySelector(".wt-caption");
+      if (_capEl) {
+        _capEl.classList.remove("enter");
+        void _capEl.offsetWidth;
+        _capEl.classList.add("enter");
+      }
+    } catch (_animErr) {}
+
+    // ── Gentle chime + haptic on step ADVANCE (skip step 0 so opening isn't jarring) ──
+    if (_wt.idx > 0) {
+      _wtChime();
+    }
 
     // ── Speech-completion-driven auto-advance (fixes the race/overlap bug) ──
     //
