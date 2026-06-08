@@ -6696,8 +6696,8 @@ body:not(.focus) .focus-home {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px 18px 28px;
-  margin: 0 0 16px;
+  padding: 22px 20px 30px;
+  margin: 0 0 18px;
   background: linear-gradient(160deg, #0057a8 0%, #0066cc 60%, #0078e8 100%);
   border-radius: 0 0 24px 24px;
   color: #fff;
@@ -6736,8 +6736,8 @@ body:not(.focus) .focus-home {
 .active-choice-card {
   display: flex;
   gap: 12px;
-  margin: 0 16px 16px;
-  padding: 14px 14px;
+  margin: 0 18px;
+  padding: 15px 16px;
   border-radius: 16px;
   background: linear-gradient(135deg, rgba(0, 102, 204, 0.1), rgba(20, 184, 166, 0.08));
   border: 1px solid rgba(0, 102, 204, 0.18);
@@ -6957,39 +6957,39 @@ body:not(.focus) .focus-home {
    v6.1 — Talk to Dadi card (voice-first hero with rotating placeholder + chip rail)
    ══════════════════════════════════════════════════════════════════════════ */
 .talk-card {
-  margin: 0 16px 16px;
-  padding: 12px 12px 10px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 0 18px 4px;
+  padding: 0;
+  background: transparent;
+  border: 0;
 }
 .talk-card-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
 }
 .talk-card-input {
   flex: 1;
   min-width: 0;
-  background: var(--surface, rgba(255, 255, 255, 0.06));
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-  color: var(--text, #fff);
+  background: #fff;
+  border: 1px solid rgba(0, 40, 90, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 40, 90, 0.06);
+  color: var(--text, #0a1628);
   font-family: inherit;
   font-size: 15px;
-  padding: 13px 16px;
-  border-radius: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
   outline: none;
   transition:
     border-color 0.15s,
-    background 0.15s;
+    box-shadow 0.15s;
 }
 .talk-card-input::placeholder {
-  color: var(--text3, rgba(255, 255, 255, 0.42));
+  color: var(--text3, #8a98ad);
   font-style: italic;
 }
 .talk-card-input:focus {
-  border-color: var(--accent2, #0066cc);
-  background: var(--surface2, rgba(255, 255, 255, 0.08));
+  border-color: var(--primary, #0066cc);
+  box-shadow: 0 2px 14px rgba(0, 102, 204, 0.14);
 }
 .talk-card-mic {
   flex-shrink: 0;
@@ -7023,8 +7023,8 @@ body:not(.focus) .focus-home {
 }
 .talk-card-chip-rail {
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 9px;
+  margin-top: 13px;
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -7035,13 +7035,14 @@ body:not(.focus) .focus-home {
 }
 .talk-chip {
   flex-shrink: 0;
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text2, #d1d5db);
+  border: 1px solid rgba(0, 40, 90, 0.1);
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 40, 90, 0.04);
+  color: var(--text, #0a1628);
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
-  padding: 7px 13px;
+  padding: 9px 15px;
   border-radius: 999px;
   cursor: pointer;
   transition:
@@ -7052,8 +7053,8 @@ body:not(.focus) .focus-home {
 }
 .talk-chip:active {
   transform: scale(0.95);
-  background: rgba(0, 102, 204, 0.18);
-  border-color: var(--accent2, #0066cc);
+  background: rgba(0, 102, 204, 0.1);
+  border-color: var(--primary, #0066cc);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -7937,7 +7938,7 @@ body:not(.focus) .focus-home {
   color: var(--text);
   letter-spacing: -0.01em;
   padding: 0 18px;
-  margin: 22px 0 12px;
+  margin: 26px 0 13px;
 }
 .zone-label::before {
   content: "";
@@ -7950,7 +7951,7 @@ body:not(.focus) .focus-home {
 
 /* — Zone 2: companion / nuskha card — */
 #companion-card {
-  margin: 0 16px;
+  margin: 0 18px;
 }
 /* active-choice variant: give it the same soft card as .active-choice-card */
 #companion-card[data-kind]:not([data-kind="nuskha"]) {
@@ -7984,7 +7985,7 @@ body:not(.focus) .focus-home {
 }
 .nuskha-card {
   position: relative;
-  padding: 16px 18px;
+  padding: 18px 20px;
   border-radius: 18px;
   background: linear-gradient(160deg, rgba(0, 102, 204, 0.08), rgba(0, 120, 232, 0.03));
   border: 1px solid rgba(0, 102, 204, 0.16);
@@ -8008,8 +8009,8 @@ body:not(.focus) .focus-home {
 #life-rooms {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 0 16px;
+  gap: 15px;
+  padding: 0 18px;
 }
 .room-card {
   border-radius: 18px;
@@ -8026,7 +8027,7 @@ body:not(.focus) .focus-home {
   border: 0;
   background: transparent;
   cursor: pointer;
-  padding: 15px 16px 12px;
+  padding: 16px 18px 13px;
   font-family: inherit;
   text-align: left;
 }
@@ -8065,13 +8066,13 @@ body:not(.focus) .focus-home {
 }
 
 .room-body {
-  padding: 0 16px 14px;
+  padding: 0 18px 16px;
 }
 .room-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 0;
+  padding: 13px 0;
   border-top: 1px solid var(--border-soft, rgba(0, 40, 90, 0.07));
 }
 .room-row:first-child {
@@ -8211,8 +8212,8 @@ body:not(.focus) .focus-home {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: calc(100% - 32px);
-  margin: 18px 16px 4px;
+  width: calc(100% - 36px);
+  margin: 22px 18px 4px;
   border: 0;
   background: transparent;
   color: var(--text3, #6b7a90);
@@ -9082,6 +9083,10 @@ const LANG = {
   // Active Choice card (one of three states)
   ac_recall_prefix: { hi: "पिछली बार आपने कहा था:", en: "Pichli baar aapne kaha tha:" },
   ac_recall_suffix: { hi: "आज कैसा है?", en: "Aaj kaisa hai?" },
+  ac_recall_warm: {
+    hi: "पिछली बार की बातचीत अधूरी रह गई थी — वहीं से जारी रखें?",
+    en: "Pichli baar ki baat adhuri reh gayi thi — wahin se jaari rakhein?",
+  },
   ac_returner: {
     hi: "कुछ दिन हो गए। सब ठीक? आज कैसे महसूस कर रहे हैं?",
     en: "Kuch din ho gaye. Sab theek? Aaj kaise feel kar rahe hain?",
@@ -11110,35 +11115,32 @@ function renderWarmHero() {
 function pickActiveChoice() {
   // v6.7.2: every visible string flows through t(). All three card states
   // (recall / returner / time-of-day) re-translate on language toggle.
-  // 1a. Recent unresolved complaint — pull last user line from in-memory chatHistory
+  // 1a. Recent unresolved complaint — check in-memory chatHistory.
+  // We do NOT quote the raw user message (surfacing stray/test text is wrong).
+  // Instead we show a warm generic line that offers to resume the thread.
   const hist = (ST.chatHistory || []).slice().reverse();
   const lastUser = hist.find((m) => m && m.role === "user");
   if (lastUser && lastUser.content) {
-    const snippet = String(lastUser.content)
-      .split(/[.!?।\n]/)[0]
-      .trim()
-      .slice(0, 80);
-    if (snippet) {
-      return {
-        kind: "recall",
-        icon: "💭",
-        text: t("ac_recall_prefix") + ' "' + snippet + '". ' + t("ac_recall_suffix"),
-        primary: { label: t("ac_btn_theek"), action: "ac_resolve" },
-        secondary: { label: t("ac_btn_continue_thread"), action: "ac_continue" },
-      };
-    }
+    return {
+      kind: "recall",
+      icon: "💭",
+      text: t("ac_recall_warm"),
+      primary: { label: t("ac_btn_theek"), action: "ac_resolve" },
+      secondary: { label: t("ac_btn_continue_thread"), action: "ac_continue" },
+    };
   }
-  // 1b. chatHistory is empty after reload — fall back to most recent saved session
+  // 1b. chatHistory is empty after reload — fall back to most recent saved session.
+  // We do NOT quote the session title (raw user text, possibly in wrong lang).
+  // Instead we show the same warm generic recall line.
   try {
     if (typeof window.loadChatSessions === "function") {
       const sessions = window.loadChatSessions() || [];
-      if (sessions.length > 0 && sessions[0] && sessions[0].title) {
-        const snippet = String(sessions[0].title).slice(0, 80);
-        ST._recallSessionId = sessions[0].id || null;
+      if (sessions.length > 0 && sessions[0] && sessions[0].id) {
+        ST._recallSessionId = sessions[0].id;
         return {
           kind: "recall",
           icon: "💭",
-          text: t("ac_recall_prefix") + ' "' + snippet + '". ' + t("ac_recall_suffix"),
+          text: t("ac_recall_warm"),
           primary: { label: t("ac_btn_theek"), action: "ac_resolve" },
           secondary: { label: t("ac_btn_continue_thread"), action: "ac_continue" },
         };
@@ -11320,37 +11322,72 @@ const HUB_CHIPS = [
 ];
 
 // Prompts feel different by time-of-day because users ask different things
-// morning vs night. Each bucket has 5 short Hinglish examples cycled
-// through the input placeholder every ~3.5s.
+// morning vs night. Each bucket has 5 examples cycled through the input
+// placeholder every ~3.5s.
+// Language-keyed: hi = pure Devanagari, en = Hinglish (Roman).
+// getLang() is read on every tick so a language toggle mid-session takes
+// effect on the very next cycle — no re-init required.
 const HUB_PROMPTS_BY_TOD = {
-  morning: [
-    "sir dard hai…",
-    "subah weakness lag rahi…",
-    "khaali pet acidity…",
-    "saans bhaari hai…",
-    "naashta hi kya khaaun?",
-  ],
-  noon: [
-    "khaane ke baad gas…",
-    "thakaan lag rahi…",
-    "pet mein hawa bhar gayi…",
-    "sir dard ho raha…",
-    "neend aa rahi…",
-  ],
-  evening: [
-    "shaam tak thak gaye…",
-    "mood theek nahi…",
-    "kal ki sardi-khansi…",
-    "sir dard ho raha…",
-    "kuch halka khaaun?",
-  ],
-  night: [
-    "neend nahi aati…",
-    "tension lag rahi…",
-    "raat ko pet mein dard…",
-    "dimaag chal raha…",
-    "gehri saans kaise lein?",
-  ],
+  hi: {
+    morning: [
+      "जैसे: सुबह से सिर दर्द है…",
+      "जैसे: खाली पेट एसिडिटी हो रही है…",
+      "जैसे: गले में खराश है…",
+      "जैसे: सांस थोड़ी भारी लग रही है…",
+      "जैसे: नाश्ते में क्या खाऊं?",
+    ],
+    noon: [
+      "जैसे: खाने के बाद पेट में गैस…",
+      "जैसे: थकान लग रही है…",
+      "जैसे: पेट में दर्द है…",
+      "जैसे: सिर भारी लग रहा है…",
+      "जैसे: नींद आ रही है दोपहर को…",
+    ],
+    evening: [
+      "जैसे: शाम तक थक गए…",
+      "जैसे: मूड ठीक नहीं है…",
+      "जैसे: सर्दी-खांसी शुरू हो रही है…",
+      "जैसे: सिर दर्द हो रहा है…",
+      "जैसे: कुछ हल्का खाना है…",
+    ],
+    night: [
+      "जैसे: रात को नींद नहीं आती…",
+      "जैसे: टेंशन लग रही है…",
+      "जैसे: रात को पेट में दर्द है…",
+      "जैसे: दिमाग बंद नहीं होता…",
+      "जैसे: गहरी सांस कैसे लें?",
+    ],
+  },
+  en: {
+    morning: [
+      "Jaise: sir dard hai…",
+      "Jaise: khaali pet acidity…",
+      "Jaise: gale mein kharash hai…",
+      "Jaise: saans bhaari lag rahi…",
+      "Jaise: naashte mein kya khaun?",
+    ],
+    noon: [
+      "Jaise: khaane ke baad gas…",
+      "Jaise: thakaan lag rahi…",
+      "Jaise: pet mein dard hai…",
+      "Jaise: sir bhaari lag raha…",
+      "Jaise: dopahar ko neend aa rahi…",
+    ],
+    evening: [
+      "Jaise: shaam tak thak gaye…",
+      "Jaise: mood theek nahi…",
+      "Jaise: sardi-khansi shuru ho rahi…",
+      "Jaise: sir dard ho raha…",
+      "Jaise: kuch halka khaana hai…",
+    ],
+    night: [
+      "Jaise: raat ko neend nahi aati…",
+      "Jaise: tension lag rahi…",
+      "Jaise: raat ko pet mein dard…",
+      "Jaise: dimaag band nahi hota…",
+      "Jaise: gehri saans kaise lein?",
+    ],
+  },
 };
 
 function renderHubChipRail() {
@@ -11389,15 +11426,19 @@ function startHubPlaceholderRotation() {
   const input = document.getElementById("hub-input");
   if (!input) return;
   const tod = typeof getTodWarm === "function" ? getTodWarm() : { bucket: "noon" };
-  const pool = HUB_PROMPTS_BY_TOD[tod.bucket] || HUB_PROMPTS_BY_TOD.noon;
   _hubPlaceholderIdx = 0;
   const apply = () => {
     // Don't override while user is typing.
     if (input.value && input.value.length > 0) return;
-    // v6.7.2: "Try:" prefix is i18n'd; the sample prompt itself stays
-    // Hinglish (it's an example of what the USER might type, and they
-    // type either in Devanagari or Hinglish naturally).
-    input.placeholder = t("hub_try_prefix") + " " + pool[_hubPlaceholderIdx % pool.length];
+    // Read getLang() on every tick so a language toggle mid-session is
+    // reflected on the very next cycle — no re-init of the rotation needed.
+    const lang = (typeof getLang === "function" ? getLang() : null) || "hi";
+    const langPool = HUB_PROMPTS_BY_TOD[lang] || HUB_PROMPTS_BY_TOD.hi;
+    const pool = langPool[tod.bucket] || langPool.noon;
+    // "जैसे:" / "Jaise:" prefix is already baked into each example string,
+    // so we no longer prepend t("hub_try_prefix") separately — the examples
+    // are self-contained and consistent across both scripts.
+    input.placeholder = pool[_hubPlaceholderIdx % pool.length];
     _hubPlaceholderIdx++;
   };
   apply();
@@ -11414,12 +11455,22 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
 // ── v9: Life Rooms — Zone 2 (Companion Moment) ──
 
 // Rotating daily wellness tips — gentle, seasonal, general. NOT medical claims.
-const NUSKHA_TIPS = [
-  "🌿 Subah ek glass garam paani mein adha nimbu — pachhan achha rehta hai aur energy bani rehti hai.",
-  "🍃 Raat ko sone se pehle ek cup haldi wala doodh — neend gehri aati hai aur thakaan kam hoti hai.",
-  "🌸 Din mein 5-10 minute dhoop lena — sehat aur mann dono ke liye faydemand hai.",
-  "🫚 Sarson ya til ka tel pair ke talhon par laga ke so jaao — neend shant aati hai.",
-];
+// Language-keyed: hi = pure Devanagari, en = Hinglish (Roman).
+// Both arrays must stay the same length and cover the same tips in order.
+const NUSKHA_TIPS = {
+  hi: [
+    "🌿 सुबह एक गिलास गरम पानी में आधा नींबू — पाचन अच्छा रहता है और दिन भर ताज़गी बनी रहती है।",
+    "🍃 रात को सोने से पहले एक कप हल्दी वाला दूध — नींद गहरी आती है और थकान कम होती है।",
+    "🌸 दिन में ५-१० मिनट धूप लेना — सेहत और मन दोनों के लिए फ़ायदेमंद है।",
+    "🫚 सरसों या तिल का तेल पैर के तलवों पर लगा कर सो जाओ — नींद शांत आती है।",
+  ],
+  en: [
+    "🌿 Subah ek glass garam paani mein aadha nimbu — pachan accha rehta hai aur energy bani rehti hai.",
+    "🍃 Raat ko sone se pehle ek cup haldi wala doodh — neend gehri aati hai aur thakaan kam hoti hai.",
+    "🌸 Din mein 5-10 minute dhoop lena — sehat aur mann dono ke liye faydemand hai.",
+    "🫚 Sarson ya til ka tel pair ke talhon par laga ke so jaao — neend shant aati hai.",
+  ],
+};
 
 function renderCompanionCard() {
   const el = document.getElementById("companion-card");
@@ -11428,8 +11479,10 @@ function renderCompanionCard() {
   // साथी की बात: always shows आज का नुस्खा — rotating daily wellness tip.
   // The active-choice nudge (recall / returner / TOD) now lives at the top of
   // the hub in #active-choice-card (rendered by renderActiveChoice()).
-  const dayIdx = new Date().getDate() % NUSKHA_TIPS.length;
-  const tip = NUSKHA_TIPS[dayIdx];
+  // Pick the array for the CURRENT language so pure Devanagari shows in Hindi mode.
+  const _tips = NUSKHA_TIPS[getLang()] || NUSKHA_TIPS.hi;
+  const dayIdx = new Date().getDate() % _tips.length;
+  const tip = _tips[dayIdx];
   el.dataset.kind = "nuskha";
   el.innerHTML =
     '<div class="nuskha-card">' +
