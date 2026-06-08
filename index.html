@@ -8290,6 +8290,70 @@ body:not(.focus) .focus-home {
 .hub-more:active {
   background: rgba(0, 40, 90, 0.05);
 }
+
+/* ════════════════════════════════════════════════════════════════
+   v10 — Owned SVG motion library (km-*) for the walkthrough player.
+   Calm, flat-with-soft-glow, Jio palette. The breathing orb is the
+   stage background (.wt-stage::before); these classes carry motion only.
+   Lottie (premium pack) overrides per-step via REMEDY_MEDIA; this SVG
+   set is the always-present floor so every step shows "how to do it".
+   ════════════════════════════════════════════════════════════════ */
+.km-svg { overflow: visible; }
+.km-bob { animation: km-bob 4.5s ease-in-out infinite; transform-origin: center; }
+@keyframes km-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* steam wisps */
+.km-wisp { stroke: rgba(255,255,255,.55); stroke-width: 5; stroke-linecap: round; fill: none; opacity: 0; }
+.km-w1 { animation: km-rise 3s ease-in-out infinite; }
+.km-w2 { animation: km-rise 3s ease-in-out infinite .8s; }
+.km-w3 { animation: km-rise 3s ease-in-out infinite 1.6s; }
+@keyframes km-rise { 0% { opacity: 0; transform: translateY(14px) scaleY(.6); } 30% { opacity: .7; } 100% { opacity: 0; transform: translateY(-26px) scaleY(1.1); } }
+
+/* breathing ring (for breathing-rest) */
+.km-ringpulse { animation: km-ringpulse 5s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes km-ringpulse { 0%,100% { transform: scale(.82); opacity: .65; } 50% { transform: scale(1.12); opacity: 1; } }
+
+/* stir spoon */
+.km-spoon { animation: km-stir 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 86%; }
+@keyframes km-stir { 0%,100% { transform: rotate(-22deg); } 50% { transform: rotate(22deg); } }
+
+/* pour: tilting vessel + falling drops */
+.km-tilt { animation: km-tilt 3.8s ease-in-out infinite; transform-box: fill-box; transform-origin: 80% 20%; }
+@keyframes km-tilt { 0%,100% { transform: rotate(0); } 45%,70% { transform: rotate(-28deg); } }
+.km-drop { opacity: 0; animation: km-drop 1.9s ease-in infinite; }
+.km-d2 { animation-delay: .65s; }
+.km-d3 { animation-delay: 1.3s; }
+@keyframes km-drop { 0% { opacity: 0; transform: translateY(-4px); } 18% { opacity: 1; } 100% { opacity: 0; transform: translateY(40px); } }
+
+/* water ripple rings */
+.km-ring { fill: none; stroke: #4da3ff; stroke-width: 3; opacity: 0; transform-box: fill-box; transform-origin: center; animation: km-ripple 2.4s ease-out infinite; }
+.km-r2 { animation-delay: 1.2s; }
+@keyframes km-ripple { 0% { opacity: .7; transform: scale(.3); } 100% { opacity: 0; transform: scale(1.35); } }
+
+/* press point: finger dips + pulse */
+.km-finger { animation: km-press 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes km-press { 0%,100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+.km-pulse { fill: none; stroke: #22c55e; stroke-width: 3; opacity: 0; transform-box: fill-box; transform-origin: center; animation: km-ripple 2.2s ease-out infinite; }
+
+/* boil: bubbles rising in a pot */
+.km-bub { opacity: 0; animation: km-bub 1.8s ease-in-out infinite; }
+.km-b2 { animation-delay: .5s; }
+.km-b3 { animation-delay: 1s; }
+@keyframes km-bub { 0% { opacity: 0; transform: translateY(6px) scale(.6); } 35% { opacity: .8; } 100% { opacity: 0; transform: translateY(-16px) scale(1); } }
+
+/* rest/sleep: drifting Zzz */
+.km-zzz { opacity: 0; animation: km-zzz 3s ease-in-out infinite; }
+.km-z2 { animation-delay: 1s; }
+.km-z3 { animation-delay: 2s; }
+@keyframes km-zzz { 0% { opacity: 0; transform: translate(0,6px) scale(.7); } 30% { opacity: .9; } 100% { opacity: 0; transform: translate(10px,-22px) scale(1.05); } }
+
+/* leaf/herb sway */
+.km-sway { animation: km-sway 3.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes km-sway { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+
+/* entrance for any km svg (player already toggles .wt-anim.enter) */
+.km-svg { animation: km-in .5s ease-out; }
+@keyframes km-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
@@ -11848,166 +11912,45 @@ function renderHubMore() {
   //   via classes that match keyframes in globals.css (.flame, .steam, etc.).
   //   Realistic warm palette: cream, gold, terracotta, charcoal. No faces, no
   //   googly eyes — the brief was "not cartoony". Each is 200x200 viewBox.
+  // v7.0 — KITCHEN_SVG replaced with owned km-* motion SVG library.
+  // All entries use viewBox "0 0 120 120" (or 120x140 for water).
+  // CSS classes km-* are defined in globals.css by @orchestrator.
+  // Breathing orb is the .wt-stage::before background — these SVGs carry motion only.
+  // Old keys kept as aliases so any stale svg: refs in existing data still resolve.
   const KITCHEN_SVG = {
-    "pan-milk-heat": `
-<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
-  <defs>
-    <radialGradient id="ks-flame" cx="50%" cy="100%" r="65%">
-      <stop offset="0%" stop-color="#fde047"/>
-      <stop offset="55%" stop-color="#f59e0b"/>
-      <stop offset="100%" stop-color="#dc2626"/>
-    </radialGradient>
-  </defs>
-  <g class="steam">
-    <path d="M 88 70 Q 92 58 86 46 Q 82 34 88 22" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.55"/>
-  </g>
-  <g class="steam s2">
-    <path d="M 108 70 Q 104 56 110 44 Q 114 32 108 20" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.55"/>
-  </g>
-  <g class="steam s3">
-    <path d="M 128 72 Q 132 60 126 48 Q 122 36 128 26" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.45"/>
-  </g>
-  <path d="M 55 92 L 55 138 Q 55 154 71 154 L 129 154 Q 145 154 145 138 L 145 92 Z" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
-  <rect x="60" y="96" width="80" height="40" rx="2" fill="#fef9c3"/>
-  <ellipse cx="100" cy="96" rx="40" ry="3" fill="#fef9c3" opacity="0.7"/>
-  <rect x="145" y="115" width="38" height="6" rx="3" fill="#334155"/>
-  <ellipse cx="100" cy="168" rx="55" ry="6" fill="#1e293b"/>
-  <g transform="translate(100 162)">
-    <g class="flame">
-      <path d="M -22 0 Q -26 -14 -16 -22 Q -10 -16 -6 -24 Q -2 -16 2 -26 Q 6 -16 12 -24 Q 18 -16 22 -22 Q 26 -14 22 0 Z" fill="url(#ks-flame)"/>
-    </g>
-  </g>
-</svg>`,
-    "spoon-haldi-pour": `
-<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
-  <defs>
-    <linearGradient id="ks-cupg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fef9c3"/>
-      <stop offset="100%" stop-color="#fde68a"/>
-    </linearGradient>
-  </defs>
-  <g class="spoon-pour" transform="translate(125 35)">
-    <rect x="0" y="0" width="32" height="6" rx="2" fill="#7c2d12"/>
-    <ellipse cx="-4" cy="3" rx="9" ry="7" fill="#a16207"/>
-    <ellipse cx="-4" cy="2" rx="7" ry="5" fill="#ca8a04"/>
-  </g>
-  <g>
-    <circle cx="100" cy="90" r="3" fill="#ca8a04" class="particle"/>
-    <circle cx="95" cy="95" r="2" fill="#ca8a04" class="particle p2"/>
-    <circle cx="105" cy="100" r="2.5" fill="#a16207" class="particle p3"/>
-    <circle cx="100" cy="108" r="2" fill="#ca8a04" class="particle p4"/>
-  </g>
-  <path d="M 60 115 L 65 165 Q 65 175 75 175 L 125 175 Q 135 175 135 165 L 140 115 Z" fill="#475569" stroke="#64748b" stroke-width="1.5"/>
-  <ellipse cx="100" cy="115" rx="40" ry="5" fill="url(#ks-cupg)"/>
-  <ellipse cx="100" cy="115" rx="36" ry="3" fill="#fef3c7" opacity="0.6"/>
-  <rect x="135" y="130" width="20" height="4" rx="2" fill="#334155"/>
-</svg>`,
-    "spoon-stir": `
-<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
-  <defs>
-    <radialGradient id="ks-swirl" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#fef3c7"/>
-      <stop offset="60%" stop-color="#fde68a"/>
-      <stop offset="100%" stop-color="#facc15"/>
-    </radialGradient>
-  </defs>
-  <circle cx="100" cy="110" r="58" fill="#1e293b" stroke="#475569" stroke-width="2"/>
-  <circle cx="100" cy="110" r="52" fill="url(#ks-swirl)"/>
-  <g opacity="0.45">
-    <circle cx="100" cy="110" r="34" fill="none" stroke="#fff" stroke-width="1.3" stroke-dasharray="3 4"/>
-    <circle cx="100" cy="110" r="22" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="2 3"/>
-  </g>
-  <g class="spoon-stir">
-    <rect x="98" y="62" width="6" height="58" rx="2" fill="#7c2d12"/>
-    <ellipse cx="101" cy="120" rx="9" ry="7" fill="#a16207"/>
-  </g>
-</svg>`,
-    "pan-boil": `
-<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
-  <defs>
-    <radialGradient id="ks-flame2" cx="50%" cy="100%" r="65%">
-      <stop offset="0%" stop-color="#fde047"/>
-      <stop offset="55%" stop-color="#f59e0b"/>
-      <stop offset="100%" stop-color="#dc2626"/>
-    </radialGradient>
-  </defs>
-  <g class="steam">
-    <path d="M 80 56 Q 84 44 78 30 Q 76 18 82 8" stroke="#e2e8f0" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.55"/>
-  </g>
-  <g class="steam s2">
-    <path d="M 100 52 Q 96 38 102 24 Q 104 12 100 2" stroke="#e2e8f0" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.55"/>
-  </g>
-  <g class="steam s3">
-    <path d="M 122 56 Q 126 44 120 30 Q 118 18 124 8" stroke="#e2e8f0" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.45"/>
-  </g>
-  <path d="M 55 92 L 55 138 Q 55 154 71 154 L 129 154 Q 145 154 145 138 L 145 92 Z" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
-  <rect x="60" y="96" width="80" height="40" rx="2" fill="#fbbf24"/>
-  <ellipse cx="100" cy="96" rx="40" ry="3" fill="#fde68a" opacity="0.8"/>
-  <circle cx="82" cy="128" r="4" fill="#fef3c7" class="bubble"/>
-  <circle cx="100" cy="132" r="5" fill="#fef3c7" class="bubble b2"/>
-  <circle cx="118" cy="128" r="3.5" fill="#fef3c7" class="bubble b3"/>
-  <circle cx="90" cy="124" r="3" fill="#fef3c7" class="bubble b4"/>
-  <rect x="145" y="115" width="38" height="6" rx="3" fill="#334155"/>
-  <ellipse cx="100" cy="168" rx="55" ry="6" fill="#1e293b"/>
-  <g transform="translate(100 162)">
-    <g class="flame">
-      <path d="M -18 0 Q -22 -12 -14 -18 Q -8 -14 -4 -20 Q 0 -14 4 -22 Q 8 -14 14 -18 Q 22 -12 18 0 Z" fill="url(#ks-flame2)"/>
-    </g>
-  </g>
-</svg>`,
-    "drink-rest": `
-<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
-  <g class="steam" transform="translate(160 60)">
-    <path d="M 0 25 Q 4 12 -2 0 Q -6 -10 0 -22" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.55"/>
-  </g>
-  <g class="steam s2" transform="translate(170 64)">
-    <path d="M 0 24 Q -4 12 2 -2 Q 4 -14 -2 -24" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.5"/>
-  </g>
-  <g transform="translate(155 85)">
-    <path d="M 0 0 L 0 32 Q 0 40 8 40 L 22 40 Q 30 40 30 32 L 30 0 Z" fill="#475569" stroke="#64748b" stroke-width="1.5"/>
-    <rect x="2" y="3" width="26" height="10" rx="2" fill="#fbbf24"/>
-  </g>
-  <g class="body-rest">
-    <ellipse cx="80" cy="160" rx="70" ry="12" fill="#334155" opacity="0.4"/>
-    <rect x="20" y="120" width="120" height="32" rx="16" fill="#94a3b8"/>
-    <circle cx="44" cy="120" r="22" fill="#fbcfe8"/>
-    <path d="M 28 110 Q 44 96 60 110 L 60 120 L 28 120 Z" fill="#4c1d95"/>
-    <rect x="10" y="145" width="135" height="8" rx="4" fill="#1e293b"/>
-  </g>
-  <text x="100" y="74" font-size="22" fill="#94a3b8" class="zzz" font-family="system-ui">z</text>
-  <text x="112" y="60" font-size="18" fill="#94a3b8" class="zzz z2" font-family="system-ui">z</text>
-</svg>`,
-    // v6.3.2 — two new scenes for leaf-based and skin-application remedies
-    "leaf-grind": `
-<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
-  <ellipse cx="100" cy="180" rx="74" ry="6" fill="#1e1b18" opacity="0.5"/>
-  <path d="M 50 130 Q 50 175 100 178 Q 150 175 150 130 Z" fill="#78350f" stroke="#451a03" stroke-width="2"/>
-  <path d="M 60 130 Q 60 162 100 165 Q 140 162 140 130 Z" fill="#1c1917"/>
-  <ellipse cx="100" cy="130" rx="50" ry="6" fill="#a16207" opacity="0.6"/>
-  <ellipse cx="78" cy="140" rx="8" ry="5" fill="#16a34a" transform="rotate(-14 78 140)"/>
-  <ellipse cx="100" cy="145" rx="9" ry="6" fill="#15803d" transform="rotate(8 100 145)"/>
-  <ellipse cx="122" cy="140" rx="8" ry="5" fill="#16a34a" transform="rotate(22 122 140)"/>
-  <ellipse cx="90" cy="153" rx="5" ry="3" fill="#22c55e"/>
-  <ellipse cx="110" cy="153" rx="5" ry="3" fill="#22c55e"/>
-  <g class="pestle-grind">
-    <rect x="94" y="50" width="12" height="92" rx="6" fill="#7c2d12" stroke="#451a03" stroke-width="1.2"/>
-    <ellipse cx="100" cy="50" rx="9" ry="4" fill="#a16207"/>
-    <ellipse cx="100" cy="142" rx="11" ry="5" fill="#451a03"/>
-  </g>
-</svg>`,
-    "paste-apply": `
-<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
-  <ellipse cx="100" cy="110" rx="70" ry="58" fill="#fde2c8" stroke="#f5cba7" stroke-width="1.5"/>
-  <ellipse cx="100" cy="100" rx="62" ry="48" fill="#fef0e0" opacity="0.7"/>
-  <ellipse cx="100" cy="110" rx="32" ry="18" fill="#fbbf24" opacity="0.9" class="paste-smear"/>
-  <ellipse cx="100" cy="110" rx="20" ry="12" fill="#f59e0b" opacity="0.6" class="paste-smear"/>
-  <g class="finger-sweep">
-    <rect x="36" y="68" width="22" height="58" rx="11" fill="#fde2c8" stroke="#f5cba7" stroke-width="1.5"/>
-    <ellipse cx="47" cy="68" rx="11" ry="7" fill="#fde2c8" stroke="#f5cba7" stroke-width="1.5"/>
-    <ellipse cx="47" cy="68" rx="6" ry="3" fill="#f5cba7" opacity="0.6"/>
-  </g>
-</svg>`,
+    // ── Core 6 (exact validated strings from brief) ──
+    "warm-drink": '<svg class="km-svg" viewBox="0 0 120 120"><defs><linearGradient id="kmCup" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd27a"/><stop offset="1" stop-color="#f0a93c"/></linearGradient></defs><g transform="translate(60,42)"><path class="km-wisp km-w1" d="M-12 0 q-6 -10 0 -20 q6 -10 0 -20"/><path class="km-wisp km-w2" d="M0 0 q-6 -10 0 -20 q6 -10 0 -20"/><path class="km-wisp km-w3" d="M12 0 q-6 -10 0 -20 q6 -10 0 -20"/></g><g class="km-bob"><ellipse cx="60" cy="58" rx="32" ry="8" fill="#7a3e12"/><path d="M28 58 q0 40 32 40 q32 0 32 -40 Z" fill="url(#kmCup)"/><path d="M90 64 q18 2 16 18 q-2 14 -18 11" fill="none" stroke="url(#kmCup)" stroke-width="7" stroke-linecap="round"/></g></svg>',
+    "breathing-rest": '<svg class="km-svg" viewBox="0 0 120 120"><circle class="km-ringpulse" cx="60" cy="60" r="26" fill="none" stroke="#9ec7ff" stroke-width="3"/><circle class="km-bob" cx="60" cy="60" r="6" fill="#dfeeff"/></svg>',
+    "water": '<svg class="km-svg" viewBox="0 0 120 140"><circle class="km-ring" cx="60" cy="96" r="20"/><circle class="km-ring km-r2" cx="60" cy="96" r="20"/><path d="M40 40 h40 l-5 64 q-1 8 -15 8 q-14 0 -15 -8 Z" fill="rgba(77,163,255,.22)" stroke="#4da3ff" stroke-width="3"/><rect x="44" y="64" width="32" height="36" rx="4" fill="#4da3ff" opacity=".55"/></svg>',
+    "stir": '<svg class="km-svg" viewBox="0 0 120 120"><path d="M24 64 q0 30 36 30 q36 0 36 -30 Z" fill="#2f6f4f"/><ellipse cx="60" cy="64" rx="36" ry="9" fill="#3f8f63"/><g class="km-spoon"><rect x="56" y="20" width="7" height="52" rx="3" fill="#ffd27a"/><ellipse cx="59" cy="74" rx="11" ry="7" fill="#f0a93c"/></g></svg>',
+    "pour": '<svg class="km-svg" viewBox="0 0 120 120"><g class="km-tilt" transform="translate(30,16)"><rect x="0" y="0" width="26" height="40" rx="8" fill="#ffd27a"/><rect x="8" y="-8" width="10" height="10" rx="2" fill="#f0a93c"/></g><circle class="km-drop" cx="44" cy="60" r="4" fill="#b5651d"/><circle class="km-drop km-d2" cx="44" cy="60" r="4" fill="#b5651d"/><circle class="km-drop km-d3" cx="44" cy="60" r="4" fill="#b5651d"/><path d="M34 92 q0 16 26 16 q26 0 26 -16 Z" fill="#2f6f4f"/><ellipse cx="60" cy="92" rx="26" ry="6" fill="#3f8f63"/></svg>',
+    "press-point": '<svg class="km-svg" viewBox="0 0 120 120"><circle class="km-pulse" cx="60" cy="74" r="14"/><circle cx="60" cy="74" r="9" fill="#22c55e"/><g class="km-finger"><path d="M50 14 q10 -8 20 0 v38 q-10 8 -20 0 Z" fill="#ffd9b0"/><rect x="50" y="46" width="20" height="10" rx="3" fill="#f3c79a"/></g></svg>',
+    // ── 4 authored additions (Jio flat-with-glow style, same palette) ──
+    // boil: pot with 3 rising bubbles — for ubaalo/garam karo steps
+    "boil": '<svg class="km-svg" viewBox="0 0 120 120"><path d="M22 60 q0 38 38 38 q38 0 38 -38 Z" fill="#2f6f4f"/><ellipse cx="60" cy="60" rx="38" ry="10" fill="#3f8f63"/><rect x="18" y="58" width="6" height="24" rx="3" fill="#f0a93c"/><rect x="96" y="58" width="6" height="24" rx="3" fill="#f0a93c"/><circle class="km-bub" cx="48" cy="52" r="5" fill="#ffd27a" opacity=".8"/><circle class="km-bub km-b2" cx="60" cy="46" r="6" fill="#ffd27a" opacity=".75"/><circle class="km-bub km-b3" cx="72" cy="52" r="4" fill="#ffd27a" opacity=".8"/></svg>',
+    // rest: moon + 3 drifting Zzz — for aaram/neend/sleep steps
+    "rest": '<svg class="km-svg" viewBox="0 0 120 120"><path d="M52 22 q-20 10 -20 32 q0 28 26 34 q-32 -4 -32 -34 q0 -28 26 -32 Z" fill="#dfeeff" opacity=".7"/><circle cx="66" cy="54" r="26" fill="#dfeeff" opacity=".18" stroke="#9ec7ff" stroke-width="1.5"/><text class="km-zzz" x="78" y="40" font-size="14" fill="#9ec7ff" font-family="system-ui" font-weight="bold">z</text><text class="km-zzz km-z2" x="86" y="28" font-size="11" fill="#9ec7ff" font-family="system-ui" font-weight="bold">z</text><text class="km-zzz km-z3" x="92" y="18" font-size="9" fill="#9ec7ff" font-family="system-ui" font-weight="bold">z</text></svg>',
+    // leaf: herb sprig that sways — for tulsi/patti/peeso steps
+    "leaf": '<svg class="km-svg" viewBox="0 0 120 120"><g class="km-sway" style="transform-origin:60px 90px"><line x1="60" y1="90" x2="60" y2="40" stroke="#2f6f4f" stroke-width="3" stroke-linecap="round"/><ellipse cx="50" cy="68" rx="14" ry="8" fill="#3f8f63" transform="rotate(-30 50 68)"/><ellipse cx="70" cy="56" rx="13" ry="7" fill="#22c55e" opacity=".9" transform="rotate(25 70 56)"/><ellipse cx="46" cy="50" rx="11" ry="6" fill="#3f8f63" opacity=".8" transform="rotate(-15 46 50)"/><ellipse cx="74" cy="44" rx="10" ry="5" fill="#22c55e" opacity=".7" transform="rotate(20 74 44)"/></g></svg>',
+    // paste: bowl + smear with gentle bob — for lep/lagao/skin steps
+    "paste": '<svg class="km-svg" viewBox="0 0 120 120"><g class="km-bob"><path d="M30 72 q0 26 30 26 q30 0 30 -26 Z" fill="#ffd27a"/><ellipse cx="60" cy="72" rx="30" ry="8" fill="#f0a93c"/><ellipse cx="60" cy="69" rx="28" ry="5" fill="#ffd27a" opacity=".6"/></g><ellipse cx="60" cy="56" rx="18" ry="7" fill="#f59e0b" opacity=".75" transform="rotate(-8 60 56)"/><ellipse cx="56" cy="52" rx="12" ry="4" fill="#fbbf24" opacity=".5" transform="rotate(-8 56 52)"/></svg>',
+    // ── Legacy aliases: old svg: key values still resolve to nearest new scene ──
+    "pan-milk-heat": null, // resolved below
+    "spoon-haldi-pour": null,
+    "spoon-stir": null,
+    "pan-boil": null,
+    "drink-rest": null,
+    "leaf-grind": null,
+    "paste-apply": null,
   };
+  // Wire legacy aliases to their nearest new counterpart.
+  KITCHEN_SVG["pan-milk-heat"]    = KITCHEN_SVG["warm-drink"];
+  KITCHEN_SVG["spoon-haldi-pour"] = KITCHEN_SVG["pour"];
+  KITCHEN_SVG["spoon-stir"]       = KITCHEN_SVG["stir"];
+  KITCHEN_SVG["pan-boil"]         = KITCHEN_SVG["boil"];
+  KITCHEN_SVG["drink-rest"]       = KITCHEN_SVG["warm-drink"];
+  KITCHEN_SVG["leaf-grind"]       = KITCHEN_SVG["leaf"];
+  KITCHEN_SVG["paste-apply"]      = KITCHEN_SVG["paste"];
 
   // — Library of fully-embodied remedies. v6.2 ships ONE polished exemplar
   //   (haldi-doodh for zukaam) to prove the experience pattern. Subsequent
@@ -12040,7 +11983,7 @@ function renderHubMore() {
           titleHi: "Doodh garam karein",
           lineHi: "Sabse pehle ek cup doodh lein. Halki aanch par dheere-dheere garam karein, jaldi mat karein.",
           sayHi: "सबसे पहले एक कप दूध लें। हल्की आंच पर धीरे-धीरे गरम करें, जल्दी मत करें।",
-          svg: "pan-milk-heat",
+          svg: "warm-drink",
         },
         {
           ix: 2,
@@ -12048,7 +11991,7 @@ function renderHubMore() {
           titleHi: "Haldi daalo",
           lineHi: "Ab aadha chamach haldi daalo. Bas aadha — zyada haldi se kadwa ho jaata hai.",
           sayHi: "अब आधा चम्मच हल्दी डालो। बस आधा — ज़्यादा हल्दी से कड़वा हो जाता है।",
-          svg: "spoon-haldi-pour",
+          svg: "pour",
         },
         {
           ix: 3,
@@ -12056,7 +11999,7 @@ function renderHubMore() {
           titleHi: "Acche se hilao",
           lineHi: "Chamach se acche se hilao. Gaanth na rahe — saari haldi doodh mein ghul jaaye.",
           sayHi: "चम्मच से अच्छे से हिलाओ। गांठ ना रहे — सारी हल्दी दूध में घुल जाए।",
-          svg: "spoon-stir",
+          svg: "stir",
         },
         {
           ix: 4,
@@ -12064,7 +12007,7 @@ function renderHubMore() {
           titleHi: "Halki aanch pe ubaalo",
           lineHi: "Halki aanch par ek minute aur. Jaise hi upar jhaag aana shuru ho, utar lo. Bas itna.",
           sayHi: "हल्की आंच पर एक मिनट और। जैसे ही ऊपर झाग आना शुरू हो, उतार लो। बस इतना।",
-          svg: "pan-boil",
+          svg: "boil",
         },
         {
           ix: 5,
@@ -12072,7 +12015,7 @@ function renderHubMore() {
           titleHi: "Piyo aur let jao",
           lineHi: "Ab garam-garam ghoont-ghoont piyo. Phir kambal odh ke let jao. Subah uthkar khud farak feel hoga.",
           sayHi: "अब गरम गरम घूंट घूंट पियो। फिर कंबल ओढ़ के लेट जाओ। सुबह उठकर खुद फ़र्क फील होगा।",
-          svg: "drink-rest",
+          svg: "rest",
         },
       ],
       finishLine: "Bas ho gaya. Ab kambal odh ke aaraam karein. Subah farak khud dikhega.",
@@ -12116,7 +12059,7 @@ function renderHubMore() {
           titleHi: "Adrak ko kuto",
           lineHi: "Ek inch adrak nikaalo aur chhote tukde karein. Phir thoda sa kuto — bas itna ki rass nikalna shuru ho. Adrak ka rass hi kamal karta hai.",
           sayHi: "एक इंच अदरक निकालें और छोटे टुकड़े करें। फिर थोड़ा सा कूटें — बस इतना कि रस निकलना शुरू हो। अदरक का रस ही कमाल करता है।",
-          svg: "spoon-haldi-pour",
+          svg: "leaf",
         },
         {
           ix: 2,
@@ -12124,7 +12067,7 @@ function renderHubMore() {
           titleHi: "Paani + chai patti ubaalo",
           lineHi: "Ab aadha cup paani mein woh adrak daal do, saath mein thodi chai patti. Halki aanch par ubaalo — jaldi mat karo.",
           sayHi: "अब आधा कप पानी में वो अदरक डाल दो, साथ में थोड़ी चाय पत्ती। हल्की आंच पर उबालो — जल्दी मत करो।",
-          svg: "pan-boil",
+          svg: "boil",
         },
         {
           ix: 3,
@@ -12132,7 +12075,7 @@ function renderHubMore() {
           titleHi: "Doodh dheere se daalo",
           lineHi: "Ab aadha cup doodh daal do, dheere se. Teen-chaar minute aur ubaalo — jab tak achha rang aa jaaye.",
           sayHi: "अब आधा कप दूध डाल दो, धीरे से। तीन-चार मिनट और उबालो — जब तक अच्छा रंग आ जाए।",
-          svg: "pan-milk-heat",
+          svg: "warm-drink",
         },
         {
           ix: 4,
@@ -12140,7 +12083,7 @@ function renderHubMore() {
           titleHi: "Chhan ke gud daalo",
           lineHi: "Ab chhan ke cup mein nikaalo. Cheeni mat daalo — gud mila lo, khaansi mein woh zyada accha hai.",
           sayHi: "अब छान के कप में निकालो। चीनी मत डालो — गुड़ मिला लो, खांसी में वो ज़्यादा अच्छा है।",
-          svg: "spoon-stir",
+          svg: "stir",
         },
         {
           ix: 5,
@@ -12148,7 +12091,7 @@ function renderHubMore() {
           titleHi: "Ghoont-ghoont piyo",
           lineHi: "Garam-garam ghoont-ghoont piyo, jaldi mat piyo. Subah aur shaam, 2-3 din. Dekhna, galay khulta jaayega.",
           sayHi: "गरम गरम घूंट घूंट पियो, जल्दी मत पियो। सुबह और शाम, 2-3 दिन। देखना, गला खुलता जाएगा।",
-          svg: "drink-rest",
+          svg: "warm-drink",
         },
       ],
       finishLine: "Ho gaya. Ab thoda aaraam karein. Garam chai pi ke kambal lo — galay raat tak khul jaayega.",
@@ -12191,7 +12134,7 @@ function renderHubMore() {
           titleHi: "Paani garam karo",
           lineHi: "Ek glass paani halki aanch par garam karo.",
           sayHi: "एक गिलास पानी हल्की आंच पर गरम करो।",
-          svg: "pan-milk-heat",
+          svg: "warm-drink",
         },
         {
           ix: 2,
@@ -12199,7 +12142,7 @@ function renderHubMore() {
           titleHi: "Jeera daal ke ubaalo",
           lineHi: "Ek chamach jeera daalo aur do minute aur ubaalo.",
           sayHi: "एक चम्मच जीरा डालो और दो मिनट और उबालो।",
-          svg: "pan-boil",
+          svg: "boil",
         },
         {
           ix: 3,
@@ -12207,7 +12150,7 @@ function renderHubMore() {
           titleHi: "Chhan ke garam piyo",
           lineHi: "Chhan ke garam-garam ghoont-ghoont piyo. Pet halka feel hoga.",
           sayHi: "छान के गरम गरम घूंट घूंट पियो। पेट हल्का लगेगा।",
-          svg: "drink-rest",
+          svg: "warm-drink",
         },
       ],
       finishLine: "Pet ko aaraam mil gaya hoga.",
@@ -12240,7 +12183,7 @@ function renderHubMore() {
           titleHi: "Tulsi patte kuto",
           lineHi: "8-10 taza tulsi patte tod ke halka kuto, taaki rass nikle.",
           sayHi: "आठ दस ताज़े तुलसी पत्ते तोड़ के हल्का कूटो, ताकि रस निकले।",
-          svg: "leaf-grind",
+          svg: "leaf",
         },
         {
           ix: 2,
@@ -12248,7 +12191,7 @@ function renderHubMore() {
           titleHi: "Paani mein ubaalo",
           lineHi: "Ek cup paani mein tulsi, 2 kali mirch aur thodi adrak daal ke 5 min ubaalo.",
           sayHi: "एक कप पानी में तुलसी, दो काली मिर्च और थोड़ी अदरक डाल के पांच मिनट उबालो।",
-          svg: "pan-boil",
+          svg: "boil",
         },
         {
           ix: 3,
@@ -12256,7 +12199,7 @@ function renderHubMore() {
           titleHi: "Garam piyo",
           lineHi: "Chhan ke shahad mila lo, garam-garam piyo. Galay aur sardi dono ko aaraam.",
           sayHi: "छान के शहद मिला लो, गरम गरम पियो। गला और सर्दी दोनों को आराम।",
-          svg: "drink-rest",
+          svg: "warm-drink",
         },
       ],
       finishLine: "Tulsi ka asar zaroor dikhega. Aaraam karein.",
@@ -12297,7 +12240,7 @@ function renderHubMore() {
           titleHi: "Raat ko bhigao",
           lineHi: "Raat ko sone se pehle ek chamach methi ke daane lein. Ek glass paani mein daal do, dhakkan band karke rakh do. Subah tak methi sara apna gun paani mein de degi.",
           sayHi: "रात को सोने से पहले एक चम्मच मेथी के दाने लें। एक गिलास पानी में डाल दो, ढक्कन बंद करके रख दो। सुबह तक मेथी सारा अपना गुण पानी में दे देगी।",
-          svg: "spoon-haldi-pour",
+          svg: "water",
         },
         {
           ix: 2,
@@ -12305,7 +12248,7 @@ function renderHubMore() {
           titleHi: "Subah chhano",
           lineHi: "Subah uthkar woh paani chhan lo. Daane meetha thoda kadwe hote hain — chaba lo ya phenk do, jaisa accha lage.",
           sayHi: "सुबह उठ कर वो पानी छान लो। दाने थोड़े कड़वे होते हैं — चबा लो या फेंक दो, जैसा अच्छा लगे।",
-          svg: "spoon-stir",
+          svg: "stir",
         },
         {
           ix: 3,
@@ -12313,7 +12256,7 @@ function renderHubMore() {
           titleHi: "Khali pet piyo",
           lineHi: "Khali pet woh paani piyo — chai-naashta usse pehle nahi. Roz karoge toh pet halka rahega aur sugar bhi control mein.",
           sayHi: "खाली पेट वो पानी पियो — चाय-नाश्ता उससे पहले नहीं। रोज़ करोगे तो पेट हल्का रहेगा और शुगर भी कंट्रोल में।",
-          svg: "drink-rest",
+          svg: "warm-drink",
         },
       ],
       finishLine: "Roz subah karein toh ek hafte mein khud farak feel hoga. Itna purana tarika hai.",
@@ -12345,7 +12288,7 @@ function renderHubMore() {
           titleHi: "Paani halka garam karo",
           lineHi: "Ek glass paani halka garam karo, ubalna nahi.",
           sayHi: "एक गिलास पानी हल्का गरम करो, उबालना नहीं।",
-          svg: "pan-milk-heat",
+          svg: "water",
         },
         {
           ix: 2,
@@ -12353,7 +12296,7 @@ function renderHubMore() {
           titleHi: "Nimbu aur shahad daalo",
           lineHi: "Aadha nimbu nichodo aur ek chamach shahad daalo.",
           sayHi: "आधा नींबू निचोड़ो और एक चम्मच शहद डालो।",
-          svg: "spoon-haldi-pour",
+          svg: "pour",
         },
         {
           ix: 3,
@@ -12361,7 +12304,7 @@ function renderHubMore() {
           titleHi: "Hilao",
           lineHi: "Acche se hilao. Shahad ghulna chahiye.",
           sayHi: "अच्छे से हिलाओ। शहद घुलना चाहिए।",
-          svg: "spoon-stir",
+          svg: "stir",
         },
         {
           ix: 4,
@@ -12369,7 +12312,7 @@ function renderHubMore() {
           titleHi: "Khali pet piyo",
           lineHi: "Subah khali pet piyo. Body halki feel hogi.",
           sayHi: "सुबह खाली पेट पियो। शरीर हल्का लगेगा।",
-          svg: "drink-rest",
+          svg: "warm-drink",
         },
       ],
       finishLine: "Roz karne se sehat mein farak dikhega.",
@@ -12401,7 +12344,7 @@ function renderHubMore() {
           titleHi: "Dalchini powder lo",
           lineHi: "Aadha chamach dalchini powder ek katori mein nikalo.",
           sayHi: "आधा चम्मच दालचीनी पाउडर एक कटोरी में निकालो।",
-          svg: "spoon-haldi-pour",
+          svg: "pour",
         },
         {
           ix: 2,
@@ -12409,7 +12352,7 @@ function renderHubMore() {
           titleHi: "Shahad mix karo",
           lineHi: "Ek chamach shahad daal ke acche se hilao taaki paste ban jaaye.",
           sayHi: "एक चम्मच शहद डाल के अच्छे से हिलाओ ताकि पेस्ट बन जाए।",
-          svg: "spoon-stir",
+          svg: "stir",
         },
         {
           ix: 3,
@@ -12417,7 +12360,7 @@ function renderHubMore() {
           titleHi: "Khali pet chaato",
           lineHi: "Subah khali pet aadha chamach chaato. Garam paani upar se piyo.",
           sayHi: "सुबह खाली पेट आधा चम्मच चाटो। गरम पानी ऊपर से पियो।",
-          svg: "drink-rest",
+          svg: "warm-drink",
         },
       ],
       finishLine: "Hofta-bhar karne se asar dikhega.",
@@ -12449,7 +12392,7 @@ function renderHubMore() {
           titleHi: "तुलसी के पत्ते तोड़ें",
           lineHi: "पाँच-छह ताज़े तुलसी पत्ते धीरे से तोड़ लें। इन्हें साफ़ पानी से हल्के हाथ से धोएँ।",
           sayHi: "पाँच छह ताज़े तुलसी पत्ते धीरे से तोड़ लें। इन्हें साफ़ पानी से हल्के हाथ से धोएँ।",
-          svg: "leaf-grind",
+          svg: "leaf",
         },
         {
           ix: 2,
@@ -12457,7 +12400,7 @@ function renderHubMore() {
           titleHi: "धीरे-धीरे रस निकालें",
           lineHi: "पत्तों को हथेली में रख कर हल्के से मसलें — बस इतना कि रस टपकने लगे। ज़ोर मत लगाइए।",
           sayHi: "पत्तों को हथेली में रख कर हल्के से मसलें — बस इतना कि रस टपकने लगे। ज़ोर मत लगाइए।",
-          svg: "spoon-stir",
+          svg: "stir",
         },
         {
           ix: 3,
@@ -12465,7 +12408,7 @@ function renderHubMore() {
           titleHi: "शहद मिलाएँ",
           lineHi: "एक चम्मच शुद्ध शहद उस रस में मिलाएँ। धीरे-धीरे हिलाएँ ताकि दोनों अच्छे से घुल जाएँ।",
           sayHi: "एक चम्मच शुद्ध शहद उस रस में मिलाएँ। धीरे धीरे हिलाएँ ताकि दोनों अच्छे से घुल जाएँ।",
-          svg: "spoon-haldi-pour",
+          svg: "pour",
         },
         {
           ix: 4,
@@ -12473,7 +12416,7 @@ function renderHubMore() {
           titleHi: "धीरे से चाटें, आराम करें",
           lineHi: "अब इसे एकदम धीरे-धीरे चाटें — गले पर टिकने दें। फिर आँखें बंद करें, एक लंबी साँस लें। दिन में दो-तीन बार यही करें।",
           sayHi: "अब इसे एकदम धीरे धीरे चाटें — गले पर टिकने दें। फिर आँखें बंद करें, एक लंबी साँस लें। दिन में दो तीन बार यही करें।",
-          svg: "drink-rest",
+          svg: "rest",
         },
       ],
       finishLine: "Galay ki khich-khich dheere-dheere shant hogi. Aaraam karein.",
@@ -12513,7 +12456,7 @@ function renderHubMore() {
           titleHi: "Lasun ki 2 kaliyaan kuto",
           lineHi: "Lasun ki 2 kaliyaan chhilke acche se kuto.",
           sayHi: "लहसुन की दो कलियां छील के अच्छे से कूटो।",
-          svg: "leaf-grind",
+          svg: "leaf",
         },
         {
           ix: 2,
@@ -12521,7 +12464,7 @@ function renderHubMore() {
           titleHi: "Shahad daal ke mix karo",
           lineHi: "Ek chamach shahad daal ke 2 minute chhod do, taaki ras mix ho jaaye.",
           sayHi: "एक चम्मच शहद डाल के दो मिनट छोड़ दो, ताकि रस मिक्स हो जाए।",
-          svg: "spoon-stir",
+          svg: "stir",
         },
         {
           ix: 3,
@@ -12529,7 +12472,7 @@ function renderHubMore() {
           titleHi: "Khali pet khao",
           lineHi: "Subah khali pet khao. Strong taste hai, paani peelo upar se.",
           sayHi: "सुबह खाली पेट खाओ। तेज़ स्वाद है, पानी पी लो ऊपर से।",
-          svg: "drink-rest",
+          svg: "warm-drink",
         },
       ],
       finishLine: "Immunity strong banegi. Roz karein toh kamaal.",
@@ -12569,7 +12512,7 @@ function renderHubMore() {
           titleHi: "Paani garam karo",
           lineHi: "Ek glass paani halki aanch par garam karo.",
           sayHi: "एक गिलास पानी हल्की आंच पर गरम करो।",
-          svg: "pan-milk-heat",
+          svg: "warm-drink",
         },
         {
           ix: 2,
@@ -12577,7 +12520,7 @@ function renderHubMore() {
           titleHi: "Saunf daal ke ubaalo",
           lineHi: "Ek chamach saunf daalo aur 3-4 min ubaalo.",
           sayHi: "एक चम्मच सौंफ डालो और तीन चार मिनट उबालो।",
-          svg: "pan-boil",
+          svg: "boil",
         },
         {
           ix: 3,
@@ -12585,7 +12528,7 @@ function renderHubMore() {
           titleHi: "Chhan ke garam piyo",
           lineHi: "Chhan ke garam-garam ghoont-ghoont piyo. Khaane ke baad behtar.",
           sayHi: "छान के गरम गरम घूंट घूंट पियो। खाने के बाद बेहतर।",
-          svg: "drink-rest",
+          svg: "warm-drink",
         },
       ],
       finishLine: "Pet halka aur saans bhi taza feel hoga.",
@@ -12617,7 +12560,7 @@ function renderHubMore() {
           titleHi: "Dhaniya bhigao",
           lineHi: "Ek chamach saabut dhaniya raat bhar paani mein bhigao.",
           sayHi: "एक चम्मच साबुत धनिया रात भर पानी में भिगाओ।",
-          svg: "spoon-haldi-pour",
+          svg: "water",
         },
         {
           ix: 2,
@@ -12625,7 +12568,7 @@ function renderHubMore() {
           titleHi: "Subah chhano",
           lineHi: "Subah uthkar chhan lo. Paani halka peela ho jaayega.",
           sayHi: "सुबह उठ कर छान लो। पानी हल्का पीला हो जाएगा।",
-          svg: "spoon-stir",
+          svg: "stir",
         },
         {
           ix: 3,
@@ -12633,7 +12576,7 @@ function renderHubMore() {
           titleHi: "Khali pet piyo",
           lineHi: "Khali pet pi lo. Pet ki garmi shaant karta hai.",
           sayHi: "खाली पेट पी लो। पेट की गर्मी शांत करता है।",
-          svg: "drink-rest",
+          svg: "warm-drink",
         },
       ],
       finishLine: "Pet thanda aur halka feel hoga.",
@@ -12665,7 +12608,7 @@ function renderHubMore() {
           titleHi: "Neem patte peeso",
           lineHi: "8-10 taza neem patte aur thodi haldi mil ke peeso, paste banayein.",
           sayHi: "आठ दस ताज़े नीम पत्ते और थोड़ी हल्दी मिला के पीसो, पेस्ट बनाओ।",
-          svg: "leaf-grind",
+          svg: "leaf",
         },
         {
           ix: 2,
@@ -12673,7 +12616,7 @@ function renderHubMore() {
           titleHi: "Haldi mila lo",
           lineHi: "Chutki bhar haldi daal ke paste ko chikna karo.",
           sayHi: "चुटकी भर हल्दी डाल के पेस्ट को चिकना करो।",
-          svg: "spoon-stir",
+          svg: "stir",
         },
         {
           ix: 3,
@@ -12681,7 +12624,7 @@ function renderHubMore() {
           titleHi: "Affected jagah par lagao",
           lineHi: "Paste ko prabhavit jagah par halke haath se lagao. 15-20 min sookhne do.",
           sayHi: "पेस्ट को प्रभावित जगह पर हल्के हाथ से लगाओ। पंद्रह बीस मिनट सूखने दो।",
-          svg: "paste-apply",
+          svg: "paste",
         },
         {
           ix: 4,
@@ -12689,7 +12632,7 @@ function renderHubMore() {
           titleHi: "Gunguna paani se dhoyo",
           lineHi: "Gunguna paani se halke haath se dho lo. Roz raat ko karein.",
           sayHi: "गुनगुने पानी से हल्के हाथ से धो लो। रोज़ रात को करें।",
-          svg: "drink-rest",
+          svg: "water",
         },
       ],
       finishLine: "Hofta bhar karoge toh chamak laut aayegi.",
@@ -12734,7 +12677,7 @@ function renderHubMore() {
           titleHi: "थोड़ा रुकें, शरीर को आराम दें",
           lineHi: "जो भी काम चल रहा है उसे अभी एक तरफ रख दीजिए। शरीर कुछ कह रहा है — उसकी सुनिए। लेट जाइए, आँखें बंद करिए, बस थोड़ी देर के लिए।",
           sayHi: "जो भी काम चल रहा है उसे अभी एक तरफ रख दीजिए। शरीर कुछ कह रहा है — उसकी सुनिए। लेट जाइए, आँखें बंद करिए, बस थोड़ी देर के लिए।",
-          svg: "drink-rest",
+          svg: "rest",
         },
         {
           ix: 2,
@@ -12742,7 +12685,7 @@ function renderHubMore() {
           titleHi: "गुनगुना पानी पीती रहें",
           lineHi: "थोड़ा थोड़ा करके गुनगुना पानी या कोई हल्का गरम पेय लेती रहें। शरीर को पानी की ज़रूरत है — प्यास न लगे तब भी।",
           sayHi: "थोड़ा थोड़ा करके गुनगुना पानी या कोई हल्का गरम पेय लेती रहें। शरीर को पानी की ज़रूरत है — प्यास न लगे तब भी।",
-          svg: "pan-milk-heat",
+          svg: "water",
         },
         {
           ix: 3,
@@ -12750,7 +12693,7 @@ function renderHubMore() {
           titleHi: "हल्का और ताज़ा खाना लें",
           lineHi: "भारी, तला-भुना खाना अभी के लिए न लें। दाल, खिचड़ी, दही, फल — जो हल्का हो, जो आसानी से पचे — वही सबसे अच्छा है इस वक्त।",
           sayHi: "भारी, तला भुना खाना अभी के लिए न लें। दाल, खिचड़ी, दही, फल — जो हल्का हो, जो आसानी से पचे — वही सबसे अच्छा है इस वक्त।",
-          svg: "spoon-stir",
+          svg: "stir",
         },
         {
           ix: 4,
@@ -12758,7 +12701,7 @@ function renderHubMore() {
           titleHi: "लक्षण पर नज़र रखें",
           lineHi: "आराम मिल रहा है तो अच्छी बात है। लेकिन अगर तकलीफ़ बढ़े, बुखार तेज़ हो, साँस लेने में दिक्कत हो, या एक-दो दिन में कोई फ़र्क न पड़े — तो देर मत करिए, डॉक्टर से ज़रूर मिलिए।",
           sayHi: "आराम मिल रहा है तो अच्छी बात है। लेकिन अगर तकलीफ़ बढ़े, बुखार तेज़ हो, साँस लेने में दिक्कत हो, या एक दो दिन में कोई फ़र्क न पड़े — तो देर मत करिए, डॉक्टर से ज़रूर मिलिए।",
-          svg: "drink-rest",
+          svg: "breathing-rest",
         },
       ],
       finishLine: "Apna khayal rakhein. Aaraam milega. Zyada takleef ho toh doctor se zaroor milein.",
@@ -13698,6 +13641,87 @@ function renderHubMore() {
   window.closeWalkthrough = closeWalkthrough;
   window.openWalkthrough = openWalkthrough;
 
+  // openWalkthroughExp(expObj, displayKey) — immersive player entry point for
+  // TRANSIENT experience objects (e.g. kit-adapter from file 12).
+  // The object is NOT stored in REMEDY_EXPERIENCES; displayKey is used only for
+  // logging and the finish-screen YT / social-proof lookup (best-effort).
+  // Lottie override still works: remedyMediaFor(displayKey, idx) is called in
+  // runWalkthroughStep if file 16 is loaded. For transient kit experiences no
+  // Lottie mapping exists (fine — km-SVG floor shows).
+  function openWalkthroughExp(expObj, displayKey) {
+    if (!expObj || !expObj.steps || !expObj.steps.length) {
+      console.warn("[walkthrough] openWalkthroughExp: invalid expObj for", displayKey);
+      return;
+    }
+    // Re-entry guard: same displayKey already playing → drop silently.
+    if (_wt && _wt.key === displayKey) {
+      console.info("[walkthrough] openWalkthroughExp: already running, ignoring duplicate for", displayKey);
+      return;
+    }
+    // Different key already running → close cleanly first.
+    if (_wt) {
+      console.info("[walkthrough] openWalkthroughExp: switching from", _wt.key, "to", displayKey);
+      closeWalkthrough();
+    }
+
+    // Safety gate (same as openWalkthrough).
+    if (typeof checkRemedySafety === "function") {
+      try {
+        const sc = checkRemedySafety(displayKey);
+        if (sc.level === "block") {
+          if (typeof showSafetyModal === "function") showSafetyModal(sc.hits, "block");
+          console.info("[walkthrough] openWalkthroughExp: safety block for", displayKey, sc.hits);
+          return;
+        }
+        window._activeRemedySafety = sc;
+      } catch (e) {
+        console.warn("[walkthrough] openWalkthroughExp: safety gate error:", e);
+      }
+    }
+
+    if (typeof stopVoice === "function") { try { stopVoice(); } catch (e) {} }
+    if (typeof hideVoiceOverlay === "function") { try { hideVoiceOverlay(); } catch (e) {} }
+    _cancelCurrentSpeech();
+    window._walkthroughOpen = true;
+
+    const overlay = document.getElementById("wt-overlay");
+    if (!overlay) {
+      console.warn("[walkthrough] openWalkthroughExp: #wt-overlay not found");
+      window._walkthroughOpen = false;
+      return;
+    }
+    const modal = overlay.querySelector(".wt-modal");
+    const finishEl = document.getElementById("wt-finish");
+    if (modal) modal.classList.remove("finished");
+    if (finishEl) finishEl.classList.remove("open");
+    overlay.classList.add("open");
+    overlay.setAttribute("aria-hidden", "false");
+
+    _wt = {
+      exp: expObj,
+      idx: 0,
+      timerId: null,
+      paused: false,
+      key: displayKey || "_transient",
+      _stepRunning: false,
+      _speakAbortFn: null,
+    };
+
+    const _locName = typeof locName === "function" ? locName : function (o) { return o.title; };
+    setText("wt-title", _locName(expObj));
+    const _wtSubtitle = (
+      typeof locName === "function" &&
+      window.ST && window.ST.currentLanguage &&
+      window.ST.currentLanguage.startsWith("hi") &&
+      expObj.subtitleHi
+    ) ? expObj.subtitleHi : (expObj.subtitle || "");
+    setText("wt-subtitle", _wtSubtitle);
+    renderWtDots();
+    runWalkthroughStep();
+    console.info("[walkthrough] openWalkthroughExp opened", displayKey);
+  }
+  window.openWalkthroughExp = openWalkthroughExp;
+
   // — CTA hook: after every AI reply we detect a known experience and append
   //   a "Saathi ke saath karein" tile inside the chat. Tap → openWalkthrough.
   //   Idempotent per turn (chat-msgs gets cleared between sessions). The
@@ -13706,6 +13730,8 @@ function renderHubMore() {
     if (!text) return null;
     const t = String(text).toLowerCase();
     for (const [key, exp] of Object.entries(REMEDY_EXPERIENCES)) {
+      // Skip transient kit entries registered under the "_kit_" prefix fallback.
+      if (key.startsWith("_kit_")) continue;
       for (const needle of exp.match || []) {
         if (t.includes(String(needle).toLowerCase())) {
           return { key, exp };
@@ -24979,6 +25005,82 @@ const BREATH_PHASES = [
       } catch (_) {}
     })();
   }
+  // motionForStep(text) — maps a step's text to the nearest km-* SVG key.
+  // Priority: first matching keyword wins (keys listed longest-first where
+  // there's possible overlap). Returns a KITCHEN_SVG key string.
+  function motionForStep(text) {
+    if (!text) return "warm-drink";
+    const t = text.toLowerCase();
+    if (/ubaal|ubal|garam karo|boil/.test(t))              return "boil";
+    if (/bhaap|steam|saans|sungh/.test(t))                  return "warm-drink";
+    if (/piyo|pi lo|chai|doodh|kadha|kaadha|garm paani/.test(t)) return "warm-drink";
+    if (/milao|mix|ghol|hilao|chamcha|stir/.test(t))        return "stir";
+    if (/daalo|pour|tapka|nichod|nimbu|shahad/.test(t))     return "pour";
+    if (/paani|water|kulla|gargle/.test(t))                 return "water";
+    if (/aaram|let jao|so jao|leta|neend|sleep|kambal/.test(t)) return "rest";
+    if (/daba|press|point|maalish|massage/.test(t))         return "press-point";
+    if (/patti|patta|leaf|peeso|grind|kuchal|tulsi|herb/.test(t)) return "leaf";
+    if (/lep|lagao|paste|twacha|skin|chehra/.test(t))       return "paste";
+    return "warm-drink";
+  }
+
+  // openWalkthroughFromKit(kit, key) — builds a transient REMEDY_EXPERIENCES-
+  // compatible object from a REMEDY_KIT and opens it in the immersive player.
+  // The transient object is NOT stored in REMEDY_EXPERIENCES so it cannot
+  // accidentally match detection/substring loops.
+  function openWalkthroughFromKit(kit, key) {
+    if (!kit || !kit.steps || !kit.steps.length) return;
+
+    // Per-step duration: spread kitDurSec evenly, clamp 7–10 s minimum feel.
+    const totalSec = kit.durSec || 45;
+    const perStep = Math.max(7, Math.min(10, Math.round(totalSec / kit.steps.length)));
+
+    const transientExp = {
+      title: kit.title,
+      titleHi: kit.titleHi || kit.title,
+      subtitle: kit.title,
+      subtitleHi: kit.titleHi || kit.title,
+      kindIcon: kit.emoji || "🌿",
+      // No videoQuery on transient — ytSearch not relevant for kits without one,
+      // but carry it through if kit has it so finishWalkthrough can still offer YT.
+      videoQuery: kit.videoQuery || null,
+      match: [], // intentionally empty — never participates in detection
+      steps: kit.steps.map(function (s, i) {
+        return {
+          ix: i + 1,
+          durationSec: perStep,
+          titleHi: "Step " + (i + 1),
+          lineHi: s,
+          sayHi: s, // voice engine transliterates Roman → Devanagari automatically
+          svg: motionForStep(s),
+        };
+      }),
+      finishLineHi: "Ho gaya! Roz karein, fark dikhega.",
+      finishLine: "Ho gaya! Roz karein, fark dikhega.",
+      citation: (kit.citation) || "Ghar ka aazmaaya nuskha.",
+    };
+
+    // Open the immersive player using a sibling function that accepts the object
+    // directly, without registering it into REMEDY_EXPERIENCES permanently.
+    if (typeof openWalkthroughExp === "function") {
+      openWalkthroughExp(transientExp, key);
+    } else if (typeof openWalkthrough === "function") {
+      // Fallback: temporarily register under a prefixed key, open, then clean up.
+      // The "_kit_" prefix ensures detectRemedy / detectExperienceInReply skip it.
+      const tempKey = "_kit_" + key;
+      if (typeof REMEDY_EXPERIENCES !== "undefined") {
+        REMEDY_EXPERIENCES[tempKey] = transientExp;
+      }
+      openWalkthrough(tempKey);
+      // Schedule cleanup after the player has had time to read the object (500 ms).
+      setTimeout(function () {
+        if (typeof REMEDY_EXPERIENCES !== "undefined") {
+          delete REMEDY_EXPERIENCES[tempKey];
+        }
+      }, 500);
+    }
+  }
+
   function openRemedy(key) {
     // WS1 safety gate: check for contraindications before opening.
     // block → show safety modal, do not open.
@@ -24997,51 +25099,18 @@ const BREATH_PHASES = [
         console.warn("[remedy] safety gate error:", e);
       }
     }
-    // v6.2: if we have a magical Walkthrough authored for this remedy, route
-    // there instead of the legacy move-ov player. Falls through to the old
-    // path for remedies without an experience yet (the other ~98 nushke).
+    // v6.2: if we have a magical Walkthrough authored for this remedy, route there.
     if (typeof REMEDY_EXPERIENCES !== "undefined" && REMEDY_EXPERIENCES[key]) {
       if (typeof openWalkthrough === "function") {
         openWalkthrough(key);
         return;
       }
     }
+    // v7.0: for all other remedy kits, build a transient experience and open
+    // the immersive blue player — retire the legacy green move-ov path for remedy kits.
     const kit = REMEDY_KITS[key];
     if (!kit) return;
-    // v5.5.4: kill any in-flight TTS before remedy walkthrough starts speaking
-    if (_currentAudio) {
-      try {
-        _currentAudio.pause();
-      } catch (e) {}
-      _currentAudio = null;
-    }
-    try {
-      window.speechSynthesis && window.speechSynthesis.cancel();
-    } catch (e) {}
-    // Reuse the move-ov player — it already supports steps + auto-advance + speak
-    _moveSkill = kit;
-    _moveStepIdx = 0;
-    document.getElementById("move-ov").classList.add("on");
-    document.getElementById("move-ov-title").textContent = (typeof locName === "function" ? locName(kit) : kit.title);
-    // v5.4: restore emoji-circle look after any prior MOVEMENT_SKILLS run may have
-    // stripped the .pulse class + transparent-background state for SVG animation.
-    const anim = document.getElementById("move-ov-anim");
-    if (_lottieInstance) {
-      try {
-        _lottieInstance.destroy();
-      } catch (e) {}
-      _lottieInstance = null;
-    }
-    anim.classList.add("pulse");
-    anim.style.background = "rgba(34,197,94,.1)";
-    anim.style.border = "2px solid rgba(34,197,94,.3)";
-    anim.style.fontSize = "80px";
-    anim.innerHTML = kit.emoji;
-    document.getElementById("move-ov-progress").innerHTML = kit.steps
-      .map(() => '<div class="move-ov-progress-dot"></div>')
-      .join("");
-    document.getElementById("move-ov-next").textContent = "Aage badho";
-    showMoveStep(0);
+    openWalkthroughFromKit(kit, key);
   }
   // Back-compat: some flows still call injectVideoCard / openVideoLink
   function injectVideoCard(text, msgsContainer) {
