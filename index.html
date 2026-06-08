@@ -28864,23 +28864,60 @@ const BREATH_PHASES = [
   const MEDIA_BASE =
     (window.__SS_CONFIG__ && window.__SS_CONFIG__.mediaBase) || "assets/remedies/";
 
-  // — Asset map. Empty for WS2 (no assets hosted yet). Commented examples below
-  //   show both whole-experience and per-step shapes for when assets land.
+  // — Asset map. Per-step Lottie mappings for curated self-hosted animations.
+  //   Keys match REMEDY_EXPERIENCES. Step indices are 0-based into exp.steps[].
+  //   Steps with no entry fall back to inline KITCHEN_SVG then emoji — the
+  //   existing SVG fallback logic is untouched.
+  //
+  //   Hosted files live under /assets/remedies/ (MEDIA_BASE below).
+  //   Available Lottie files:
+  //     motion-rest.json      — woman meditating (rest / breathe / calm)
+  //     motion-warmdrink.json — gold tea cup with steam (warm fluids / kadha / chai)
+  //     motion-prep.json      — whisking bowl + jug (prepare / mix / light food)
+  //     motion-water.json     — glass of water + clock (hydration / watch)
+  //     motion-stretch.json   — shoulder stretch (movement)
   const REMEDY_MEDIA = {
-    // ── Uncomment and fill as assets are uploaded to /assets/remedies/ ───────
-    //
-    // Whole-experience Lottie (plays for every step unless overridden):
-    // "haldi-doodh": { lottie: "haldi-doodh.json" },
-    //
-    // Per-step video override on step 0 only:
-    // "adrak-chai": { steps: { 0: { video: "adrak-chai-step1.mp4" } } },
-    //
-    // Both levels together (experience default + step 2 override):
-    // "tulsi-kadha": {
-    //   lottie: "tulsi-kadha.json",
-    //   steps: { 2: { lottie: "tulsi-kadha-finish.json" } }
-    // },
-    // ─────────────────────────────────────────────────────────────────────────
+
+    // ── general-care — highest-traffic fallback; all 4 steps fully Lottie ──
+    "general-care": {
+      steps: {
+        0: { lottie: "motion-rest.json" },       // थोड़ा रुकें, शरीर को आराम दें
+        1: { lottie: "motion-warmdrink.json" },  // गुनगुना पानी पीती रहें
+        2: { lottie: "motion-prep.json" },       // हल्का और ताज़ा खाना लें
+        3: { lottie: "motion-water.json" },      // लक्षण पर नज़र रखें
+      },
+    },
+
+    // ── tulsi-shahad — gala kharaash; step 0 + step 3 only ──
+    // Steps 1 and 2 intentionally absent → keep their existing kitchen SVG.
+    "tulsi-shahad": {
+      steps: {
+        0: { lottie: "motion-prep.json" },   // तुलसी के पत्ते तोड़ें (pick/prep)
+        3: { lottie: "motion-rest.json" },   // धीरे से चाटें, आराम करें (lick + breathe)
+      },
+    },
+
+    // ── adrak-chai — final warm-drink step ──
+    "adrak-chai": {
+      steps: {
+        4: { lottie: "motion-warmdrink.json" }, // गरम घूंट घूंट पियो
+      },
+    },
+
+    // ── tulsi-kadha — final warm-drink step ──
+    "tulsi-kadha": {
+      steps: {
+        2: { lottie: "motion-warmdrink.json" }, // छान के शहद मिला, गरम पियो
+      },
+    },
+
+    // ── haldi-doodh — final warm-drink + rest step ──
+    "haldi-doodh": {
+      steps: {
+        4: { lottie: "motion-warmdrink.json" }, // गरम घूंट घूंट पियो, फिर लेट जाओ
+      },
+    },
+
   };
 
   // — mediaUrl(file) — prepend MEDIA_BASE; pass through absolute http(s) URLs.
