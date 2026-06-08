@@ -28876,6 +28876,7 @@ const BREATH_PHASES = [
   //     motion-prep.json      — whisking bowl + jug (prepare / mix / light food)
   //     motion-water.json     — glass of water + clock (hydration / watch)
   //     motion-stretch.json   — shoulder stretch (movement)
+  //     motion-sleep.json     — woman sleeping peacefully (deep-blue palette; sleep/neend payoff)
   const REMEDY_MEDIA = {
 
     // ── general-care — highest-traffic fallback; all 4 steps fully Lottie ──
@@ -28911,10 +28912,12 @@ const BREATH_PHASES = [
       },
     },
 
-    // ── haldi-doodh — final warm-drink + rest step ──
+    // ── haldi-doodh — step 4 is the sleep payoff: "piyo aur let jao / kambal odh ke let jao"
+    //    Single combined step → motion-sleep.json (the going-to-sleep beat is the payoff).
+    //    No separate drink-only step exists, so motion-warmdrink is not needed here.
     "haldi-doodh": {
       steps: {
-        4: { lottie: "motion-warmdrink.json" }, // गरम घूंट घूंट पियो, फिर लेट जाओ
+        4: { lottie: "motion-sleep.json" }, // अब गरम घूंट घूंट पियो, फिर कंबल ओढ़ के लेट जाओ
       },
     },
 
