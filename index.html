@@ -9608,6 +9608,8 @@ const APP_VERSION = "v6.6";
     currentLanguage: "hi-IN",
     // v6.9: set by Tan-Man mood chip before startFeature('wellness') — cleared after use
     moodSeed: null, // 'good' | 'ok' | 'tired' | null
+    // v7.1: set in callAI when EXPERIENCE: contract fires — suppresses competing card injections
+    _experienceShownThisTurn: false,
   };
 
   const PERSONAS = {
@@ -10126,10 +10128,25 @@ Examples:
   Question: "साथ में बुखार भी है?" → OPTIONS: हाँ, बुखार है | नहीं | पता नहीं | कुछ और
   Symptom (no OPTIONS): "सिर दर्द है? — ठीक है, समझ आया। अभी guided तरीके से ठीक करते हैं।" [NO OPTIONS line]
 
+GUIDED COMPANION CONTRACT (v7.1 — machine-readable, never shown to user):
+When Saathi is ready to GUIDE the user through a remedy or practice (i.e. recommending they actively DO something), she ends her reply with a final machine-readable line in EXACTLY this format:
+  EXPERIENCE: <key>
+where <key> is one of these VETTED keys ONLY:
+  haldi-doodh, adrak-chai, jeera-paani, tulsi-kadha, methi-paani, nimbu-shahad, dalchini-shahad, tulsi-shahad, lasun-shahad, saunf-paani, dhaniya-paani, neem-haldi-paste, general-care
+
+Rules for EXPERIENCE:
+- Turn 1 for a new symptom: keep the existing behaviour — warm acknowledgement + ONE gentle clarifying question (with OPTIONS: line where applicable). Do NOT emit EXPERIENCE: yet.
+- Once she has enough to help (after the clarifying answer, or immediately if the problem is clearly described), she MUST end the reply with an EXPERIENCE: line. Pick the closest VETTED remedy key if one genuinely fits the concern; otherwise use general-care.
+- NEVER invent a remedy key or emit a key not in the list above. If the concern is outside these remedies (BP, diabetes, injury, etc.) → general-care.
+- RED FLAGS (chest pain, breathing difficulty, severe/persistent pain, bleeding, fainting, stroke signs): advise seeing a doctor warmly, then emit EXPERIENCE: general-care (it carries the escalation path).
+- When the OPTIONS: line is present (clarifying-question turn), do NOT also emit EXPERIENCE: on that same reply.
+- The EXPERIENCE: line is a separate final line, never spoken aloud, never shown as text to the user — it is a machine-readable control line only.
+
 OUTPUT FORMAT (strict):
 First line: LANG:<code>  where <code> is one of hi, mr, bn, ta, te, kn, ml, gu, pa, en.
 Second line onward: your warm reply.
-Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...`;
+Final line (only when asking a question): OPTIONS: <opt1> | <opt2> | ...
+Final line (only when guiding a remedy): EXPERIENCE: <key>`;
 
   // ── v2: Wellness + Community system prompts ──
   const WELLNESS_SYSTEM_PROMPT = `You are Sehat Saathi — Wellness mode. You are a warm, caring health companion talking to a young adult (18–35) about everyday wellness on JioBharatIQ. NOT a grandmother, NOT an elder figure — a knowledgeable, encouraging friend.
@@ -12689,6 +12706,75 @@ function renderHubMore() {
         },
       ],
     },
+
+    // ───────────────────────────────────────────────────────────────────────
+    // general-care — universal safe fallback experience.
+    //
+    // Reached via AI contract ("EXPERIENCE: general-care") injected by baat
+    // when no specific vetted remedy exists, or when red-flag symptoms are
+    // present. match[] is intentionally empty so this entry NEVER hijacks
+    // specific remedies via substring matching — it is AI-dispatch only.
+    //
+    // Content: non-prescriptive supportive self-care arc. No herb/drug claims.
+    // Steps written in warm Dadi voice, Devanagari throughout.
+    // ───────────────────────────────────────────────────────────────────────
+    "general-care": {
+      title: "Aaram aur dekhbhaal",
+      titleHi: "आराम और देखभाल",
+      subtitle: "Aaram aur dekhbhaal",
+      subtitleHi: "आराम और देखभाल",
+      kindIcon: "🤝",
+      // match[] is empty — this experience is ONLY reached via AI contract,
+      // not by substring matching in detectExperienceInReply().
+      match: [],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 9,
+          titleHi: "थोड़ा रुकें, शरीर को आराम दें",
+          lineHi: "जो भी काम चल रहा है उसे अभी एक तरफ रख दीजिए। शरीर कुछ कह रहा है — उसकी सुनिए। लेट जाइए, आँखें बंद करिए, बस थोड़ी देर के लिए।",
+          sayHi: "जो भी काम चल रहा है उसे अभी एक तरफ रख दीजिए। शरीर कुछ कह रहा है — उसकी सुनिए। लेट जाइए, आँखें बंद करिए, बस थोड़ी देर के लिए।",
+          svg: "drink-rest",
+        },
+        {
+          ix: 2,
+          durationSec: 8,
+          titleHi: "गुनगुना पानी पीती रहें",
+          lineHi: "थोड़ा थोड़ा करके गुनगुना पानी या कोई हल्का गरम पेय लेती रहें। शरीर को पानी की ज़रूरत है — प्यास न लगे तब भी।",
+          sayHi: "थोड़ा थोड़ा करके गुनगुना पानी या कोई हल्का गरम पेय लेती रहें। शरीर को पानी की ज़रूरत है — प्यास न लगे तब भी।",
+          svg: "pan-milk-heat",
+        },
+        {
+          ix: 3,
+          durationSec: 8,
+          titleHi: "हल्का और ताज़ा खाना लें",
+          lineHi: "भारी, तला-भुना खाना अभी के लिए न लें। दाल, खिचड़ी, दही, फल — जो हल्का हो, जो आसानी से पचे — वही सबसे अच्छा है इस वक्त।",
+          sayHi: "भारी, तला भुना खाना अभी के लिए न लें। दाल, खिचड़ी, दही, फल — जो हल्का हो, जो आसानी से पचे — वही सबसे अच्छा है इस वक्त।",
+          svg: "spoon-stir",
+        },
+        {
+          ix: 4,
+          durationSec: 9,
+          titleHi: "लक्षण पर नज़र रखें",
+          lineHi: "आराम मिल रहा है तो अच्छी बात है। लेकिन अगर तकलीफ़ बढ़े, बुखार तेज़ हो, साँस लेने में दिक्कत हो, या एक-दो दिन में कोई फ़र्क न पड़े — तो देर मत करिए, डॉक्टर से ज़रूर मिलिए।",
+          sayHi: "आराम मिल रहा है तो अच्छी बात है। लेकिन अगर तकलीफ़ बढ़े, बुखार तेज़ हो, साँस लेने में दिक्कत हो, या एक दो दिन में कोई फ़र्क न पड़े — तो देर मत करिए, डॉक्टर से ज़रूर मिलिए।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Apna khayal rakhein. Aaraam milega. Zyada takleef ho toh doctor se zaroor milein.",
+      finishLineHi: "अपना ख़याल रखें। आराम ज़रूर मिलेगा। अगर तकलीफ़ बढ़े तो डॉक्टर से ज़रूर मिलें — यह कमज़ोरी नहीं, समझदारी है।",
+      citation: "General supportive self-care guidance — aaram, hydration, hafif khaana. Koi bhi nayi dawai ya jaadibuti shuru karne se pehle doctor se salah lein.",
+      sources: [
+        {
+          org: "WHO — Self-care for health",
+          title: "Self-care interventions for health",
+          url: "https://www.who.int/health-topics/self-care",
+          strength: "limited",
+          note: "WHO aam sehat ke liye aaram, paryaapt pani aur hafif aahaar ko buniyaadi swaydekh-bhaal maanta hai.",
+          noteHi: "WHO आम सेहत के लिए आराम, पर्याप्त पानी और हल्का आहार को बुनियादी स्वयंदेखभाल मानता है।",
+        },
+      ],
+    },
   };
 
   // ── Engine state ──
@@ -14916,14 +15002,21 @@ function renderHubMore() {
         // movement skills) into the voice transcript area so the voice experience
         // matches the chat experience. Tapping a card still routes through
         // openRemedy → openWalkthrough (the new magical player).
+        // v7.1: skip remedy/acupressure mirror when EXPERIENCE: contract fired —
+        // the companion entry is the single affordance for this turn.
         const voiceTa = document.getElementById("voice-transcript-area");
-        if (voiceTa) {
+        if (voiceTa && !ST._experienceShownThisTurn) {
           if (typeof injectRemedyCard === "function") {
             setTimeout(() => injectRemedyCard(text, voiceTa), 80);
           }
           if (typeof injectAcupressureCard === "function") {
             setTimeout(() => injectAcupressureCard(text, voiceTa), 160);
           }
+          if (typeof injectMovementCard === "function") {
+            setTimeout(() => injectMovementCard(text, voiceTa), 220);
+          }
+        } else if (voiceTa && ST._experienceShownThisTurn) {
+          // Movement cards are non-remedy (exercise/yoga) — still allow them
           if (typeof injectMovementCard === "function") {
             setTimeout(() => injectMovementCard(text, voiceTa), 220);
           }
@@ -14969,8 +15062,10 @@ function renderHubMore() {
       // (wellness AI often suggests haldi-doodh / pressure points / etc. too)
       // WS1: on the VERY FIRST symptom turn (_symptomTurnSeen===1), hold the
       // remedy card — guided CTA handles triage instead. From turn 2+, allow.
+      // v7.1: also suppress when EXPERIENCE: contract fired this turn —
+      // callAI already rendered the single companion entry; no competing cards.
       if (ST.chatCtx === "nushke" || ST.chatCtx === "wellness") {
-        const _suppressRemedy = (ST._symptomTurnSeen === 1);
+        const _suppressRemedy = (ST._symptomTurnSeen === 1) || !!ST._experienceShownThisTurn;
         if (!_suppressRemedy) {
           setTimeout(() => injectRemedyCard(text, msgs), 800);
           setTimeout(() => injectAcupressureCard(text, msgs), 950);
@@ -15404,6 +15499,8 @@ function renderHubMore() {
       );
       return;
     }
+    // v7.1: reset per-turn experience flag at the start of each new callAI round
+    ST._experienceShownThisTurn = false;
     ST.chatHistory.push({ role: "user", content: userText });
     showThinking();
 
@@ -15571,18 +15668,122 @@ function renderHubMore() {
         }
         // ── /v8 parse ───────────────────────────────────────────────────────
 
-        // Push clean reply (without OPTIONS line) into chat history so subsequent
-        // turns see natural conversation, not control syntax.
+        // ── v7.1: Parse and strip trailing EXPERIENCE: line ─────────────────
+        // Machine-readable contract: "EXPERIENCE: <key>" on the last line tells
+        // us Saathi is recommending the user DO a remedy. Extract the key, strip
+        // the line from both displayed text and TTS text (it must never be shown
+        // or spoken), validate against the vetted list, and render ONE companion
+        // entry instead of multiple competing card paths.
+        const _VETTED_EXPERIENCE_KEYS = new Set([
+          "haldi-doodh", "adrak-chai", "jeera-paani", "tulsi-kadha",
+          "methi-paani", "nimbu-shahad", "dalchini-shahad", "tulsi-shahad",
+          "lasun-shahad", "saunf-paani", "dhaniya-paani", "neem-haldi-paste",
+          "general-care",
+        ]);
+        const experienceMatch = cleanReply.match(/\n?\s*EXPERIENCE:\s*([a-z0-9-]+)\s*$/i);
+        let _experienceKey = null;
+        if (experienceMatch) {
+          // Strip the EXPERIENCE line from the reply the user will see/hear
+          cleanReply = cleanReply.slice(0, experienceMatch.index).trim();
+          const rawKey = experienceMatch[1].toLowerCase().trim();
+          // Validate — unknown keys fall back to general-care
+          _experienceKey = _VETTED_EXPERIENCE_KEYS.has(rawKey) ? rawKey : "general-care";
+        }
+        // ── /v7.1 EXPERIENCE parse ───────────────────────────────────────────
+
+        // Push clean reply (without OPTIONS/EXPERIENCE lines) into chat history so
+        // subsequent turns see natural conversation, not control syntax.
         ST.chatHistory.push({ role: "assistant", content: cleanReply });
         hideThinking();
+
+        // v7.1: set/clear suppression flag BEFORE addMsg so the timers inside
+        // addMsg read the correct value synchronously.
+        ST._experienceShownThisTurn = !!_experienceKey;
+
         const isFirst = ST.isFirstMsg;
         ST.isFirstMsg = false;
         addMsg("bot", cleanReply, isFirst);
         speak(cleanReply);
         // v9: persist chat session after each AI turn
         if (typeof saveChatSession === "function") saveChatSession();
-        // v6.2: append "Saathi ke saath karein" CTA if the reply matches a known experience
-        if (typeof maybeAppendRemedyCta === "function") maybeAppendRemedyCta(cleanReply);
+
+        // ── v7.1: Render single companion entry when EXPERIENCE contract fired ─
+        // Replaces maybeAppendRemedyCta + injectRemedyCard competing paths.
+        if (_experienceKey) {
+          // Resolve experience object from REMEDY_EXPERIENCES or fall back to a
+          // generic general-care placeholder (nuskha is adding that in parallel).
+          const _expObj =
+            (typeof REMEDY_EXPERIENCES !== "undefined" && REMEDY_EXPERIENCES[_experienceKey]) ||
+            null;
+
+          // Determine current UI language for CTA label
+          const _lang = ST.currentLanguage && ST.currentLanguage.startsWith("hi") ? "hi" : "en";
+          const _ctaLabel =
+            _lang === "hi"
+              ? "चलो, मैं आपके साथ करती हूँ →"
+              : "Chalo, main aapke saath karti hoon →";
+
+          setTimeout(function () {
+            const msgs = document.getElementById("chat-msgs");
+            if (!msgs) return;
+            // Avoid double-appending within the same turn (belt-and-suspenders)
+            if (msgs.querySelector('[data-experience-key="' + _experienceKey + '"]')) return;
+
+            const cta = document.createElement("button");
+            cta.className = "remedy-cta";
+            cta.setAttribute("data-experience-key", _experienceKey);
+            cta.setAttribute("data-cta-key", _experienceKey); // back-compat with dedupe logic
+            cta.onclick = function () {
+              if (typeof openWalkthrough === "function") {
+                openWalkthrough(_experienceKey);
+              }
+            };
+            const _icon = (_expObj && _expObj.kindIcon) || "🌿";
+            const _titleHi = (_expObj && _expObj.titleHi) || _experienceKey;
+            cta.innerHTML =
+              '<div class="remedy-cta-emoji">' + _icon + "</div>" +
+              '<div class="remedy-cta-text">' +
+              '<div class="remedy-cta-title">' + _ctaLabel + "</div>" +
+              '<div class="remedy-cta-sub">' + _titleHi + " · Step-by-step</div>" +
+              "</div>" +
+              '<div class="remedy-cta-arrow">›</div>';
+            msgs.appendChild(cta);
+            msgs.scrollTop = msgs.scrollHeight;
+            // Suppress generic followups for this turn — single CTA is the focus
+            ST._guidedCtaActive = true;
+            console.info("[experience-contract] companion entry rendered:", _experienceKey);
+          }, 600);
+
+          // Also surface in voice overlay when open
+          if (voiceModeActive) {
+            setTimeout(function () {
+              const voiceTa = document.getElementById("voice-transcript-area");
+              if (!voiceTa) return;
+              if (voiceTa.querySelector('[data-experience-key="' + _experienceKey + '"]')) return;
+              const vtaCta = document.createElement("button");
+              vtaCta.className = "remedy-cta";
+              vtaCta.setAttribute("data-experience-key", _experienceKey);
+              vtaCta.onclick = function () {
+                if (typeof openWalkthrough === "function") openWalkthrough(_experienceKey);
+              };
+              const _icon2 = (_expObj && _expObj.kindIcon) || "🌿";
+              const _titleHi2 = (_expObj && _expObj.titleHi) || _experienceKey;
+              vtaCta.innerHTML =
+                '<div class="remedy-cta-emoji">' + _icon2 + "</div>" +
+                '<div class="remedy-cta-text">' +
+                '<div class="remedy-cta-title">' + _ctaLabel + "</div>" +
+                '<div class="remedy-cta-sub">' + _titleHi2 + " · Step-by-step</div>" +
+                "</div>" +
+                '<div class="remedy-cta-arrow">›</div>';
+              voiceTa.appendChild(vtaCta);
+              voiceTa.scrollTop = voiceTa.scrollHeight;
+            }, 600);
+          }
+        } else {
+          // No EXPERIENCE contract — use the old substring-based CTA as fallback
+          if (typeof maybeAppendRemedyCta === "function") maybeAppendRemedyCta(cleanReply);
+        }
+        // ── /v7.1 companion entry ────────────────────────────────────────────
 
         // ── v9.1: Voice hero-card deterministic fallback ──────────────────────
         // In voice mode the AI asks a short clarifying question and rarely names
@@ -15590,8 +15791,11 @@ function renderHubMore() {
         // nothing and NO card appears. This fallback ensures a tappable remedy
         // card is ALWAYS surfaced for known symptoms — the hero experience.
         //
+        // v7.1: ONLY runs when the EXPERIENCE contract did NOT fire this turn
+        // (demoted to fallback — the contract path is now the primary route).
+        //
         // Logic:
-        //   1. Only runs when the voice overlay is open.
+        //   1. Only runs when the voice overlay is open AND no EXPERIENCE fired.
         //   2. Waits 350ms (after the 80ms primary injectRemedyCard has fired).
         //   3. If detectRemedy(cleanReply) returns null → no card from AI reply.
         //   4. Detect symptom from the user's utterance via _detectSymptomKey.
@@ -15601,7 +15805,7 @@ function renderHubMore() {
         //      Guard: ST._voiceRemedyShownSymptoms (Set) accumulates per session;
         //      reset to an empty Set each time voiceModeActive is freshly true
         //      AND the overlay was previously closed (overlay just re-opened).
-        if (voiceModeActive) {
+        if (voiceModeActive && !_experienceKey) {
           // Lazy-init / reset the session guard when the overlay opens fresh.
           // _voiceOv.classList.contains("on") is true right now; we detect a
           // "new session" by checking ST._voiceOverlayWasOn: false means we
@@ -15684,7 +15888,7 @@ function renderHubMore() {
               console.info("[voice-fallback] remedy card injected:", remedyKey, "for symptom:", symptomKey);
             }
           }, _voiceFallbackDelay);
-        } else {
+        } else if (!_experienceKey) {
           // Voice overlay is not open — reset the session guard so the next
           // voice session starts clean.
           ST._voiceOverlayWasOn = false;
