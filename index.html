@@ -25338,11 +25338,40 @@ const BREATH_PHASES = [
     anim.style.background = "rgba(34,197,94,.1)";
     anim.style.border = "2px solid rgba(34,197,94,.3)";
     anim.style.fontSize = "80px";
-    anim.innerHTML =
-      (ACU_SVGS[p.svgKey] || "") +
-      (typeof p.cx === "number"
-        ? `<div class="acu-pin" style="left:${p.cx}%;top:${p.cy}%"></div>`
-        : "");
+
+    // v7.1: Lottie-first cascade for the acupressure anim slot.
+    // Priority: (1) lottie-acupressure.json via window.lottie,
+    //           (2) ACU_SVGS body-part silhouette + acu-pin (existing),
+    //           (3) emoji-only (last resort, never actually reached here).
+    // Path resolves via window.mediaUrl if file 16 loaded, else hardcoded relative path.
+    var _acuLottiePath = (typeof window.mediaUrl === "function")
+      ? window.mediaUrl("lottie-acupressure.json")
+      : "assets/remedies/lottie-acupressure.json";
+    var _acuLottieLoaded = false;
+    if (typeof window.lottie !== "undefined") {
+      try {
+        anim.innerHTML = "";
+        _lottieInstance = window.lottie.loadAnimation({
+          container: anim,
+          renderer: "svg",
+          loop: true,
+          autoplay: true,
+          path: _acuLottiePath,
+        });
+        _acuLottieLoaded = true;
+      } catch (_acuLottieErr) {
+        console.warn("[acupressure] Lottie load failed, falling back to SVG:", _acuLottieErr);
+        _lottieInstance = null;
+      }
+    }
+    if (!_acuLottieLoaded) {
+      // Fallback: existing body-part silhouette SVG + pulsing press-point pin.
+      anim.innerHTML =
+        (ACU_SVGS[p.svgKey] || "") +
+        (typeof p.cx === "number"
+          ? '<div class="acu-pin" style="left:' + p.cx + '%;top:' + p.cy + '%"></div>'
+          : "");
+    }
     document.getElementById("move-ov-progress").innerHTML = p.instr
       .map(() => '<div class="move-ov-progress-dot"></div>')
       .join("");
@@ -25551,6 +25580,8 @@ const BREATH_PHASES = [
       titleHi: "अनुलोम-विलोम प्राणायाम",
       durSec: 180,
       anim: ["sit-spine", "nostril-left-in", "nostril-right-out", "nostril-alt", "breath-cycle"],
+      // Lottie: calm breathing ring for all steps — mirrors the inhale/exhale rhythm
+      lottie: ["lottie-breathe.json", "lottie-breathe.json", "lottie-breathe.json", "lottie-breathe.json", "lottie-breathe.json"],
       steps: [
         "Aaram se baitho. Reedh ki haddi seedhi.",
         "Daahini naak band karo angoothe se. Baayi se saans lo (4 sec).",
@@ -25572,6 +25603,8 @@ const BREATH_PHASES = [
       titleHi: "कपालभाति",
       durSec: 120,
       anim: ["sit-spine", "breath-in", "sharp-exhale", "sharp-exhale", "still"],
+      // Lottie: lungs actively working — the pumping exhale-focused technique
+      lottie: ["lottie-lungs.json", "lottie-lungs.json", "lottie-lungs.json", "lottie-lungs.json", "lottie-lungs.json"],
       steps: [
         "Vajrasana mein baitho ya kursi par seedha.",
         "Naak se halki saans andar lo.",
@@ -25593,6 +25626,8 @@ const BREATH_PHASES = [
       titleHi: "भ्रामरी प्राणायाम",
       durSec: 150,
       anim: ["ears-blocked", "breath-in", "bee-hum", "bee-hum", "still"],
+      // Lottie: calm breathing ring — bhramari is a gentle humming exhale pranayam
+      lottie: ["lottie-breathe.json", "lottie-breathe.json", "lottie-breathe.json", "lottie-breathe.json", "lottie-breathe.json"],
       steps: [
         "Aankhein band, kaano mein angoothe se daba lo.",
         "Naak se gehri saans lo.",
@@ -25614,6 +25649,8 @@ const BREATH_PHASES = [
       titleHi: "वज्रासन",
       durSec: 300,
       anim: ["kneel", "kneel", "sit-spine", "sit-spine", "kneel"],
+      // Lottie: yoga mat scene — kneeling seated yoga posture
+      lottie: ["lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json"],
       steps: [
         "Ghutno ke bal baitho — paav peeche.",
         "Edi par baith jao, paanv ek doosre se sata ke.",
@@ -25635,6 +25672,8 @@ const BREATH_PHASES = [
       titleHi: "सूर्य नमस्कार (1 राउंड)",
       durSec: 90,
       anim: ["sn-pranama", "sn-arms-up", "sn-fold", "sn-lunge", "sn-plank", "sn-cycle"],
+      // Lottie: yoga mat scene — flowing asana sequence
+      lottie: ["lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json"],
       steps: [
         "Pranamasana — haath jodke khade ho.",
         "Hasta Uttanasana — saans lete hue haath upar.",
@@ -25658,6 +25697,8 @@ const BREATH_PHASES = [
       titleHi: "गर्दन की एक्सरसाइज़",
       durSec: 120,
       anim: ["sit-spine", "neck-right", "neck-left", "neck-circle", "shoulders-loose"],
+      // Lottie: yoga mat scene — seated stretch/mobility work
+      lottie: ["lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json"],
       steps: [
         "Seedhe baitho. Kandhe dheele.",
         "Gardan dheere se daahini taraf — 5 sec ruko.",
@@ -25679,6 +25720,8 @@ const BREATH_PHASES = [
       titleHi: "मालासन (squat)",
       durSec: 90,
       anim: ["feet-wide", "squat-down", "squat-down", "squat-down", "squat-down"],
+      // Lottie: yoga mat scene — squat is a yoga/stretch posture
+      lottie: ["lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json", "lottie-yoga.json"],
       steps: [
         "Pair kandhe ki chaudaai par.",
         "Dheere dheere niche baitho — squat position.",
@@ -25693,6 +25736,8 @@ const BREATH_PHASES = [
       titleHi: "शवासन",
       durSec: 240,
       anim: ["lie-still", "lie-still", "lie-still", "breath-cycle", "lie-still"],
+      // Lottie: monk meditating with glowing aura — shavasana is deep rest/meditation
+      lottie: ["lottie-monk.json", "lottie-monk.json", "lottie-monk.json", "lottie-monk.json", "lottie-monk.json"],
       steps: [
         "Peeth ke bal lete jao. Aankhein band.",
         "Pair thode khule. Haath body se thoda door.",
@@ -25715,6 +25760,8 @@ const BREATH_PHASES = [
       titleHi: "रोज़ की 30-मिनट walk",
       durSec: 1800,
       anim: ["shoes", "walk-slow", "walk-brisk", "walk-slow", "daily"],
+      // Lottie: person lifting barbell — active physical exercise visual
+      lottie: ["lottie-exercise.json", "lottie-exercise.json", "lottie-exercise.json", "lottie-exercise.json", "lottie-exercise.json"],
       steps: [
         "Comfortable shoes pehno. Subah ya sham — jab time mile.",
         "Pehle 5 min dheere chalo — body warm-up.",
@@ -25799,6 +25846,8 @@ const BREATH_PHASES = [
       titleHi: "5-मिनट mindful साँस",
       durSec: 300,
       anim: ["meditate-pose", "breath-cycle", "mind-thoughts", "still", "daily"],
+      // Lottie: monk meditating with glowing aura — light (44KB), calm/dhyaan
+      lottie: ["lottie-monk.json", "lottie-monk.json", "lottie-monk.json", "lottie-monk.json", "lottie-monk.json"],
       steps: [
         "Aaram se baitho. Reedh seedhi. Aankhein band.",
         "Saans pe dhyan lo — andar aati hai, bahar jaati hai.",
@@ -25823,6 +25872,8 @@ const BREATH_PHASES = [
       titleHi: "बॉक्स ब्रीदिंग (4-4-4-4)",
       durSec: 240,
       anim: ["sit-spine", "breath-in", "breath-hold", "breath-out", "breath-cycle"],
+      // Lottie: breathing ring loops through in/hold/out/hold exactly as box breathing
+      lottie: ["lottie-breathe.json", "lottie-breathe.json", "lottie-breathe.json", "lottie-breathe.json", "lottie-breathe.json"],
       steps: [
         "Aaram se baitho. Reedh seedhi, kandhe dheele.",
         "4 second mein naak se saans andar lo — dheere, gehri.",
@@ -25986,7 +26037,16 @@ const BREATH_PHASES = [
     // (paints its own body-silhouette SVG in openAcupressure) skip this block.
     if (_moveSkill.anim || _moveSkill.lottie) {
       const animKey = (_moveSkill.anim && _moveSkill.anim[idx]) || null;
-      const lottieUrl = (_moveSkill.lottie && _moveSkill.lottie[idx]) || null;
+      // Resolve lottie filename → full URL via the same base-path logic as
+      // _tileAnimLottieUrl. Filenames in skill.lottie[] are relative to the
+      // assets/remedies directory. window.mediaUrl overrides when set by the
+      // hosted-media manifest (WS2 pattern).
+      const _lottieFile = (_moveSkill.lottie && _moveSkill.lottie[idx]) || null;
+      const _lottieBase =
+        (typeof window !== "undefined" && window.mediaUrl)
+          ? window.mediaUrl.replace(/\/$/, "")
+          : "assets/remedies";
+      const lottieUrl = _lottieFile ? (_lottieBase + "/" + _lottieFile) : null;
       renderStepAnim(animKey, lottieUrl);
     }
 
