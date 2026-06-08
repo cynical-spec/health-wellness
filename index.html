@@ -21546,13 +21546,12 @@ const BREATH_PHASES = [
     return true;
   }
 
-  // v7.3: Speak English / Hinglish-Latin text via Sarvam Bulbul with
-  // target_language_code "en-IN" and speaker "vidya" (the warm Saathi voice).
-  // Sarvam's Indian-English speakers have a genuine Indian accent, solving
-  // the US-accent complaint when Saathi speaks English.
-  // Returns true on success so speak() can short-circuit; false on error so
-  // speak() falls through to ElevenLabs as the next-best option.
-  async function speakSarvamEnglish(text) {
+  // v7.3: Generalised Sarvam Bulbul TTS — any supported target_language_code.
+  // Used by speakSarvamEnglish (en-IN) and the Tamil/Telugu/Kannada intercept
+  // (ta-IN / te-IN / kn-IN). Speaker is always "vidya" (warm Saathi voice).
+  // Returns true on success so speak() can short-circuit; false on any error
+  // so the caller can fall through to ElevenLabs as a backup.
+  async function speakSarvamLang(text, langCode) {
     if (!USE_WORKER && (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes("REPLACE"))) {
       return false; // no Sarvam key → fall through to ElevenLabs
     }
@@ -21561,13 +21560,13 @@ const BREATH_PHASES = [
     try {
       const speakText = text.length > 500 ? text.substring(0, 500) : text;
       const _t0 = performance.now();
-      console.info("[TTS-EN] Sarvam en-IN speaker=vidya chars=" + speakText.length);
+      console.info("[TTS-SV] Sarvam lang=" + langCode + " speaker=vidya chars=" + speakText.length);
       const res = await fetch(sarvamUrl("/text-to-speech"), {
         method: "POST",
         headers: sarvamHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           inputs: [speakText],
-          target_language_code: "en-IN",
+          target_language_code: langCode,
           speaker: "vidya",
           pitch: 0,
           pace: 0.9,
@@ -21579,15 +21578,15 @@ const BREATH_PHASES = [
       });
       if (!res.ok) {
         const errTxt = await res.text();
-        console.warn("[TTS-EN] Sarvam en-IN failed", res.status, errTxt);
+        console.warn("[TTS-SV] Sarvam " + langCode + " failed", res.status, errTxt);
         return false; // fall through to ElevenLabs
       }
       const data = await res.json();
       if (!data.audios || !data.audios[0]) {
-        console.warn("[TTS-EN] Sarvam en-IN returned no audio");
+        console.warn("[TTS-SV] Sarvam " + langCode + " returned no audio");
         return false;
       }
-      console.info("[TTS-EN] Sarvam en-IN", Math.round(performance.now() - _t0), "ms");
+      console.info("[TTS-SV] Sarvam " + langCode, Math.round(performance.now() - _t0), "ms");
       if (_currentAudio) {
         try { _currentAudio.pause(); } catch (e) {}
         _currentAudio = null;
@@ -21602,11 +21601,11 @@ const BREATH_PHASES = [
         sarvamAudio.addEventListener("abort", _done, { once: true });
         sarvamAudio.play().catch((e) => {
           if (e && e.name === "NotAllowedError") {
-            console.warn("[TTS-EN] autoplay blocked — queuing gesture-unlock", e);
+            console.warn("[TTS-SV] autoplay blocked — queuing gesture-unlock", e);
             _isSpeaking = false;
             _armAudioUnlock(sarvamAudio);
           } else {
-            console.warn("[TTS-EN] play error", e);
+            console.warn("[TTS-SV] play error", e);
             _isSpeaking = false;
           }
           resolve();
@@ -21614,9 +21613,36 @@ const BREATH_PHASES = [
       });
       return true;
     } catch (e) {
-      console.warn("[TTS-EN] speakSarvamEnglish failed", e);
+      console.warn("[TTS-SV] speakSarvamLang(" + langCode + ") failed", e);
       return false;
     }
+  }
+
+  // v7.3: Speak English / Hinglish-Latin text via Sarvam Bulbul en-IN.
+  // Thin wrapper around speakSarvamLang — kept for backwards compatibility with
+  // any direct callers and for the speak() intercept label in logs.
+  async function speakSarvamEnglish(text) {
+    return speakSarvamLang(text, "en-IN");
+  }
+
+  // v7.4: Script-dominant detector for Tamil / Telugu / Kannada.
+  // Counts characters in each script block and returns the tag for whichever
+  // has the most. A few Latin words mixed into Tamil still correctly route Tamil.
+  // Returns "ta" | "te" | "kn" | null (null = none of the three dominate).
+  function _dominantDravidianScript(text) {
+    if (!text) return null;
+    let ta = 0, te = 0, kn = 0;
+    for (let i = 0; i < text.length; i++) {
+      const cp = text.charCodeAt(i);
+      if (cp >= 0x0B80 && cp <= 0x0BFF) ta++;       // Tamil
+      else if (cp >= 0x0C00 && cp <= 0x0C7F) te++;  // Telugu
+      else if (cp >= 0x0C80 && cp <= 0x0CFF) kn++;  // Kannada
+    }
+    const max = Math.max(ta, te, kn);
+    if (max === 0) return null;
+    if (ta === max) return "ta";
+    if (te === max) return "te";
+    return "kn";
   }
 
   async function speak(text, opts) {
@@ -21676,6 +21702,21 @@ const BREATH_PHASES = [
       if (await speakSarvamEnglish(prepText)) return;
       // Sarvam English failed — fall through to ElevenLabs as backup.
       console.info("[speak] Sarvam en-IN failed, falling back to ElevenLabs");
+    }
+    // v7.4: TAMIL / TELUGU / KANNADA INTERCEPT — route to Sarvam Bulbul vidya
+    // BEFORE ElevenLabs. ElevenLabs' yM93 multilingual voice handles Tamil
+    // adequately but produces a noticeably off accent for Kannada/Telugu.
+    // Sarvam Bulbul confirms clean audio for ta-IN / te-IN / kn-IN.
+    // We inspect prepText (may already contain native script after pre-translit)
+    // AND the original textForEnCheck (raw input) — whichever has Dravidian
+    // codepoints wins.
+    const _dScript = _dominantDravidianScript(prepText) || _dominantDravidianScript(textForEnCheck);
+    if (_dScript) {
+      const _dLang = _dScript === "ta" ? "ta-IN" : _dScript === "te" ? "te-IN" : "kn-IN";
+      console.info("[speak] Dravidian script=" + _dScript + " → Sarvam " + _dLang);
+      if (await speakSarvamLang(prepText, _dLang)) return;
+      // Sarvam failed for this language — fall through to ElevenLabs as backup.
+      console.info("[speak] Sarvam " + _dLang + " failed, falling back to ElevenLabs");
     }
     // v3.7: ElevenLabs first if available — now with native-script input.
     // SOS-fix-3: speakElevenLabs is already awaitable and returns true on
