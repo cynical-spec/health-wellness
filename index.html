@@ -29073,9 +29073,10 @@ const BREATH_PHASES = [
   const REMEDY_MEDIA = {
 
     // ── general-care — highest-traffic fallback; all 4 steps fully Lottie ──
+    // Step 0: rest beat → lottie-monk (illustrated calm/rest; replaces motion-rest)
     "general-care": {
       steps: {
-        0: { lottie: "motion-rest.json" },       // थोड़ा रुकें, शरीर को आराम दें
+        0: { lottie: "lottie-monk.json" },       // थोड़ा रुकें, शरीर को आराम दें
         1: { lottie: "motion-warmdrink.json" },  // गुनगुना पानी पीती रहें
         2: { lottie: "motion-prep.json" },       // हल्का और ताज़ा खाना लें
         3: { lottie: "motion-water.json" },      // लक्षण पर नज़र रखें
@@ -29084,24 +29085,39 @@ const BREATH_PHASES = [
 
     // ── tulsi-shahad — gala kharaash; step 0 + step 3 only ──
     // Steps 1 and 2 intentionally absent → keep their existing kitchen SVG.
+    // Step 3: "आँखें बंद करें, एक लंबी साँस लें" → lottie-monk (calm rest beat)
     "tulsi-shahad": {
       steps: {
-        0: { lottie: "motion-prep.json" },   // तुलसी के पत्ते तोड़ें (pick/prep)
-        3: { lottie: "motion-rest.json" },   // धीरे से चाटें, आराम करें (lick + breathe)
+        0: { lottie: "motion-prep.json" },    // तुलसी के पत्ते तोड़ें (pick/prep)
+        3: { lottie: "lottie-monk.json" },    // धीरे से चाटें, आराम करें (aankhein band, lambi saans)
       },
     },
 
-    // ── adrak-chai — final warm-drink step ──
+    // ── adrak-chai — sardi-khansi remedy ──
+    // Step 0: "Adrak ko kuto" → lottie-mortar (crush/grind beat)
+    // Step 4: final drink/relief beat → lottie-cough (person coughing → relief)
     "adrak-chai": {
       steps: {
-        4: { lottie: "motion-warmdrink.json" }, // गरम घूंट घूंट पियो
+        0: { lottie: "lottie-mortar.json" },  // अदरक छोटे टुकड़े करें, कूटें
+        4: { lottie: "lottie-cough.json" },   // गरम घूंट घूंट पियो — सर्दी-खाँसी राहत
       },
     },
 
-    // ── tulsi-kadha — final warm-drink step ──
+    // ── tulsi-kadha — sardi/bukhar remedy ──
+    // Step 0: "Tulsi patte kuto" → lottie-mortar (kuto/crush step)
+    // Step 2: final drink step → lottie-fever (tulsi kadha targets bukhar)
     "tulsi-kadha": {
       steps: {
-        2: { lottie: "motion-warmdrink.json" }, // छान के शहद मिला, गरम पियो
+        0: { lottie: "lottie-mortar.json" }, // तुलसी पत्ते कूटो (kuto step)
+        2: { lottie: "lottie-fever.json" },  // छान के शहद मिला, गरम पियो (bukhar relief beat)
+      },
+    },
+
+    // ── neem-haldi-paste — skin/daane remedy ──
+    // Step 0: "Neem patte peeso" → lottie-mortar (peeso/grind step)
+    "neem-haldi-paste": {
+      steps: {
+        0: { lottie: "lottie-mortar.json" }, // नीम पत्ते और हल्दी पीसो (peeso/grind step)
       },
     },
 
