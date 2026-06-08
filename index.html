@@ -15222,9 +15222,22 @@ function renderHubMore() {
     ST._guidedCtaActive = true;
   }
 
+  // Symptom → best vetted EXPERIENCE key for the companion walkthrough entry.
+  // Matches the v7.1 _VETTED_EXPERIENCE_KEYS contract. Fallback: general-care.
+  const _TRIAGE_EXPERIENCE_MAP = {
+    "sardi-khansi": "adrak-chai",    // adrak ki chai — sardi/khansi ka flagship nushka
+    "neend":        "haldi-doodh",   // haldi-doodh — sone se pehle, neend ke liye
+    "pet":          "jeera-paani",   // jeera paani — gas/acidity/pet dard
+    "sir-dard":     "tulsi-kadha",   // tulsi kadha — sir dard + immunity, warm relief
+    "bukhar":       "tulsi-kadha",   // tulsi + kali mirch — halke bukhar ka nushka
+    "kamar-dard":   "general-care",  // koi specific experience nahi — self-care + rest
+    "tension":      "general-care",  // breathing/rest — brahmi-chai vetted list mein nahi
+  };
+
   // Called when all triage questions are answered.
-  // Hero flow: post warm acknowledgment, save focus, navigate to the plan view.
-  // The card opens ONLY when the user taps a step's "Shuru karein →".
+  // v7.2: Stay in chat — DO NOT navigate to s-hub / renderFocusHome.
+  // Instead post warm ack + render the single companion walkthrough entry
+  // (identical to the typed-symptom EXPERIENCE: contract path in callAI).
   function _finalizeTriageInChat(msgsContainer) {
     if (!_activeTriage) return;
     const key = _activeTriage.key;
@@ -15232,7 +15245,7 @@ function renderHubMore() {
     const flow = FOCUS_FLOWS[key];
     _activeTriage = null;
 
-    // Early doctor escalation check
+    // Early doctor escalation check — stays in chat, no hub navigation
     if (flow && flow.requiresDoctor && flow.requiresDoctor(answers)) {
       const who = (ST && ST.userProfile && ST.userProfile.name) || "Aap";
       if (typeof openDoctor === "function") {
@@ -15247,7 +15260,8 @@ function renderHubMore() {
       return;
     }
 
-    // Save focus state (mirrors finalizeFocusStart logic in file 14)
+    // Save focus state so healing-path session (openFocusStep / markFocusStepComplete)
+    // continues to work if the user revisits it from the hub later.
     let steps = [];
     if (typeof saveFocus === "function" && flow) {
       steps = flow.buildSteps(answers)
@@ -15265,14 +15279,11 @@ function renderHubMore() {
       });
     }
 
-    // Show warm acknowledgment in chat — instant template, LLM-enhanced asynchronously.
-    // Use a unique stable id so _enhanceAckWithLLM can update both this bubble
-    // and the plan banner when the LLM reply lands.
+    // Warm acknowledgment bubble (instant template, no LLM round-trip needed here)
     const ackText = typeof _warmAckTemplate === "function"
       ? _warmAckTemplate(key, answers)
       : (flow && flow.quote ? flow.quote(answers) : "");
 
-    // Post the ack as a bot bubble with a stable id span inside
     const msgs = msgsContainer || document.getElementById("chat-msgs");
     if (msgs && ackText) {
       const row = document.createElement("div");
@@ -15286,23 +15297,46 @@ function renderHubMore() {
       msgs.scrollTop = msgs.scrollHeight;
     }
 
-    // Reveal 3-step plan: navigate to hub and render renderFocusHome
-    setTimeout(() => {
-      if (typeof goTo === "function") goTo("s-hub");
-      setTimeout(() => {
-        if (typeof applySunitaMode === "function") applySunitaMode();
-        if (typeof renderFocusHome === "function") renderFocusHome();
-        if (typeof renderHubStories === "function") renderHubStories();
-        // Fire LLM enhancement — updates both the chat bubble and the plan banner
-        if (typeof _enhanceAckWithLLM === "function" && steps.length) {
-          const stepTitles = steps.map((s) => {
-            try {
-              return (typeof focusStepMeta === "function") ? focusStepMeta(s).title : (s.key || s.type);
-            } catch (e) { return s.key || s.type; }
-          });
-          _enhanceAckWithLLM(key, answers, stepTitles, "focus-ack-text");
-        }
-      }, 120);
+    // Resolve the experience key for this symptom
+    const _experienceKey = _TRIAGE_EXPERIENCE_MAP[key] || "general-care";
+
+    // Render single companion walkthrough entry — same pattern as v7.1 EXPERIENCE: contract
+    setTimeout(function () {
+      if (!msgs) return;
+      // Avoid double-appending (belt-and-suspenders)
+      if (msgs.querySelector('[data-experience-key="' + _experienceKey + '"]')) return;
+
+      const _expObj =
+        (typeof REMEDY_EXPERIENCES !== "undefined" && REMEDY_EXPERIENCES[_experienceKey]) || null;
+
+      const _lang = ST && ST.currentLanguage && ST.currentLanguage.startsWith("hi") ? "hi" : "en";
+      const _ctaLabel =
+        _lang === "hi"
+          ? "चलो, मैं आपके साथ करती हूँ →"
+          : "Chalo, main aapke saath karti hoon →";
+
+      const cta = document.createElement("button");
+      cta.className = "remedy-cta";
+      cta.setAttribute("data-experience-key", _experienceKey);
+      cta.setAttribute("data-cta-key", _experienceKey);
+      cta.onclick = function () {
+        if (typeof openWalkthrough === "function") openWalkthrough(_experienceKey);
+      };
+      const _icon  = (_expObj && _expObj.kindIcon) || "🌿";
+      const _title = (_expObj && _expObj.titleHi)  || _experienceKey;
+      cta.innerHTML =
+        '<div class="remedy-cta-emoji">' + _icon + "</div>" +
+        '<div class="remedy-cta-text">' +
+        '<div class="remedy-cta-title">' + _ctaLabel + "</div>" +
+        '<div class="remedy-cta-sub">' + _title + " · Step-by-step</div>" +
+        "</div>" +
+        '<div class="remedy-cta-arrow">›</div>';
+      msgs.appendChild(cta);
+      msgs.scrollTop = msgs.scrollHeight;
+
+      // Suppress generic followup chips for this turn — single CTA is the focus
+      ST._guidedCtaActive = true;
+      console.info("[triage-finalize] companion entry rendered:", _experienceKey, "for symptom:", key);
     }, 500);
   }
 
@@ -16095,17 +16129,23 @@ function renderNushkeStart() {
     // Reverse-map display label → NUSHKE_CATS entry by matching either form
     const entry = NUSHKE_CATS.find((c) => c.label === displayLabel || c.labelHi === displayLabel);
     const routingLabel = entry ? entry.label : displayLabel;
-    addMsg("user", displayLabel, false);
-    // If this symptom has a guided flow, launch it instead of plain LLM call
+    // v7.2: for known symptoms with a guided flow, route through triSymptomTap so
+    // the user STAYS in chat (deterministic triage → companion walkthrough entry).
+    // This replaces the old startFocus() path that navigated to s-focus-qa and
+    // then landed on the Focus-home 3-step plan screen.
     if (
       entry &&
       entry.focusKey &&
-      typeof startFocus === "function" &&
       typeof FOCUS_FLOWS !== "undefined" &&
       FOCUS_FLOWS[entry.focusKey]
     ) {
-      startFocus(entry.focusKey);
+      // triSymptomTap seeds chat with the display label, detects the symptom key,
+      // and launches the deterministic bubble-triage — identical to typing the symptom.
+      if (typeof triSymptomTap === "function") {
+        triSymptomTap(displayLabel, routingLabel + " ke baare mein ghar ka nushka chahiye");
+      }
     } else {
+      addMsg("user", displayLabel, false);
       callAI(routingLabel + " ke baare mein ghar ka nushka chahiye");
     }
   });
@@ -27224,19 +27264,85 @@ const BREATH_PHASES = [
     ST._focusQAStep = 0;
     ST._focusQAAnswers = {};
 
-    // Hero flow: navigate to the plan view and show warm acknowledgment.
-    // The card opens ONLY when the user taps a step's "Shuru karein →".
-    goTo("s-hub");
+    // v7.2: Stay in chat — open s-chat seeded with the symptom and the warm
+    // acknowledgment, then surface the companion walkthrough entry.
+    // The Focus-home 3-step plan screen is no longer the destination for
+    // symptom-template / triage flows. renderFocusHome() is preserved for
+    // active healing-path sessions that a user may have already started.
+    const _TRIAGE_EXPERIENCE_MAP_14 = {
+      "sardi-khansi": "adrak-chai",
+      "neend":        "haldi-doodh",
+      "pet":          "jeera-paani",
+      "sir-dard":     "tulsi-kadha",
+      "bukhar":       "tulsi-kadha",
+      "kamar-dard":   "general-care",
+      "tension":      "general-care",
+    };
+    const _experienceKey = _TRIAGE_EXPERIENCE_MAP_14[sym] || "general-care";
+
+    // Open chat in nushke context, seeded with the symptom
+    ST.chatCtx = "nushke";
+    ST.chatHistory = [];
+    ST.isFirstMsg = true;
+    ST._symptomTurnSeen = 0;
+    if (typeof trackFeature === "function") trackFeature("nushke");
+    if (typeof goTo === "function") goTo("s-chat");
+    const _lbl = document.getElementById("chat-ctx-label");
+    if (_lbl) _lbl.textContent = "Ghar ke Nushke";
+
     setTimeout(() => {
-      if (typeof applySunitaMode === "function") applySunitaMode();
-      renderFocusHome();
-      if (typeof renderHubStories === "function") renderHubStories();
-      // Fire LLM enhancement for the plan banner (fire-and-forget)
-      const stepTitles = steps.map((s) => {
-        try { return focusStepMeta(s).title; } catch (e) { return s.key || s.type; }
-      });
-      _enhanceAckWithLLM(sym, answers, stepTitles, "focus-ack-text");
-    }, 120);
+      const msgs = document.getElementById("chat-msgs");
+      if (!msgs) return;
+      msgs.innerHTML = "";
+
+      // Warm acknowledgment bubble
+      const ackText = typeof _warmAckTemplate === "function"
+        ? _warmAckTemplate(sym, answers)
+        : (flow && flow.quote ? flow.quote(answers) : "");
+      if (ackText) {
+        const row = document.createElement("div");
+        row.className = "msg-row bot";
+        const bub = document.createElement("div");
+        bub.className = "bubble bot";
+        bub.id = "focus-ack-text";
+        bub.textContent = ackText;
+        row.appendChild(bub);
+        msgs.appendChild(row);
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+
+      // Companion walkthrough entry — identical to v7.1 EXPERIENCE: contract
+      setTimeout(function () {
+        if (msgs.querySelector('[data-experience-key="' + _experienceKey + '"]')) return;
+        const _expObj =
+          (typeof REMEDY_EXPERIENCES !== "undefined" && REMEDY_EXPERIENCES[_experienceKey]) || null;
+        const _lang = ST && ST.currentLanguage && ST.currentLanguage.startsWith("hi") ? "hi" : "en";
+        const _ctaLabel =
+          _lang === "hi"
+            ? "चलो, मैं आपके साथ करती हूँ →"
+            : "Chalo, main aapke saath karti hoon →";
+        const cta = document.createElement("button");
+        cta.className = "remedy-cta";
+        cta.setAttribute("data-experience-key", _experienceKey);
+        cta.setAttribute("data-cta-key", _experienceKey);
+        cta.onclick = function () {
+          if (typeof openWalkthrough === "function") openWalkthrough(_experienceKey);
+        };
+        const _icon  = (_expObj && _expObj.kindIcon) || "🌿";
+        const _title = (_expObj && _expObj.titleHi)  || _experienceKey;
+        cta.innerHTML =
+          '<div class="remedy-cta-emoji">' + _icon + "</div>" +
+          '<div class="remedy-cta-text">' +
+          '<div class="remedy-cta-title">' + _ctaLabel + "</div>" +
+          '<div class="remedy-cta-sub">' + _title + " · Step-by-step</div>" +
+          "</div>" +
+          '<div class="remedy-cta-arrow">›</div>';
+        msgs.appendChild(cta);
+        msgs.scrollTop = msgs.scrollHeight;
+        if (ST) ST._guidedCtaActive = true;
+        console.info("[finalizeFocusStart] companion entry rendered:", _experienceKey, "for symptom:", sym);
+      }, 400);
+    }, 100);
   }
 
   // — Warm acknowledgment helpers —
