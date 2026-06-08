@@ -8376,6 +8376,7 @@ body:not(.focus) .focus-home {
   <div class="body hub-zones-canvas">
   <div class="focus-home" id="focus-home"></div>
   <div class="warm-hero" id="warm-hero"></div>
+  <div class="active-choice-card" id="active-choice-card"></div>
   <div class="zone-label" data-i18n="hub_ask_label">hub_ask_label</div>
   <div class="talk-card">
     <div class="talk-card-row">
@@ -8391,14 +8392,6 @@ body:not(.focus) .focus-home {
   <div class="zone-label" data-i18n="hub_rooms_label">hub_rooms_label</div>
   <div id="life-rooms"></div>
   <button class="hub-more" data-i18n="hub_more" onclick="openToolsSheet()">hub_more</button>
-  <div class="safar-path" id="safar-path"></div>
-  <div class="sunita-home">
-    <div class="sun-lbl" data-i18n="exit_aur_kuch">Aur kuch?</div>
-    <div class="sun-grid">
-      <button class="sunita-tile" onclick="playStory('general')"><div class="sunita-tile-emoji">📖</div><div class="sunita-tile-name" data-i18n="exit_dadi_kahani_title">Dadi ki kahani</div><div class="sunita-tile-sub" data-i18n="exit_dadi_kahani_sub">2 min · roz nayi kahani</div></button>
-      <button class="sunita-tile danger" onclick="openDoctor('Aap')"><div class="sunita-tile-emoji">🩺</div><div class="sunita-tile-name" data-i18n="exit_doctor_title">Doctor se baat</div><div class="sunita-tile-sub" data-i18n="exit_doctor_sub">Call · Practo · 1mg</div></button>
-    </div>
-  </div>
   <div style="height:24px"></div>
 </div>
 </div>
@@ -11033,9 +11026,9 @@ function initHubDynamic() {
   if (typeof applySunitaMode === "function") applySunitaMode();
   // v5.1: Aaj ki Sehat stories rail
   if (typeof renderHubStories === "function") renderHubStories();
-  // v6.0: warm landing — time-aware greeting, Active Choice nudge, safar path
+  // v6.0: warm landing — time-aware greeting + Active Choice nudge at top
   renderWarmHero();
-  renderSafarPath();
+  renderActiveChoice();
   // v6.1: voice-first talk-card — chip rail + rotating placeholder
   renderHubChipRail();
   startHubPlaceholderRotation();
@@ -11432,24 +11425,9 @@ function renderCompanionCard() {
   const el = document.getElementById("companion-card");
   if (!el) return;
 
-  // Try renderActiveChoice() first — it writes to #active-choice-card.
-  // We replicate the same pick logic here to fill #companion-card.
-  const ac = (typeof pickActiveChoice === "function") ? pickActiveChoice() : null;
-
-  if (ac) {
-    // Reuse the active-choice output but target companion-card
-    el.dataset.kind = ac.kind;
-    el.innerHTML =
-      '<div class="ac-icon" aria-hidden="true">' + ac.icon +
-      '</div><div class="ac-body"><div class="ac-text">' + ac.text +
-      '</div><div class="ac-actions">' +
-      '<button class="ac-btn ac-btn-primary" onclick="handleActiveChoice(\'' + ac.primary.action + '\')">' + ac.primary.label + '</button>' +
-      '<button class="ac-btn ac-btn-secondary" onclick="handleActiveChoice(\'' + ac.secondary.action + '\')">' + ac.secondary.label + '</button>' +
-      '</div></div>';
-    return;
-  }
-
-  // Fallback: rotating daily nuskha card
+  // साथी की बात: always shows आज का नुस्खा — rotating daily wellness tip.
+  // The active-choice nudge (recall / returner / TOD) now lives at the top of
+  // the hub in #active-choice-card (rendered by renderActiveChoice()).
   const dayIdx = new Date().getDate() % NUSKHA_TIPS.length;
   const tip = NUSKHA_TIPS[dayIdx];
   el.dataset.kind = "nuskha";
