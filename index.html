@@ -7918,6 +7918,319 @@ body:not(.focus) .focus-home {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ════════════════════════════════════════════════════════════════
+   HUB v9 — "Life Rooms" zones canvas (Jio-blue system)
+   Zone 1 Nushka hero · Zone 2 Companion moment · Zone 3 Life Rooms
+   ════════════════════════════════════════════════════════════════ */
+.hub-zones-canvas {
+  padding-bottom: 28px;
+}
+
+/* — Section labels: "● क्या तकलीफ है?" — */
+.zone-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  padding: 0 18px;
+  margin: 22px 0 12px;
+}
+.zone-label::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary, #0066cc);
+  flex-shrink: 0;
+}
+
+/* — Zone 2: companion / nuskha card — */
+#companion-card {
+  margin: 0 16px;
+}
+/* active-choice variant: give it the same soft card as .active-choice-card */
+#companion-card[data-kind]:not([data-kind="nuskha"]) {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.1), rgba(20, 184, 166, 0.08));
+  border: 1px solid rgba(0, 102, 204, 0.18);
+}
+#companion-card .ac-icon {
+  font-size: 26px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+#companion-card .ac-body {
+  flex: 1;
+  min-width: 0;
+}
+#companion-card .ac-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.45;
+  font-weight: 500;
+}
+#companion-card .ac-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.nuskha-card {
+  position: relative;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(0, 102, 204, 0.08), rgba(0, 120, 232, 0.03));
+  border: 1px solid rgba(0, 102, 204, 0.16);
+  overflow: hidden;
+}
+.nuskha-card .nuskha-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary, #0066cc);
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
+}
+.nuskha-card .nuskha-card-body {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* — Zone 3: Life Rooms — */
+#life-rooms {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 16px;
+}
+.room-card {
+  border-radius: 18px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-soft, rgba(0, 40, 90, 0.08));
+  box-shadow: 0 2px 10px rgba(0, 40, 90, 0.05);
+  overflow: hidden;
+}
+.room-hdr {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 15px 16px 12px;
+  font-family: inherit;
+  text-align: left;
+}
+.room-hdr:active {
+  background: rgba(0, 102, 204, 0.04);
+}
+.room-hdr {
+  font-size: 19px; /* sizes the leading emoji glyph */
+}
+.room-hdr > span:not(.room-chev) {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.room-chev {
+  font-size: 22px;
+  color: var(--text3, #8a98ad);
+  font-weight: 400;
+  line-height: 1;
+  flex-shrink: 0;
+}
+/* per-room soft card tints (recognition cue; system stays Jio-blue led) */
+.room-family {
+  background: linear-gradient(160deg, rgba(34, 197, 94, 0.09), rgba(34, 197, 94, 0.02));
+  border-color: rgba(34, 197, 94, 0.18);
+}
+.room-dawai {
+  background: linear-gradient(160deg, rgba(0, 102, 204, 0.08), rgba(0, 102, 204, 0.02));
+  border-color: rgba(0, 102, 204, 0.16);
+}
+.room-tanman {
+  background: linear-gradient(160deg, rgba(236, 72, 153, 0.08), rgba(236, 72, 153, 0.02));
+  border-color: rgba(236, 72, 153, 0.16);
+}
+
+.room-body {
+  padding: 0 16px 14px;
+}
+.room-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--border-soft, rgba(0, 40, 90, 0.07));
+}
+.room-row:first-child {
+  border-top: 0;
+}
+.room-row .room-row-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(0, 40, 90, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.room-row .room-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.room-row .room-row-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+}
+.room-row .room-row-sub {
+  font-size: 12.5px;
+  color: var(--text3, #6b7a90);
+  line-height: 1.35;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* — status pills (kept semantic, not blue) — */
+.room-pill {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.room-pill.ok {
+  background: rgba(34, 197, 94, 0.15);
+  color: #15803d;
+}
+.room-pill.warn {
+  background: rgba(245, 158, 11, 0.18);
+  color: #b45309;
+}
+.room-pill.alert {
+  background: rgba(239, 68, 68, 0.15);
+  color: #b91c1c;
+}
+
+/* — empty states — */
+.room-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 1.5px dashed rgba(0, 102, 204, 0.28);
+  background: rgba(0, 102, 204, 0.04);
+  color: var(--primary, #0066cc);
+  border-radius: 12px;
+  padding: 13px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.35;
+}
+.room-empty::before {
+  content: "＋";
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
+.room-empty:active {
+  background: rgba(0, 102, 204, 0.09);
+}
+
+/* — Tan-Man mood check-in (3 large tiles) — */
+.room-tanman .room-q {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 2px 0 12px;
+}
+.room-tanman .mood-chips-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.room-tanman .mood-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1.5px solid rgba(236, 72, 153, 0.16);
+  border-radius: 14px;
+  padding: 14px 6px;
+  font-family: inherit;
+  font-size: 26px; /* sizes the leading emoji glyph */
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    transform 0.08s,
+    border-color 0.15s,
+    background 0.15s;
+}
+.room-tanman .mood-chip > span {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.room-tanman .mood-chip:active {
+  transform: scale(0.96);
+}
+.room-tanman .mood-chip.sel {
+  background: rgba(0, 102, 204, 0.1);
+  border-color: var(--primary, #0066cc);
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.16);
+}
+
+/* — overflow: "और सुविधाएँ" — */
+.hub-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: calc(100% - 32px);
+  margin: 18px 16px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--text3, #6b7a90);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.hub-more::after {
+  content: "›";
+  font-size: 18px;
+  line-height: 1;
+}
+.hub-more:active {
+  background: rgba(0, 40, 90, 0.05);
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
@@ -8060,64 +8373,34 @@ body:not(.focus) .focus-home {
     </div>
   </div>
 
-  <div class="body">
-    <!-- v5.1: Aaj ki Sehat — Instagram-style daily stories rail (top of hub) -->
-    <!-- v8 (Jio redesign): stories rail removed; streak stays in header -->
-
-    <!-- v5.3: Focus Mode home — shown when body.focus is set (active healing path) -->
-    <div class="focus-home" id="focus-home"><!-- JS renders renderFocusHome() --></div>
-
-    <!-- v6.0/v6.1 warm landing — JS hydrates these on hub init -->
-    <div class="warm-hero" id="warm-hero"></div>
-    <div class="active-choice-card" id="active-choice-card"></div>
-    <div class="talk-card">
-      <div class="talk-card-row">
-        <input class="talk-card-input" id="hub-input" placeholder="Dadi se kuch bhi kahein…" onkeydown="hubKey(event)">
-        <button class="talk-card-mic" id="hub-speak" onclick="toggleVoice('hub')" aria-label="Dadi se awaaz mein baat karein">
-          <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
-            <path d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3z" fill="currentColor"/>
-            <path d="M19 11a7 7 0 01-14 0M12 18v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </div>
-      <div class="talk-card-chip-rail" id="talk-chip-rail"></div>
+  <div class="body hub-zones-canvas">
+  <div class="focus-home" id="focus-home"></div>
+  <div class="warm-hero" id="warm-hero"></div>
+  <div class="zone-label" data-i18n="hub_ask_label">hub_ask_label</div>
+  <div class="talk-card">
+    <div class="talk-card-row">
+      <input class="talk-card-input" id="hub-input" placeholder="Dadi se kuch bhi kahein…" onkeydown="hubKey(event)" />
+      <button class="talk-card-mic" id="hub-speak" onclick="toggleVoice('hub')" aria-label="Dadi se awaaz mein baat karein">
+        <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3z" fill="currentColor"/><path d="M19 11a7 7 0 01-14 0M12 18v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
     </div>
-    <div class="exit-section">
-      <div class="exit-section-lbl" data-i18n="hub_aaj_kya">Aaj kya karna hai?</div>
-      <div class="exit-grid">
-        <button class="exit-tile tile-nushka" onclick="goToFeature('nushke')" aria-label="Tabiyat poochho">
-          <div class="exit-tile-emoji">🌿</div>
-          <div class="exit-tile-title" data-i18n="exit_tabiyat_title">Tabiyat poochho</div>
-          <div class="exit-tile-sub" data-i18n="exit_tabiyat_sub">Sir dard, sardi, pet — Dadi se kahein</div>
-        </button>
-        <button class="exit-tile tile-wellness" onclick="goToFeature('wellness')" aria-label="Tan-Man ke saath">
-          <div class="exit-tile-emoji">🧘</div>
-          <div class="exit-tile-title" data-i18n="exit_tanman_title">Tan-Man ke saath</div>
-          <div class="exit-tile-sub" data-i18n="exit_tanman_sub">Saans, neend, energy — chhote skills</div>
-        </button>
-        <button class="exit-tile tile-family" onclick="startFeature('family')" aria-label="Family Care">
-          <div class="exit-tile-emoji">👨‍👩‍👧</div>
-          <div class="exit-tile-title" data-i18n="fc_tile_title">Family Care</div>
-          <div class="exit-tile-sub" data-i18n="fc_tile_sub">Apno ka khayal rakhein</div>
-        </button>
-        <button class="exit-tile tile-dawai" onclick="startFeature('rx')" aria-label="Dawai ka time">
-          <div class="exit-tile-emoji">💊</div>
-          <div class="exit-tile-title" data-i18n="exit_dawai_title">Dawai ka time</div>
-          <div class="exit-tile-sub" data-i18n="exit_dawai_sub">Parchi scan · reminder · ghar mangao</div>
-        </button>
-      </div>
-    </div>
-    <div class="safar-path" id="safar-path"></div>
-
-    <!-- v5.2: Sunita home — auto-shown when profile.age >= 40 OR profile.scope === 'household'.
-         Hidden on body.sunita removal; the dense grids below get `dense-only` so they hide when Sunita mode is on. -->
-    <div class="sunita-home">
-    </div>
-
-    <!-- v4.1: Wellness goals — proactive path for younger / general audience -->
-    <!-- v4: Symptom triage grid — for the unwell -->
-    <!-- v5.1: Mood pulse strip removed for de-cluttering — wellness goals + symptoms grid cover both intents -->
+    <div class="talk-card-chip-rail" id="talk-chip-rail"></div>
   </div>
+  <div class="zone-label" data-i18n="hub_companion_label">hub_companion_label</div>
+  <div id="companion-card"></div>
+  <div class="zone-label" data-i18n="hub_rooms_label">hub_rooms_label</div>
+  <div id="life-rooms"></div>
+  <button class="hub-more" data-i18n="hub_more" onclick="openToolsSheet()">hub_more</button>
+  <div class="safar-path" id="safar-path"></div>
+  <div class="sunita-home">
+    <div class="sun-lbl" data-i18n="exit_aur_kuch">Aur kuch?</div>
+    <div class="sun-grid">
+      <button class="sunita-tile" onclick="playStory('general')"><div class="sunita-tile-emoji">📖</div><div class="sunita-tile-name" data-i18n="exit_dadi_kahani_title">Dadi ki kahani</div><div class="sunita-tile-sub" data-i18n="exit_dadi_kahani_sub">2 min · roz nayi kahani</div></button>
+      <button class="sunita-tile danger" onclick="openDoctor('Aap')"><div class="sunita-tile-emoji">🩺</div><div class="sunita-tile-name" data-i18n="exit_doctor_title">Doctor se baat</div><div class="sunita-tile-sub" data-i18n="exit_doctor_sub">Call · Practo · 1mg</div></button>
+    </div>
+  </div>
+  <div style="height:24px"></div>
+</div>
 </div>
 
 <!-- ══════════════ TOOLS BOTTOM SHEET ══════════════ -->
@@ -8937,6 +9220,26 @@ const LANG = {
   ob_done_greeting: { hi: "बस हो गया! ✨", en: "Bas ho gaya! ✨" },
   ob_done_hint: { hi: "अब सेहत साथी आपको बेहतर समझेगा", en: "Ab Sehat Saathi aapko behtar samjhega" },
   ob_bmi_label: { hi: "आपका BMI:", en: "Aapka BMI:" },
+
+  // ── v6.8: HUB "Life Rooms" redesign ──
+  hub_ask_label: { hi: "क्या तकलीफ है?", en: "Kya takleef hai?" },
+  hub_companion_label: { hi: "साथी की बात", en: "Saathi ki baat" },
+  hub_nuskha_title: { hi: "आज का नुस्खा", en: "Aaj ka nuskha" },
+  hub_rooms_label: { hi: "घर की देखभाल", en: "Ghar ki dekhbhaal" },
+  room_dawai_title: { hi: "दवाई का समय", en: "Dawai ka samay" },
+  room_tanman_title: { hi: "तन-मन", en: "Tan-Man" },
+  room_tanman_q: { hi: "आज कैसा महसूस हो रहा है?", en: "Aaj kaisa mehsoos ho raha hai?" },
+  mood_good: { hi: "अच्छा", en: "Accha" },
+  mood_ok: { hi: "ठीक है", en: "Theek hai" },
+  mood_tired: { hi: "थका हुआ", en: "Thaka hua" },
+  room_family_empty: { hi: "परिवार जोड़ें — अपनों का ख्याल एक जगह", en: "Parivaar jodein — apno ka khayaal ek jagah" },
+  room_dawai_empty: { hi: "दवाई का रिमाइंडर लगाएँ", en: "Dawai ka reminder lagaayein" },
+  pill_remind: { hi: "याद दिलाएँ", en: "Yaad dilaayein" },
+  pill_ok: { hi: "ठीक है", en: "Theek hai" },
+  pill_pending: { hi: "बाकी है", en: "Baaki hai" },
+  pill_done: { hi: "हो गई", en: "Ho gayi" },
+  pill_saal: { hi: "साल", en: "saal" },
+  hub_more: { hi: "और सुविधाएँ", en: "Aur suvidhayein" },
 };
 function getLang() {
   try {
@@ -10732,11 +11035,14 @@ function initHubDynamic() {
   if (typeof renderHubStories === "function") renderHubStories();
   // v6.0: warm landing — time-aware greeting, Active Choice nudge, safar path
   renderWarmHero();
-  renderActiveChoice();
   renderSafarPath();
   // v6.1: voice-first talk-card — chip rail + rotating placeholder
   renderHubChipRail();
   startHubPlaceholderRotation();
+  // v9: Life Rooms zones canvas
+  renderCompanionCard();
+  renderLifeRooms();
+  renderHubMore();
   // mark last-visit so next session's recall logic knows when we were here
   try {
     localStorage.setItem("ss_last_visit", String(Date.now()));
@@ -11111,6 +11417,264 @@ function stopHubPlaceholderRotation() {
   }
 }
 window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
+
+// ── v9: Life Rooms — Zone 2 (Companion Moment) ──
+
+// Rotating daily wellness tips — gentle, seasonal, general. NOT medical claims.
+const NUSKHA_TIPS = [
+  "🌿 Subah ek glass garam paani mein adha nimbu — pachhan achha rehta hai aur energy bani rehti hai.",
+  "🍃 Raat ko sone se pehle ek cup haldi wala doodh — neend gehri aati hai aur thakaan kam hoti hai.",
+  "🌸 Din mein 5-10 minute dhoop lena — sehat aur mann dono ke liye faydemand hai.",
+  "🫚 Sarson ya til ka tel pair ke talhon par laga ke so jaao — neend shant aati hai.",
+];
+
+function renderCompanionCard() {
+  const el = document.getElementById("companion-card");
+  if (!el) return;
+
+  // Try renderActiveChoice() first — it writes to #active-choice-card.
+  // We replicate the same pick logic here to fill #companion-card.
+  const ac = (typeof pickActiveChoice === "function") ? pickActiveChoice() : null;
+
+  if (ac) {
+    // Reuse the active-choice output but target companion-card
+    el.dataset.kind = ac.kind;
+    el.innerHTML =
+      '<div class="ac-icon" aria-hidden="true">' + ac.icon +
+      '</div><div class="ac-body"><div class="ac-text">' + ac.text +
+      '</div><div class="ac-actions">' +
+      '<button class="ac-btn ac-btn-primary" onclick="handleActiveChoice(\'' + ac.primary.action + '\')">' + ac.primary.label + '</button>' +
+      '<button class="ac-btn ac-btn-secondary" onclick="handleActiveChoice(\'' + ac.secondary.action + '\')">' + ac.secondary.label + '</button>' +
+      '</div></div>';
+    return;
+  }
+
+  // Fallback: rotating daily nuskha card
+  const dayIdx = new Date().getDate() % NUSKHA_TIPS.length;
+  const tip = NUSKHA_TIPS[dayIdx];
+  el.dataset.kind = "nuskha";
+  el.innerHTML =
+    '<div class="nuskha-card">' +
+    '<div class="nuskha-card-title" data-i18n="hub_nuskha_title">' + t("hub_nuskha_title") + '</div>' +
+    '<div class="nuskha-card-body">' + tip + '</div>' +
+    '</div>';
+}
+window.renderCompanionCard = renderCompanionCard;
+
+// ── v9: Life Rooms — Zone 3 ──
+
+// Helper: pick avatar emoji by gender + age
+function _memberAvatar(m) {
+  const age = parseInt(m.age, 10) || 0;
+  const g = (m.gender || "").toLowerCase();
+  if (age > 0 && age < 15) return g === "female" ? "👧" : "🧒";
+  if (g === "female") return "👵";
+  if (g === "male") return "👴";
+  return "🧑";
+}
+
+// Helper: format a reminder's next occurrence as a short string
+function _reminderShortLabel(rem) {
+  if (!rem) return "";
+  let who = rem.who || rem.member || "";
+  if (who.indexOf("fam_") === 0) who = who.slice(4);
+  const time = rem.time || "";
+  return rem.name + (time ? " — " + time : "") + (who ? " (" + who + ")" : "");
+}
+
+// Room a: Parivaar
+function _renderRoomFamily() {
+  const fam = (typeof loadFamily === "function") ? loadFamily() : [];
+  const wellbeing = (function () {
+    try { return JSON.parse(localStorage.getItem("ss_family_wellbeing") || "{}"); }
+    catch (e) { return {}; }
+  })();
+
+  let bodyHtml = "";
+  if (!fam || fam.length === 0) {
+    bodyHtml =
+      '<button class="room-empty" onclick="startFeature(\'family\')" data-i18n="room_family_empty">' +
+      t("room_family_empty") +
+      '</button>';
+  } else {
+    const members = fam.slice(0, 2);
+    bodyHtml = members.map(function (m) {
+      const memberKey = "fam_" + m.name;
+      const avatar = _memberAvatar(m);
+      const ageStr = m.age ? " (" + m.age + " " + t("pill_saal") + ")" : "";
+
+      // Next reminder for this member
+      let subLine = "";
+      let pillClass = "room-pill ok";
+      let pillLabel = t("pill_ok");
+      try {
+        const memRems = (typeof window.remindersForMember === "function")
+          ? (window.remindersForMember(memberKey, m.name) || [])
+          : [];
+        if (memRems.length > 0) {
+          subLine = memRems[0].name + (memRems[0].time ? " — " + memRems[0].time : "");
+          pillClass = "room-pill warn";
+          pillLabel = t("pill_remind");
+        } else {
+          // Check wellbeing
+          const wb = wellbeing[memberKey];
+          if (wb && wb.status) {
+            if (wb.status === "ok") {
+              subLine = t("pill_ok");
+              pillClass = "room-pill ok";
+              pillLabel = t("pill_ok");
+            } else if (wb.status === "warn" || wb.status === "bad") {
+              pillClass = "room-pill warn";
+              pillLabel = t("pill_remind");
+            }
+          }
+        }
+      } catch (e) {}
+
+      return '<div class="room-row">' +
+        '<span class="room-row-avatar" aria-hidden="true">' + avatar + '</span>' +
+        '<div class="room-row-text">' +
+        '<span class="room-row-name">' + m.name + ageStr + '</span>' +
+        (subLine ? '<span class="room-row-sub">' + subLine + '</span>' : '') +
+        '</div>' +
+        '<span class="' + pillClass + '">' + pillLabel + '</span>' +
+        '</div>';
+    }).join("");
+  }
+
+  return '<div class="room-card room-family" id="room-family">' +
+    '<button class="room-hdr" onclick="startFeature(\'family\')">' +
+    '👨‍👩‍👧 <span data-i18n="fc_tile_title">' + t("fc_tile_title") + '</span>' +
+    '<span class="room-chev">›</span>' +
+    '</button>' +
+    '<div class="room-body">' + bodyHtml + '</div>' +
+    '</div>';
+}
+
+// Room b: Dawai
+function _renderRoomDawai() {
+  const allRems = (typeof loadReminders === "function") ? loadReminders() : [];
+
+  // Sort by time string HH:MM
+  const sorted = allRems.slice().sort(function (a, b) {
+    return (a.time || "").localeCompare(b.time || "");
+  });
+  const upcoming = sorted.slice(0, 2);
+
+  let bodyHtml = "";
+  if (!upcoming || upcoming.length === 0) {
+    bodyHtml =
+      '<button class="room-empty" onclick="startFeature(\'rx\')" data-i18n="room_dawai_empty">' +
+      t("room_dawai_empty") +
+      '</button>';
+  } else {
+    const today = new Date().toDateString();
+    bodyHtml = upcoming.map(function (rem) {
+      const doneKey = "rem_done_" + rem.id + "_" + today;
+      const isDone = !!localStorage.getItem(doneKey);
+      let who = rem.who || rem.member || "";
+      if (who.indexOf("fam_") === 0) who = who.slice(4);
+      const subLine = (rem.time || "") + (who ? " — " + who : "");
+      const pillClass = isDone ? "room-pill ok" : "room-pill warn";
+      const pillLabel = isDone ? t("pill_done") : t("pill_pending");
+
+      return '<div class="room-row">' +
+        '<span class="room-row-avatar" aria-hidden="true">💊</span>' +
+        '<div class="room-row-text">' +
+        '<span class="room-row-name">' + (rem.name || t("pill_pending")) + '</span>' +
+        (subLine ? '<span class="room-row-sub">' + subLine + '</span>' : '') +
+        '</div>' +
+        '<span class="' + pillClass + '">' + pillLabel + '</span>' +
+        '</div>';
+    }).join("");
+  }
+
+  return '<div class="room-card room-dawai" id="room-dawai">' +
+    '<button class="room-hdr" onclick="startFeature(\'rx\')">' +
+    '💊 <span data-i18n="room_dawai_title">' + t("room_dawai_title") + '</span>' +
+    '<span class="room-chev">›</span>' +
+    '</button>' +
+    '<div class="room-body">' + bodyHtml + '</div>' +
+    '</div>';
+}
+
+// Room c: Tan-Man (mood check-in)
+function _renderRoomTanman() {
+  const today = new Date().toISOString().slice(0, 10);
+  let savedMood = null;
+  try {
+    const raw = localStorage.getItem("ss_self_mood");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.date === today) savedMood = parsed.mood;
+    }
+  } catch (e) {}
+
+  const moods = [
+    { id: "good",  emoji: "😊", key: "mood_good"  },
+    { id: "ok",    emoji: "😐", key: "mood_ok"    },
+    { id: "tired", emoji: "😔", key: "mood_tired" },
+  ];
+
+  const chips = moods.map(function (m) {
+    const sel = savedMood === m.id ? " sel" : "";
+    return '<button class="mood-chip' + sel + '" onclick="tapMoodChip(\'' + m.id + '\')" data-mood="' + m.id + '">' +
+      m.emoji + ' <span data-i18n="' + m.key + '">' + t(m.key) + '</span>' +
+      '</button>';
+  }).join("");
+
+  const bodyHtml =
+    '<div class="room-q" data-i18n="room_tanman_q">' + t("room_tanman_q") + '</div>' +
+    '<div class="mood-chips-row">' + chips + '</div>';
+
+  return '<div class="room-card room-tanman" id="room-tanman">' +
+    '<button class="room-hdr" onclick="startFeature(\'wellness\')">' +
+    '🧘 <span data-i18n="room_tanman_title">' + t("room_tanman_title") + '</span>' +
+    '<span class="room-chev">›</span>' +
+    '</button>' +
+    '<div class="room-body">' + bodyHtml + '</div>' +
+    '</div>';
+}
+
+function renderLifeRooms() {
+  const el = document.getElementById("life-rooms");
+  if (!el) return;
+  el.innerHTML =
+    _renderRoomFamily() +
+    _renderRoomDawai() +
+    _renderRoomTanman();
+}
+window.renderLifeRooms = renderLifeRooms;
+
+// Mood chip tap: write to localStorage, highlight chip, refresh tan-man room
+function tapMoodChip(moodId) {
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    localStorage.setItem("ss_self_mood", JSON.stringify({
+      mood: moodId,
+      date: today,
+      ts: Date.now(),
+    }));
+  } catch (e) {}
+  // Re-render just the tan-man room so chips update in place
+  const tanman = document.getElementById("room-tanman");
+  if (tanman) {
+    tanman.outerHTML = _renderRoomTanman();
+  }
+  if (typeof bumpScore === "function") bumpScore(2);
+  if (typeof applyLanguage === "function") {
+    try { applyLanguage(); } catch (e) {}
+  }
+}
+window.tapMoodChip = tapMoodChip;
+
+// ── v9: Hub More button text hydration ──
+function renderHubMore() {
+  const btn = document.querySelector(".hub-more");
+  if (!btn) return;
+  btn.setAttribute("data-i18n", "hub_more");
+  btn.textContent = t("hub_more");
+}
   function renderSafarPath() {
     const el = document.getElementById("safar-path");
     if (!el) return;
