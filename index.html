@@ -22500,12 +22500,21 @@ const BREATH_PHASES = [
   //
   // nuskha/kadam callers: `await speak(text, opts)` is safe to use between
   // walkthrough steps — the next step will not start until TTS is fully done.
-  // v7.3: Detect whether the text should be spoken with Indian-English TTS.
-  // Returns true when the content is English / Hinglish-Latin (no Devanagari,
-  // no Bengali script) AND the session language is en-IN, OR when the text
-  // contains no Indic codepoints AND no Hinglish markers (i.e. pure English).
+  // v7.5: Detect whether the text is GENUINELY English (not Hinglish/romanized Hindi).
+  // IMPORTANT DOMAIN RULE: In this Hindi health app, ST.currentLanguage="en" means
+  // Hinglish (Hindi written in Roman/Latin letters), NOT real English. There is no
+  // genuine "speak English" use case. We must NEVER route romanized Hindi to Sarvam
+  // en-IN just because currentLanguage happens to be "en".
+  //
+  // Returns true ONLY when the text is pure English with:
+  //   - No Devanagari script (already Hindi → ElevenLabs hi path)
+  //   - No Bengali/other Indic script (their own paths)
+  //   - No Hinglish/Hindi markers in Roman/Latin form
+  //   - AND currentLanguage is NOT "en"/"en-IN" (which means Hinglish in this app)
+  //
   // Bengali (bn/bn-IN) is explicitly excluded — it stays on ElevenLabs WiaI.
   // Hindi Devanagari is explicitly excluded — it stays on ElevenLabs yM93.
+  // Romanized Hindi (Hinglish) always returns false → transliterate → Hindi voice.
   function _isEnglishContent(text) {
     if (!text) return false;
     // If the text contains Devanagari → Hindi path, not English.
@@ -22519,14 +22528,16 @@ const BREATH_PHASES = [
     if (/[ഀ-ൿ]/.test(text)) return false; // Malayalam
     if (/[઀-૿]/.test(text)) return false; // Gujarati
     if (/[਀-੿]/.test(text)) return false; // Punjabi
-    // Session language is en-IN (set by Sarvam STT auto-detect when user
-    // spoke English) → treat as English regardless of Hinglish words present.
+    // CRITICAL: "en"/"en-IN" in this app means HINGLISH (romanized Hindi), NOT real
+    // English. Never route to Sarvam en-IN on this signal alone. Romanized Hindi
+    // must go through transliterateToDevanagari → Hindi voice (ElevenLabs/Sarvam hi-IN).
     const lang = (ST && ST.currentLanguage) || "";
-    if (/^en(-IN)?$/i.test(lang)) return true;
-    // Text is Roman/Latin. Check whether it has Hinglish markers — if it has
-    // none, it's pure English. If it has Hinglish markers, it's Hinglish-Latin
-    // (mixed) — also route to Indian English for better accent than US.
-    // Either way return true: Sarvam en-IN handles both well.
+    if (/^en(-IN)?$/i.test(lang)) return false;
+    // Text is Latin/Roman and session language is NOT "en". Check for Hinglish
+    // markers — if any are present, this is romanized Hindi/Hinglish, not English.
+    const hasHinglish = /\b(beta|beti|hai|nahi|kya|mein|aap|tum|hum|pet|sir|sehat|ghar|nushka|takleef|dard|paani|pani|chai|doodh|namaste|saans|neend|bukhar|khaaya|piya|kiya|raha|rahi|rahe|aaj|kal|subah|sham|raat|dopahar|theek|achha|achhi|acche|haldi|adrak|ajwain|tulsi|jeera|kemon|achen|bhalo|kothay|tomar|amar|kintu|aapni|aapnar|tumi|kothai|tomader|baba|maa|dada|didi|ekhon|kichhu|kichu|kothao|lo|piyo|karo|koro|bolein|lijiye|dekhein|chalein|sunein|batao|puchho|khao|soye|jao|uthao|ghuma|failao|rokho|nikalo|kheencho|chhod|band|shuru|ghumao|lagao|rakhein|dabao|karein|milaye|ubaaley|pee|ubalein|chaan|chhan|chalne|milao|ghol|gholo|milaao|pilaao|ubaalo|khaali|khali|garam|thanda|ek|do|teen|char|paanch|chhe|saat|aath|nau|das|patile|ubalo|dalein|pakao|bhunein|bharein)\b/i.test(text);
+    if (hasHinglish) return false;
+    // No Indic codepoints, no Hinglish markers, session is NOT "en" → plausibly pure English.
     return true;
   }
 
@@ -22643,10 +22654,17 @@ const BREATH_PHASES = [
       const callerTtsTextEarly = opts && opts.ttsText;
       if (!callerTtsTextEarly) {
         const detEarly = detectLang(text);
+        // v7.5: "en"/"en-IN" in ST.currentLanguage means HINGLISH in this app —
+        // treat it as "hi-IN" for transliteration so romanized Hindi gets converted
+        // to Devanagari before being passed to the Hindi voice. Without this, the
+        // SARVAM_LANG_MAP lookup returns "en-IN" for lang="en", which blocks the
+        // transliteration step below and leaves romanized Hindi un-transliterated.
+        const _rawLang = (ST && ST.currentLanguage) || "hi-IN";
+        const _sessionLang = /^en(-IN)?$/i.test(_rawLang) ? "hi-IN" : _rawLang;
         const tgtEarly =
           detEarly.script !== "roman"
             ? SARVAM_LANG_MAP[detEarly.code] || "hi-IN"
-            : SARVAM_LANG_MAP[ST.currentLanguage] || "hi-IN";
+            : SARVAM_LANG_MAP[_sessionLang] || "hi-IN";
         // v6.7.11: Bengali stays Roman end-to-end. Sarvam transliterate to
         // Bengali script was producing noisy output that the bilingual voice
         // (FDQcYNtvPtQjNlTyU3du) misread. The voice handles Roman Bengali
@@ -22666,35 +22684,32 @@ const BREATH_PHASES = [
     } catch (e) {
       console.warn("[speak] pre-translit failed, using raw text", e);
     }
-    // v7.3: ENGLISH / HINGLISH-LATIN INTERCEPT — route to Sarvam Bulbul
-    // en-IN (Indian-accented) BEFORE trying ElevenLabs (US-accented for English).
-    // Applies only when the text has no Devanagari and no Bengali script, i.e.
-    // the content is Roman/Latin (English or Hinglish-Latin).
-    // Hindi (Devanagari after pre-translit above) and Bengali (WiaI ElevenLabs
-    // path) are NOT intercepted — they continue to their existing engines.
-    // prepText may already be Devanagari after the transliteration block above
-    // if this is Hinglish → Hindi — in that case _isEnglishContent(prepText)
-    // returns false (Devanagari guard hits) and we fall through to ElevenLabs
-    // as before. We test the ORIGINAL text so the intercept decision is made on
-    // the raw input, not the already-transliterated form.
-    const callerTtsTextForEnCheck = opts && opts.ttsText;
-    const textForEnCheck = callerTtsTextForEnCheck || text;
-    if (_isEnglishContent(textForEnCheck)) {
-      // Use the pre-transliterated text for English TTS too — if it ended up as
-      // Devanagari (Hinglish that got transliterated to Hindi), _isEnglishContent
-      // above would have returned false already, so prepText here is still Roman.
+    // v7.5: ENGLISH INTERCEPT — route genuinely English text to Sarvam Bulbul en-IN.
+    // CRITICAL: evaluate prepText (after transliteration), NOT the raw input.
+    // Reason: romanized Hindi (e.g. "Patile mein 2 cup paani ubalo.") is transliterated
+    // to Devanagari above. _isEnglishContent(prepText) then returns false (Devanagari
+    // guard hits) and we correctly skip the en-IN path entirely.
+    // If transliteration failed/returned raw Roman text AND _isEnglishContent is still
+    // false (Hinglish markers or currentLanguage="en"), we also skip en-IN correctly.
+    // Only genuinely English text (no Hinglish markers, non-"en" session) reaches here.
+    if (_isEnglishContent(prepText)) {
+      console.info("[TTS] pure-English→Sarvam en-IN chars=" + prepText.length);
       if (await speakSarvamEnglish(prepText)) return;
       // Sarvam English failed — fall through to ElevenLabs as backup.
       console.info("[speak] Sarvam en-IN failed, falling back to ElevenLabs");
+    } else if (/[ऀ-ॿ]/.test(prepText)) {
+      // Devanagari (transliterated from romanized Hindi, or originally Devanagari)
+      // → will fall through to ElevenLabs Hindi voice below.
+      console.info("[TTS] romanized→Devanagari→hi-IN chars=" + prepText.length);
     }
     // v7.4: TAMIL / TELUGU / KANNADA INTERCEPT — route to Sarvam Bulbul vidya
     // BEFORE ElevenLabs. ElevenLabs' yM93 multilingual voice handles Tamil
     // adequately but produces a noticeably off accent for Kannada/Telugu.
     // Sarvam Bulbul confirms clean audio for ta-IN / te-IN / kn-IN.
     // We inspect prepText (may already contain native script after pre-translit)
-    // AND the original textForEnCheck (raw input) — whichever has Dravidian
-    // codepoints wins.
-    const _dScript = _dominantDravidianScript(prepText) || _dominantDravidianScript(textForEnCheck);
+    // AND the raw input — whichever has Dravidian codepoints wins.
+    const _rawInputForDravidian = (opts && opts.ttsText) || text;
+    const _dScript = _dominantDravidianScript(prepText) || _dominantDravidianScript(_rawInputForDravidian);
     if (_dScript) {
       const _dLang = _dScript === "ta" ? "ta-IN" : _dScript === "te" ? "te-IN" : "kn-IN";
       console.info("[speak] Dravidian script=" + _dScript + " → Sarvam " + _dLang);
@@ -22727,11 +22742,14 @@ const BREATH_PHASES = [
       // v6.7.6: detect/route for Sarvam fallback. Reuse `prepText` from the
       // top — it was already transliterated for any Indic target above, so
       // we don't double-pay the round-trip here.
+      // v7.5: same Hinglish fix — "en"/"en-IN" session means Hindi, not English.
       const detected = detectLang(text);
+      const _fbRawLang = (ST && ST.currentLanguage) || "hi-IN";
+      const _fbSessionLang = /^en(-IN)?$/i.test(_fbRawLang) ? "hi-IN" : _fbRawLang;
       const targetLangCode =
         detected.script !== "roman"
           ? SARVAM_LANG_MAP[detected.code] || "hi-IN"
-          : SARVAM_LANG_MAP[ST.currentLanguage] || "hi-IN";
+          : SARVAM_LANG_MAP[_fbSessionLang] || "hi-IN";
       let speakText = callerTtsText || prepText || text;
       // Safety net: if pre-translit didn't fire (e.g. detectLang differed)
       // AND we're still on Roman + Indic target, attempt one more pass here.
