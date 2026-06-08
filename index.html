@@ -9548,6 +9548,8 @@ const APP_VERSION = "v6.6";
     communityPeer: null,
     // v3: language detected from latest user message / OpenAI LANG: prefix
     currentLanguage: "hi-IN",
+    // v6.9: set by Tan-Man mood chip before startFeature('wellness') — cleared after use
+    moodSeed: null, // 'good' | 'ok' | 'tired' | null
   };
 
   const PERSONAS = {
@@ -11677,7 +11679,9 @@ function renderLifeRooms() {
 }
 window.renderLifeRooms = renderLifeRooms;
 
-// Mood chip tap: write to localStorage, highlight chip, refresh tan-man room
+// Mood chip tap: write to localStorage, seed wellness chat context, navigate.
+// The chip will appear highlighted the next time the user returns to the hub
+// because _renderRoomTanman() reads ss_self_mood on every render.
 function tapMoodChip(moodId) {
   const today = new Date().toISOString().slice(0, 10);
   try {
@@ -11687,15 +11691,12 @@ function tapMoodChip(moodId) {
       ts: Date.now(),
     }));
   } catch (e) {}
-  // Re-render just the tan-man room so chips update in place
-  const tanman = document.getElementById("room-tanman");
-  if (tanman) {
-    tanman.outerHTML = _renderRoomTanman();
-  }
   if (typeof bumpScore === "function") bumpScore(2);
-  if (typeof applyLanguage === "function") {
-    try { applyLanguage(); } catch (e) {}
-  }
+  // Seed the wellness chat so Saathi can open with a mood-aware response.
+  // ST is the global state object shared across all partials.
+  ST.moodSeed = moodId;
+  // Navigate into the wellness chat.
+  startFeature("wellness");
 }
 window.tapMoodChip = tapMoodChip;
 
@@ -16337,6 +16338,42 @@ function renderWellnessStart() {
   if (!msgs) return;
   msgs.innerHTML = "";
   ST.chatHistory = [];
+
+  // v6.9: mood-aware opener — if the hub's Tan-Man room seeded a mood, open
+  // with a warm empathetic message tailored to that mood, then clear the seed
+  // so normal wellness entry is unaffected on the next visit.
+  if (ST.moodSeed) {
+    const seed = ST.moodSeed;
+    ST.moodSeed = null; // consume immediately — one-shot
+
+    const MOOD_OPENERS = {
+      good: {
+        hi: "सुनकर अच्छा लगा! 😊 आज क्या अच्छा चल रहा है? थोड़ा बताओ।",
+        en: "Sun kar accha laga! 😊 Aaj kya accha chal raha hai? Thoda batao.",
+      },
+      ok: {
+        hi: "ठीक-ठाक दिन है। कुछ ऐसा जो मन पर है? बताओ, मैं सुन रही हूँ।",
+        en: "Theek-thaak din hai. Kuch aisa jo mann par hai? Batao, main sun rahi hoon.",
+      },
+      tired: {
+        hi: "थकान हो रही है ना… 💙 क्या चल रहा है — काम, नींद, या कुछ और? बताओ।",
+        en: "Thakaan ho rahi hai na… 💙 Kya chal raha hai — kaam, neend, ya kuch aur? Batao.",
+      },
+    };
+
+    const openerSet = MOOD_OPENERS[seed] || MOOD_OPENERS.ok;
+    const lang = typeof getLang === "function" ? getLang() : "hi";
+    const intro = lang === "hi" ? openerSet.hi : openerSet.en;
+    // TTS always uses Devanagari natural Hindi
+    const ttsText = openerSet.hi;
+
+    addMsg("bot", intro, false);
+    speak(intro, { ttsText });
+    // No quick-reply chips for the mood opener — the reply box is the prompt
+    return;
+  }
+
+  // Default (non-seeded) wellness opener — unchanged
   const intro =
     "Namaste 🙏 Khaana, neend, thakaan, mann ki baat — jo bhi ho, Sehat Saathi ko batayein. Ghar ki baat karenge. Aaj kya feel ho raha hai?";
   addMsg("bot", intro, false);
