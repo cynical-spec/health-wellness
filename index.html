@@ -8487,6 +8487,11 @@ body:not(.focus) .focus-home {
   color: var(--text3, #8a98ad);
   font-weight: 600;
 }
+
+/* v12 — language picker option: native name over English name */
+.ob-lang-opt { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.ob-lang-native { font-size: 18px; font-weight: 800; color: var(--text, #0a1628); line-height: 1.1; }
+.ob-lang-en { font-size: 12px; font-weight: 600; color: var(--text3, #8a98ad); }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
@@ -9084,12 +9089,126 @@ if (!window.__SS_LOADED__) {
   // the hi nor en column references AYUSH/Ayurvedic/CCRAS/Ministry. The
   // system prompts + knowledge base still reference them internally (Dadi
   // needs to know where her remedies come from) — that's invisible to users.
+// ── 6-language system ─────────────────────────────────────────────────────────
+// Valid codes: en | hi | bn | ta | te | kn
+// t(key) fallback chain: selectedLang → en → hi → key-itself
+// LANG entries can have any subset of {hi, en, bn, ta, te, kn}.
+// Missing columns are handled by the fallback chain — bn/ta/te/kn strings
+// that are not yet translated will silently surface the English value.
+// ──────────────────────────────────────────────────────────────────────────────
+
+// ── Language picker options (ordered: en, hi, bn, ta, te, kn) ─────────────────
+const LANG_OPTIONS = [
+  { code: "en", nativeName: "English",   enName: "English"  },
+  { code: "hi", nativeName: "हिन्दी",    enName: "Hindi"    },
+  { code: "bn", nativeName: "বাংলা",     enName: "Bengali"  },
+  { code: "ta", nativeName: "தமிழ்",     enName: "Tamil"    },
+  { code: "te", nativeName: "తెలుగు",    enName: "Telugu"   },
+  { code: "kn", nativeName: "ಕನ್ನಡ",    enName: "Kannada"  },
+];
+const VALID_LANG_CODES = new Set(["en", "hi", "bn", "ta", "te", "kn"]);
+
+// ── ~10 high-value keys translated into all 6 natively ────────────────────────
+// These power the picker UI, onboarding essentials, hub greeting, and mood chips.
+// All other keys retain their existing {hi, en} shape and fall back gracefully.
+
+const LANG_NATIVE = {
+  // Language picker prompt
+  lang_pick_prompt: {
+    en: "Choose your language",
+    hi: "अपनी भाषा चुनें",
+    bn: "আপনার ভাষা বেছে নিন",
+    ta: "உங்கள் மொழியை தேர்ந்தெடுக்கவும்",
+    te: "మీ భాషను ఎంచుకోండి",
+    kn: "ನಿಮ್ಮ ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ",
+  },
+  // Hub greeting word
+  warm_namaste: {
+    en: "Hello",
+    hi: "नमस्ते",
+    bn: "নমস্কার",
+    ta: "வணக்கம்",
+    te: "నమస్కారం",
+    kn: "ನಮಸ್ಕಾರ",
+  },
+  // "What is your complaint / what's bothering you?"
+  hub_ask_label: {
+    en: "What's bothering you?",
+    hi: "क्या तकलीफ है?",
+    bn: "কোথায় কষ্ট হচ্ছে?",
+    ta: "என்ன கஷ்டம் இருக்கிறது?",
+    te: "ఏమి ఇబ్బంది ఉంది?",
+    kn: "ಏನು ತೊಂದರೆ ಇದೆ?",
+  },
+  // Onboarding: age field label
+  ob_q_age: {
+    en: "Your age?",
+    hi: "आपकी उम्र?",
+    bn: "আপনার বয়স?",
+    ta: "உங்கள் வயது?",
+    te: "మీ వయసు?",
+    kn: "ನಿಮ್ಮ ವಯಸ್ಸು?",
+  },
+  // Onboarding: sex/gender field label
+  ob_q_sex: {
+    en: "Gender?",
+    hi: "लिंग?",
+    bn: "লিঙ্গ?",
+    ta: "பாலினம்?",
+    te: "లింగం?",
+    kn: "ಲಿಂಗ?",
+  },
+  // Onboarding: sex options
+  ob_sex_male: {
+    en: "Male",
+    hi: "पुरुष",
+    bn: "পুরুষ",
+    ta: "ஆண்",
+    te: "పురుషుడు",
+    kn: "ಪುರುಷ",
+  },
+  ob_sex_female: {
+    en: "Female",
+    hi: "स्त्री",
+    bn: "মহিলা",
+    ta: "பெண்",
+    te: "స్త్రీ",
+    kn: "ಮಹಿಳೆ",
+  },
+  // Mood chips (Tan-Man room)
+  mood_good: {
+    en: "Good",
+    hi: "अच्छा",
+    bn: "ভালো",
+    ta: "நல்லது",
+    te: "బాగుంది",
+    kn: "ಒಳ್ಳೆಯದು",
+  },
+  mood_ok: {
+    en: "Okay",
+    hi: "ठीक है",
+    bn: "ঠিক আছে",
+    ta: "சரி",
+    te: "సరే",
+    kn: "ಸರಿ",
+  },
+  mood_tired: {
+    en: "Tired",
+    hi: "थका हुआ",
+    bn: "ক্লান্ত",
+    ta: "சோர்வாக",
+    te: "అలసిపోయాను",
+    kn: "ದಣಿದಿರುವೆ",
+  },
+};
+
 const LANG = {
   // ── Home (s-home) ──
   home_assistants: { hi: "आपके साथी", en: "Aapke Saathi" },
   home_quick_actions: { hi: "तुरंत काम", en: "Turant Kaam" },
   home_updates: { hi: "नया क्या है", en: "Naya Kya hai" },
   // ── Hub (s-hub) ──
+  // hub_ask_label is in LANG_NATIVE (all 6) — override here merges with fallback
   hub_aap_ki_aadat: { hi: "आज की आदत", en: "Aaj ki aadat" }, // was "AYUSH aadat" — cleaned
   hub_meri_sehat: { hi: "मेरी सेहत", en: "Meri Sehat" },
   hub_saans: { hi: "साँस करें", en: "Saans karein" },
@@ -9534,28 +9653,70 @@ const LANG = {
     en: "Lagaataar {N} din — badhiya! 🌿",
   },
 };
-function getLang() {
+// ── Language state ────────────────────────────────────────────────────────────
+// currentLanguage is the in-memory cache; localStorage ss_lang persists it.
+// Valid codes: en | hi | bn | ta | te | kn   (default: hi)
+let _currentLang = (function () {
   try {
     const v = localStorage.getItem("ss_lang");
-    return v === "en" ? "en" : "hi"; // default: Devanagari
+    return VALID_LANG_CODES.has(v) ? v : "hi";
   } catch (_) {
     return "hi";
   }
+})();
+
+function getLang() {
+  return _currentLang;
 }
-function setLang(v) {
+
+// setLang(code) — accepts any of the 6 codes; ignores unknown values.
+// Persists to ss_lang, updates in-memory state, re-renders [data-i18n] nodes.
+function setLang(code) {
+  if (!VALID_LANG_CODES.has(code)) return;
+  _currentLang = code;
   try {
-    localStorage.setItem("ss_lang", v === "en" ? "en" : "hi");
+    localStorage.setItem("ss_lang", code);
+  } catch (_) {}
+  applyLanguage();
+  // Re-render dynamic hub surfaces that bake t() at render time
+  try {
+    const hubActive = document.querySelector("#s-hub.active");
+    if (hubActive && typeof initHubDynamic === "function") {
+      initHubDynamic();
+    }
+  } catch (_) {}
+  try {
+    trackEvent("lang_set", { to: code });
   } catch (_) {}
 }
+
+// ── t(key) — translate with fallback chain ────────────────────────────────────
+// Priority: LANG_NATIVE[key][lang] → LANG[key][lang] → en → hi → key itself.
+// This ensures bn/ta/te/kn keys that aren't yet translated always surface
+// something readable (English or Hindi) rather than a raw key string.
 function t(key) {
+  const lang = _currentLang;
+  // 1. Check LANG_NATIVE first (full 6-column entries take precedence)
+  const native = LANG_NATIVE[key];
+  if (native) {
+    if (native[lang])           return native[lang];
+    if (lang !== "en" && native.en) return native.en;
+    if (lang !== "hi" && native.hi) return native.hi;
+    // If native entry exists but has no usable column, fall through to LANG
+  }
+  // 2. Check LANG (existing hi/en pairs)
   const e = LANG[key];
-  if (!e) return key; // fail-loud: missing key returns the key itself
-  return e[getLang()] || e.hi || key;
+  if (!e) return key; // key not found anywhere — return key itself (fail-loud)
+  if (e[lang])                    return e[lang];
+  if (lang !== "en" && e.en)      return e.en;
+  if (lang !== "hi" && e.hi)      return e.hi;
+  return key;
 }
-// Walk all [data-i18n="..."] nodes and rewrite their innerHTML. Idempotent —
-// safe to call again after toggle. Uses innerHTML so strings can carry <em>
-// / <br> for emphasis (sanitized at LANG-definition time; we trust our own
-// strings).
+
+// ── applyLanguage() ───────────────────────────────────────────────────────────
+// Walk every [data-i18n] node and rewrite its content using t().
+// Idempotent — safe to call after any language change.
+// Uses innerHTML so strings can carry <em>/<br> tags.
 function applyLanguage() {
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const k = el.getAttribute("data-i18n");
@@ -9573,53 +9734,59 @@ function applyLanguage() {
     el.setAttribute("aria-label", v);
     if (el.hasAttribute("title")) el.setAttribute("title", v);
   });
-  // Tag <html lang> so screen readers + the OS get the hint right
-  document.documentElement.setAttribute("lang", getLang() === "hi" ? "hi" : "hi-Latn");
+  // Set <html lang> so screen readers and the OS know the active script
+  const htmlLangMap = {
+    en: "en",
+    hi: "hi",
+    bn: "bn",
+    ta: "ta",
+    te: "te",
+    kn: "kn",
+  };
+  document.documentElement.setAttribute("lang", htmlLangMap[lang] || "hi");
 }
+
+// ── toggleLang() ──────────────────────────────────────────────────────────────
+// Backward-compatible 2-way toggle (hi ↔ en) for the existing toggle button.
+// New code should call setLang(code) via the picker instead.
 function toggleLang() {
-  setLang(getLang() === "hi" ? "en" : "hi");
-  applyLanguage();
+  const next = _currentLang === "hi" ? "en" : "hi";
+  setLang(next); // setLang calls applyLanguage() internally
   // Update the toggle button's own label
   const btn = document.getElementById("ss-lang-toggle");
   if (btn) {
-    btn.textContent = getLang() === "hi" ? "A" : "अ";
+    btn.textContent = _currentLang === "hi" ? "A" : "अ";
     btn.setAttribute(
       "aria-label",
-      t(getLang() === "hi" ? "lang_toggle_aria_to_en" : "lang_toggle_aria_to_hi"),
+      t(_currentLang === "hi" ? "lang_toggle_aria_to_en" : "lang_toggle_aria_to_hi"),
     );
   }
-  // v6.7.2: dynamic renderers bake t() into innerHTML at render time, so
-  // applyLanguage() alone won't flip them. Re-call the active screen's
-  // renderers so inline-t() text refreshes too.
-  try {
-    const hubActive = document.querySelector("#s-hub.active");
-    if (hubActive && typeof initHubDynamic === "function") {
-      initHubDynamic();
-    }
-  } catch (e) {}
-  try {
-    trackEvent("lang_toggle", { to: getLang() });
-  } catch (_) {}
 }
 // ── Localised-name helpers (used by dynamic renderers for data objects
 //    that carry both a Roman title and a Devanagari titleHi field) ──
 // locName(obj)  — returns obj.titleHi in hi mode, obj.title otherwise.
+//                 For non-hi Indic languages that also use Devanagari sources,
+//                 we still surface titleHi (best available); native script
+//                 equivalents are a future progressive enhancement.
 // locStr(roman, deva) — picks the right string for the current lang.
 // Both are defensive: null / undefined input returns "".
 function locName(obj) {
   if (!obj) return "";
-  return getLang() === "hi" && obj.titleHi ? obj.titleHi : obj.title || "";
+  return _currentLang === "hi" && obj.titleHi ? obj.titleHi : obj.title || "";
 }
 function locStr(roman, deva) {
-  return getLang() === "hi" && deva ? deva : roman;
+  return _currentLang === "hi" && deva ? deva : roman;
 }
 
 // Expose for JSX/HTML callers
 window.t = t;
 window.LANG = LANG;
+window.LANG_NATIVE = LANG_NATIVE;
+window.LANG_OPTIONS = LANG_OPTIONS;
 window.applyLanguage = applyLanguage;
 window.toggleLang = toggleLang;
 window.getLang = getLang;
+window.setLang = setLang;
 window.locName = locName;
 window.locStr = locStr;
 
@@ -10285,19 +10452,25 @@ NO RE-INTRODUCTION — STRICT:
 - NEVER re-introduce or re-greet on later turns — no "main Sehat Saathi hoon", no repeated "namaste", no "aapka swagat hai".
 - When the user names a symptom, respond to it directly: one warm acknowledgement line + one clarifying question. Do not restate who you are.
 
-LANGUAGE: Reply in the user's language. Supported languages: Hindi, Bengali, Marathi, Tamil, Telugu, Kannada, Malayalam, Gujarati, Punjabi, English. Never switch language unless the user does. Never ask them to change language.
+LANGUAGE: Reply in the user's SELECTED APP LANGUAGE by default. If the user writes in a different language, you may mirror it, but always default back to the selected app language. Supported app languages: en (English), hi (Hindi — Devanagari), bn (Bengali — Bengali script), ta (Tamil — Tamil script), te (Telugu — Telugu script), kn (Kannada — Kannada script). Never ask the user to change language.
 
-OUTPUT SCRIPT — STRICT:
+OUTPUT SCRIPT — STRICT (all 6 app languages):
 - LANG:hi (Hindi): Write the reply body in DEVANAGARI script. Common English terms that Indians naturally say in English (BP, sugar, report, doctor, mobile, step, minute, test) may stay in Latin where natural, but all Hindi sentence structure and Hindi words must be Devanagari — NOT Roman Hinglish. Good: "आपका BP थोड़ा high लग रहा है — doctor से मिल लें।" Bad: "Aapka BP thoda high lag raha hai."
-- LANG:en (English): Plain English reply.
+- LANG:en (English): Plain English reply. Warm, natural Indian-English — not British-style formal translation.
 - LANG:bn (Bengali): Write the reply body in NATIVE BENGALI SCRIPT (বাংলা / Unicode Bengali). Do NOT use Roman/Latin transliteration. Common English terms Bengalis say in English (BP, sugar, doctor, report) may remain Latin where natural.
+- LANG:ta (Tamil): Write the reply body in NATIVE TAMIL SCRIPT (தமிழ்). Do NOT use Roman/Latin transliteration. Common English terms Tamils say in English (BP, sugar, doctor, report) may remain Latin where natural.
+- LANG:te (Telugu): Write the reply body in NATIVE TELUGU SCRIPT (తెలుగు). Do NOT use Roman/Latin transliteration. Common English terms may remain Latin where natural.
+- LANG:kn (Kannada): Write the reply body in NATIVE KANNADA SCRIPT (ಕನ್ನಡ). Do NOT use Roman/Latin transliteration. Common English terms may remain Latin where natural.
 - All other language codes: use the natural script for that language.
 - The LANG:<code> first line is stripped by the app before display — keep it exactly as is.
 
 LANGUAGE STYLE — NATURAL, NOT MACHINE-TRANSLATED:
 - Devanagari Hindi: write modern conversational Hindi (the kind in a Mumbai newspaper), not Shuddh/Sanskritised Hindi. Common borrowed words can stay in their borrowed Devanagari form ("कप", "डॉक्टर", "मिनट", "BP", "sugar"). Never transliterate to archaic Sanskrit equivalents like "raktchaap" or "vaidya" — just write "BP" and "doctor".
 - Bengali (native script): write like a real Kolkata person on WhatsApp — in বাংলা script. Keep everyday English words (BP, doctor, sugar) in English.
-- NEVER sound like Google Translate: avoid stilted constructions. Avoid Sanskrit-style genitives that no one says.
+- Tamil (native script): write like a warm friend from Chennai on WhatsApp — in தமிழ் script. Keep everyday English terms (BP, doctor, sugar) in English. Do not over-formalise — use natural spoken Tamil register.
+- Telugu (native script): write like a warm friend from Hyderabad on WhatsApp — in తెలుగు script. Keep everyday English terms in English. Use natural conversational Telugu, not textbook-formal.
+- Kannada (native script): write like a warm friend from Bengaluru on WhatsApp — in ಕನ್ನಡ script. Keep everyday English terms in English. Use natural conversational Kannada.
+- NEVER sound like Google Translate: avoid stilted constructions. Avoid archaic grammatical forms that no one says naturally.
 - The test: would a thoughtful, warm Indian friend say this naturally? If it sounds like a textbook, rewrite.
 
 STAY ON ONE TOPIC PER REPLY:
@@ -10355,7 +10528,7 @@ OPTIONS: <opt1> | <opt2> | <opt3>
 Rules for OPTIONS:
 - 2 to 5 short tappable answers (1–4 words each) that directly answer the question you just asked.
 - Write the options in the SAME language/script as the rest of your reply (Devanagari for Hindi replies, Bengali script for Bengali replies, etc.).
-- Always include a natural escape option as the last one: "कुछ और" (Hindi), "Aur kuch" (Roman), "আরও কিছু" (Bengali), "Something else" (English).
+- Always include a natural escape option as the last one: "कुछ और" (Hindi), "Aur kuch" (Roman), "আরও কিছু" (Bengali), "Something else" (English), "வேறு ஏதாவது" (Tamil), "మరొకటి" (Telugu), "ಇನ್ನೇನಾದರೂ" (Kannada).
 - Output the OPTIONS line ONLY when you are ASKING a question. When you are GIVING a remedy/answer (not asking), do NOT output an OPTIONS line.
 - The word OPTIONS itself must never appear in your spoken sentence — it is a machine-readable control line only, stripped before display.
 - CRITICAL — DO NOT emit OPTIONS for these symptom topics: sir dard, sardi/khansi, pet ki takleef, neend, bukhar, kamar dard, tension/stress. The app's deterministic guided triage OWNS clarification for these — emitting OPTIONS for them creates duplicate competing bubbles. For these topics, give a short warm acknowledgement line ONLY (no question, no OPTIONS). The triage will take over automatically.
@@ -10552,11 +10725,11 @@ function startOnboarding(returnTo) {
   setTimeout(() => renderOnboardStep(0), 50);
 }
 
-// v7: card-layout onboarding — one question per screen.
-// TOTAL_OB_STEPS = 8:
-//   0 → scope, 1 → name, 2 → age, 3 → sex,
-//   4 → weight, 5 → height, 6 → chronic, 7 → summary/CTA
-const TOTAL_OB_STEPS = 8;
+// v8: essential-only onboarding — 4 questions + summary.
+// Steps visible in progress bar: 0→lang, 1→name, 2→age, 3→sex
+// Summary/CTA rendered after step 3 completes (not counted separately).
+// Deferred to in-flow: scope, weight/height (BMI), chronic conditions.
+const TOTAL_OB_STEPS = 4;
 
 function setOnboardProgress(i) {
   // Progress bar fill
@@ -10643,26 +10816,48 @@ function renderOnboardStep(step) {
   setOnboardProgress(step);
   const d = ST.onboardData;
 
-  // ── Step 0: Scope ──
+  // ── Step 0: Language picker ──
+  // Rendered before any other text so the user picks their language first.
+  // Uses window.LANG_OPTIONS (injected by 02-i18n.js) if available, with a
+  // safe fallback to the hard-coded LANG_OPTIONS constant from that file.
   if (step === 0) {
-    _obCard({
-      icon: "🏠",
-      question: t("ob_scope_q"),
-      hint: t("ob_scope_hint"),
-      content: "",
-    });
-    const card = document.querySelector("#ob-body .ob-card");
-    if (!card) return;
-    card.appendChild(_obOptions(
+    const opts = (typeof window.LANG_OPTIONS !== "undefined" ? window.LANG_OPTIONS : []) ||
       [
-        { label: t("ob_scope_self"), value: "self", emoji: "🙋" },
-        { label: t("ob_scope_other"), value: "household", emoji: "👨‍👩‍👧" },
-      ],
-      (val) => {
-        d.scope = val;
-        renderOnboardStep(1);
-      },
-    ));
+        { code: "en", nativeName: "English",  enName: "English" },
+        { code: "hi", nativeName: "हिन्दी",   enName: "Hindi"   },
+        { code: "bn", nativeName: "বাংলা",    enName: "Bengali" },
+        { code: "ta", nativeName: "தமிழ்",    enName: "Tamil"   },
+        { code: "te", nativeName: "తెలుగు",   enName: "Telugu"  },
+        { code: "kn", nativeName: "ಕನ್ನಡ",   enName: "Kannada" },
+      ];
+    obClear();
+    const body = document.getElementById("ob-body");
+    if (!body) return;
+    const card = document.createElement("div");
+    card.className = "ob-card";
+    // Prompt uses t() — bhasha seeded it in all 6 languages
+    card.innerHTML =
+      '<div class="ob-icon">🌐</div>' +
+      '<div class="ob-q" data-i18n="lang_pick_prompt">' + t("lang_pick_prompt") + '</div>';
+    const langGrid = document.createElement("div");
+    langGrid.className = "ob-options ob-lang-options";
+    opts.forEach((lang) => {
+      const btn = document.createElement("button");
+      btn.className = "ob-opt ob-lang-opt";
+      btn.innerHTML =
+        '<span class="ob-lang-native">' + _obEscape(lang.nativeName) + '</span>' +
+        '<span class="ob-lang-en">' + _obEscape(lang.enName) + '</span>';
+      btn.onclick = () => {
+        langGrid.querySelectorAll(".ob-lang-opt").forEach((b) => b.classList.remove("sel"));
+        btn.classList.add("sel");
+        if (typeof window.setLang === "function") window.setLang(lang.code);
+        d.lang = lang.code;
+        setTimeout(() => renderOnboardStep(1), 220);
+      };
+      langGrid.appendChild(btn);
+    });
+    card.appendChild(langGrid);
+    body.appendChild(card);
     return;
   }
 
@@ -10693,7 +10888,7 @@ function renderOnboardStep(step) {
   if (step === 2) {
     _obCard({
       icon: "🎂",
-      question: t("ob_age_q"),
+      question: t("ob_q_age"),
       hint: t("ob_age_hint"),
       content: "",
     });
@@ -10713,11 +10908,11 @@ function renderOnboardStep(step) {
     return;
   }
 
-  // ── Step 3: Sex ──
+  // ── Step 3: Sex / Gender ──
   if (step === 3) {
     _obCard({
       icon: "🧬",
-      question: t("ob_sex_q"),
+      question: t("ob_q_sex"),
       hint: t("ob_sex_hint"),
       content: "",
     });
@@ -10725,166 +10920,42 @@ function renderOnboardStep(step) {
     if (!card) return;
     card.appendChild(_obOptions(
       [
-        { label: t("ob_sex_male"), value: "Male", emoji: "👨" },
+        { label: t("ob_sex_male"),   value: "Male",   emoji: "👨" },
         { label: t("ob_sex_female"), value: "Female", emoji: "👩" },
-        { label: t("ob_sex_other"), value: "Other", emoji: "🧑" },
+        { label: t("ob_sex_other"),  value: "Other",  emoji: "🧑" },
       ],
       (val) => {
         d.sex = val;
+        // Sex is the last collected step — show summary/CTA directly.
         renderOnboardStep(4);
       },
     ));
     return;
   }
 
-  // ── Step 4: Weight ──
+  // ── Step 4: Summary / CTA ──
+  // Weight, height, BMI, chronic conditions, and scope are NOT asked here.
+  // They are deferred to in-flow moments where they are genuinely needed.
+  // profile.conditions / profile.bmi / profile.scope default to null/"self"
+  // so downstream code that reads them never gets undefined.
   if (step === 4) {
-    _obCard({
-      icon: "⚖️",
-      question: t("ob_weight_q"),
-      hint: t("ob_weight_hint"),
-      content: "",
-    });
-    const card = document.querySelector("#ob-body .ob-card");
-    if (!card) return;
-    card.appendChild(_obField({
-      type: "number",
-      inputmode: "numeric",
-      placeholder: "65",
-      value: d.weight || "",
-      onSubmit: (v) => {
-        if (v) d.weight = v;
-        renderOnboardStep(5);
-      },
-    }));
-    return;
-  }
-
-  // ── Step 5: Height (optional) ──
-  if (step === 5) {
-    _obCard({
-      icon: "📏",
-      question: t("ob_height_q"),
-      hint: t("ob_height_hint"),
-      content: "",
-    });
-    const card = document.querySelector("#ob-body .ob-card");
-    if (!card) return;
-    const fieldEl = _obField({
-      type: "number",
-      inputmode: "numeric",
-      placeholder: "165",
-      allowEmpty: true,
-      value: d.height || "",
-      onSubmit: (v) => {
-        if (v) d.height = v;
-        renderOnboardStep(6);
-      },
-    });
-    // Override button label for optional step
-    const btn = fieldEl.querySelector(".ob-next");
-    if (btn) btn.textContent = t("ob_btn_aage");
-    card.appendChild(fieldEl);
-    // Skip link for height
-    const skip = document.createElement("button");
-    skip.className = "ob-skip-inline";
-    skip.textContent = t("ob_height_skip_inline");
-    skip.onclick = () => renderOnboardStep(6);
-    card.appendChild(skip);
-    return;
-  }
-
-  // ── Step 6: Chronic condition ──
-  if (step === 6) {
-    // 12 canonical condition labels + cholesterol (task 2) near bp/heart
-    const condTiles = [
-      { label: t("ob_chronic_none"), value: null, emoji: "✅" },
-      { label: t("ob_chronic_diabetes"), value: "Diabetes", emoji: "🩸" },
-      { label: t("ob_chronic_bp"), value: "BP High", emoji: "❤️" },
-      { label: t("ob_chronic_cholesterol"), value: "Cholesterol", emoji: "🫀" },
-      { label: t("ob_chronic_heart"), value: "Heart Problem", emoji: "💔" },
-      { label: t("ob_chronic_thyroid"), value: "Thyroid", emoji: "🦋" },
-      { label: t("ob_chronic_arthritis"), value: "Arthritis", emoji: "🦴" },
-      { label: t("ob_chronic_asthma"), value: "Asthma", emoji: "🌬️" },
-      { label: t("ob_chronic_kidney"), value: "Kidney Issue", emoji: "🫘" },
-      { label: t("ob_chronic_pregnancy"), value: "Pregnancy", emoji: "🤱" },
-      { label: t("ob_chronic_liver"), value: "Liver Issue", emoji: "🟤" },
-      { label: t("ob_chronic_acidity"), value: "Acidity/GERD", emoji: "🔥" },
-      { label: t("ob_chronic_other"), value: "_other", emoji: "➕" },
-    ];
-    _obCard({
-      icon: "🏥",
-      question: t("ob_chronic_q"),
-      hint: t("ob_chronic_hint"),
-      content: "",
-    });
-    const card = document.querySelector("#ob-body .ob-card");
-    if (!card) return;
-    card.appendChild(_obOptions(
-      condTiles,
-      (val, lbl) => {
-        if (val === "_other") {
-          // Show a follow-up input card
-          _obCard({
-            icon: "✍️",
-            question: t("ob_chronic_what"),
-            hint: t("ob_chronic_other_hint"),
-            content: "",
-          });
-          const c2 = document.querySelector("#ob-body .ob-card");
-          if (!c2) return;
-          c2.appendChild(_obField({
-            type: "text",
-            placeholder: t("ob_chronic_placeholder"),
-            maxlength: 60,
-            onSubmit: (v) => {
-              d.chronic = v || null;
-              renderOnboardStep(7);
-            },
-          }));
-        } else {
-          d.chronic = val;
-          renderOnboardStep(7);
-        }
-      },
-    ));
-    return;
-  }
-
-  // ── Step 7: Summary / CTA ──
-  if (step === 7) {
-    const bmi = calcBMI(d.weight, d.height);
-    const cat = bmiCategory(bmi);
-    const showFamily = d.scope === "family" || d.scope === "household";
     const nameStr = d.name ? _obEscape(d.name) : "";
     const greet = nameStr
       ? t("ob_done_greeting_named").replace("{name}", nameStr)
       : t("ob_done_greeting");
-    let bmiBlock = "";
-    if (bmi) {
-      bmiBlock =
-        '<div class="ob-bmi-result">' +
-        '<span class="ob-bmi-num">' + t("ob_bmi_label") + " " + bmi + "</span>" +
-        ' <span class="ob-bmi-cat" style="color:' + cat.color + '">' + cat.cat + "</span>" +
-        '<div class="ob-bmi-msg">' + cat.msg + "</div></div>";
-    }
     _obCard({
       icon: "✨",
       question: greet,
       hint: t("ob_done_hint"),
-      content: bmiBlock,
+      content: "",
     });
     const card = document.querySelector("#ob-body .ob-card");
     if (!card) return;
     const ctaWrap = document.createElement("div");
     ctaWrap.className = "ob-cta-wrap";
-    ctaWrap.innerHTML = showFamily
-      ? '<button class="ob-cta" onclick="finishOnboardingThen(\'family\')" data-i18n="ob_cta_add_family">' +
-          t("ob_cta_add_family") + "</button>" +
-          '<button class="ob-cta ob-cta-secondary" onclick="finishOnboardingThen(null)" data-i18n="ob_cta_later">' +
-          t("ob_cta_later") + "</button>"
-      : '<button class="ob-cta" onclick="finishOnboardingThen(null)" data-i18n="ob_cta_open">' +
-          t("ob_cta_open") + "</button>";
+    ctaWrap.innerHTML =
+      '<button class="ob-cta" onclick="finishOnboardingThen(null)" data-i18n="ob_cta_open">' +
+      t("ob_cta_open") + "</button>";
     card.appendChild(ctaWrap);
     return;
   }
@@ -10903,22 +10974,23 @@ function onboardNext() {
 }
 function finishOnboardingThen(nextAction) {
   const d = ST.onboardData;
-  const bmi = calcBMI(d.weight, d.height);
+  // v8: weight/height/chronic/scope are NOT collected during onboarding.
+  // Defaults are set here so downstream code that reads these fields never
+  // gets undefined. They will be filled in-flow when genuinely needed.
   const profile = {
     completed: true,
     onboardedAt: Date.now(),
     skipCount: 0,
-    scope: d.scope || "self",
+    scope: d.scope || "self",       // deferred — default "self"
     name: d.name || null,
-    age: d.age,
-    sex: d.sex,
-    weight: d.weight,
-    height: d.height || null,
-    bmi: bmi,
-    // v7: chronic condition collected in step 6 of card-layout onboarding.
-    // null = none / one of the canonical values / freeform string.
-    // Threaded into system prompts so Saathi's advice respects it.
-    chronic: d.chronic || null,
+    age: d.age || null,
+    sex: d.sex || null,
+    weight: null,                   // deferred to in-flow
+    height: null,                   // deferred to in-flow
+    bmi: null,                      // deferred to in-flow
+    conditions: [],                 // deferred — empty array (was chronic)
+    chronic: null,                  // legacy alias kept for backward compat
+    lang: d.lang || getLang(),
   };
   saveProfile(profile);
   showToast("Profile save ho gaya 💚");
@@ -12389,6 +12461,139 @@ function renderHubMore() {
   btn.setAttribute("data-i18n", "hub_more");
   btn.textContent = t("hub_more");
 }
+
+// ── v8: 6-language picker overlay ────────────────────────────────────────────
+// openLangPicker() — builds a modal sheet over any screen listing all 6
+// LANG_OPTIONS. Tapping one calls setLang(code) and dismisses the sheet.
+// closeLangPicker() is safe to call even if the sheet is not present.
+//
+// toggleLang() is overridden here so the existing "अ" button in the hub
+// header (page.tsx calls toggleLang()) opens the full 6-lang picker instead
+// of the old hi↔en 2-way toggle. The override must stay in this file so it
+// loads after 02-i18n.js and wins the last-declaration race.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function openLangPicker() {
+  // Remove any stale instance first
+  closeLangPicker();
+
+  const opts = (typeof window.LANG_OPTIONS !== "undefined" ? window.LANG_OPTIONS : []) ||
+    [
+      { code: "en", nativeName: "English",  enName: "English" },
+      { code: "hi", nativeName: "हिन्दी",   enName: "Hindi"   },
+      { code: "bn", nativeName: "বাংলা",    enName: "Bengali" },
+      { code: "ta", nativeName: "தமிழ்",    enName: "Tamil"   },
+      { code: "te", nativeName: "తెలుగు",   enName: "Telugu"  },
+      { code: "kn", nativeName: "ಕನ್ನಡ",   enName: "Kannada" },
+    ];
+
+  // Backdrop
+  const backdrop = document.createElement("div");
+  backdrop.id = "lang-picker-backdrop";
+  backdrop.style.cssText =
+    "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;" +
+    "display:flex;align-items:flex-end;justify-content:center;";
+  backdrop.onclick = (e) => { if (e.target === backdrop) closeLangPicker(); };
+
+  // Sheet
+  const sheet = document.createElement("div");
+  sheet.id = "lang-picker-sheet";
+  sheet.style.cssText =
+    "background:#1a1a2e;border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;" +
+    "max-width:480px;box-shadow:0 -8px 32px rgba(0,0,0,.4);" +
+    "animation:slideUpSheet .25s cubic-bezier(.4,0,.2,1);";
+
+  // Header row
+  const hdr = document.createElement("div");
+  hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;";
+  const title = document.createElement("div");
+  title.setAttribute("data-i18n", "lang_pick_prompt");
+  title.textContent = t("lang_pick_prompt");
+  title.style.cssText = "font-size:17px;font-weight:700;color:#fff;";
+  const closeBtn = document.createElement("button");
+  closeBtn.textContent = "✕";
+  closeBtn.style.cssText =
+    "background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;" +
+    "cursor:pointer;padding:4px 8px;line-height:1;";
+  closeBtn.onclick = closeLangPicker;
+  hdr.appendChild(title);
+  hdr.appendChild(closeBtn);
+  sheet.appendChild(hdr);
+
+  // Language list
+  const list = document.createElement("div");
+  list.style.cssText = "display:flex;flex-direction:column;gap:10px;";
+  const currentCode = typeof getLang === "function" ? getLang() : "hi";
+
+  opts.forEach((lang) => {
+    const row = document.createElement("button");
+    const isActive = lang.code === currentCode;
+    row.style.cssText =
+      "display:flex;align-items:center;justify-content:space-between;" +
+      "padding:14px 16px;border-radius:12px;border:1.5px solid " +
+      (isActive ? "#4ecca3" : "rgba(255,255,255,.12)") + ";" +
+      "background:" + (isActive ? "rgba(78,204,163,.12)" : "rgba(255,255,255,.05)") + ";" +
+      "cursor:pointer;width:100%;text-align:left;";
+
+    const left = document.createElement("div");
+    const native = document.createElement("span");
+    native.textContent = lang.nativeName;
+    native.style.cssText = "font-size:18px;font-weight:700;color:#fff;display:block;";
+    const enLabel = document.createElement("span");
+    enLabel.textContent = lang.enName;
+    enLabel.style.cssText = "font-size:13px;color:rgba(255,255,255,.5);margin-top:2px;display:block;";
+    left.appendChild(native);
+    left.appendChild(enLabel);
+
+    const check = document.createElement("span");
+    check.textContent = isActive ? "✓" : "";
+    check.style.cssText = "font-size:18px;color:#4ecca3;font-weight:700;";
+
+    row.appendChild(left);
+    row.appendChild(check);
+
+    row.onclick = () => {
+      if (typeof window.setLang === "function") window.setLang(lang.code);
+      closeLangPicker();
+      // Refresh the toggle button label to show current script
+      const toggleBtn = document.getElementById("ss-lang-toggle");
+      if (toggleBtn) {
+        toggleBtn.textContent = lang.code === "en" ? "A" : lang.nativeName.charAt(0);
+      }
+    };
+    list.appendChild(row);
+  });
+
+  sheet.appendChild(list);
+  backdrop.appendChild(sheet);
+  document.body.appendChild(backdrop);
+
+  // Inject slide-up keyframe once
+  if (!document.getElementById("lang-picker-style")) {
+    const style = document.createElement("style");
+    style.id = "lang-picker-style";
+    style.textContent =
+      "@keyframes slideUpSheet{from{transform:translateY(100%)}to{transform:translateY(0)}}";
+    document.head.appendChild(style);
+  }
+}
+
+function closeLangPicker() {
+  const el = document.getElementById("lang-picker-backdrop");
+  if (el) el.remove();
+}
+window.openLangPicker = openLangPicker;
+window.closeLangPicker = closeLangPicker;
+
+// Override toggleLang so the existing "अ" button opens the 6-lang picker
+// instead of the old hi↔en cycle. This declaration intentionally shadows
+// the toggleLang defined in 02-i18n.js (last-declaration wins in the
+// concatenated runtime bundle). The old 2-way toggle behaviour is gone;
+// setLang(code) remains available for any callers that want a specific code.
+function toggleLang() {
+  openLangPicker();
+}
+window.toggleLang = toggleLang;
   function renderSafarPath() {
     const el = document.getElementById("safar-path");
     if (!el) return;
@@ -17169,6 +17374,35 @@ function renderHubMore() {
 
     let _sysContent = systemOverride || SYSTEM_PROMPT;
 
+    // v10: Inject the user's selected app language so the model replies in it
+    // by default. window.getLang() is set by bhasha's 6-language picker.
+    // Map from getLang() code → { name, script, langCode } for the LANG: prefix.
+    const _LANG_META = {
+      hi: { name: "Hindi", script: "Devanagari", langCode: "hi" },
+      en: { name: "English", script: "Latin", langCode: "en" },
+      bn: { name: "Bengali", script: "Bengali (native Unicode)", langCode: "bn" },
+      ta: { name: "Tamil", script: "Tamil (native Unicode)", langCode: "ta" },
+      te: { name: "Telugu", script: "Telugu (native Unicode)", langCode: "te" },
+      kn: { name: "Kannada", script: "Kannada (native Unicode)", langCode: "kn" },
+    };
+    const _selectedLang =
+      typeof window !== "undefined" && typeof window.getLang === "function"
+        ? window.getLang()
+        : "hi";
+    const _selectedMeta = _LANG_META[_selectedLang] || _LANG_META["hi"];
+    _sysContent +=
+      "\n\nUSER'S SELECTED APP LANGUAGE: " +
+      _selectedMeta.langCode +
+      " (" +
+      _selectedMeta.name +
+      "). Reply in this language using " +
+      _selectedMeta.script +
+      " script. Begin your reply with \"LANG:" +
+      _selectedMeta.langCode +
+      "\". If the user writes in another language (e.g. types in a different script), mirror that language, but default to " +
+      _selectedMeta.name +
+      " otherwise.";
+
     // Inject a compact VOICE directive so the model skips visual affordances
     // and converses naturally. Kept short to minimise token overhead.
     if (voiceModeActive) {
@@ -17183,16 +17417,21 @@ function renderHubMore() {
     if (_inLang && _inLang.script && _inLang.script !== "roman") {
       ST.currentLanguage = _inLang.code; // e.g. "bn-IN" — drives _pickElevenVoice
       ST._inputPinnedLang = _inLang.code;
+      // Input-detected script overrides the selected-language note above.
+      // The model already got the selected-language context; if the user typed in
+      // a different native script, honour their actual input.
       _sysContent +=
-        "\n\nUSER INPUT LANGUAGE: " +
+        "\n\nUSER INPUT LANGUAGE OVERRIDE: The user typed in " +
         _inLang.name +
-        ". Reply ONLY in " +
+        " script. Reply in " +
         _inLang.name +
         " (native script) and begin the reply with \"LANG:" +
         _inLang.code.split("-")[0] +
         "\".";
     } else {
-      ST._inputPinnedLang = "";
+      // Roman/Latin input — honour the selected app language (already injected above).
+      // Pin so the LANG: self-declaration from the model is accepted downstream.
+      ST._inputPinnedLang = _selectedMeta.langCode + "-IN";
     }
 
     const msgs = [{ role: "system", content: _sysContent }, ...ST.chatHistory];
@@ -22408,13 +22647,20 @@ const BREATH_PHASES = [
   // Null when inactive or when the browser doesn't support SpeechRecognition.
   let _convRecognition = null;
   // WS4: lang codes passed to SpeechRecognition — maps from ST.currentLanguage.
+  // v7.6: extended to cover all 6 picker languages (ta, te, kn added).
   const _RECOGNITION_LANG_MAP = {
     "hi-IN": "hi-IN",
     "bn-IN": "bn-IN",
     "en-IN": "en-IN",
+    "ta-IN": "ta-IN",
+    "te-IN": "te-IN",
+    "kn-IN": "kn-IN",
     hi: "hi-IN",
     bn: "bn-IN",
     en: "en-IN",
+    ta: "ta-IN",
+    te: "te-IN",
+    kn: "kn-IN",
   };
   // ── Mic mute state (manual user toggle) ──
   // _convMuted = true means the user has explicitly silenced the mic.
@@ -22976,7 +23222,12 @@ const BREATH_PHASES = [
         const SpeechRecognitionAPI =
           window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognitionAPI && !_isSpeaking && !_convProcessing) {
-          const recogLang =
+          // v7.6: prefer getLang() (language picker) for sidecar lang, same as Sarvam STT.
+          const _sidecarPickerLang = (function () {
+            try { return typeof getLang === "function" ? getLang() : null; } catch (_) { return null; }
+          })();
+          const _sidecarPickerMap = { en: "en-IN", hi: "hi-IN", bn: "bn-IN", ta: "ta-IN", te: "te-IN", kn: "kn-IN" };
+          const recogLang = (_sidecarPickerLang && _sidecarPickerMap[_sidecarPickerLang]) ||
             _RECOGNITION_LANG_MAP[ST.currentLanguage] || "hi-IN";
           const recog = new SpeechRecognitionAPI();
           recog.interimResults = true;
@@ -23499,14 +23750,19 @@ const BREATH_PHASES = [
       const fd = new FormData();
       fd.append("file", cleanBlob, "rec." + ext);
       fd.append("model", "saarika:v2.5");
-      // v6.7.7: always ask Sarvam to AUTO-DETECT the language. Sending the
-      // app's currentLanguage (default hi-IN) meant the first Bengali
-      // utterance was transcribed as Hindi → empty transcript → user thought
-      // STT was broken. saarika:v2.5 supports language_code="unknown" for
-      // auto-detect and returns the detected code in the response, which we
-      // then pin onto ST.currentLanguage so downstream TTS uses the right
-      // voice/script without waiting for Dadi to emit LANG:<code>.
-      fd.append("language_code", "unknown");
+      // v7.6: derive STT language_code from getLang() (the 6-language picker).
+      // When a language is explicitly selected we send it so Sarvam uses the
+      // correct model path (better accuracy) rather than auto-detecting.
+      // Mapping: en→en-IN, hi→hi-IN, bn→bn-IN, ta→ta-IN, te→te-IN, kn→kn-IN.
+      // Fallback: "unknown" (auto-detect) if getLang() is unavailable.
+      const _sttLang = (function () {
+        try {
+          const g = typeof getLang === "function" ? getLang() : null;
+          const _sttMap = { en: "en-IN", hi: "hi-IN", bn: "bn-IN", ta: "ta-IN", te: "te-IN", kn: "kn-IN" };
+          return (g && _sttMap[g]) || "unknown";
+        } catch (_) { return "unknown"; }
+      })();
+      fd.append("language_code", _sttLang);
       fd.append("with_timestamps", "false");
       const res = await fetch(sarvamUrl("/speech-to-text"), {
         method: "POST",
@@ -23589,29 +23845,39 @@ const BREATH_PHASES = [
         try { trackEvent("stt_hallucination", { len: txt.length }); } catch (_) {}
         txt = "";
       }
-      // v6.7.13: General English-media heuristic — the real fix for novel
+      // v6.7.13 / v7.6: General English-media heuristic — the real fix for novel
       // hallucinations that escape the phrase list. Whisper hallucinates long,
       // fluent, pure-English boilerplate (podcasts, news, YouTube) on
-      // silence/noise. This app is HINDI-FIRST: real user input is short
-      // Hindi/Hinglish OR contains health keywords even in English.
-      // Reject only when ALL four conditions hold simultaneously:
-      //   1. No Devanagari characters (not a Hindi transcript)
-      //   2. Six or more whitespace-separated words (long enough to be boilerplate)
-      //   3. Not a known health/Hinglish keyword (would be genuine user input)
-      //   4. Still has text to evaluate (not already cleared above)
-      // Short English ("yes", "okay", "fever since morning") passes because it
-      // either has <6 words or contains a health keyword. Err toward keeping
-      // genuine health input; err toward dropping media boilerplate.
+      // silence/noise.
+      // v7.6 RECONCILIATION: this heuristic was built for a Hindi-ONLY app where
+      // "en" meant Hinglish. Now the app has a 6-language picker. When the user
+      // has selected a non-Hindi language (bn, ta, te, kn) or real English (en),
+      // a pure-Latin transcript is EXPECTED and legitimate — do NOT apply the
+      // Hindi-centric heuristic. Only apply it when getLang() returns "hi" (or
+      // getLang is unavailable, which implies the old Hindi-first default).
+      // Reject only when ALL five conditions hold simultaneously:
+      //   1. Selected language is hi (or getLang unavailable — old Hindi-first default)
+      //   2. No Devanagari characters (not a proper Hindi/Devanagari transcript)
+      //   3. Six or more whitespace-separated words (long enough to be boilerplate)
+      //   4. Not a known health/Hinglish keyword (would be genuine user input)
+      //   5. Still has text to evaluate (not already cleared above)
       if (txt) {
-        const HAS_DEVANAGARI = /[ऀ-ॿ]/.test(txt);
-        const WORD_COUNT = txt.trim().split(/\s+/).length;
-        // Health/Hinglish words that prove the transcript is a genuine user query
-        // even when it arrives in pure-Latin script.
-        const HEALTH_KEYWORD_RE = /\b(dard|sir|sar|pet|bukhar|fever|khansi|cough|sardi|cold|neend|sleep|tabiyat|doctor|dawai|medicine|gas|acidity|bp|sugar|headache|pain|tension|thanda|garam|ulti|vomit|kabz|constipation|diarrhea|loose motion|weakness|kamzori|chakkar|dizzy|chest|breathing|saans|allergy|rash|itching|khujli|swelling|sujan|joint|ghutna|back|kamar|eye|aankh|ear|kaan|throat|gala|nose|naak|bleed|khoon|urine|peshab|weight|wajan|diabetes|thyroid|anemia|infection|wound|chot|burn|jalan)\b/i;
-        if (!HAS_DEVANAGARI && WORD_COUNT >= 6 && !HEALTH_KEYWORD_RE.test(txt)) {
-          console.warn("[Sarvam STT] HALLUCINATION rejected (English-media heuristic, words=" + WORD_COUNT + "):", txt);
-          try { trackEvent("stt_hallucination", { len: txt.length, reason: "english_media" }); } catch (_) {}
-          txt = "";
+        const _sttSelectedLang = (function () {
+          try { return typeof getLang === "function" ? getLang() : "hi"; } catch (_) { return "hi"; }
+        })();
+        // Only apply the Hindi-specific English-media filter when the user is actually in Hindi mode.
+        // For bn/ta/te/kn/en, pure-Latin transcripts are valid (Roman Bengali, Tamil-Latin, etc.)
+        if (_sttSelectedLang === "hi") {
+          const HAS_DEVANAGARI = /[ऀ-ॿ]/.test(txt);
+          const WORD_COUNT = txt.trim().split(/\s+/).length;
+          // Health/Hinglish words that prove the transcript is a genuine user query
+          // even when it arrives in pure-Latin script.
+          const HEALTH_KEYWORD_RE = /\b(dard|sir|sar|pet|bukhar|fever|khansi|cough|sardi|cold|neend|sleep|tabiyat|doctor|dawai|medicine|gas|acidity|bp|sugar|headache|pain|tension|thanda|garam|ulti|vomit|kabz|constipation|diarrhea|loose motion|weakness|kamzori|chakkar|dizzy|chest|breathing|saans|allergy|rash|itching|khujli|swelling|sujan|joint|ghutna|back|kamar|eye|aankh|ear|kaan|throat|gala|nose|naak|bleed|khoon|urine|peshab|weight|wajan|diabetes|thyroid|anemia|infection|wound|chot|burn|jalan)\b/i;
+          if (!HAS_DEVANAGARI && WORD_COUNT >= 6 && !HEALTH_KEYWORD_RE.test(txt)) {
+            console.warn("[Sarvam STT] HALLUCINATION rejected (English-media heuristic, words=" + WORD_COUNT + "):", txt);
+            try { trackEvent("stt_hallucination", { len: txt.length, reason: "english_media" }); } catch (_) {}
+            txt = "";
+          }
         }
       }
       // v6.7.9: also reject ultra-short transcripts that are almost always
@@ -23786,7 +24052,9 @@ const BREATH_PHASES = [
   async function prewarmTransliteration(textArray, lang) {
     if (!Array.isArray(textArray) || !textArray.length) return;
     const target = lang && lang.length === 5 ? lang : "hi-IN";
-    if (target === "en-IN" || target === "bn-IN") return; // nothing to transliterate
+    // en-IN, bn-IN, ta-IN, te-IN, kn-IN all bypass transliteration (Sarvam handles them directly)
+    if (target === "en-IN" || target === "bn-IN" ||
+        target === "ta-IN" || target === "te-IN" || target === "kn-IN") return;
     for (const t of textArray) {
       if (!t) continue;
       // Don't await each call — fire them all in parallel so the card is warm fast
@@ -23972,15 +24240,18 @@ const BREATH_PHASES = [
   const ELEVENLABS_VOICE_ID_HIEN =
     (window.__SS_CONFIG__ && window.__SS_CONFIG__.elevenVoiceIdHiEn) ||
     "yM93hbw8Qtvdma2wCnJG"; // Hindi+English neutral — NEXT_PUBLIC_ELEVENLABS_VOICE_ID_HIEN
-  // Finding #5 fix: voice selection is now script-detect first (inspect the actual
-  // text being spoken), falling back to lang code. This prevents a stale bn-IN
-  // ST.currentLanguage from routing Hindi card steps to the Bengali voice.
+  // Finding #5 fix / v7.6: voice selection is script-detect first (inspect the actual
+  // text being spoken), then language picker (getLang()), then ST.currentLanguage.
+  // This prevents a stale bn-IN ST.currentLanguage from routing Hindi card steps to
+  // the Bengali voice, and ensures getLang()==="en" picks the English (Sarah) voice.
+  //
   //   Priority:
   //   1. localStorage.ss_elevenlabs_voice override (user manual override)
   //   2. Text contains Devanagari (U+0900–U+097F) → Hindi/English voice yM93…
-  //   3. Text contains Bengali script (U+0980–U+09FF) OR lang is bn/bn-IN → Bengali voice WiaI…
-  //   4. Lang code is bn/bn-IN → Bengali voice WiaI…
-  //   5. Else (Latin/English/unknown) → Hindi/English voice yM93…
+  //   3. Text contains Bengali script (U+0980–U+09FF) → Bengali voice WiaI…
+  //   4. getLang()==="en" → English voice (Sarah / ELEVENLABS_VOICE_ID)
+  //   5. getLang()==="bn" OR ST.currentLanguage bn/bn-IN → Bengali voice WiaI…
+  //   6. Else (hi-IN / unknown) → neutral Hindi/English voice yM93…
   function _pickElevenVoice(textOrLangCode) {
     const lsAny =
       (typeof localStorage !== "undefined" && localStorage.getItem("ss_elevenlabs_voice")) || "";
@@ -23992,10 +24263,16 @@ const BREATH_PHASES = [
       if (/[ऀ-ॿ]/.test(txt)) return ELEVENLABS_VOICE_ID_HIEN; // Devanagari → Hindi voice
       if (/[ঀ-৿]/.test(txt)) return ELEVENLABS_VOICE_ID_INDIC; // Bengali script → Bengali voice
     }
+    // v7.6: consult the language picker — authoritative selection signal.
+    const _pickerLang = (function () {
+      try { return typeof getLang === "function" ? getLang() : null; } catch (_) { return null; }
+    })();
+    if (_pickerLang === "en") return ELEVENLABS_VOICE_ID; // real English → Sarah voice
+    if (_pickerLang === "bn") return ELEVENLABS_VOICE_ID_INDIC; // Bengali picker
     // Fall back to session language (set by STT auto-detect, or explicitly changed)
     const lang = (ST && ST.currentLanguage) || "";
     if (/^bn(-IN)?$/i.test(lang)) return ELEVENLABS_VOICE_ID_INDIC;
-    // Everything else (hi-IN, en-IN, unknown / default) → neutral Hindi/English voice
+    // Everything else (hi-IN, ta/te/kn handled by Sarvam intercept, unknown/default) → neutral Hindi/English voice
     return ELEVENLABS_VOICE_ID_HIEN;
   }
   const _localElKey =
@@ -24038,18 +24315,33 @@ const BREATH_PHASES = [
     document.addEventListener("keydown", _onGesture, { once: true, capture: true });
   }
 
-  // v6.7.19: derive the ElevenLabs `language_code` from the same signal used by
-  // _pickElevenVoice so the voice and language hint always agree:
-  //   Bengali script (U+0980–U+09FF) OR ST.currentLanguage bn/bn-IN → "bn"
-  //   Devanagari (U+0900–U+097F) OR ST.currentLanguage hi/hi-IN      → "hi"
-  //   everything else (Latin / en-IN / unknown)                        → "en"
-  // This fixes robotic pronunciation on Roman/mixed Bengali text: eleven_flash_v2_5
-  // now applies Bengali phonology even when it can't infer the language from glyphs.
+  // v6.7.19 / v7.6: derive the ElevenLabs `language_code` from the same signal used by
+  // _pickElevenVoice so the voice and language hint always agree.
+  //
+  // Priority (script-detect first, then picker, then ST.currentLanguage):
+  //   Bengali script (U+0980–U+09FF)  → "bn"
+  //   Devanagari (U+0900–U+097F)      → "hi"
+  //   getLang()==="en"                → "en"  (real English; no Hinglish remap)
+  //   getLang()==="hi" / ST.currentLanguage hi/hi-IN → "hi"
+  //   getLang()==="bn" / ST.currentLanguage bn/bn-IN → "bn"
+  //   everything else (Latin/unknown) → "en"
+  //
+  // v7.6: getLang()==="en" means REAL English (distinct picker selection),
+  // so it maps to "en" here (was previously caught by the "everything else" branch
+  // but now given an explicit fast path for clarity).
   function _ttsLangCode(text) {
     if (text) {
       if (/[ঀ-৿]/.test(text)) return "bn"; // Bengali script → bn
       if (/[ऀ-ॿ]/.test(text)) return "hi"; // Devanagari  → hi
     }
+    // Consult the language picker before ST.currentLanguage.
+    const _pickerLang = (function () {
+      try { return typeof getLang === "function" ? getLang() : null; } catch (_) { return null; }
+    })();
+    if (_pickerLang === "en") return "en"; // real English selection
+    if (_pickerLang === "hi") return "hi";
+    if (_pickerLang === "bn") return "bn";
+    // ta/te/kn → these go through speakSarvamLang directly; ElevenLabs gets "en" as fallback
     const lang = (ST && ST.currentLanguage) || "";
     if (/^bn(-IN)?$/i.test(lang)) return "bn";
     if (/^hi(-IN)?$/i.test(lang)) return "hi";
@@ -24382,21 +24674,19 @@ const BREATH_PHASES = [
   //
   // nuskha/kadam callers: `await speak(text, opts)` is safe to use between
   // walkthrough steps — the next step will not start until TTS is fully done.
-  // v7.5: Detect whether the text is GENUINELY English (not Hinglish/romanized Hindi).
-  // IMPORTANT DOMAIN RULE: In this Hindi health app, ST.currentLanguage="en" means
-  // Hinglish (Hindi written in Roman/Latin letters), NOT real English. There is no
-  // genuine "speak English" use case. We must NEVER route romanized Hindi to Sarvam
-  // en-IN just because currentLanguage happens to be "en".
+  // v7.5 / v7.6: Detect whether the text is GENUINELY English (not Hinglish/romanized Hindi).
   //
-  // Returns true ONLY when the text is pure English with:
-  //   - No Devanagari script (already Hindi → ElevenLabs hi path)
-  //   - No Bengali/other Indic script (their own paths)
-  //   - No Hinglish/Hindi markers in Roman/Latin form
-  //   - AND currentLanguage is NOT "en"/"en-IN" (which means Hinglish in this app)
+  // v7.6 RECONCILIATION: "en" in getLang() NOW means REAL English (a distinct selectable
+  // language in the 6-language picker). When getLang()==="en", route to Sarvam en-IN.
+  // When getLang()==="hi" and text has Hinglish markers → transliterate → Hindi voice.
+  // When getLang() is unavailable, fall back to content-based heuristic (old behaviour).
   //
-  // Bengali (bn/bn-IN) is explicitly excluded — it stays on ElevenLabs WiaI.
-  // Hindi Devanagari is explicitly excluded — it stays on ElevenLabs yM93.
-  // Romanized Hindi (Hinglish) always returns false → transliterate → Hindi voice.
+  // Returns true (→ Sarvam en-IN path) when:
+  //   A. getLang()==="en" AND text has no Indic script, OR
+  //   B. getLang() unavailable, text is Latin, no Hinglish markers, no Indic session lang
+  //
+  // Bengali (bn/bn-IN) → ElevenLabs WiaI. Hindi Devanagari → ElevenLabs yM93.
+  // Romanized Hindi (getLang==="hi") → transliterate → Hindi voice.
   function _isEnglishContent(text) {
     if (!text) return false;
     // If the text contains Devanagari → Hindi path, not English.
@@ -24410,16 +24700,31 @@ const BREATH_PHASES = [
     if (/[ഀ-ൿ]/.test(text)) return false; // Malayalam
     if (/[઀-૿]/.test(text)) return false; // Gujarati
     if (/[਀-੿]/.test(text)) return false; // Punjabi
-    // CRITICAL: "en"/"en-IN" in this app means HINGLISH (romanized Hindi), NOT real
-    // English. Never route to Sarvam en-IN on this signal alone. Romanized Hindi
-    // must go through transliterateToDevanagari → Hindi voice (ElevenLabs/Sarvam hi-IN).
+    // v7.6: consult the language picker — it is the authoritative selection signal.
+    const _selectedLang = (function () {
+      try { return typeof getLang === "function" ? getLang() : null; } catch (_) { return null; }
+    })();
+
+    // User explicitly selected English → treat as English (no Hinglish check needed).
+    if (_selectedLang === "en") return true;
+
+    // User selected a non-English Indic language → this Latin text is NOT English
+    // (romanized content in that language — Bengali Roman, Tamil-Latin, etc.)
+    if (_selectedLang === "hi" || _selectedLang === "bn" ||
+        _selectedLang === "ta" || _selectedLang === "te" || _selectedLang === "kn") {
+      return false;
+    }
+
+    // getLang() unavailable / unrecognised → legacy content-based heuristic.
+    // If session language is a known Indic language, this Latin text is not English.
     const lang = (ST && ST.currentLanguage) || "";
-    if (/^en(-IN)?$/i.test(lang)) return false;
-    // Text is Latin/Roman and session language is NOT "en". Check for Hinglish
+    if (/^(hi|bn|ta|te|kn)(-IN)?$/i.test(lang)) return false;
+
+    // Text is Latin/Roman and session is not a known Indic language. Check for Hinglish
     // markers — if any are present, this is romanized Hindi/Hinglish, not English.
     const hasHinglish = /\b(beta|beti|hai|nahi|kya|mein|aap|tum|hum|pet|sir|sehat|ghar|nushka|takleef|dard|paani|pani|chai|doodh|namaste|saans|neend|bukhar|khaaya|piya|kiya|raha|rahi|rahe|aaj|kal|subah|sham|raat|dopahar|theek|achha|achhi|acche|haldi|adrak|ajwain|tulsi|jeera|kemon|achen|bhalo|kothay|tomar|amar|kintu|aapni|aapnar|tumi|kothai|tomader|baba|maa|dada|didi|ekhon|kichhu|kichu|kothao|lo|piyo|karo|koro|bolein|lijiye|dekhein|chalein|sunein|batao|puchho|khao|soye|jao|uthao|ghuma|failao|rokho|nikalo|kheencho|chhod|band|shuru|ghumao|lagao|rakhein|dabao|karein|milaye|ubaaley|pee|ubalein|chaan|chhan|chalne|milao|ghol|gholo|milaao|pilaao|ubaalo|khaali|khali|garam|thanda|ek|do|teen|char|paanch|chhe|saat|aath|nau|das|patile|ubalo|dalein|pakao|bhunein|bharein)\b/i.test(text);
     if (hasHinglish) return false;
-    // No Indic codepoints, no Hinglish markers, session is NOT "en" → plausibly pure English.
+    // No Indic codepoints, no Hinglish markers, no known Indic session lang → plausibly pure English.
     return true;
   }
 
@@ -24536,13 +24841,25 @@ const BREATH_PHASES = [
       const callerTtsTextEarly = opts && opts.ttsText;
       if (!callerTtsTextEarly) {
         const detEarly = detectLang(text);
-        // v7.5: "en"/"en-IN" in ST.currentLanguage means HINGLISH in this app —
-        // treat it as "hi-IN" for transliteration so romanized Hindi gets converted
-        // to Devanagari before being passed to the Hindi voice. Without this, the
-        // SARVAM_LANG_MAP lookup returns "en-IN" for lang="en", which blocks the
-        // transliteration step below and leaves romanized Hindi un-transliterated.
+        // v7.6: determine the session target language using getLang() (language picker)
+        // as the primary signal, falling back to ST.currentLanguage.
+        //
+        // OLD rule (v7.5): "en"/"en-IN" always remapped to "hi-IN" (Hinglish assumption).
+        // NEW rule (v7.6): when getLang()==="en", the user chose REAL English — do NOT
+        // transliterate to Devanagari. Keep "en-IN" so transliteration is skipped below.
+        // When getLang()==="hi" (or unavailable) AND ST.currentLanguage is "en"/"en-IN",
+        // still remap to "hi-IN" (old Hinglish behaviour preserved for that case).
         const _rawLang = (ST && ST.currentLanguage) || "hi-IN";
-        const _sessionLang = /^en(-IN)?$/i.test(_rawLang) ? "hi-IN" : _rawLang;
+        const _pickerLang = (function () {
+          try { return typeof getLang === "function" ? getLang() : null; } catch (_) { return null; }
+        })();
+        // If picker says "en" → real English, keep "en-IN" (no translit).
+        // If picker says another Indic lang, use that. Otherwise fall back to ST.currentLanguage
+        // with the old "en"=Hinglish remap for when getLang() is unavailable.
+        const _pickerLangMap = { en: "en-IN", hi: "hi-IN", bn: "bn-IN", ta: "ta-IN", te: "te-IN", kn: "kn-IN" };
+        const _sessionLang = _pickerLang
+          ? (_pickerLangMap[_pickerLang] || _rawLang)
+          : (/^en(-IN)?$/i.test(_rawLang) ? "hi-IN" : _rawLang); // legacy Hinglish remap when picker unavailable
         const tgtEarly =
           detEarly.script !== "roman"
             ? SARVAM_LANG_MAP[detEarly.code] || "hi-IN"
@@ -24551,7 +24868,7 @@ const BREATH_PHASES = [
         // Bengali script was producing noisy output that the bilingual voice
         // (FDQcYNtvPtQjNlTyU3du) misread. The voice handles Roman Bengali
         // natively — no transliteration needed. Hindi still transliterates
-        // to Devanagari (works well).
+        // to Devanagari (works well). English also skipped (tgtEarly = "en-IN").
         if (
           detEarly.script === "roman" &&
           tgtEarly &&
@@ -24624,10 +24941,17 @@ const BREATH_PHASES = [
       // v6.7.6: detect/route for Sarvam fallback. Reuse `prepText` from the
       // top — it was already transliterated for any Indic target above, so
       // we don't double-pay the round-trip here.
-      // v7.5: same Hinglish fix — "en"/"en-IN" session means Hindi, not English.
+      // v7.6: use getLang() as primary signal. getLang()==="en" → real English
+      // (en-IN), not Hinglish. Only remap "en"→"hi-IN" when getLang() is unavailable.
       const detected = detectLang(text);
       const _fbRawLang = (ST && ST.currentLanguage) || "hi-IN";
-      const _fbSessionLang = /^en(-IN)?$/i.test(_fbRawLang) ? "hi-IN" : _fbRawLang;
+      const _fbPickerLang = (function () {
+        try { return typeof getLang === "function" ? getLang() : null; } catch (_) { return null; }
+      })();
+      const _fbPickerMap = { en: "en-IN", hi: "hi-IN", bn: "bn-IN", ta: "ta-IN", te: "te-IN", kn: "kn-IN" };
+      const _fbSessionLang = _fbPickerLang
+        ? (_fbPickerMap[_fbPickerLang] || _fbRawLang)
+        : (/^en(-IN)?$/i.test(_fbRawLang) ? "hi-IN" : _fbRawLang); // legacy Hinglish remap
       const targetLangCode =
         detected.script !== "roman"
           ? SARVAM_LANG_MAP[detected.code] || "hi-IN"
