@@ -16429,6 +16429,7 @@ window.toggleLang = toggleLang;
     ST.chatHistory = [];
     ST.isFirstMsg = true;
     ST._symptomTurnSeen = 0;
+    ST._lastCardKeyThisTurn = null; // v7.3: fresh dedupe key per triage session
     trackFeature("nushke");
     if (typeof pushCheckin === "function") pushCheckin(displayText, aiPrompt);
     goTo("s-chat");
@@ -16877,9 +16878,17 @@ window.toggleLang = toggleLang;
       }
       row.appendChild(acts);
       // skill check
+      // Dedupe guard: skip if (a) a triage is currently running (companion entry
+      // from _finalizeTriageInChat is the correct single affordance for that turn),
+      // or (b) the same skill key was already injected earlier in this turn.
       const skill = detectSkill(text);
-      if (skill)
+      if (skill && !_activeTriage && ST._lastCardKeyThisTurn !== ("skill:" + skill))
         setTimeout(() => {
+          // Re-check _activeTriage inside the timer — it may have started in the
+          // 600ms window (e.g. maybeAppendGuidedCta fires just after addMsg returns).
+          if (_activeTriage) return;
+          if (ST._lastCardKeyThisTurn === ("skill:" + skill)) return;
+          ST._lastCardKeyThisTurn = "skill:" + skill;
           const skRow = document.createElement("div");
           skRow.className = "msg-row bot";
           renderSkillCard(skill, skRow);
@@ -17069,6 +17078,8 @@ window.toggleLang = toggleLang;
   // (identical to the typed-symptom EXPERIENCE: contract path in callAI).
   function _finalizeTriageInChat(msgsContainer) {
     if (!_activeTriage) return;
+    // v7.3: clear the per-turn dedupe key so the companion entry always renders.
+    ST._lastCardKeyThisTurn = null;
     const key = _activeTriage.key;
     const answers = _activeTriage.answers;
     const flow = FOCUS_FLOWS[key];
@@ -17364,6 +17375,8 @@ window.toggleLang = toggleLang;
     }
     // v7.1: reset per-turn experience flag at the start of each new callAI round
     ST._experienceShownThisTurn = false;
+    // v7.3: reset per-turn card-dedupe key so each new LLM reply gets a fresh slate
+    ST._lastCardKeyThisTurn = null;
     ST.chatHistory.push({ role: "user", content: userText });
     showThinking();
 
