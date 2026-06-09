@@ -24896,16 +24896,19 @@ const BREATH_PHASES = [
   // (ta-IN / te-IN / kn-IN). Speaker is always "vidya" (warm Saathi voice).
   // Returns true on success so speak() can short-circuit; false on any error
   // so the caller can fall through to ElevenLabs as a backup.
-  async function speakSarvamLang(text, langCode) {
+  // v8.3: optional `pace` param (default 0.9). English callers pass 0.85 for
+  // a slower, calmer delivery — Sarvam honours the pace param for en-IN.
+  async function speakSarvamLang(text, langCode, pace) {
     if (!USE_WORKER && (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes("REPLACE"))) {
       return false; // no Sarvam key → fall through to ElevenLabs
     }
     _killSidecarForTts();
     _stopRecorderForTts();
+    const _pace = (typeof pace === "number" && pace > 0) ? pace : 0.9;
     try {
       const speakText = text.length > 500 ? text.substring(0, 500) : text;
       const _t0 = performance.now();
-      console.info("[TTS-SV] Sarvam lang=" + langCode + " speaker=vidya chars=" + speakText.length);
+      console.info("[TTS-SV] Sarvam lang=" + langCode + " speaker=vidya pace=" + _pace + " chars=" + speakText.length);
       const res = await fetch(sarvamUrl("/text-to-speech"), {
         method: "POST",
         headers: sarvamHeaders({ "Content-Type": "application/json" }),
@@ -24914,7 +24917,7 @@ const BREATH_PHASES = [
           target_language_code: langCode,
           speaker: "vidya",
           pitch: 0,
-          pace: 0.9,
+          pace: _pace,
           loudness: 1.4,
           speech_sample_rate: 22050,
           enable_preprocessing: true,
@@ -25072,15 +25075,17 @@ const BREATH_PHASES = [
     })();
     if (_speakPickerLang) {
       if (_speakPickerLang === "en") {
-        // v8.2: Real English session → ElevenLabs yM93 multilingual.
-        // ElevenLabs uses English language hint ("en") so phonology is correct.
+        // v8.3: Real English session → Sarvam en-IN (vidya) at pace 0.85.
+        // ElevenLabs was producing US-accented English regardless of voice/model;
+        // Sarvam vidya en-IN is reliably Indian-accented and honours pace control.
+        // pace 0.85 is slightly slower than the Sarvam default (0.9) — calmer delivery.
         // Text is sent as-is (Latin/English) — no Devanagari transliteration runs
-        // for English (ISSUE 5 fix ensures tgtEarly==="en-IN" skips translit above).
-        console.info("[TTS] getLang=en → ElevenLabs yM93 (English) chars=" + prepText.length);
+        // for English (tgtEarly==="en-IN" skips translit above).
+        console.info("[TTS] getLang=en → Sarvam en-IN vidya pace=0.85 chars=" + prepText.length);
+        if (await speakSarvamLang(prepText, "en-IN", 0.85)) return;
+        console.info("[speak] Sarvam en-IN failed, falling back to ElevenLabs");
+        // Sarvam failed → fall back to ElevenLabs as last resort.
         if (await speakElevenLabs(prepText, opts)) return;
-        console.info("[speak] ElevenLabs en failed, falling back to Sarvam en-IN");
-        // ElevenLabs failed → fall back to Sarvam en-IN.
-        if (await speakSarvamEnglish(prepText)) return;
         return; // both failed — nothing more to try for English
       } else if (_speakPickerLang === "ta" || _speakPickerLang === "te" || _speakPickerLang === "kn") {
         // Dravidian sessions → Sarvam vidya in the correct Indic language, always.
