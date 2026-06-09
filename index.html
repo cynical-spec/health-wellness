@@ -9743,7 +9743,7 @@ function applyLanguage() {
     te: "te",
     kn: "kn",
   };
-  document.documentElement.setAttribute("lang", htmlLangMap[lang] || "hi");
+  document.documentElement.setAttribute("lang", htmlLangMap[_currentLang] || "hi");
 }
 
 // ── toggleLang() ──────────────────────────────────────────────────────────────
@@ -23069,12 +23069,15 @@ const BREATH_PHASES = [
           return;
         }
         // If recording was too short AND no sidecar interim captured anything,
-        // release lock and resume listening (user may have tapped before speaking).
+        // the recorder fired onstop immediately (e.g. NO_SPEECH_TIMEOUT).
+        // Use the same 2500ms calm-idle grace as the empty-transcript path so
+        // this does NOT become a rapid loop when there is continuous background
+        // noise or TTS tail triggering the silence-detect early.
         if (blob.size < 1500 && !_sidecarLastInterim) {
           _convProcessing = false;
           _muteAfterProcess = false;
           // If user muted before speaking (nothing captured at all), stay muted.
-          if (!_convMuted) setTimeout(convListenOnce, 200);
+          if (!_convMuted) _convResumeTimer = setTimeout(convListenOnce, 2500);
           return;
         }
         setVoiceState("thinking");
@@ -23097,13 +23100,22 @@ const BREATH_PHASES = [
         // Clear the sidecar interim for the next turn regardless.
         _sidecarLastInterim = "";
         if (!transcript) {
-          // Both Sarvam STT and sidecar fallback returned nothing.
-          // Show the "didn't hear you" toast — this is the ONLY place it now fires.
+          // Both Sarvam STT and sidecar fallback returned nothing (silence,
+          // hallucination rejected, or noise).  Enter a calm idle state — do NOT
+          // immediately re-kick convListenOnce with a tiny 300ms gap (that was
+          // creating the rapid silence→STT→reject→re-listen spiral seen in the
+          // Tamil session).  Instead wait 2.5s so the TTS acoustic tail fully
+          // drains before the mic re-opens.  If the user is muted stay muted.
           showToast("Kuch sunaai nahi diya — thoda zor se bolein");
           _convProcessing = false;
           _muteAfterProcess = false;
           setVoiceState("listening");
-          if (_convActive && !_convMuted) setTimeout(convListenOnce, 300);
+          if (_convActive && !_convMuted) {
+            // Use a generous grace window (2500ms) before reopening the mic so
+            // TTS tail / room echo / ambient noise does NOT trigger another
+            // immediate hallucination cycle.
+            _convResumeTimer = setTimeout(convListenOnce, 2500);
+          }
           return;
         }
         // Send to AI and play reply; convHandleTranscript awaits TTS end,
@@ -23788,11 +23800,32 @@ const BREATH_PHASES = [
       }
       const data = await res.json();
       let txt = (data.transcript || "").trim();
-      // v6.7.7: pin the detected language so downstream TTS uses the right
-      // voice/script immediately, even before the LLM reply lands.
+      // v6.7.7 / v8.0: pin the detected language so downstream TTS uses the
+      // right voice/script immediately, even before the LLM reply lands.
+      // v8.0 GUARD: only update ST.currentLanguage when Sarvam's detected
+      // language is CONSISTENT with getLang() (the user's explicit picker
+      // choice).  A hallucinated transcript that Sarvam tags as "en-IN" during
+      // a Tamil session must NOT silently flip ST.currentLanguage to en-IN —
+      // that would corrupt TTS routing for the rest of the session.
+      // Rule: accept detected language only when (a) getLang() is unavailable
+      // (no picker — old single-language builds), OR (b) the detected language's
+      // prefix matches getLang() (e.g. detected "ta-IN" agrees with getLang()
+      // "ta"), OR (c) the transcript already passed hallucination filters AND is
+      // non-empty (set below after filtering, not here).
       if (data.language_code && /^[a-z]{2}-[A-Z]{2}$/.test(data.language_code)) {
-        ST.currentLanguage = data.language_code;
-        console.info("[Sarvam STT] detected", data.language_code);
+        const _detectedLang = data.language_code;
+        const _pickerLangForPin = (function () {
+          try { return typeof getLang === "function" ? getLang() : null; } catch (_) { return null; }
+        })();
+        // Agree when: no picker, or detected prefix matches picker selection.
+        const _detectedPrefix = _detectedLang.split("-")[0]; // "en", "ta", "hi", etc.
+        const _langAgrees = !_pickerLangForPin || _detectedPrefix === _pickerLangForPin;
+        if (_langAgrees) {
+          ST.currentLanguage = _detectedLang;
+          console.info("[Sarvam STT] detected", _detectedLang, "(accepted — matches picker)");
+        } else {
+          console.info("[Sarvam STT] detected", _detectedLang, "but picker=" + _pickerLangForPin + " — ignoring to prevent session language corruption");
+        }
       }
       // ── v6.7.9: Whisper-family hallucination filter ──
       // saarika:v2.5 is Whisper-based; Whisper hallucinates training-set
@@ -23849,37 +23882,43 @@ const BREATH_PHASES = [
         try { trackEvent("stt_hallucination", { len: txt.length }); } catch (_) {}
         txt = "";
       }
-      // v6.7.13 / v7.6: General English-media heuristic — the real fix for novel
-      // hallucinations that escape the phrase list. Whisper hallucinates long,
-      // fluent, pure-English boilerplate (podcasts, news, YouTube) on
-      // silence/noise.
-      // v7.6 RECONCILIATION: this heuristic was built for a Hindi-ONLY app where
-      // "en" meant Hinglish. Now the app has a 6-language picker. When the user
-      // has selected a non-Hindi language (bn, ta, te, kn) or real English (en),
-      // a pure-Latin transcript is EXPECTED and legitimate — do NOT apply the
-      // Hindi-centric heuristic. Only apply it when getLang() returns "hi" (or
-      // getLang is unavailable, which implies the old Hindi-first default).
+      // v6.7.13 / v7.6 / v8.0: General English-media heuristic — the real fix for
+      // novel hallucinations that escape the phrase list. Whisper hallucinates long,
+      // fluent, pure-English boilerplate (podcasts, news, YouTube, cricket commentary)
+      // on silence/noise in ANY language session.
+      //
+      // v8.0 EXPANSION: previously only applied when getLang()==="hi". Now applies
+      // to ALL non-English Indic sessions (hi, bn, ta, te, kn) because the Tamil
+      // session cricket-commentary hallucination proved the bug is language-agnostic.
+      // When the user is in a Tamil/Bengali/Telugu/Kannada session and Sarvam returns
+      // a long, pure-Latin, English-sounding text with zero native-script chars, that
+      // is almost certainly a Whisper hallucination — reject it.
+      //
+      // Exception: when getLang()==="en", the user chose REAL English, so pure-Latin
+      // transcripts are expected and valid — do NOT apply the heuristic.
+      //
       // Reject only when ALL five conditions hold simultaneously:
-      //   1. Selected language is hi (or getLang unavailable — old Hindi-first default)
-      //   2. No Devanagari characters (not a proper Hindi/Devanagari transcript)
+      //   1. Selected language is NOT "en" (non-English Indic session, or getLang unavailable)
+      //   2. No Indic script characters in the transcript (would confirm native speech)
       //   3. Six or more whitespace-separated words (long enough to be boilerplate)
-      //   4. Not a known health/Hinglish keyword (would be genuine user input)
+      //   4. Not a known health/Hinglish keyword (would be a genuine user query)
       //   5. Still has text to evaluate (not already cleared above)
       if (txt) {
         const _sttSelectedLang = (function () {
           try { return typeof getLang === "function" ? getLang() : "hi"; } catch (_) { return "hi"; }
         })();
-        // Only apply the Hindi-specific English-media filter when the user is actually in Hindi mode.
-        // For bn/ta/te/kn/en, pure-Latin transcripts are valid (Roman Bengali, Tamil-Latin, etc.)
-        if (_sttSelectedLang === "hi") {
-          const HAS_DEVANAGARI = /[ऀ-ॿ]/.test(txt);
+        // Apply to all non-English sessions (hi, bn, ta, te, kn, unknown).
+        // Skip ONLY when the user explicitly selected English.
+        if (_sttSelectedLang !== "en") {
+          // Any Indic codepoints present → this is native-script speech, not English hallucination.
+          const HAS_ANY_INDIC = /[ऀ-ॿঀ-৿஀-௿ఀ-౿ಀ-೿ഀ-ൿ]/.test(txt);
           const WORD_COUNT = txt.trim().split(/\s+/).length;
           // Health/Hinglish words that prove the transcript is a genuine user query
           // even when it arrives in pure-Latin script.
-          const HEALTH_KEYWORD_RE = /\b(dard|sir|sar|pet|bukhar|fever|khansi|cough|sardi|cold|neend|sleep|tabiyat|doctor|dawai|medicine|gas|acidity|bp|sugar|headache|pain|tension|thanda|garam|ulti|vomit|kabz|constipation|diarrhea|loose motion|weakness|kamzori|chakkar|dizzy|chest|breathing|saans|allergy|rash|itching|khujli|swelling|sujan|joint|ghutna|back|kamar|eye|aankh|ear|kaan|throat|gala|nose|naak|bleed|khoon|urine|peshab|weight|wajan|diabetes|thyroid|anemia|infection|wound|chot|burn|jalan)\b/i;
-          if (!HAS_DEVANAGARI && WORD_COUNT >= 6 && !HEALTH_KEYWORD_RE.test(txt)) {
-            console.warn("[Sarvam STT] HALLUCINATION rejected (English-media heuristic, words=" + WORD_COUNT + "):", txt);
-            try { trackEvent("stt_hallucination", { len: txt.length, reason: "english_media" }); } catch (_) {}
+          const HEALTH_KEYWORD_RE = /\b(dard|sir|sar|pet|bukhar|fever|khansi|cough|sardi|cold|neend|sleep|tabiyat|doctor|dawai|medicine|gas|acidity|bp|sugar|headache|pain|tension|thanda|garam|ulti|vomit|kabz|constipation|diarrhea|loose motion|weakness|kamzori|chakkar|dizzy|chest|breathing|saans|allergy|rash|itching|khujli|swelling|sujan|joint|ghutna|back|kamar|eye|aankh|ear|kaan|throat|gala|nose|naak|bleed|khoon|urine|peshab|weight|wajan|diabetes|thyroid|anemia|infection|wound|chot|burn|jalan|வலி|தலைவலி|காய்ச்சல்|இருமல்|மூச்சு|தூக்கம்|வயிறு|கண்|காது|தொண்டை|நோய்|மருந்து)\b/i;
+          if (!HAS_ANY_INDIC && WORD_COUNT >= 6 && !HEALTH_KEYWORD_RE.test(txt)) {
+            console.warn("[Sarvam STT] HALLUCINATION rejected (English-media heuristic, lang=" + _sttSelectedLang + " words=" + WORD_COUNT + "):", txt);
+            try { trackEvent("stt_hallucination", { len: txt.length, reason: "english_media", lang: _sttSelectedLang }); } catch (_) {}
             txt = "";
           }
         }
