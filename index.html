@@ -9790,6 +9790,254 @@ window.setLang = setLang;
 window.locName = locName;
 window.locStr = locStr;
 
+// ── Translation engine: ssT / ssPrewarm ──────────────────────────────────────
+//
+// PURPOSE: Let any runtime module render the ONE Hindi-deterministic content
+// (triage questions, option labels, card text, walkthrough steps) in the
+// user's active non-Hindi language without maintaining per-language copies.
+//
+// HOW IT WORKS:
+//   • ssT(hiText) is SYNCHRONOUS — callers get a string immediately, no await.
+//     If the translation is already cached it returns it; otherwise it returns
+//     the Hindi original as a fallback and kicks off a background fetch so the
+//     translated value is ready next time.
+//   • ssPrewarm(hiTextArray) is ASYNC — callers `await ssPrewarm([...])` before
+//     rendering a flow so ssT() can be fully synchronous at render time.
+//   • The cache lives both in-memory (_trCache) and in localStorage
+//     (`ss_tr_<lang>`) so repeat sessions require zero network round-trips.
+//
+// WORKER CONTRACT:
+//   POST ${WORKER_URL}/translate
+//   Headers: { "Content-Type": "application/json", "x-pilot-token": CLIENT_TOKEN }
+//   Body:    { texts: [...], source_language_code: "hi-IN",
+//              target_language_code: "<lang>-IN" }
+//   Response: { translations: [...] }  (same order as input)
+//
+// LANGUAGE CODES (getLang() → BCP-47 target):
+//   en → en-IN   bn → bn-IN   ta → ta-IN   te → te-IN   kn → kn-IN
+//
+// CACHE KEYS:
+//   In-memory : _trCache[lang][hiText]
+//   localStorage: "ss_tr_<lang>"  (JSON object, same shape as _trCache[lang])
+// ──────────────────────────────────────────────────────────────────────────────
+
+// ── Internal state ────────────────────────────────────────────────────────────
+
+// Map from getLang() code to BCP-47 target_language_code for the Worker.
+const _TR_LANG_CODE = {
+  en: "en-IN",
+  bn: "bn-IN",
+  ta: "ta-IN",
+  te: "te-IN",
+  kn: "kn-IN",
+};
+
+// In-memory translation cache: { <lang>: { <hiText>: <translatedText> } }
+// Populated from localStorage on init and written back after each batch.
+const _trCache = {};
+
+// Guard: warn about Worker issues only once per session, not per string.
+let _trWarnedOnce = false;
+
+// Tracks in-flight single-string background fetches so we don't issue
+// duplicate requests for the same hiText while a fetch is already pending.
+// Shape: { <lang>: Set<hiText> }
+const _trInFlight = {};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Load a single language's cache shard from localStorage into _trCache. */
+function _loadTrCache(lang) {
+  if (_trCache[lang]) return; // already loaded this session
+  _trCache[lang] = {};
+  try {
+    const raw = localStorage.getItem("ss_tr_" + lang);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        _trCache[lang] = parsed;
+      }
+    }
+  } catch (_) {}
+}
+
+/** Persist a single language's cache shard to localStorage. */
+function _persistTrCache(lang) {
+  try {
+    localStorage.setItem("ss_tr_" + lang, JSON.stringify(_trCache[lang] || {}));
+  } catch (_) {}
+}
+
+/**
+ * POST texts[] to the Worker /translate endpoint.
+ * Returns a map { hiText → translatedText } for the texts that succeeded.
+ * On any error / missing route: logs a single warning, returns {}.
+ *
+ * @param {string} lang         - getLang() code, e.g. "bn"
+ * @param {string[]} texts      - deduplicated Hindi strings
+ * @returns {Promise<Object>}
+ */
+async function _translateBatch(lang, texts) {
+  // Guard: WORKER_URL / USE_WORKER are defined in 01-header-config.js (shared scope).
+  if (!USE_WORKER || !WORKER_URL) {
+    if (!_trWarnedOnce) {
+      console.warn("[ssT] Worker not configured — translations unavailable. Set WORKER_URL + CLIENT_TOKEN.");
+      _trWarnedOnce = true;
+    }
+    return {};
+  }
+
+  const targetCode = _TR_LANG_CODE[lang];
+  if (!targetCode) return {};
+
+  // Chunk into batches of at most 50 texts per request.
+  const CHUNK_SIZE = 50;
+  const result = {};
+
+  for (let i = 0; i < texts.length; i += CHUNK_SIZE) {
+    const chunk = texts.slice(i, i + CHUNK_SIZE);
+    try {
+      const resp = await fetch(WORKER_URL + "/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-pilot-token": CLIENT_TOKEN,
+        },
+        body: JSON.stringify({
+          texts: chunk,
+          source_language_code: "hi-IN",
+          target_language_code: targetCode,
+        }),
+      });
+
+      if (!resp.ok) {
+        if (!_trWarnedOnce) {
+          console.warn("[ssT] /translate returned", resp.status, "— falling back to Hindi originals.");
+          _trWarnedOnce = true;
+        }
+        continue; // leave this chunk untranslated; try next chunk if any
+      }
+
+      const json = await resp.json();
+      if (json && Array.isArray(json.translations)) {
+        json.translations.forEach((translated, idx) => {
+          if (typeof translated === "string" && chunk[idx]) {
+            result[chunk[idx]] = translated;
+          }
+        });
+      }
+    } catch (err) {
+      if (!_trWarnedOnce) {
+        console.warn("[ssT] /translate fetch error — falling back to Hindi originals:", err);
+        _trWarnedOnce = true;
+      }
+      // Continue — remaining chunks still attempted.
+    }
+  }
+
+  return result;
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+
+/**
+ * ssT(hiText) — SYNCHRONOUS translation look-up.
+ *
+ * Rules:
+ *   1. If getLang() === "hi" OR hiText is falsy → return hiText unchanged.
+ *   2. If cached in _trCache[lang][hiText] → return the translation.
+ *   3. Otherwise → return hiText (Hindi fallback) immediately, and fire a
+ *      background async translate so the result is cached for next time.
+ *
+ * @param {string} hiText - A Hindi (Devanagari) string.
+ * @returns {string}
+ */
+function ssT(hiText) {
+  if (!hiText) return hiText;
+
+  const lang = getLang();
+  if (lang === "hi") return hiText;
+
+  _loadTrCache(lang);
+
+  // Cache hit.
+  if (_trCache[lang][hiText] !== undefined) {
+    return _trCache[lang][hiText];
+  }
+
+  // Cache miss — fire-and-forget background translate.
+  if (!_trInFlight[lang]) _trInFlight[lang] = new Set();
+  if (!_trInFlight[lang].has(hiText)) {
+    _trInFlight[lang].add(hiText);
+    _translateBatch(lang, [hiText]).then((map) => {
+      _trInFlight[lang].delete(hiText);
+      if (map[hiText] !== undefined) {
+        _trCache[lang][hiText] = map[hiText];
+        _persistTrCache(lang);
+      }
+    }).catch(() => {
+      if (_trInFlight[lang]) _trInFlight[lang].delete(hiText);
+    });
+  }
+
+  return hiText; // Hindi fallback until the async result lands
+}
+
+/**
+ * ssPrewarm(hiTextArray) — ASYNC batch pre-translation.
+ *
+ * Collects all strings from the array that are not yet cached for the current
+ * language, sends them in ONE (or more, if >50) batched Worker call(s), stores
+ * results in _trCache and persists to localStorage.
+ *
+ * Call this BEFORE rendering a flow so ssT() returns translated text at first
+ * paint for every string in the flow:
+ *
+ *   await ssPrewarm([q.text, ...q.options.map(o => o.label), ...]);
+ *   // now render — ssT() is fully synchronous
+ *
+ * @param {string[]} hiTextArray - Array of Hindi strings (may contain duplicates).
+ * @returns {Promise<void>}
+ */
+async function ssPrewarm(hiTextArray) {
+  const lang = getLang();
+  if (lang === "hi") return; // no-op for Hindi
+
+  if (!Array.isArray(hiTextArray) || hiTextArray.length === 0) return;
+
+  _loadTrCache(lang);
+
+  // Deduplicate and filter to only uncached, non-empty strings.
+  const seen = new Set();
+  const uncached = [];
+  for (const text of hiTextArray) {
+    if (!text || seen.has(text)) continue;
+    seen.add(text);
+    if (_trCache[lang][text] === undefined) {
+      uncached.push(text);
+    }
+  }
+
+  if (uncached.length === 0) return; // everything already cached
+
+  const map = await _translateBatch(lang, uncached);
+
+  // Merge results into cache.
+  let added = 0;
+  for (const [hiText, translated] of Object.entries(map)) {
+    _trCache[lang][hiText] = translated;
+    added++;
+  }
+
+  if (added > 0) {
+    _persistTrCache(lang);
+  }
+}
+
+// Expose translation engine on window.
+window.ssT = ssT;
+window.ssPrewarm = ssPrewarm;
+
 // ── v6.6: WhatsApp feedback button handler ──
 // Number is hardcoded (Nawaneet's work mobile). Prefill includes app
 // version, current screen, anonymous user hash, last 3 events (so we know
@@ -10531,16 +10779,15 @@ Rules for OPTIONS:
 - Always include a natural escape option as the last one: "कुछ और" (Hindi), "Aur kuch" (Roman), "আরও কিছু" (Bengali), "Something else" (English), "வேறு ஏதாவது" (Tamil), "మరొకటి" (Telugu), "ಇನ್ನೇನಾದರೂ" (Kannada).
 - Output the OPTIONS line ONLY when you are ASKING a question. When you are GIVING a remedy/answer (not asking), do NOT output an OPTIONS line.
 - The word OPTIONS itself must never appear in your spoken sentence — it is a machine-readable control line only, stripped before display.
-- HINDI ONLY — DO NOT emit OPTIONS for these 7 symptom topics when the reply language is Hindi (LANG:hi): sir dard, sardi/khansi, pet ki takleef, neend, bukhar, kamar dard, tension/stress. The app's deterministic guided triage OWNS clarification for these in Hindi — emitting OPTIONS for them creates duplicate competing bubbles. For these topics in Hindi, give a short warm acknowledgement line ONLY (no question, no OPTIONS). The triage will take over automatically.
-- ALL OTHER LANGUAGES (English, Bengali, Tamil, Telugu, Kannada, etc.) — The deterministic Hindi triage does NOT run. You MUST handle clarification yourself. For ANY health symptom — including those same 7 topics (headache, cold/cough, stomach, sleep, fever, back pain, stress/tension) — ask ONE short warm clarifying question and ALWAYS end with an OPTIONS line of 2–4 tappable choices in the reply language. After the user answers (or taps a choice), give the remedy as 2–3 short warm actionable steps in the reply language.
+- HINDI ONLY — DO NOT emit OPTIONS for these 7 symptom topics when the reply language is Hindi (LANG:hi): sir dard, sardi/khansi, pet ki takleef, neend, bukhar, kamar dard, tension/stress. The app's deterministic guided triage OWNS clarification for these in ALL languages — emitting OPTIONS for them creates duplicate competing bubbles. For these topics in Hindi, give a short warm acknowledgement line ONLY (no question, no OPTIONS). The triage will take over automatically.
+- ALL LANGUAGES — The deterministic triage runs for the 7 core symptoms. For ANY clarifying question you ask on OTHER health topics, ALWAYS end with an OPTIONS line of 2–4 tappable choices in the reply language.
 Examples (Hindi — no OPTIONS for the 7 core symptoms):
   Symptom (no OPTIONS): "सिर दर्द है? — ठीक है, समझ आया। अभी guided तरीके से ठीक करते हैं।" [NO OPTIONS line]
-Examples (non-Hindi — OPTIONS required even for the 7 core symptoms):
-  English headache: "I see, headache. Since when — today or longer?" → OPTIONS: Just today | Since yesterday | Few days | Something else
-  English cold: "Sorry to hear that! Is it mostly a runny nose, sore throat, or cough?" → OPTIONS: Runny nose | Sore throat | Cough | All three
-  Bengali stomach: "পেটে কী ধরনের সমস্যা — গ্যাস, বমি ভাব, নাকি ব্যথা?" → OPTIONS: গ্যাস | বমি ভাব | পেটে ব্যথা | আরও কিছু
-  Tamil fever: "எப்போதிலிருந்து காய்ச்சல் உள்ளது?" → OPTIONS: இன்று | நேற்று | சில நாட்களாக | வேறு ஏதாவது
-  Question (any language): "कहाँ दर्द है?" → OPTIONS: जोड़ों में | पीठ में | पूरे शरीर में | कुछ और
+Examples (other languages — OPTIONS on clarifying questions for non-triage topics):
+  English headache: the triage handles this — give warm ack only, no OPTIONS
+  English non-triage: "I see, skin rash. Since when — today or longer?" → OPTIONS: Just today | Since yesterday | Few days | Something else
+  Bengali stomach (triage-owned): warm ack only, no OPTIONS
+  Question (any language, non-triage topic): "कहाँ दर्द है?" → OPTIONS: जोड़ों में | पीठ में | पूरे शरीर में | कुछ और
 
 GUIDED COMPANION CONTRACT (v7.1 — machine-readable, never shown to user):
 When Saathi is ready to GUIDE the user through a remedy or practice (i.e. recommending they actively DO something), she ends her reply with a final machine-readable line in EXACTLY this format:
@@ -10557,7 +10804,6 @@ Rules for EXPERIENCE:
 - RED FLAGS (chest pain, breathing difficulty, severe/persistent pain, bleeding, fainting, stroke signs): advise seeing a doctor warmly, then emit EXPERIENCE: general-care (it carries the escalation path).
 - When the OPTIONS: line is present (clarifying-question turn), do NOT also emit EXPERIENCE: on that same reply.
 - The EXPERIENCE: line is a separate final line, never spoken aloud, never shown as text to the user — it is a machine-readable control line only.
-- NON-HINDI LANGUAGES: If the user's selected app language is NOT Hindi (i.e. the per-call language note says the language is Bengali, Tamil, Telugu, Kannada, English, etc.), do NOT emit an EXPERIENCE: line at all. The step-by-step walkthrough card is unavailable in that language. Give the remedy guidance directly as 2–3 short, warm, actionable steps in the user's language; your text reply IS the complete guidance.
 
 OUTPUT FORMAT (strict):
 First line: LANG:<code>  where <code> is one of hi, mr, bn, ta, te, kn, ml, gu, pa, en.
@@ -14560,19 +14806,39 @@ window.toggleLang = toggleLang;
       _speakAbortFn: null,
     };
 
-    // Set top fields once — use locName for hi-mode Devanagari title/subtitle
-    const _locName = typeof locName === "function" ? locName : function (o) { return o.title; };
-    setText("wt-title", _locName(exp));
-    const _wtSubtitle = (
-      typeof locName === "function" &&
-      window.ST && window.ST.currentLanguage &&
-      window.ST.currentLanguage.startsWith("hi") &&
-      exp.subtitleHi
-    ) ? exp.subtitleHi : exp.subtitle;
-    setText("wt-subtitle", _wtSubtitle);
-    renderWtDots();
-    runWalkthroughStep();
-    console.info("[walkthrough] opened", experienceKey);
+    // i18n prewarm: batch-translate all step text + header into the current
+    // language BEFORE rendering step 0, so ssT() is always a synchronous
+    // cache hit during rendering and speech.  Guard typeof so this is a no-op
+    // when bhasha's translation engine hasn't loaded yet (e.g. hi mode).
+    (async function _prewarm() {
+      if (typeof window.ssPrewarm === "function") {
+        try {
+          const _stringsToWarm = [];
+          if (exp.titleHi)    _stringsToWarm.push(exp.titleHi);
+          if (exp.subtitleHi) _stringsToWarm.push(exp.subtitleHi);
+          if (exp.finishLineHi) _stringsToWarm.push(exp.finishLineHi);
+          for (const _s of (exp.steps || [])) {
+            if (_s.titleHi) _stringsToWarm.push(_s.titleHi);
+            if (_s.lineHi)  _stringsToWarm.push(_s.lineHi);
+            if (_s.sayHi)   _stringsToWarm.push(_s.sayHi);
+          }
+          await window.ssPrewarm(_stringsToWarm);
+        } catch (_pwErr) {
+          console.warn("[walkthrough] ssPrewarm error:", _pwErr);
+        }
+      }
+
+      // Set top fields once — use ssT for translated header; fall back to locName for hi
+      const _ssTrans = typeof window.ssT === "function" ? window.ssT : function (s) { return s; };
+      const _locName = typeof locName === "function" ? locName : function (o) { return o.title; };
+      const _expTitle = exp.titleHi ? _ssTrans(exp.titleHi) : _locName(exp);
+      setText("wt-title", _expTitle);
+      const _expSubtitle = exp.subtitleHi ? _ssTrans(exp.subtitleHi) : (exp.subtitle || "");
+      setText("wt-subtitle", _expSubtitle);
+      renderWtDots();
+      runWalkthroughStep();
+      console.info("[walkthrough] opened", experienceKey);
+    })();
   }
 
   function setText(id, text) {
@@ -14718,9 +14984,12 @@ window.toggleLang = toggleLang;
         stage.innerHTML = '<div style="font-size:60px;opacity:.5">🌿</div>';
       }
     }
+    // i18n: translate step title + line via ssT (synchronous cache hit after
+    // ssPrewarm; falls back to Hindi text unchanged for hi mode).
+    const _ssTfn = typeof window.ssT === "function" ? window.ssT : function (s) { return s; };
     setText("wt-step-counter", "Step " + step.ix + " / " + _wt.exp.steps.length);
-    setText("wt-step-title", step.titleHi);
-    setText("wt-step-line", step.lineHi);
+    setText("wt-step-title", _ssTfn(step.titleHi || ""));
+    setText("wt-step-line",  _ssTfn(step.lineHi  || ""));
     renderWtDots();
 
     // ── Step entrance animation re-trigger ──
@@ -14781,7 +15050,11 @@ window.toggleLang = toggleLang;
     console.info("[walkthrough] step", step.ix, step.titleHi);
 
     if (typeof speak === "function") {
-      const speakResult = speak(step.lineHi, { ttsText: step.sayHi || step.lineHi });
+      // Speak the ssT-translated version so TTS voice matches the selected language.
+      // ssT is a synchronous cache hit here (prewarm ran before step 0).
+      const _ssTspeak = typeof window.ssT === "function" ? window.ssT : function (s) { return s; };
+      const _speakLine = _ssTspeak(step.sayHi || step.lineHi || "");
+      const speakResult = speak(_speakLine, { ttsText: _speakLine });
 
       if (speakResult && typeof speakResult.then === "function") {
         // Start the visual progress bar for the expected duration — speech-activity
@@ -14981,7 +15254,8 @@ window.toggleLang = toggleLang;
             "margin-top:14px;padding:12px 16px;border-radius:14px;" +
             "background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.25);" +
             "color:#86efac;font-size:14px;text-align:center;line-height:1.6;";
-          warmDiv.textContent = "Ho gaya 🌿 Thodi der mein farak mehsoos hoga, aaram karein.";
+          const _ssTwarm = typeof window.ssT === "function" ? window.ssT : function (s) { return s; };
+          warmDiv.textContent = _ssTwarm("हो गया 🌿 थोड़ी देर में फ़र्क महसूस होगा, आराम करें।");
           if (fbDiv) {
             fbDiv.appendChild(warmDiv);
           } else {
@@ -14992,7 +15266,13 @@ window.toggleLang = toggleLang;
         console.warn("[walkthrough] warm completion inject error:", _warmErr);
       }
     }
-    setText("wt-finish-line", _wt.exp.finishLine || "Bas ho gaya.");
+    // i18n: render finishLine in the selected language via ssT.
+    // finishLineHi is the Devanagari source for best translation quality.
+    const _ssTfinish = typeof window.ssT === "function" ? window.ssT : function (s) { return s; };
+    const _finishText = _wt.exp.finishLineHi
+      ? _ssTfinish(_wt.exp.finishLineHi)
+      : (_wt.exp.finishLine || "Bas ho gaya.");
+    setText("wt-finish-line", _finishText);
     // WS1: keep citation element as plain-text fallback when no sources array
     setText("wt-finish-citation", (_wt.exp.sources && _wt.exp.sources.length) ? "" : (_wt.exp.citation || ""));
 
@@ -15171,9 +15451,8 @@ window.toggleLang = toggleLang;
     }
 
     if (typeof speak === "function") {
-      speak(_wt.exp.finishLine, {
-        ttsText: _wt.exp.finishLineHi || _wt.exp.finishLine,
-      });
+      // Speak the ssT-translated finish line so voice matches selected language.
+      speak(_finishText, { ttsText: _finishText });
     }
 
     // v7.1 — Record attempt into journey memory so the home screen (sehat-ghar)
@@ -15513,18 +15792,35 @@ window.toggleLang = toggleLang;
       _speakAbortFn: null,
     };
 
-    const _locName = typeof locName === "function" ? locName : function (o) { return o.title; };
-    setText("wt-title", _locName(expObj));
-    const _wtSubtitle = (
-      typeof locName === "function" &&
-      window.ST && window.ST.currentLanguage &&
-      window.ST.currentLanguage.startsWith("hi") &&
-      expObj.subtitleHi
-    ) ? expObj.subtitleHi : (expObj.subtitle || "");
-    setText("wt-subtitle", _wtSubtitle);
-    renderWtDots();
-    runWalkthroughStep();
-    console.info("[walkthrough] openWalkthroughExp opened", displayKey);
+    // i18n prewarm for transient/kit-adapted experiences — same pattern as openWalkthrough.
+    (async function _prewarmExp() {
+      if (typeof window.ssPrewarm === "function") {
+        try {
+          const _stringsToWarm = [];
+          if (expObj.titleHi)    _stringsToWarm.push(expObj.titleHi);
+          if (expObj.subtitleHi) _stringsToWarm.push(expObj.subtitleHi);
+          if (expObj.finishLineHi) _stringsToWarm.push(expObj.finishLineHi);
+          for (const _s of (expObj.steps || [])) {
+            if (_s.titleHi) _stringsToWarm.push(_s.titleHi);
+            if (_s.lineHi)  _stringsToWarm.push(_s.lineHi);
+            if (_s.sayHi)   _stringsToWarm.push(_s.sayHi);
+          }
+          await window.ssPrewarm(_stringsToWarm);
+        } catch (_pwErr) {
+          console.warn("[walkthrough] openWalkthroughExp ssPrewarm error:", _pwErr);
+        }
+      }
+
+      const _ssTrans = typeof window.ssT === "function" ? window.ssT : function (s) { return s; };
+      const _locName = typeof locName === "function" ? locName : function (o) { return o.title; };
+      const _expTitle = expObj.titleHi ? _ssTrans(expObj.titleHi) : _locName(expObj);
+      setText("wt-title", _expTitle);
+      const _expSubtitle = expObj.subtitleHi ? _ssTrans(expObj.subtitleHi) : (expObj.subtitle || "");
+      setText("wt-subtitle", _expSubtitle);
+      renderWtDots();
+      runWalkthroughStep();
+      console.info("[walkthrough] openWalkthroughExp opened", displayKey);
+    })();
   }
   window.openWalkthroughExp = openWalkthroughExp;
 
@@ -16446,23 +16742,16 @@ window.toggleLang = toggleLang;
       addMsg("user", displayText, false);
       if (ST.chatHistory) ST.chatHistory.push({ role: "user", content: displayText });
 
-      // Check for deterministic triage flow — Hindi-only (non-Hindi gets AI reply in selected language)
-      const _isHindi = (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
-      const symptomKey = _isHindi
-        ? (_detectSymptomKey(displayText) || _detectSymptomKey(aiPrompt))
-        : null;
-      if (_isHindi && symptomKey && typeof FOCUS_FLOWS !== "undefined" && FOCUS_FLOWS[symptomKey]) {
-        // Launch bubble-triage directly — no LLM call on first symptom turn
+      // Check for deterministic triage flow — runs for ALL languages (strings translated via ssT)
+      const symptomKey = _detectSymptomKey(displayText) || _detectSymptomKey(aiPrompt);
+      if (symptomKey && typeof FOCUS_FLOWS !== "undefined" && FOCUS_FLOWS[symptomKey]) {
+        // Launch bubble-triage via maybeAppendGuidedCta which handles ssPrewarm + ssT
         ST._symptomTurnSeen = 1;
-        _activeTriage = { key: symptomKey, stepIdx: 0, answers: {} };
-        const flow = FOCUS_FLOWS[symptomKey];
-        if (flow && flow.dadiOpener) {
-          addMsg("bot", flow.dadiOpener, false);
-          if (typeof speak === "function") speak(flow.dadiOpener);
+        if (typeof maybeAppendGuidedCta === "function") {
+          maybeAppendGuidedCta(displayText, msgs);
         }
-        setTimeout(() => _renderNextTriageQuestion(msgs), 200);
       } else {
-        // Non-Hindi or no deterministic flow — fall through to AI in selected language
+        // No deterministic flow — fall through to AI in selected language
         callAI(aiPrompt, getSystemPromptFor("nushke"));
       }
     }, 100);
@@ -16516,14 +16805,17 @@ window.toggleLang = toggleLang;
     row.className = "msg-row bot followup-row";
     const wrap = document.createElement("div");
     wrap.className = "followup-chips";
+    // Helper: run i18n label through ssT for additional translation if needed
+    const _ssT = (typeof window.ssT === "function") ? window.ssT : null;
     for (const k of list) {
       const btn = document.createElement("button");
       btn.className = "followup-chip";
       btn.setAttribute("data-i18n", k);
-      btn.textContent = t(k);
+      const _rawLabel = t(k);
+      btn.textContent = _ssT ? (_ssT(_rawLabel) || _rawLabel) : _rawLabel;
       btn.onclick = () => {
         row.remove();
-        handleFollowup(t(k), ctx);
+        handleFollowup(_rawLabel, ctx);
       };
       wrap.appendChild(btn);
     }
@@ -16841,10 +17133,8 @@ window.toggleLang = toggleLang;
         // openRemedy → openWalkthrough (the new magical player).
         // v7.1: skip remedy/acupressure mirror when EXPERIENCE: contract fired —
         // the companion entry is the single affordance for this turn.
-        // v10: Hinglish content cards are Hindi-only; non-Hindi gets AI-native guidance.
-        const _addMsgIsHindi = (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
         const voiceTa = document.getElementById("voice-transcript-area");
-        if (_addMsgIsHindi && voiceTa && !ST._experienceShownThisTurn) {
+        if (voiceTa && !ST._experienceShownThisTurn) {
           if (typeof injectRemedyCard === "function") {
             setTimeout(() => injectRemedyCard(text, voiceTa), 80);
           }
@@ -16854,7 +17144,7 @@ window.toggleLang = toggleLang;
           if (typeof injectMovementCard === "function") {
             setTimeout(() => injectMovementCard(text, voiceTa), 220);
           }
-        } else if (_addMsgIsHindi && voiceTa && ST._experienceShownThisTurn) {
+        } else if (voiceTa && ST._experienceShownThisTurn) {
           // Movement cards are non-remedy (exercise/yoga) — still allow them
           if (typeof injectMovementCard === "function") {
             setTimeout(() => injectMovementCard(text, voiceTa), 220);
@@ -16887,14 +17177,10 @@ window.toggleLang = toggleLang;
         }
       }
       row.appendChild(acts);
-      // skill check — Hindi-only: Hinglish content cards are unavailable in non-Hindi
-      // v10: gate detectSkill card, injectRemedyCard, injectAcupressureCard,
-      // injectMovementCard on Hindi. Follow-up chips + speaker button stay language-neutral.
-      const _chatMsgIsHindi = (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
       // Dedupe guard: skip if (a) a triage is currently running (companion entry
       // from _finalizeTriageInChat is the correct single affordance for that turn),
       // or (b) the same skill key was already injected earlier in this turn.
-      const skill = _chatMsgIsHindi ? detectSkill(text) : null;
+      const skill = detectSkill(text);
       if (skill && !_activeTriage && ST._lastCardKeyThisTurn !== ("skill:" + skill))
         setTimeout(() => {
           // Re-check _activeTriage inside the timer — it may have started in the
@@ -16914,16 +17200,15 @@ window.toggleLang = toggleLang;
       // remedy card — guided CTA handles triage instead. From turn 2+, allow.
       // v7.1: also suppress when EXPERIENCE: contract fired this turn —
       // callAI already rendered the single companion entry; no competing cards.
-      // v10: Hindi-only gate applied to remedy + acupressure + movement cards.
-      if (_chatMsgIsHindi && (ST.chatCtx === "nushke" || ST.chatCtx === "wellness")) {
+      if (ST.chatCtx === "nushke" || ST.chatCtx === "wellness") {
         const _suppressRemedy = (ST._symptomTurnSeen === 1) || !!ST._experienceShownThisTurn;
         if (!_suppressRemedy) {
           setTimeout(() => injectRemedyCard(text, msgs), 800);
           setTimeout(() => injectAcupressureCard(text, msgs), 950);
         }
       }
-      // movement skill / wellness habit card — Hindi-only, fires in all ctxs when keyword matches
-      if (_chatMsgIsHindi) setTimeout(() => injectMovementCard(text, msgs), 900);
+      // movement skill / wellness habit card — fires in all ctxs when keyword matches
+      setTimeout(() => injectMovementCard(text, msgs), 900);
       // v3.2: Follow-up CTA chips (after a beat, only on AI replies — not template ones)
       // WS1 fix: skip generic chips when the guided-ilaj CTA was injected for this
       // turn (ST._guidedCtaActive). Reset the flag and the dedupe key after reading.
@@ -17010,6 +17295,7 @@ window.toggleLang = toggleLang;
 
   // Render the next triage question as addQuickReplies bubbles.
   // Called on entry and after each answer.
+  // Strings are routed through ssT() for the selected language (no-op for Hindi).
   function _renderNextTriageQuestion(msgsContainer) {
     if (!_activeTriage) return;
     const flow = FOCUS_FLOWS[_activeTriage.key];
@@ -17023,17 +17309,23 @@ window.toggleLang = toggleLang;
       return;
     }
 
+    // Helper: translate a string via ssT if available (synchronous cache hit after prewarm)
+    const _t = (typeof window.ssT === "function")
+      ? function (s) { return window.ssT(s) || s; }
+      : function (s) { return s; };
+
     const q = qList[idx];
     // Show the question as a bot bubble first, then the options as chips.
-    addMsg("bot", q.q, false);
-    if (typeof speak === "function") speak(q.q);
+    const _translatedQ = _t(q.q);
+    addMsg("bot", _translatedQ, false);
+    if (typeof speak === "function") speak(_translatedQ);
 
-    // Build option list — include a "Skip" escape that finalizes with current answers
+    // Build option list — translate each option, include a "Skip" escape
     const skipLabel =
       typeof locStr === "function"
         ? locStr("Skip — Saathi chunega", "स्किप — साथी चुनेगा")
         : "Skip — Saathi chunega";
-    const opts = [...q.opts, skipLabel];
+    const opts = [...q.opts.map(_t), skipLabel];
 
     // Replace the generic addQuickReplies so this row is uniquely addressable
     const msgs = msgsContainer || document.getElementById("chat-msgs");
@@ -17197,14 +17489,9 @@ window.toggleLang = toggleLang;
   // Public entry: detect symptom in userText and, if found, launch the
   // deterministic bubble-triage instead of showing LLM OPTIONS.
   // Returns true if triage was launched (caller must suppress OPTIONS rendering).
-  // ISSUE 1+2 defense-in-depth: only runs for Hindi (getLang()==="hi").
-  // Non-Hindi sessions get one AI reply in the selected language — no triage.
+  // Runs for ALL languages — strings are translated via ssPrewarm/ssT.
   let _lastTriageKey = null; // per-callAI-roundtrip dedupe
-  function maybeAppendGuidedCta(userText, msgsContainer) {
-    // Defense-in-depth gate: deterministic Hinglish triage is Hindi-only.
-    const _ctaIsHindi = (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
-    if (!_ctaIsHindi) return false;
-
+  async function maybeAppendGuidedCta(userText, msgsContainer) {
     if (!userText || !msgsContainer) return false;
     const key = _detectSymptomKey(userText);
     if (!key) return false;
@@ -17217,6 +17504,28 @@ window.toggleLang = toggleLang;
     if (_activeTriage && _activeTriage.key === key) return true; // already running
     _lastTriageKey = key;
 
+    // Prewarm translations for all strings in this flow so ssT() is synchronous
+    // during rendering. For Hindi (getLang()==="hi"), ssPrewarm/ssT are no-ops.
+    const flow = FOCUS_FLOWS[key];
+    if (typeof window.ssPrewarm === "function" && flow) {
+      const _stringsToWarm = [];
+      if (flow.dadiOpener) _stringsToWarm.push(flow.dadiOpener);
+      if (flow.qa) {
+        for (const q of flow.qa) {
+          if (q.q) _stringsToWarm.push(q.q);
+          if (q.opts) _stringsToWarm.push(...q.opts);
+        }
+      }
+      // Generic followup chips used by the triage
+      _stringsToWarm.push("Aur batao", "Iske baare mein aur", "Doctor se kab milein?");
+      try { await window.ssPrewarm(_stringsToWarm); } catch (e) {}
+    }
+
+    // Helper: translate a string if ssT is available, else return as-is
+    const _t = (typeof window.ssT === "function")
+      ? function (s) { return window.ssT(s) || s; }
+      : function (s) { return s; };
+
     // Initialize triage state
     _activeTriage = { key, stepIdx: 0, answers: {} };
 
@@ -17226,13 +17535,14 @@ window.toggleLang = toggleLang;
     // always saw the flag as false and injected a duplicate set of followup chips.)
     ST._guidedCtaActive = true;
 
-    // Show the flow opener
-    const flow = FOCUS_FLOWS[key];
+    // Show the flow opener — translated into the selected language
     if (flow && flow.dadiOpener) {
-      addMsg("bot", flow.dadiOpener, false);
+      const _translatedOpener = _t(flow.dadiOpener);
+      addMsg("bot", _translatedOpener, false);
+      if (typeof speak === "function") speak(_translatedOpener);
     }
 
-    // Render first question as bubbles
+    // Render first question as bubbles — _renderNextTriageQuestion uses ssT internally
     setTimeout(() => _renderNextTriageQuestion(msgsContainer), 200);
 
     return true;
@@ -17452,26 +17762,7 @@ window.toggleLang = toggleLang;
         _selectedMeta.script +
         " script, EVEN IF the user types in Hindi, Hinglish/Roman-Hindi, or any other language. Do NOT mirror the user's input language. The selected app language always wins. Begin with \"LANG:" +
         _selectedMeta.langCode +
-        "\"." +
-        "\n\nNON-HINDI SYMPTOM FLOW (mandatory): The Hindi deterministic triage does NOT run for this language. For ANY health symptom the user describes — including headache, cold/cough, stomach trouble, sleep, fever, back pain, or stress — you MUST: (1) acknowledge warmly in one short clause, (2) ask exactly ONE clarifying question (e.g. since when / what type / any other symptoms), and (3) end the reply with an OPTIONS line of 2–4 tappable choices in " +
-        _selectedMeta.name +
-        " (last option always a natural escape like \"Something else\" in " +
-        _selectedMeta.name +
-        "). After the user answers or taps a choice, THEN give the remedy as 2–3 short warm actionable steps in " +
-        _selectedMeta.name +
-        ". Do NOT skip the clarifying question and jump straight to remedy on the first symptom mention.";
-    }
-    // v10: walkthrough companion card is only available in Hindi.
-    // For all other languages the app cannot show the card — so DO NOT emit
-    // an EXPERIENCE: line. Give the remedy guidance directly as short, warm,
-    // actionable steps in the user's language; your text reply IS the complete guidance.
-    if (_selectedLang !== "hi") {
-      _sysContent +=
-        "\n\nIMPORTANT — EXPERIENCE LINE SUPPRESSED: The step-by-step walkthrough card is NOT available in " +
-        _selectedMeta.name +
-        ". Do NOT emit an EXPERIENCE: line in this reply. Instead, give the remedy guidance directly as 2–3 short, warm, actionable steps in " +
-        _selectedMeta.name +
-        ". Your text reply is the complete guidance.";
+        "\".";
     }
 
     // Inject a compact VOICE directive so the model skips visual affordances
@@ -17676,11 +17967,9 @@ window.toggleLang = toggleLang;
 
         // ── v7.1: Render single companion entry when EXPERIENCE contract fired ─
         // Replaces maybeAppendRemedyCta + injectRemedyCard competing paths.
-        // v10: The walkthrough companion card is Hindi-only. For non-Hindi, the
-        // AI's native-language text reply IS the complete guidance — no card.
         // The EXPERIENCE: line is stripped from displayed/spoken text for ALL languages.
-        const _callAIIsHindi = (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
-        if (_experienceKey && _callAIIsHindi) {
+        // The walkthrough companion card renders for ALL selected languages (triage is now multilingual).
+        if (_experienceKey) {
           // Resolve experience object from REMEDY_EXPERIENCES or fall back to a
           // generic general-care placeholder (nuskha is adding that in parallel).
           const _expObj =
@@ -17777,7 +18066,7 @@ window.toggleLang = toggleLang;
         //      Guard: ST._voiceRemedyShownSymptoms (Set) accumulates per session;
         //      reset to an empty Set each time voiceModeActive is freshly true
         //      AND the overlay was previously closed (overlay just re-opened).
-        if (_callAIIsHindi && voiceModeActive && !_experienceKey) {
+        if (voiceModeActive && !_experienceKey) {
           // Lazy-init / reset the session guard when the overlay opens fresh.
           // _voiceOv.classList.contains("on") is true right now; we detect a
           // "new session" by checking ST._voiceOverlayWasOn: false means we
@@ -17872,13 +18161,9 @@ window.toggleLang = toggleLang;
         // Returns true if triage was launched — in that case options are irrelevant.
         // v6.9: skip entirely in VOICE mode — tap affordances are meaningless there;
         // the model already asks a spoken clarifying question via the VOICE directive.
-        // ISSUE 1+2 FIX: also gate on getLang()==="hi" — non-Hindi sessions must NOT
-        // launch the Hinglish deterministic triage at all. The AI reply in the
-        // selected language is the complete response for those sessions.
-        const _callAITriageIsHindi =
-          (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
+        // Runs for ALL languages — maybeAppendGuidedCta prewarms translations via ssPrewarm.
         const _triagedThisTurn =
-          _callAITriageIsHindi && !voiceModeActive && typeof maybeAppendGuidedCta === "function"
+          !voiceModeActive && typeof maybeAppendGuidedCta === "function"
             ? maybeAppendGuidedCta(userText, document.getElementById("chat-msgs"))
             : false;
 
@@ -19219,17 +19504,13 @@ function chatSend() {
     return;
   }
 
-  // v10.1: Hindi triage short-circuit — for typed symptoms that map to a
-  // deterministic FOCUS_FLOW, launch the triage directly and SKIP the LLM
-  // call entirely. This prevents two redundant clarifying bubbles:
-  //   (a) the LLM's own "समझ गई। कहाँ दर्द है?" reply, AND
+  // Triage short-circuit — for typed symptoms that map to a deterministic
+  // FOCUS_FLOW, launch the triage directly and SKIP the LLM call entirely.
+  // This prevents two redundant clarifying bubbles:
+  //   (a) the LLM's own clarifying reply, AND
   //   (b) maybeAppendGuidedCta's dadiOpener + first triage question.
-  // Only applies to Hindi (getLang()==="hi"). Non-Hindi chat, the EXPERIENCE
-  // walkthrough path (triSymptomTap with a non-typed aiPrompt), and all
-  // non-symptom Hindi chat fall through to callAI as before.
-  const _chatSendIsHindi =
-    (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
-  if (_chatSendIsHindi) {
+  // Runs for ALL languages — maybeAppendGuidedCta prewarms translations via ssPrewarm.
+  {
     const _symptomKey =
       typeof _detectSymptomKey === "function" ? _detectSymptomKey(txt) : null;
     if (
@@ -19237,7 +19518,6 @@ function chatSend() {
       typeof FOCUS_FLOWS !== "undefined" &&
       FOCUS_FLOWS[_symptomKey]
     ) {
-      // Seed chat history with the user message, then launch triage.
       // triSymptomTap resets context and re-adds the user bubble, so we
       // do NOT add it here — just let triSymptomTap own the whole flow.
       trackEvent("chat_send", { ctx: ST.chatCtx, len: txt.length });
@@ -27332,6 +27612,16 @@ const BREATH_PHASES = [
         "</div>"
       : "";
 
+    // i18n: translate card text via ssT (synchronous; cache pre-filled on next
+    // paint if ssPrewarm wasn't called ahead of time, ssT returns Hindi as fallback).
+    const _ssTcard = typeof window.ssT === "function" ? window.ssT : function (s) { return s; };
+    // Card title: prefer Devanagari titleHi as translation source for best quality.
+    const _cardTitle = kit.titleHi
+      ? _ssTcard(kit.titleHi)
+      : (typeof locName === "function" ? locName(kit) : kit.title);
+    const _cardIng  = _ssTcard(kit.ingredients || "");
+    const _cardMeta = _ssTcard(kit.steps.length + " steps · " + Math.round(kit.durSec / 60) + " min");
+
     const row = document.createElement("div");
     row.className = "msg-row bot video-card-row";
     row.innerHTML =
@@ -27347,16 +27637,14 @@ const BREATH_PHASES = [
       "</div>" +
       '<div class="recipe-card-info">' +
       '<div class="recipe-card-title">' +
-      (typeof locName === "function" ? locName(kit) : kit.title) +
+      _cardTitle +
       "</div>" +
       '<div class="recipe-card-ing">' +
-      kit.ingredients +
+      _cardIng +
       "</div>" +
       '<div class="recipe-card-meta">' +
-      kit.steps.length +
-      " steps · " +
-      Math.round(kit.durSec / 60) +
-      " min</div>" +
+      _cardMeta +
+      "</div>" +
       spHtml +
       badgeHtml +
       "</div>" +
@@ -27718,16 +28006,22 @@ const BREATH_PHASES = [
     const a = detectAcupressure(text);
     if (!a) return;
     const [key, p] = a;
+    // i18n: translate acupressure card labels via ssT.
+    const _ssTacu = typeof window.ssT === "function" ? window.ssT : function (s) { return s; };
+    const _acuTitle = p.titleHi
+      ? _ssTacu(p.titleHi)
+      : (typeof locName === "function" ? locName(p) : p.title);
+    const _acuMeta = _ssTacu(p.dur + " · Step-by-step");
     const row = document.createElement("div");
     row.className = "msg-row bot video-card-row";
-    row.innerHTML = `
-    <button class="acu-card" onclick="openAcupressure('${key}')">
-      <div class="acu-card-thumb"><span>${p.emoji}</span><div class="acu-card-pulse"></div></div>
-      <div class="acu-card-info">
-        <div class="acu-card-title">${typeof locName === "function" ? locName(p) : p.title}</div>
-        <div class="acu-card-meta"><span class="acu-card-tag">Acupressure</span>${p.dur} · Step-by-step</div>
-      </div>
-    </button>`;
+    row.innerHTML =
+      '<button class="acu-card" onclick="openAcupressure(\'' + key + '\')">' +
+      '<div class="acu-card-thumb"><span>' + p.emoji + '</span><div class="acu-card-pulse"></div></div>' +
+      '<div class="acu-card-info">' +
+      '<div class="acu-card-title">' + _acuTitle + '</div>' +
+      '<div class="acu-card-meta"><span class="acu-card-tag">Acupressure</span>' + _acuMeta + '</div>' +
+      '</div>' +
+      '</button>';
     msgsContainer.appendChild(row);
     msgsContainer.scrollTop = msgsContainer.scrollHeight;
   }
@@ -27749,7 +28043,12 @@ const BREATH_PHASES = [
     _moveSkill = { emoji: p.emoji, title: p.title, titleHi: p.titleHi, durSec: 60, steps: p.instr, tts: p.tts };
     _moveStepIdx = 0;
     document.getElementById("move-ov").classList.add("on");
-    document.getElementById("move-ov-title").textContent = (typeof locName === "function" ? locName(p) : p.title);
+    // i18n: translate acupressure overlay title via ssT.
+    const _ssTacuOv = typeof window.ssT === "function" ? window.ssT : function (s) { return s; };
+    const _acuOvTitle = p.titleHi
+      ? _ssTacuOv(p.titleHi)
+      : (typeof locName === "function" ? locName(p) : p.title);
+    document.getElementById("move-ov-title").textContent = _acuOvTitle;
     const anim = document.getElementById("move-ov-anim");
     // v5.4: restore default circle look after any prior MOVEMENT_SKILLS run that
     // may have transparent-styled the container, then paint the body silhouette.
