@@ -16240,6 +16240,7 @@ function renderHubMore() {
         const flow = FOCUS_FLOWS[symptomKey];
         if (flow && flow.dadiOpener) {
           addMsg("bot", flow.dadiOpener, false);
+          if (typeof speak === "function") speak(flow.dadiOpener);
         }
         setTimeout(() => _renderNextTriageQuestion(msgs), 200);
       } else {
@@ -16793,6 +16794,7 @@ function renderHubMore() {
     const q = qList[idx];
     // Show the question as a bot bubble first, then the options as chips.
     addMsg("bot", q.q, false);
+    if (typeof speak === "function") speak(q.q);
 
     // Build option list — include a "Skip" escape that finalizes with current answers
     const skipLabel =
@@ -19002,6 +19004,15 @@ const MED_STEPS = [
 ];
 
 function renderMedStep(step) {
+  // v6.9: legacy MED_STEPS flow is dead — redirect to the live RX/reminder flow
+  // in file 10 (startRx). This prevents anyone landing in the broken single-time-
+  // picker / goBack-only confirm path. startRx is defined in 10-commerce-*.js and
+  // is always present in the concatenated runtime.
+  if (typeof startRx === "function") {
+    startRx();
+    return;
+  }
+  // Fallback (should never be reached in production): continue legacy render
   ST.medStep = step;
   const flow = document.getElementById("med-flow");
   const s = MED_STEPS[step];
@@ -19321,6 +19332,53 @@ function reloadSavedReminders() {
     scheduleReminder(rem);
   });
 }
+
+// ── v6.9: sendReminderCall — immediate confirmation call/WhatsApp on reminder save.
+// Called by bazaar's flow right after the user confirms a reminder with a phone number.
+// fireReminder() (above) handles the SCHEDULED delivery at the saved time using the
+// same /notify/voice endpoint — this function covers the immediate "wiring proof" call.
+//
+// REQUIREMENT FOR A REAL CALL TO LAND:
+//   1. Worker must be deployed and WORKER_URL must point to it (USE_WORKER === true).
+//   2. The Worker's /notify/voice route must be implemented (POST → Twilio REST API).
+//   3. Valid Twilio Account SID + Auth Token + a purchased From number must be set as
+//      Worker env vars (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM).
+//   Without these, the fetch will fail silently (caught below) — the reminder still
+//   saves and the in-app overlay fires at the scheduled time.
+//
+// Usage: window.sendReminderCall("+919876543210", "Aapka reminder set ho gaya!");
+window.sendReminderCall = function sendReminderCall(phone, sayText) {
+  if (!USE_WORKER || !phone) {
+    // Guard: no-op when Worker is not wired or phone is empty
+    return Promise.resolve(null);
+  }
+  console.log("[notify] reminder call ->", phone);
+  const voicePromise = fetch(WORKER_URL + "/notify/voice", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-pilot-token": CLIENT_TOKEN,
+    },
+    body: JSON.stringify({ to: phone, say: sayText }),
+  }).catch(function (err) {
+    console.warn("[notify] /notify/voice fetch failed —", err && err.message);
+  });
+
+  // Also attempt WhatsApp as a fallback (best-effort, independent of voice)
+  fetch(WORKER_URL + "/notify/whatsapp", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-pilot-token": CLIENT_TOKEN,
+    },
+    body: JSON.stringify({ to: phone, text: sayText }),
+  }).catch(function (err) {
+    console.warn("[notify] /notify/whatsapp fetch failed —", err && err.message);
+  });
+
+  // Return the voice promise so callers can await/chain if needed
+  return voicePromise;
+};
 
 // ══════════════ v5.2: 48h SYMPTOM CHECK-IN LOOP ══════════════
 //
@@ -19942,9 +20000,24 @@ function rxSetPhone(v) {
 // ─── Prescription flow entry ───
 function startRx() {
   ST.rxStep = 0;
-  ST.rxData = { meds: [], member: "self", memberLabel: "Aap", channel: "app", phone: "" };
+  ST.rxData = { meds: [], member: "self", memberLabel: "Aap", channel: "voice", phone: "" };
   goTo("s-rx");
   renderRxStep(0);
+}
+
+// Start RX flow pre-seeded to a specific member — skips member-pick (step 0) and lands on step 1.
+// Used by fcAddMed, fcAddRx, and the post-add family celebration screen.
+function startRxForMember(memberKey, memberLabel) {
+  ST.rxStep = 0;
+  ST.rxData = {
+    meds: [],
+    member: memberKey || "self",
+    memberLabel: memberLabel || "Aap",
+    channel: "voice",
+    phone: "",
+  };
+  goTo("s-rx");
+  renderRxStep(1);
 }
 function rxBack() {
   if (ST.rxStep > 0) renderRxStep(ST.rxStep - 1);
@@ -20127,33 +20200,78 @@ function _renderRxStepInner(step) {
 
   if (step === 4) {
     // Reminder timings + delivery channel
+    // Frequency → N time-slot defaults
     if (titleEl) titleEl.textContent = "Reminder lagao";
-    if (subEl) subEl.textContent = "Kab yaad dilana hai?";
-    let html = `<div class="rx-body">
-      <div class="rx-step-title">Reminder kab lagana hai?</div>
-      <div class="rx-step-sub">Har dawai ka time chunein — hum yaad dila denge</div>`;
-    ST.rxData.meds.forEach((m, i) => {
-      const opts = ["Subah", "Dopahar", "Shaam", "Raat"];
-      const def = { Subah: "08:00", Dopahar: "13:00", Shaam: "18:00", Raat: "21:30" };
-      m._time = m._time || (m.timing && m.timing[0] ? def[m.timing[0]] : "08:00");
-      html += `<div class="rx-timing-card">
-        <div class="rx-timing-head">${m.name}<span class="strength">${m.strength} · ${m.dose}</span></div>
-        <div class="rx-timing-q">Kab leni hai? (ek ya zyada chunein)</div>
-        <div class="rx-timing-chips" data-med="${i}">`;
-      opts.forEach((o) => {
-        const sel = (m.timing || []).includes(o);
-        html += `<button class="rx-timing-chip ${sel ? "selected" : ""}" onclick="rxToggleTiming(${i},'${o}',this)">${o}</button>`;
-      });
-      html += `</div><div class="rx-timing-time">⏰ Pehla reminder time:<input type="time" value="${m._time}" onchange="rxSetTime(${i}, this.value)"></div>
-      </div>`;
+    if (subEl) subEl.textContent = "Kitni baar aur kab?";
+
+    // Default time arrays by frequency (1/2/3/4 per day)
+    const _freqDefaults = {
+      1: ["08:00"],
+      2: ["09:00", "21:00"],
+      3: ["08:00", "14:00", "21:00"],
+      4: ["08:00", "13:00", "18:00", "22:00"],
+    };
+
+    // Initialise _freq and _times[] on each med — derive from existing timing array if not yet set
+    ST.rxData.meds.forEach((m) => {
+      // Derive initial frequency from timing array length (1-4); clamp to valid range
+      if (!m._freq) {
+        const derived = Math.min(4, Math.max(1, (m.timing || ["Subah"]).length));
+        m._freq = derived;
+      }
+      // Always regenerate _times from _freqDefaults when _times is missing or stale length
+      const expected = _freqDefaults[m._freq] || _freqDefaults[1];
+      if (!Array.isArray(m._times) || m._times.length !== m._freq) {
+        m._times = expected.slice();
+      }
+      // Clear stale single _time field to prevent leakage
+      delete m._time;
     });
 
-    // Delivery channel — default: voice (WhatsApp disabled for pilot)
+    const _loc = (hi, en) => (typeof locStr === "function" ? locStr(hi, en) : en);
+    let html = `<div class="rx-body">
+      <div class="rx-step-title">Reminder kab lagana hai?</div>
+      <div class="rx-step-sub">Har dawai ke liye frequency aur time chunein</div>`;
+
+    ST.rxData.meds.forEach((m, i) => {
+      html += `<div class="rx-timing-card">
+        <div class="rx-timing-head">${m.name}<span class="strength">${m.strength} · ${m.dose}</span></div>
+        <div class="rx-timing-q">Kitni baar leni hai? (rozana)</div>
+        <div class="rx-timing-chips" data-med="${i}" style="margin-bottom:10px">`;
+      [1, 2, 3, 4].forEach((n) => {
+        const label = n === 1 ? "1 baar" : n === 2 ? "2 baar" : n === 3 ? "3 baar" : "4 baar";
+        html += `<button class="rx-timing-chip${m._freq === n ? " selected" : ""}" onclick="rxSetFreq(${i},${n})">${label}</button>`;
+      });
+      html += `</div>`;
+
+      // Kitne din field (inline in the timing card so duration is visible and editable here)
+      html += `<div class="rx-timing-time" style="margin-bottom:8px">
+        📅 Kitne din leni hai:&nbsp;
+        <input type="number" min="1" max="365" value="${m.duration || 7}"
+          style="width:70px;display:inline-block"
+          onchange="rxSetDuration(${i}, this.value)"> din
+      </div>`;
+
+      // N time inputs — one per dose
+      html += `<div class="rx-timing-q" style="margin-bottom:6px">Har dose ka time:</div>`;
+      const slotLabels = ["1st dose", "2nd dose", "3rd dose", "4th dose"];
+      (m._times || []).forEach((t, si) => {
+        html += `<div class="rx-timing-time" style="margin-bottom:6px">
+          ⏰ ${slotLabels[si] || "Dose " + (si + 1)}:&nbsp;
+          <input type="time" value="${t}"
+            onchange="rxSetSlotTime(${i},${si},this.value)"
+            style="display:inline-block">
+        </div>`;
+      });
+      html += `</div>`;
+    });
+
+    // Delivery channel — default: voice
     const ch = ST.rxData.channel || "voice";
     if (!ST.rxData.channel) ST.rxData.channel = "voice";
-    const _loc = (hi, en) => (typeof locStr === "function" ? locStr(hi, en) : en);
+
     html += `<div class="rx-channel">
-      <div class="rx-channel-head">${_loc("Reminder kahan bheje?", "Where to send reminder?")}</div>
+      <div class="rx-channel-head">${_loc("Reminder kaise mile?", "How to receive reminder?")}</div>
       <div class="rx-channel-sub">${_loc("Ghar ke bado ke liye awaaz best hai — padhna nahi aata? No problem.", "Voice call is best for elders — no reading needed.")}</div>
       <button class="rx-channel-opt ${ch === "voice" ? "selected" : ""}" onclick="rxSetChannel('voice')" style="border:none;width:100%;font-family:inherit;color:inherit;text-align:left">
         <div class="rx-channel-opt-ic" style="color:#fb923c">📞</div>
@@ -20169,8 +20287,8 @@ function _renderRxStepInner(step) {
         <div class="rx-channel-opt-ic" style="color:#25d366">💬</div>
         <div style="flex:1"><div class="rx-channel-opt-name" style="display:flex;align-items:center;gap:8px">${_loc("WhatsApp pe message", "WhatsApp message")}<span style="font-size:10px;background:#e5e7eb;color:#6b7280;padding:2px 7px;border-radius:20px;font-weight:600">${_loc("जल्द आएगा", "Coming soon")}</span></div><div class="rx-channel-opt-sub">${_loc("Sandbox approval ke baad milega — abhi upalabdh nahi", "Available after Meta approval — not yet active")}</div></div>
       </div>
-      <div class="rx-channel-phone${ch === "voice" ? " on" : ""}">
-        <label>${_loc("Call kis number par karna hai?", "Which number to call?")}</label>
+      <div class="rx-channel-phone on">
+        <label>${_loc("Call/reminder kis number par karna hai?", "Phone number for reminders:")}</label>
         <input type="tel" placeholder="+91 98XXXXXXXX" value="${ST.rxData.phone || ""}" oninput="rxSetPhone(this.value)">
       </div>
     </div>`;
@@ -20184,27 +20302,44 @@ function _renderRxStepInner(step) {
 
   if (step === 5) {
     // Confirmation + offer to order
-    if (titleEl) titleEl.textContent = "Reminders set ho gaye ✓";
+    if (titleEl) titleEl.textContent = "Reminders set ho gaye";
     if (subEl) subEl.textContent = ST.rxData.memberLabel + " ke liye";
     const channelLabel =
       { app: "JBIQ App", whatsapp: "WhatsApp", voice: "Voice call" }[ST.rxData.channel] || "App";
-    const totalDays = Math.max(...ST.rxData.meds.map((m) => m.duration || 1));
+    const totalDays = ST.rxData.meds.length
+      ? Math.max(...ST.rxData.meds.map((m) => m.duration || 1))
+      : 7;
+    const phone = ST.rxData.phone || "";
+
+    // Build per-med reminder summary
+    let medSummary = "";
+    ST.rxData.meds.forEach((m) => {
+      const times = Array.isArray(m._times) && m._times.length ? m._times : (m._time ? [m._time] : ["08:00"]);
+      medSummary += `<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08)">
+        <div style="font-size:13px;font-weight:600">💊 ${m.name}${m.strength ? " · " + m.strength : ""}</div>
+        <div style="font-size:11px;color:var(--text2);text-align:right">${times.join(" / ")} · ${m.duration || 7} din</div>
+      </div>`;
+    });
+
     let html = `<div class="lottie-hero" data-lottie="lottie-medicine.json"></div>
     <div class="bz-success">
       <div class="bz-tick">✓</div>
-      <h2>Reminders ready!</h2>
-      <p>${ST.rxData.meds.length} dawaiyaan ke liye reminder set hai · ${channelLabel} pe yaad dilayenge</p>
+      <h2>Reminders set ho gaye!</h2>
+      <p>${ST.rxData.meds.length} dawaiyaan · ${channelLabel}${phone ? " · " + phone : ""}</p>
       <div class="bz-success-id">${totalDays} din chalega · ${ST.rxData.memberLabel}</div>
     </div>
+    <div style="background:var(--surface);border-radius:14px;padding:14px 16px;margin:0 16px 16px">
+      ${medSummary || "<div style='font-size:12px;color:var(--text3)'>Koi dawai nahi</div>"}
+    </div>
     <div style="padding:0 16px 24px">
-      <div class="bz-banner">
+      <button class="rx-cta" onclick="goTo('s-hub')" style="background:var(--primary)">Wapas Sehat Saathi</button>
+      <div class="bz-banner" style="margin-top:12px">
         <div class="bz-banner-ic">🛒</div>
         <div style="flex:1">
           <div class="bz-banner-l">Yeh dawaiyaan ghar mangao?<span class="small">Sehat Bazaar (Reliance Netmeds) — tier 2/3 mein bhi delivery, COD available</span></div>
         </div>
       </div>
-      <button class="rx-cta warm" onclick="orderFromRx()">Sehat Bazaar se ghar mangao →</button>
-      <button class="rx-cta secondary" onclick="goTo('s-hub')">Ab nahi · Wapas Sehat Saathi</button>
+      <button class="rx-cta secondary" onclick="orderFromRx()">Sehat Bazaar se ghar mangao →</button>
       <button class="rx-cta secondary" onclick="startFeature('bazaar')">Mere reminders dekhein</button>
     </div>`;
     el.innerHTML = html;
@@ -20772,8 +20907,43 @@ function rxToggleTiming(i, t, btn) {
   if (btn) btn.classList.toggle("selected");
 }
 function rxSetTime(i, t) {
+  // Legacy single-time setter — kept for back-compat; step 4 now uses rxSetSlotTime
   ST.rxData.meds[i]._time = t;
 }
+
+// Set frequency for med i; regenerate _times[] from defaults and re-render step 4
+function rxSetFreq(i, n) {
+  const _freqDefaults = {
+    1: ["08:00"],
+    2: ["09:00", "21:00"],
+    3: ["08:00", "14:00", "21:00"],
+    4: ["08:00", "13:00", "18:00", "22:00"],
+  };
+  const m = ST.rxData.meds[i];
+  if (!m) return;
+  m._freq = n;
+  m._times = (_freqDefaults[n] || _freqDefaults[1]).slice();
+  // Also sync timing array so review card (step 3) and saved reminder timing label reflect frequency
+  const slotNames = ["Subah", "Dopahar", "Shaam", "Raat"];
+  m.timing = slotNames.slice(0, n);
+  renderRxStep(4);
+}
+
+// Set a specific dose-slot time for med i, slot si
+function rxSetSlotTime(i, si, t) {
+  const m = ST.rxData.meds[i];
+  if (!m || !Array.isArray(m._times)) return;
+  m._times[si] = t;
+}
+
+// Update duration (days) for med i from the step-4 inline field
+function rxSetDuration(i, v) {
+  const m = ST.rxData.meds[i];
+  if (!m) return;
+  const d = parseInt(v, 10);
+  m.duration = d > 0 ? d : 7;
+}
+
 function rxSetChannel(c) {
   if (c === "whatsapp") {
     // WhatsApp disabled for pilot — Twilio sandbox opt-in / Meta approval pending
@@ -20798,39 +20968,68 @@ function rxSaveReminders() {
     const _phoneEl = document.querySelector(".rx-channel-phone input");
     if (_phoneEl && _phoneEl.value.trim()) ST.rxData.phone = _phoneEl.value.trim();
   } catch (e) {}
-  if (ST.rxData.channel === "voice" && !(ST.rxData.phone || "").trim()) {
+
+  // Phone is required for all channels (voice calls are wired; app reminders also use it)
+  if (!(ST.rxData.phone || "").trim()) {
     const _loc = (hi, en) => (typeof locStr === "function" ? locStr(hi, en) : en);
-    showToast(_loc("Call ke liye phone number daalein", "Please enter phone number for call"));
+    showToast(_loc("Phone number zaroor daalein — reminder ke liye", "Please enter phone number for reminders"));
     return;
   }
+
+  const phone = (ST.rxData.phone || "").trim();
   const rxId = "rx_" + Date.now();
   const rems = loadReminders();
+  const newRems = [];
+
   ST.rxData.meds.forEach((m) => {
-    if (!m.timing || !m.timing.length) return;
-    rems.push({
-      id: Date.now() + Math.random(),
-      rxId,
-      name: m.name,
-      strength: m.strength,
-      who: ST.rxData.memberLabel,
-      member: ST.rxData.member,
-      time: m._time || "08:00",
-      timing: (m.timing || []).join(", "),
-      dose: m.dose,
-      duration_days: m.duration,
-      channel: ST.rxData.channel,
-      phone: ST.rxData.phone || "",
-      notes: m.notes || "",
+    // Build times array: prefer _times[] (N-slot), fall back to single _time, then default
+    const times = Array.isArray(m._times) && m._times.length
+      ? m._times.slice()
+      : (m._time ? [m._time] : ["08:00"]);
+    // frequency stored on med
+    const freq = m._freq || times.length || 1;
+    const timingLabel = (m.timing || []).join(", ") || "Subah";
+
+    // Create one reminder entry per dose slot so each fires independently
+    times.forEach((slotTime, si) => {
+      const rem = {
+        id: Date.now() + Math.random(),
+        rxId,
+        name: m.name,
+        strength: m.strength,
+        who: ST.rxData.memberLabel,
+        member: ST.rxData.member,
+        time: slotTime,
+        times: times, // full times array, for display
+        slotIndex: si,
+        freq,
+        timing: timingLabel,
+        dose: m.dose,
+        duration_days: m.duration,
+        channel: ST.rxData.channel,
+        phone,
+        notes: m.notes || "",
+      };
+      rems.push(rem);
+      newRems.push(rem);
     });
   });
+
   saveReminders(rems);
   if (ST.rxData.channel === "app") requestNotifPermission();
-  // WS6: schedule ALL channels — fireReminder now branches on rem.channel and
-  // routes whatsapp/voice through the Worker. App channel also gets
-  // requestNotifPermission above so browser notifications still work.
-  rems.slice(-ST.rxData.meds.length).forEach((rem) => {
+  // Schedule each slot reminder
+  newRems.forEach((rem) => {
     scheduleReminder(rem);
   });
+
+  // Fire an immediate confirmation call on the entered number (baat exposes window.sendReminderCall)
+  try {
+    const firstMedName = (ST.rxData.meds[0] && ST.rxData.meds[0].name) || "dawai";
+    const confirmText = `नमस्ते! आपका ${firstMedName} का reminder सेट हो गया है। हम आपको समय पर याद दिलाएँगे।`;
+    if (typeof window.sendReminderCall === "function") {
+      window.sendReminderCall(phone, confirmText);
+    }
+  } catch (_ce) {}
 
   // Persist prescription record per member (ss_prescriptions[memberKey])
   try {
@@ -20848,6 +21047,8 @@ function rxSaveReminders() {
         strength: mm.strength,
         dose: mm.dose,
         timing: mm.timing,
+        times: mm._times || [],
+        freq: mm._freq || 1,
         duration: mm.duration,
         form: mm.form,
         notes: mm.notes,
@@ -20859,9 +21060,11 @@ function rxSaveReminders() {
     rxStore[rxMember] = rxStore[rxMember].slice(0, 10); // cap at 10 per member
     localStorage.setItem("ss_prescriptions", JSON.stringify(rxStore));
   } catch (_e) {}
+
   if (ST.rxData.channel === "whatsapp")
     showToast("WhatsApp reminders set — waqt pe message bhejenge");
   if (ST.rxData.channel === "voice") showToast("Voice call reminders set — waqt pe call aayegi");
+  if (ST.rxData.channel === "app") showToast("App reminders set — waqt pe yaad dilayenge");
   bumpScore && bumpScore(2);
   renderRxStep(5);
 }
@@ -21263,7 +21466,7 @@ function renderBazaarList() {
         <div class="bz-list-ic" style="background:rgba(168,85,247,.18);color:#a855f7">💊</div>
         <div class="bz-list-info">
           <div class="bz-list-name">${r.name}${r.strength ? " · " + r.strength : ""}</div>
-          <div class="bz-list-sub">${r.who} · ${r.timing || "-"} · ${r.time || "-"}<span class="rem-channel-pill ${ch}">${chLabel}</span></div>
+          <div class="bz-list-sub">${r.who} · ${r.timing || "-"} · ${Array.isArray(r.times) && r.times.length ? r.times.join(" / ") : (r.time || "-")}<span class="rem-channel-pill ${ch}">${chLabel}</span></div>
         </div>
         <button onclick="deleteReminder('${r.id}')" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer">✕</button>
       </div>`;
@@ -21885,8 +22088,7 @@ function fcAddMed(idx) {
   const m = fam[idx];
   if (!m) return;
   const memberKey = "fam_" + m.name;
-  rxSelectMember(memberKey, m.name);
-  startRx();
+  startRxForMember(memberKey, m.name);
 }
 
 function fcAddReport(idx) {
@@ -21907,8 +22109,7 @@ function fcAddRx(idx) {
   const m = fam[idx];
   if (!m) return;
   const memberKey = "fam_" + m.name;
-  rxSelectMember(memberKey, m.name);
-  startRx();
+  startRxForMember(memberKey, m.name);
 }
 
 // ── Edit family member (pre-fill the add form) ──
@@ -22035,16 +22236,20 @@ function saveFamilyMember() {
   // Show follow-up suggestions instead of dead-ending on the family list
   const flow = document.getElementById("family-list");
   if (flow) {
+    // Build the member key for the newly added member (last in fam array)
+    const _newMemberKey = "fam_" + name;
+    const _newMemberKeyEsc = _newMemberKey.replace(/'/g, "\\'");
+    const _newNameEsc = name.replace(/'/g, "\\'");
     flow.innerHTML = `
       <div style="text-align:center;padding:30px 16px 20px">
         <div style="font-size:48px;margin-bottom:12px">🎉</div>
         <div style="font-size:18px;font-weight:700;margin-bottom:6px">${name} jud gaye!</div>
         <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:24px">${name} ke liye Sehat Saathi ab dekhbhal karega.</div>
         <div style="display:flex;flex-direction:column;gap:8px;max-width:320px;margin:0 auto">
-          <button class="lab-cta" onclick="goToFeature('lab')">🧪 ${name} ki lab report jodein</button>
-          <button class="lab-cta secondary" onclick="goToFeature('medicine')">💊 ${name} ke liye dawai reminder</button>
+          <button class="lab-cta" onclick="(typeof window.startLabForMember==='function'?window.startLabForMember('${_newMemberKeyEsc}','${_newNameEsc}'):startFeature('lab'))">🧪 ${name} ki lab report jodein</button>
+          <button class="lab-cta secondary" onclick="startRxForMember('${_newMemberKeyEsc}','${_newNameEsc}')">💊 ${name} ke liye dawai reminder</button>
           <button class="lab-cta secondary" onclick="renderFamilyList()">Family list dekhein</button>
-          <button class="lab-cta secondary" onclick="goTo('s-hub')">← Wapas Sehat Saathi</button>
+          <button class="lab-cta secondary" onclick="goTo('s-hub')">Wapas Sehat Saathi</button>
         </div>
       </div>`;
   }
