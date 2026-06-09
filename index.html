@@ -22938,17 +22938,24 @@ const BREATH_PHASES = [
   // Wrapped in a guard so localhost dev with HMR doesn't double-register.
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     window.addEventListener("load", () => {
+      // Capture before registration so first-install controllerchange is ignored.
+      const hadController = !!navigator.serviceWorker.controller;
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (!hadController || reloaded) return; // first install -> no reload flash
+        reloaded = true;
+        location.reload();
+      });
       navigator.serviceWorker
         .register("/sw.js", { scope: "/" })
         .then((reg) => {
           console.log("[sw] registered, scope:", reg.scope);
-          // On controller change (new SW activated), reload once so user sees
-          // the latest deploy without a manual refresh.
-          let reloaded = false;
-          navigator.serviceWorker.addEventListener("controllerchange", () => {
-            if (reloaded) return;
-            reloaded = true;
-            location.reload();
+          // On visibility restore, nudge the SW to check for a new deploy so
+          // long-lived / returning tabs pick up updates without a full reload.
+          document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+              try { reg.update(); } catch (e) {}
+            }
           });
         })
         .catch((err) => console.warn("[sw] register failed:", err));
