@@ -23061,7 +23061,14 @@ const BREATH_PHASES = [
           if (_convAudioCtx) _convAudioCtx.close();
         } catch (e) {}
         _convAudioCtx = null;
-        const blob = new Blob(_audioChunks, { type: _convRecorder.mimeType || "audio/webm" });
+        // v8.1 null-guard: _convRecorder can be nulled by stopVoice() or
+        // _stopRecorderForTts() between the recorder's stop() call and this
+        // onstop firing. Read mimeType before it can be nulled, using the
+        // closure-captured recorder reference (_convRecorder at onstop definition
+        // time) which may also be null if the race completed. Capture once and
+        // fall back to "audio/webm" so we never dereference null.
+        const _blobMime = (_convRecorder && _convRecorder.mimeType) || "audio/webm";
+        const blob = new Blob(_audioChunks, { type: _blobMime });
         if (!_convActive) {
           // Voice was stopped externally while the recorder was draining — release lock.
           _convProcessing = false;
@@ -24926,38 +24933,81 @@ const BREATH_PHASES = [
     } catch (e) {
       console.warn("[speak] pre-translit failed, using raw text", e);
     }
-    // v7.5: ENGLISH INTERCEPT — route genuinely English text to Sarvam Bulbul en-IN.
-    // CRITICAL: evaluate prepText (after transliteration), NOT the raw input.
-    // Reason: romanized Hindi (e.g. "Patile mein 2 cup paani ubalo.") is transliterated
-    // to Devanagari above. _isEnglishContent(prepText) then returns false (Devanagari
-    // guard hits) and we correctly skip the en-IN path entirely.
-    // If transliteration failed/returned raw Roman text AND _isEnglishContent is still
-    // false (Hinglish markers or currentLanguage="en"), we also skip en-IN correctly.
-    // Only genuinely English text (no Hinglish markers, non-"en" session) reaches here.
-    if (_isEnglishContent(prepText)) {
-      console.info("[TTS] pure-English→Sarvam en-IN chars=" + prepText.length);
-      if (await speakSarvamEnglish(prepText)) return;
-      // Sarvam English failed — fall through to ElevenLabs as backup.
-      console.info("[speak] Sarvam en-IN failed, falling back to ElevenLabs");
-    } else if (/[ऀ-ॿ]/.test(prepText)) {
-      // Devanagari (transliterated from romanized Hindi, or originally Devanagari)
-      // → will fall through to ElevenLabs Hindi voice below.
-      console.info("[TTS] romanized→Devanagari→hi-IN chars=" + prepText.length);
-    }
-    // v7.4: TAMIL / TELUGU / KANNADA INTERCEPT — route to Sarvam Bulbul vidya
-    // BEFORE ElevenLabs. ElevenLabs' yM93 multilingual voice handles Tamil
-    // adequately but produces a noticeably off accent for Kannada/Telugu.
-    // Sarvam Bulbul confirms clean audio for ta-IN / te-IN / kn-IN.
-    // We inspect prepText (may already contain native script after pre-translit)
-    // AND the raw input — whichever has Dravidian codepoints wins.
-    const _rawInputForDravidian = (opts && opts.ttsText) || text;
-    const _dScript = _dominantDravidianScript(prepText) || _dominantDravidianScript(_rawInputForDravidian);
-    if (_dScript) {
-      const _dLang = _dScript === "ta" ? "ta-IN" : _dScript === "te" ? "te-IN" : "kn-IN";
-      console.info("[speak] Dravidian script=" + _dScript + " → Sarvam " + _dLang);
-      if (await speakSarvamLang(prepText, _dLang)) return;
-      // Sarvam failed for this language — fall through to ElevenLabs as backup.
-      console.info("[speak] Sarvam " + _dLang + " failed, falling back to ElevenLabs");
+    // v8.1: getLang()-FIRST ROUTING — when the user has explicitly selected a
+    // language in the picker, route to the CORRECT engine+voice for that language
+    // on EVERY utterance, regardless of utterance content/length/script.
+    // This eliminates the mid-conversation voice flip where short Latin phrases
+    // (e.g. "Theek hai", 9 chars) escaped the Hinglish keyword list and were
+    // misclassified as English, landing on Sarvam en-IN instead of ElevenLabs
+    // Hindi yM93 — producing a different accent in the same session.
+    //
+    // Engine+voice assignment by getLang():
+    //   "hi"  → always ElevenLabs yM93 (Hindi voice). Never Sarvam en-IN.
+    //   "en"  → always Sarvam vidya en-IN.
+    //   "bn"  → always ElevenLabs Bengali voice (WiaI…).
+    //   "ta"  → always Sarvam vidya ta-IN.
+    //   "te"  → always Sarvam vidya te-IN.
+    //   "kn"  → always Sarvam vidya kn-IN.
+    //   (unavailable) → fall through to legacy content/script heuristics below.
+    //
+    // When getLang() is set, we return immediately after the chosen path and
+    // never reach the old _isEnglishContent / Dravidian intercepts.
+    const _speakPickerLang = (function () {
+      try { return typeof getLang === "function" ? getLang() : null; } catch (_) { return null; }
+    })();
+    if (_speakPickerLang) {
+      if (_speakPickerLang === "en") {
+        // Real English session → Sarvam en-IN vidya, always.
+        console.info("[TTS] getLang=en → Sarvam en-IN chars=" + prepText.length);
+        if (await speakSarvamEnglish(prepText)) return;
+        console.info("[speak] Sarvam en-IN failed, falling back to ElevenLabs");
+        // Fall through to ElevenLabs as backup.
+      } else if (_speakPickerLang === "ta" || _speakPickerLang === "te" || _speakPickerLang === "kn") {
+        // Dravidian sessions → Sarvam vidya in the correct Indic language, always.
+        const _drLang = _speakPickerLang === "ta" ? "ta-IN" : _speakPickerLang === "te" ? "te-IN" : "kn-IN";
+        console.info("[TTS] getLang=" + _speakPickerLang + " → Sarvam " + _drLang + " chars=" + prepText.length);
+        if (await speakSarvamLang(prepText, _drLang)) return;
+        console.info("[speak] Sarvam " + _drLang + " failed, falling back to ElevenLabs");
+        // Fall through to ElevenLabs as backup.
+      } else {
+        // "hi" or "bn" → ElevenLabs always (yM93 for Hindi, WiaI for Bengali).
+        // Log which path we are on so the console shows one consistent voice per session.
+        if (/[ऀ-ॿ]/.test(prepText)) {
+          console.info("[TTS] getLang=" + _speakPickerLang + " romanized→Devanagari→ElevenLabs chars=" + prepText.length);
+        } else {
+          console.info("[TTS] getLang=" + _speakPickerLang + " → ElevenLabs chars=" + prepText.length);
+        }
+        // ElevenLabs call is below (_pickElevenVoice will select the correct voice
+        // via the getLang() path in its own logic). Fall through directly.
+      }
+      // For "hi"/"bn": skip the legacy content intercepts entirely — jump to ElevenLabs.
+      if (_speakPickerLang === "hi" || _speakPickerLang === "bn") {
+        if (await speakElevenLabs(prepText, opts)) return;
+        // ElevenLabs failed → fall through to Sarvam fallback at the bottom.
+      }
+    } else {
+      // getLang() unavailable — legacy content-based heuristics (old behaviour).
+      // v7.5: ENGLISH INTERCEPT — route genuinely English text to Sarvam Bulbul en-IN.
+      // CRITICAL: evaluate prepText (after transliteration), NOT the raw input.
+      // Reason: romanized Hindi (e.g. "Patile mein 2 cup paani ubalo.") is transliterated
+      // to Devanagari above. _isEnglishContent(prepText) then returns false (Devanagari
+      // guard hits) and we correctly skip the en-IN path entirely.
+      if (_isEnglishContent(prepText)) {
+        console.info("[TTS] pure-English→Sarvam en-IN chars=" + prepText.length);
+        if (await speakSarvamEnglish(prepText)) return;
+        console.info("[speak] Sarvam en-IN failed, falling back to ElevenLabs");
+      } else if (/[ऀ-ॿ]/.test(prepText)) {
+        console.info("[TTS] romanized→Devanagari→hi-IN chars=" + prepText.length);
+      }
+      // v7.4: TAMIL / TELUGU / KANNADA INTERCEPT (legacy path only).
+      const _rawInputForDravidian = (opts && opts.ttsText) || text;
+      const _dScript = _dominantDravidianScript(prepText) || _dominantDravidianScript(_rawInputForDravidian);
+      if (_dScript) {
+        const _dLang = _dScript === "ta" ? "ta-IN" : _dScript === "te" ? "te-IN" : "kn-IN";
+        console.info("[speak] Dravidian script=" + _dScript + " → Sarvam " + _dLang);
+        if (await speakSarvamLang(prepText, _dLang)) return;
+        console.info("[speak] Sarvam " + _dLang + " failed, falling back to ElevenLabs");
+      }
     }
     // v3.7: ElevenLabs first if available — now with native-script input.
     // SOS-fix-3: speakElevenLabs is already awaitable and returns true on
@@ -31523,11 +31573,21 @@ const BREATH_PHASES = [
 
   };
 
-  // — mediaUrl(file) — prepend MEDIA_BASE; pass through absolute http(s) URLs.
+  // — mediaUrl(file) — prepend MEDIA_BASE; pass through absolute http(s)/data: URLs.
+  //   MEDIA_BASE access is wrapped in try/catch so that if this function is called
+  //   during early init (e.g. initLottieHeroes) before the const declaration has
+  //   executed in the concatenated bundle (temporal dead zone), it falls back to
+  //   the literal default rather than throwing a ReferenceError.
   function mediaUrl(file) {
     if (!file || typeof file !== "string") return "";
-    if (/^https?:\/\//i.test(file)) return file;
-    return MEDIA_BASE + file;
+    if (/^(https?:|data:)/i.test(file)) return file;
+    var base;
+    try {
+      base = (window.__SS_CONFIG__ && window.__SS_CONFIG__.mediaBase) || MEDIA_BASE;
+    } catch (e) {
+      base = (window.__SS_CONFIG__ && window.__SS_CONFIG__.mediaBase) || "assets/remedies/";
+    }
+    return base + file;
   }
 
   // — remedyMediaFor(remedyKey, stepIdx) — resolves media for a given step.
