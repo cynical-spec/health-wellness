@@ -10452,7 +10452,7 @@ NO RE-INTRODUCTION — STRICT:
 - NEVER re-introduce or re-greet on later turns — no "main Sehat Saathi hoon", no repeated "namaste", no "aapka swagat hai".
 - When the user names a symptom, respond to it directly: one warm acknowledgement line + one clarifying question. Do not restate who you are.
 
-LANGUAGE: Reply in the user's SELECTED APP LANGUAGE by default. If the user writes in a different language, you may mirror it, but always default back to the selected app language. Supported app languages: en (English), hi (Hindi — Devanagari), bn (Bengali — Bengali script), ta (Tamil — Tamil script), te (Telugu — Telugu script), kn (Kannada — Kannada script). Never ask the user to change language.
+LANGUAGE: ALWAYS reply in the user's SELECTED APP LANGUAGE. Do NOT mirror the user's input language. Even if the user types in Hindi, Hinglish/Roman-Hindi, or any other language, your reply must be in the selected app language. The per-call system note ("USER'S SELECTED APP LANGUAGE: ...") is the definitive instruction — follow it exactly. Supported app languages: en (English), hi (Hindi — Devanagari), bn (Bengali — Bengali script), ta (Tamil — Tamil script), te (Telugu — Telugu script), kn (Kannada — Kannada script). Never ask the user to change language.
 
 OUTPUT SCRIPT — STRICT (all 6 app languages):
 - LANG:hi (Hindi): Write the reply body in DEVANAGARI script. Common English terms that Indians naturally say in English (BP, sugar, report, doctor, mobile, step, minute, test) may stay in Latin where natural, but all Hindi sentence structure and Hindi words must be Devanagari — NOT Roman Hinglish. Good: "आपका BP थोड़ा high लग रहा है — doctor से मिल लें।" Bad: "Aapka BP thoda high lag raha hai."
@@ -17193,8 +17193,14 @@ window.toggleLang = toggleLang;
   // Public entry: detect symptom in userText and, if found, launch the
   // deterministic bubble-triage instead of showing LLM OPTIONS.
   // Returns true if triage was launched (caller must suppress OPTIONS rendering).
+  // ISSUE 1+2 defense-in-depth: only runs for Hindi (getLang()==="hi").
+  // Non-Hindi sessions get one AI reply in the selected language — no triage.
   let _lastTriageKey = null; // per-callAI-roundtrip dedupe
   function maybeAppendGuidedCta(userText, msgsContainer) {
+    // Defense-in-depth gate: deterministic Hinglish triage is Hindi-only.
+    const _ctaIsHindi = (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
+    if (!_ctaIsHindi) return false;
+
     if (!userText || !msgsContainer) return false;
     const key = _detectSymptomKey(userText);
     if (!key) return false;
@@ -17210,6 +17216,12 @@ window.toggleLang = toggleLang;
     // Initialize triage state
     _activeTriage = { key, stepIdx: 0, answers: {} };
 
+    // ISSUE 4 FIX: set _guidedCtaActive BEFORE the dadiOpener addMsg call so the
+    // followup-chip timer inside addMsg reads the flag as true and skips generic chips.
+    // (Previously this was set AFTER addMsg, meaning the 1100ms timer inside addMsg
+    // always saw the flag as false and injected a duplicate set of followup chips.)
+    ST._guidedCtaActive = true;
+
     // Show the flow opener
     const flow = FOCUS_FLOWS[key];
     if (flow && flow.dadiOpener) {
@@ -17219,8 +17231,6 @@ window.toggleLang = toggleLang;
     // Render first question as bubbles
     setTimeout(() => _renderNextTriageQuestion(msgsContainer), 200);
 
-    // Suppress generic followups and LLM OPTIONS for this turn
-    ST._guidedCtaActive = true;
     return true;
   }
   // ── End Unified Deterministic Bubble-Triage ──────────────────────────────
@@ -17417,18 +17427,29 @@ window.toggleLang = toggleLang;
         ? window.getLang()
         : "hi";
     const _selectedMeta = _LANG_META[_selectedLang] || _LANG_META["hi"];
-    _sysContent +=
-      "\n\nUSER'S SELECTED APP LANGUAGE: " +
-      _selectedMeta.langCode +
-      " (" +
-      _selectedMeta.name +
-      "). Reply in this language using " +
-      _selectedMeta.script +
-      " script. Begin your reply with \"LANG:" +
-      _selectedMeta.langCode +
-      "\". If the user writes in another language (e.g. types in a different script), mirror that language, but default to " +
-      _selectedMeta.name +
-      " otherwise.";
+    // ISSUE 3 FIX: for non-Hindi selected languages, remove the "mirror that language"
+    // escape hatch entirely. The selected app language ALWAYS wins — even when the
+    // user types in Hindi, Hinglish/Roman-Hindi, or any other language. For Hindi,
+    // the original mirror-fallback phrasing is safe since Hindi IS the triage language.
+    if (_selectedLang === "hi") {
+      _sysContent +=
+        "\n\nUSER'S SELECTED APP LANGUAGE: hi (Hindi). Reply in Hindi using Devanagari script. Begin your reply with \"LANG:hi\". If the user types in another script, you may acknowledge that script briefly, but reply in Devanagari Hindi.";
+    } else {
+      _sysContent +=
+        "\n\nUSER'S SELECTED APP LANGUAGE: " +
+        _selectedMeta.langCode +
+        " (" +
+        _selectedMeta.name +
+        "). ALWAYS reply in " +
+        _selectedMeta.name +
+        " (" +
+        _selectedMeta.langCode +
+        ") using " +
+        _selectedMeta.script +
+        " script, EVEN IF the user types in Hindi, Hinglish/Roman-Hindi, or any other language. Do NOT mirror the user's input language. The selected app language always wins. Begin with \"LANG:" +
+        _selectedMeta.langCode +
+        "\".";
+    }
     // v10: walkthrough companion card is only available in Hindi.
     // For all other languages the app cannot show the card — so DO NOT emit
     // an EXPERIENCE: line. Give the remedy guidance directly as short, warm,
@@ -17840,8 +17861,13 @@ window.toggleLang = toggleLang;
         // Returns true if triage was launched — in that case options are irrelevant.
         // v6.9: skip entirely in VOICE mode — tap affordances are meaningless there;
         // the model already asks a spoken clarifying question via the VOICE directive.
+        // ISSUE 1+2 FIX: also gate on getLang()==="hi" — non-Hindi sessions must NOT
+        // launch the Hinglish deterministic triage at all. The AI reply in the
+        // selected language is the complete response for those sessions.
+        const _callAITriageIsHindi =
+          (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
         const _triagedThisTurn =
-          !voiceModeActive && typeof maybeAppendGuidedCta === "function"
+          _callAITriageIsHindi && !voiceModeActive && typeof maybeAppendGuidedCta === "function"
             ? maybeAppendGuidedCta(userText, document.getElementById("chat-msgs"))
             : false;
 
@@ -24034,6 +24060,11 @@ const BREATH_PHASES = [
     gu: "gu-IN",
     pa: "pa-IN",
     en: "en-IN",
+    // v8.2: "en-IN" explicit entry so SARVAM_LANG_MAP["en-IN"] returns "en-IN"
+    // instead of falling back to the || "hi-IN" default. Without this entry the
+    // pre-transliteration guard (tgtEarly !== "en-IN") was testing against "hi-IN"
+    // and incorrectly ran Devanagari transliteration on English text.
+    "en-IN": "en-IN",
   };
   let _currentAudio = null;
 
@@ -24983,7 +25014,9 @@ const BREATH_PHASES = [
     //
     // Engine+voice assignment by getLang():
     //   "hi"  → always ElevenLabs yM93 (Hindi voice). Never Sarvam en-IN.
-    //   "en"  → always Sarvam vidya en-IN.
+    //   "en"  → always ElevenLabs yM93 multilingual (English — same engine as Hindi
+    //            for a consistent Saathi voice and Indian-English tone). NOT Sarvam.
+    //            No transliteration: English text is sent as-is (Latin script).
     //   "bn"  → always ElevenLabs Bengali voice (WiaI…).
     //   "ta"  → always Sarvam vidya ta-IN.
     //   "te"  → always Sarvam vidya te-IN.
@@ -24997,11 +25030,16 @@ const BREATH_PHASES = [
     })();
     if (_speakPickerLang) {
       if (_speakPickerLang === "en") {
-        // Real English session → Sarvam en-IN vidya, always.
-        console.info("[TTS] getLang=en → Sarvam en-IN chars=" + prepText.length);
+        // v8.2: Real English session → ElevenLabs yM93 multilingual.
+        // ElevenLabs uses English language hint ("en") so phonology is correct.
+        // Text is sent as-is (Latin/English) — no Devanagari transliteration runs
+        // for English (ISSUE 5 fix ensures tgtEarly==="en-IN" skips translit above).
+        console.info("[TTS] getLang=en → ElevenLabs yM93 (English) chars=" + prepText.length);
+        if (await speakElevenLabs(prepText, opts)) return;
+        console.info("[speak] ElevenLabs en failed, falling back to Sarvam en-IN");
+        // ElevenLabs failed → fall back to Sarvam en-IN.
         if (await speakSarvamEnglish(prepText)) return;
-        console.info("[speak] Sarvam en-IN failed, falling back to ElevenLabs");
-        // Fall through to ElevenLabs as backup.
+        return; // both failed — nothing more to try for English
       } else if (_speakPickerLang === "ta" || _speakPickerLang === "te" || _speakPickerLang === "kn") {
         // Dravidian sessions → Sarvam vidya in the correct Indic language, always.
         const _drLang = _speakPickerLang === "ta" ? "ta-IN" : _speakPickerLang === "te" ? "te-IN" : "kn-IN";
