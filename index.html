@@ -8354,6 +8354,11 @@ body:not(.focus) .focus-home {
 /* entrance for any km svg (player already toggles .wt-anim.enter) */
 .km-svg { animation: km-in .5s ease-out; }
 @keyframes km-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+
+/* v10 — Lottie hero containers (data-lottie auto-loader fills these) */
+.dr-glow[data-lottie] svg { width: 66px; height: 66px; }
+.lottie-hero { width: 100%; max-width: 200px; aspect-ratio: 1/1; margin: 0 auto 4px; }
+.lottie-hero svg { width: 100%; height: 100%; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
@@ -8863,7 +8868,7 @@ body:not(.focus) .focus-home {
 
 <!-- v5.2: Doctor handoff — fires when check-in answer is "worse" OR Sunita home "Doctor se baat" CTA -->
 <div id="doctor-ov" role="dialog" aria-modal="true" aria-labelledby="dr-title">
-  <div class="dr-glow">🩺</div>
+  <div class="dr-glow" data-lottie="lottie-medical.json">🩺</div>
   <div class="dr-title" id="dr-title">Beta, ab doctor zaroori hai</div>
   <div class="dr-sub">Ghar ka nuskha kafi nahi laga. Asli doctor se ek baar mil lo — saathi yahin hai, ghabraao mat.</div>
   <div class="dr-actions">
@@ -16785,6 +16790,18 @@ function renderWellnessStart() {
     // TTS always uses Devanagari natural Hindi
     const ttsText = openerSet.hi;
 
+    // Calming Lottie hero — prepended before the first bot bubble on the
+    // mood-seeded path only. lottie-monk.json (44KB) — NOT lottie-meditation.json.
+    // If window.lottie is absent the container stays empty (no visible fallback
+    // needed here; the mood opener text carries the screen).
+    var heroEl = document.createElement("div");
+    heroEl.className = "lottie-hero";
+    heroEl.setAttribute("data-lottie", "lottie-monk.json");
+    msgs.insertBefore(heroEl, msgs.firstChild);
+    if (typeof window.initLottieHeroes === "function") {
+      window.initLottieHeroes();
+    }
+
     addMsg("bot", intro, false);
     speak(intro, { ttsText });
     // No quick-reply chips for the mood opener — the reply box is the prompt
@@ -18407,6 +18424,7 @@ function _renderRxStepInner(step) {
     if (titleEl) titleEl.textContent = "Parchi kaise daal sakte hain?";
     if (subEl) subEl.textContent = ST.rxData.memberLabel + " ke liye";
     el.innerHTML = `<div class="rx-body">
+      <div class="lottie-hero" data-lottie="lottie-takemed.json"></div>
       <div class="rx-step-title">${ST.rxData.memberLabel} ki parchi</div>
       <div class="rx-step-sub">Doctor ki parchi ki photo khichein, ya manually likhein</div>
       <div class="rx-methods">
@@ -18437,6 +18455,7 @@ function _renderRxStepInner(step) {
       </div>
       <div class="lab-warn">Yeh prototype hai — abhi Vision API ke bina sample data ka istemaal ho raha hai. Real prescription bhi save hogi.</div>
     </div>`;
+    if (typeof window.initLottieHeroes === 'function') window.initLottieHeroes();
     return;
   }
 
@@ -18580,7 +18599,8 @@ function _renderRxStepInner(step) {
     const channelLabel =
       { app: "JBIQ App", whatsapp: "WhatsApp", voice: "Voice call" }[ST.rxData.channel] || "App";
     const totalDays = Math.max(...ST.rxData.meds.map((m) => m.duration || 1));
-    let html = `<div class="bz-success">
+    let html = `<div class="lottie-hero" data-lottie="lottie-medicine.json"></div>
+    <div class="bz-success">
       <div class="bz-tick">✓</div>
       <h2>Reminders ready!</h2>
       <p>${ST.rxData.meds.length} dawaiyaan ke liye reminder set hai · ${channelLabel} pe yaad dilayenge</p>
@@ -18598,6 +18618,7 @@ function _renderRxStepInner(step) {
       <button class="rx-cta secondary" onclick="startFeature('bazaar')">Mere reminders dekhein</button>
     </div>`;
     el.innerHTML = html;
+    if (typeof window.initLottieHeroes === 'function') window.initLottieHeroes();
     return;
   }
 }
@@ -28359,6 +28380,40 @@ const BREATH_PHASES = [
   window.closeProtoTriage = closeProtoTriage;
   window.protoChoose = protoChoose;
 
+  // ── Lottie hero loader ────────────────────────────────────────────────────
+  // Scans all [data-lottie]:not([data-lottie-done]) elements and initialises
+  // Lottie animations. Skips silently when window.lottie is absent (emoji/text
+  // fallback stays in place) or when prefers-reduced-motion is active.
+  // Idempotent — safe to call multiple times.
+  function initLottieHeroes() {
+    var els = document.querySelectorAll("[data-lottie]:not([data-lottie-done])");
+    if (!els.length) return;
+    var reducedMotion =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    els.forEach(function (el) {
+      // Mark immediately so re-calls skip this element even if Lottie is absent.
+      el.dataset.lottieDone = "1";
+      if (typeof window.lottie === "undefined") return; // keep emoji fallback
+      if (reducedMotion) return;                         // keep emoji fallback
+      try {
+        el.textContent = ""; // remove emoji placeholder
+        window.lottie.loadAnimation({
+          container: el,
+          renderer: "svg",
+          loop: true,
+          autoplay: true,
+          path: window.mediaUrl
+            ? window.mediaUrl(el.dataset.lottie)
+            : "assets/remedies/" + el.dataset.lottie,
+        });
+      } catch (e) {
+        console.warn("[initLottieHeroes] loadAnimation failed for", el.dataset.lottie, e);
+      }
+    });
+  }
+  window.initLottieHeroes = initLottieHeroes;
+
   // Auto-trigger from URL query param so screen-recording is one URL away
   function _initPrototypes() {
     try {
@@ -28370,12 +28425,17 @@ const BREATH_PHASES = [
         setTimeout(() => openProtoTriage(), 600);
       }
     } catch (e) {}
+    // Run hero loader for any static [data-lottie] containers already in the DOM.
+    initLottieHeroes();
   }
   if (document.readyState === "complete") {
     _initPrototypes();
   } else {
     window.addEventListener("load", _initPrototypes);
   }
+  // Also fire on window load so dynamically-added containers painted before load
+  // are caught even if _initPrototypes ran earlier via readyState === "complete".
+  window.addEventListener("load", function () { initLottieHeroes(); });
 } // end __SS_LOADED__ guard
   // ══════════════════════════════════════════════════════════════════════════
   // 15-safety-contraindications.js — Remedy × Medical Condition Safety Gate
