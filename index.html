@@ -9401,9 +9401,9 @@ const LANG = {
   // Hub header (top)
   hub_app_name: { hi: "सेहत साथी", en: "Sehat Saathi" },
   // Common quick-reply chips
-  chip_aur_batao: { hi: "और बताओ", en: "Aur batao" },
-  chip_doctor_kab: { hi: "डॉक्टर कब मिलें?", en: "Doctor kab milein?" },
-  chip_dadi_kahani: { hi: "एक कहानी सुनें", en: "Ek kahani sunein" },
+  chip_aur_batao: { hi: "और बताओ", en: "Tell me more" },
+  chip_doctor_kab: { hi: "डॉक्टर कब मिलें?", en: "When should I see a doctor?" },
+  chip_dadi_kahani: { hi: "एक कहानी सुनें", en: "Hear a short story" },
   // Voice overlay
   voice_listening: { hi: "सुन रही हूँ", en: "Sun rahi hoon" },
   voice_band_karein: { hi: "बंद करें", en: "Band karein" },
@@ -9774,8 +9774,136 @@ function locName(obj) {
   if (!obj) return "";
   return _currentLang === "hi" && obj.titleHi ? obj.titleHi : obj.title || "";
 }
+
+// ── EN_OVERRIDES: hand-authored English for deterministic symptom-flow strings ─
+// Keys are the EXACT Devanagari source strings used by locStr(roman, deva).
+// When lang === "en", locStr() returns the authored value here instead of the
+// Hinglish roman column (which would otherwise go through Sarvam machine
+// translation and produce garbage output).
+const EN_OVERRIDES = {
+  "समझ गई — थोड़ा बताओ।": "Got it — tell me a little more.",
+
+  // sir-dard
+  "कहाँ दर्द है?": "Where does it hurt?",
+  "माथे के आगे": "Front of the forehead",
+  "पीछे (गर्दन)": "Back (the neck)",
+  "साइड में": "On one side",
+  "पूरा सिर": "The whole head",
+  "कब से?": "Since when?",
+  "अभी-अभी": "Just now",
+  "आज सुबह से": "Since this morning",
+  "कल रात से": "Since last night",
+  "2 दिन से ज़्यादा": "More than 2 days",
+  "साथ में क्या?": "Anything else along with it?",
+  "मितली आती है": "Feeling nauseous",
+  "आँख में दर्द": "Pain in the eyes",
+  "टेंशन": "Stress",
+  "कुछ नहीं": "Nothing else",
+
+  // sardi-khansi
+  "खाँसी या नज़ला?": "Cough or a cold?",
+  "सूखी खाँसी": "Dry cough",
+  "बलगम वाली": "Cough with phlegm",
+  "नज़ला / बहती नाक": "Cold / runny nose",
+  "दोनों": "Both",
+  "गले में खिच-खिच?": "Is your throat scratchy?",
+  "हाँ, बहुत": "Yes, a lot",
+  "थोड़ी": "A little",
+  "नहीं": "No",
+  "बुखार या बदन दर्द?": "Any fever or body ache?",
+  "हल्का": "Mild",
+  "बुखार ज़्यादा है": "The fever is high",
+
+  // pet
+  "क्या तकलीफ़ है?": "What's troubling you?",
+  "एसिडिटी / जलन": "Acidity / burning",
+  "गैस": "Gas",
+  "पेट दर्द": "Stomach ache",
+  "दस्त (loose motion)": "Loose motions",
+  "कब शुरू हुआ?": "When did it start?",
+  "खाने के बाद": "After eating",
+  "सुबह उठकर": "After waking up",
+  "अचानक": "Suddenly",
+  "क्या खाया था?": "What had you eaten?",
+  "तला-भुना": "Fried / oily food",
+  "बाहर का": "Food from outside",
+  "दूध / दही": "Milk / curd",
+  "याद नहीं": "Don't remember",
+
+  // bukhar
+  "कब से है बुखार?": "Since when have you had the fever?",
+  "आज से": "Since today",
+  "2 दिन से": "For 2 days",
+  "3 दिन या ज़्यादा": "3 days or more",
+  "बुखार कितना है (feel से)?": "How high does it feel?",
+  "हल्का (normal से थोड़ा ज़्यादा)": "Mild (a little above normal)",
+  "तेज़ लगता है": "Feels high",
+  "बहुत तेज़": "Very high",
+  "साँस लेने में दिक्कत?": "Any trouble breathing?",
+  "नहीं, ठीक है": "No, it's fine",
+  "थोड़ी तकलीफ़": "A little difficulty",
+  "बहुत ज़्यादा": "Quite a lot",
+
+  // kamar-dard
+  "कमर दर्द कैसे शुरू हुआ?": "How did the back pain start?",
+  "झुक के काम किया": "From bending while working",
+  "चोट या गिरने से": "From an injury or a fall",
+  "कुछ नहीं, बस हो रहा है": "No reason, it just started",
+  "दर्द पैरों में उतर रहा है?": "Is the pain going down into your legs?",
+  "थोड़ी सी sensation": "A slight sensation",
+  "हाँ, सीधा पैरों तक": "Yes, all the way down my legs",
+  "कब से है?": "Since when?",
+  "आज": "Today",
+  "2-3 दिन से": "For 2-3 days",
+  "1 हफ्ते से ज़्यादा": "More than a week",
+
+  // tension
+  "क्या feel हो रहा है?": "What are you feeling?",
+  "सर में भारी लगता है": "My head feels heavy",
+  "दिल घबराता है": "My heart feels uneasy",
+  "नींद नहीं आती": "I can't sleep",
+  "सब एक साथ": "All of it at once",
+  "कब से है यह feeling?": "How long have you felt this way?",
+  "कुछ दिन से": "For a few days",
+  "कई हफ्ते से": "For several weeks",
+  "खुद को hurt करने के ख्याल आ रहे हैं?": "Are you having any thoughts of hurting yourself?",
+  "नहीं बिल्कुल": "No, not at all",
+  "नहीं, पर बहुत overwhelmed हूँ": "No, but I feel very overwhelmed",
+
+  // neend
+  "क्या दिक्कत है?": "What's the trouble?",
+  "बीच में टूट जाती": "I wake up in the middle of the night",
+  "सुबह जल्दी उठ जाते": "I wake up too early",
+  "ठीक से नहीं सोते": "I don't sleep well",
+  "सोचने में दिक्कत?": "Is your mind racing?",
+  "बहुत सोचता हूँ": "I overthink a lot",
+  "थोड़ी टेंशन": "A little stress",
+  "सोने से पहले phone?": "Do you use your phone before bed?",
+  "हाँ, late तक": "Yes, until late",
+  "थोड़ा": "A little",
+
+  // companion CTA, skip, doctor, ack suffixes, youtube
+  "चलो, मैं आपके साथ करती हूँ →": "I'll do this with you →",
+  "स्किप — साथी चुनेगा": "Skip — let Saathi choose",
+  "फिर भी तकलीफ़ है? डॉक्टर से बात करें →": "Still not feeling better? Talk to a doctor →",
+  "ये लक्षण डॉक्टर से मिलने का संकेत हैं।": "These signs mean it's best to see a doctor.",
+  "फिर भी तकलीफ़ है? डॉक्टर से बात करें": "Still not feeling better? Talk to a doctor",
+  "शुरू करें →": "Start →",
+  " टेंशन वाला सिर दर्द अक्सर अंदर की थकान से होता है — चिंता मत करें।": " A tension headache often comes from being worn out inside — please don't worry.",
+  " पेट और सिर का दोनों connection होता है — दोनों को साथ ठीक करते हैं।": " The stomach and the head are connected — we'll soothe both together.",
+  " अक्सर यह टेंशन या पानी की कमी से होता है — घबराइए मत.": " This often comes from stress or not drinking enough water — don't worry.",
+  "ये वीडियो भी आपको बेहतर महसूस करने में मदद करेगा — देखें": "This video can help you feel better too — watch",
+};
+
 function locStr(roman, deva) {
-  return _currentLang === "hi" && deva ? deva : roman;
+  const lang = _currentLang;
+  if (lang === "hi") return deva || roman;
+  if (lang === "en") {
+    if (deva && EN_OVERRIDES[deva] !== undefined) return EN_OVERRIDES[deva];
+    return roman; // unmapped string: fall back to Hinglish roman
+  }
+  // bn / ta / te / kn — keep existing behavior (return roman)
+  return roman;
 }
 
 // Expose for JSX/HTML callers
@@ -9956,7 +10084,11 @@ function ssT(hiText) {
   if (!hiText) return hiText;
 
   const lang = getLang();
+  // Hindi: return unchanged (source language).
   if (lang === "hi") return hiText;
+  // English: return unchanged — English is hand-authored via EN_OVERRIDES /
+  // locStr(); never machine-translate it through Sarvam.
+  if (lang === "en") return hiText;
 
   _loadTrCache(lang);
 
@@ -10001,7 +10133,8 @@ function ssT(hiText) {
  */
 async function ssPrewarm(hiTextArray) {
   const lang = getLang();
-  if (lang === "hi") return; // no-op for Hindi
+  if (lang === "hi") return; // no-op for Hindi — source language
+  if (lang === "en") return; // no-op for English — hand-authored, never machine-translated
 
   if (!Array.isArray(hiTextArray) || hiTextArray.length === 0) return;
 
@@ -15437,9 +15570,10 @@ window.toggleLang = toggleLang;
           const btn = document.createElement("button");
           btn.className = "yt-offer";
           btn.setAttribute("data-ytid", _ytId);
+          const _ytLs = typeof locStr === "function" ? locStr : function (r) { return r; };
           btn.innerHTML =
             '<span class="yt-offer-ico">🎬</span>' +
-            '<span>ये वीडियो भी आपको बेहतर महसूस करने में मदद करेगा — देखें</span>';
+            '<span>' + _ytLs("Yeh video bhi aapko behtar mehsoos karne mein madad karega — dekhein", "ये वीडियो भी आपको बेहतर महसूस करने में मदद करेगा — देखें") + '</span>';
           btn.onclick = function () {
             if (typeof window.ytReveal === "function") window.ytReveal(btn, _ytId);
           };
@@ -17406,24 +17540,11 @@ window.toggleLang = toggleLang;
       return;
     }
 
-    // Save focus state so healing-path session (openFocusStep / markFocusStepComplete)
-    // continues to work if the user revisits it from the hub later.
-    let steps = [];
-    if (typeof saveFocus === "function" && flow) {
-      steps = flow.buildSteps(answers)
-        .map((s, i) => ({ ...s, status: i === 0 ? "current" : "pending" }));
-      saveFocus({
-        symptom: key,
-        startedAt: Date.now(),
-        qaAnswers: answers,
-        qaSkipped: false,
-        steps,
-        retryCount: 0,
-        validations: [],
-        resolved: false,
-        resolvedAt: null,
-      });
-    }
+    // NOTE: saveFocus is intentionally NOT called here. Persisting an active-focus
+    // record from an in-chat triage causes markFocusStepComplete (file 14) to call
+    // renderFocusHome(), which re-renders the legacy "STEP N OF 3" plan screen on
+    // top of the chat companion flow. The companion carries _experienceKey directly
+    // and openWalkthrough() needs no persisted focus record.
 
     // Warm acknowledgment bubble (instant template, no LLM round-trip needed here)
     const ackText = typeof _warmAckTemplate === "function"
@@ -17455,11 +17576,9 @@ window.toggleLang = toggleLang;
       const _expObj =
         (typeof REMEDY_EXPERIENCES !== "undefined" && REMEDY_EXPERIENCES[_experienceKey]) || null;
 
-      const _lang = ST && ST.currentLanguage && ST.currentLanguage.startsWith("hi") ? "hi" : "en";
-      const _ctaLabel =
-        _lang === "hi"
-          ? "चलो, मैं आपके साथ करती हूँ →"
-          : "Chalo, main aapke saath karti hoon →";
+      const _ctaLabel = (typeof locStr === "function")
+        ? locStr("Chalo, main aapke saath karti hoon →", "चलो, मैं आपके साथ करती हूँ →")
+        : "Chalo, main aapke saath karti hoon →";
 
       const cta = document.createElement("button");
       cta.className = "remedy-cta";
@@ -17976,12 +18095,11 @@ window.toggleLang = toggleLang;
             (typeof REMEDY_EXPERIENCES !== "undefined" && REMEDY_EXPERIENCES[_experienceKey]) ||
             null;
 
-          // Determine current UI language for CTA label
-          const _lang = ST.currentLanguage && ST.currentLanguage.startsWith("hi") ? "hi" : "en";
-          const _ctaLabel =
-            _lang === "hi"
-              ? "चलो, मैं आपके साथ करती हूँ →"
-              : "Chalo, main aapke saath karti hoon →";
+          // Determine current UI language for CTA label — route through locStr so
+          // English gets the authored EN_OVERRIDES value, never raw Hinglish.
+          const _ctaLabel = (typeof locStr === "function")
+            ? locStr("Chalo, main aapke saath karti hoon →", "चलो, मैं आपके साथ करती हूँ →")
+            : "Chalo, main aapke saath karti hoon →";
 
           setTimeout(function () {
             const msgs = document.getElementById("chat-msgs");
@@ -19597,6 +19715,28 @@ function hubSend() {
   if (ctxLbl) ctxLbl.textContent = "Sehat Saathi";
   goTo("s-chat");
   setTimeout(() => {
+    // Triage short-circuit — same guard as chatSend: if the typed text maps to
+    // a deterministic FOCUS_FLOW, hand off to triSymptomTap and skip callAI
+    // entirely so only one bubble (the deterministic triage) fires, never two.
+    const _hubSymptomKey =
+      typeof _detectSymptomKey === "function" ? _detectSymptomKey(txt) : null;
+    if (
+      _hubSymptomKey &&
+      typeof FOCUS_FLOWS !== "undefined" &&
+      FOCUS_FLOWS[_hubSymptomKey]
+    ) {
+      trackEvent("hub_send", { len: txt.length });
+      if (isOverDailyCap()) {
+        trackEvent("daily_cap_hit");
+        addMsg("user", txt, false);
+        addMsg("assistant", t("daily_cap_msg"), false);
+        return;
+      }
+      bumpDailyChatCount();
+      triSymptomTap(txt, txt);
+      return;
+    }
+
     addMsg("user", txt, false);
     trackEvent("hub_send", { len: txt.length });
     if (isOverDailyCap()) {
@@ -30069,11 +30209,10 @@ const BREATH_PHASES = [
         if (_sym === "tension" && typeof addMsg === "function") {
           const msgs = document.getElementById("chat-msgs");
           if (msgs) {
-            addMsg(
-              "bot",
-              "Aap akele nahi hain. iCall helpline par koi baat kar sakta hai — 9152987821. Kisi bharose ke insaan se bhi baat karein.",
-              false,
-            );
+            const _crisisMsg = (typeof getLang === "function" && getLang() === "en")
+              ? "Thank you for telling me — that took courage. You don't have to go through this alone. Please reach out to someone you trust, or a doctor, right away."
+              : "Aap akele nahi hain. iCall helpline par koi baat kar sakta hai — 9152987821. Kisi bharose ke insaan se bhi baat karein.";
+            addMsg("bot", _crisisMsg, false);
           }
         }
         openDoctor((ST.userProfile && ST.userProfile.name) || "Aap");
@@ -30169,11 +30308,7 @@ const BREATH_PHASES = [
         if (msgs.querySelector('[data-experience-key="' + _experienceKey + '"]')) return;
         const _expObj =
           (typeof REMEDY_EXPERIENCES !== "undefined" && REMEDY_EXPERIENCES[_experienceKey]) || null;
-        const _lang = ST && ST.currentLanguage && ST.currentLanguage.startsWith("hi") ? "hi" : "en";
-        const _ctaLabel =
-          _lang === "hi"
-            ? "चलो, मैं आपके साथ करती हूँ →"
-            : "Chalo, main aapke saath karti hoon →";
+        const _ctaLabel = _locStr("Chalo, main aapke saath karti hoon →", "चलो, मैं आपके साथ करती हूँ →");
         const cta = document.createElement("button");
         cta.className = "remedy-cta";
         cta.setAttribute("data-experience-key", _experienceKey);
@@ -30200,9 +30335,26 @@ const BREATH_PHASES = [
 
   // — Warm acknowledgment helpers —
 
+  // Authored English acknowledgments — one clean sentence per symptom.
+  // These are used when getLang() === "en" so English users never see
+  // a broken Hinglish interpolation ("Samajh gayi — More than 2 days …").
+  const EN_ACK = {
+    "sir-dard":    "Got it — a headache. This often comes from stress or not drinking enough water, so try not to worry. Let's ease it together.",
+    "sardi-khansi":"Got it — a cough and cold. These usually settle with warmth and rest. Let's take care of it together.",
+    "pet":         "Got it — a stomach problem. This usually settles once we calm the gut down. Let's take care of it together.",
+    "bukhar":      "Got it — a fever. Most fevers settle with rest and plenty of fluids. Let's keep an eye on it together.",
+    "kamar-dard":  "Got it — back pain. This often eases with gentle movement and rest. Let's work on it together.",
+    "tension":     "Got it — you're feeling stressed. That's okay, and you're not alone. Let's calm it down together, slowly.",
+    "neend":       "Got it — trouble sleeping. This is very common, and it can get better. Let's work on it gently together.",
+  };
+
   // Returns an instant, answer-aware warm line per symptom.
   // Weaves in their actual answer labels without ever being blank.
   function _warmAckTemplate(symptom, answers) {
+    // English: return a clean authored sentence — never interpolate Hinglish labels.
+    if (typeof getLang === "function" && getLang() === "en") {
+      return EN_ACK[symptom] || "Got it — thank you for telling me. Let's take care of this together.";
+    }
     const a = answers || {};
     switch (symptom) {
       case "sir-dard": {
