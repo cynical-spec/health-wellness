@@ -8469,6 +8469,24 @@ body:not(.focus) .focus-home {
   margin-top: 6px;
   font-weight: 600;
 }
+
+/* v11 — Aaj ka nuskha: tappable, time-of-day, "did you know" */
+.nuskha-card { cursor: pointer; transition: transform 0.08s, border-color 0.15s; }
+.nuskha-card:active { transform: scale(0.99); }
+.nuskha-card:hover { border-color: rgba(0, 102, 204, 0.3); }
+.nuskha-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 11px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary, #0066cc);
+}
+.nuskha-card-title .nk-tod {
+  color: var(--text3, #8a98ad);
+  font-weight: 600;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
@@ -11888,21 +11906,67 @@ window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
 
 // ── v9: Life Rooms — Zone 2 (Companion Moment) ──
 
-// Rotating daily wellness tips — gentle, seasonal, general. NOT medical claims.
-// Language-keyed: hi = pure Devanagari, en = Hinglish (Roman).
-// Both arrays must stay the same length and cover the same tips in order.
-const NUSKHA_TIPS = {
-  hi: [
-    "🌿 सुबह एक गिलास गरम पानी में आधा नींबू — पाचन अच्छा रहता है और दिन भर ताज़गी बनी रहती है।",
-    "🍃 रात को सोने से पहले एक कप हल्दी वाला दूध — नींद गहरी आती है और थकान कम होती है।",
-    "🌸 दिन में ५-१० मिनट धूप लेना — सेहत और मन दोनों के लिए फ़ायदेमंद है।",
-    "🫚 सरसों या तिल का तेल पैर के तलवों पर लगा कर सो जाओ — नींद शांत आती है।",
+// TIME-OF-DAY aware nuskha tips. Each bucket has 2-3 tips that rotate by date.
+// Each tip: { hi, en, key } where key is a REMEDY_EXPERIENCES key opened on tap.
+// Language-aware: hi = pure Devanagari, en = Hinglish (Roman).
+const NUSKHA_TIPS_BY_TOD = {
+  morning: [
+    {
+      hi: "क्या आप जानते हैं? सुबह गुनगुने पानी में नींबू-शहद मिलाकर पीने से पाचन बेहतर होता है और ताज़गी बनी रहती है।",
+      en: "Kya aap jaante hain? Subah gunguney paani mein nimbu-shahad milaakar peeney se pachan behtar hota hai aur energy bani rehti hai.",
+      key: "nimbu-shahad",
+    },
+    {
+      hi: "क्या आप जानते हैं? सुबह खाली पेट जीरा पानी पीने से पेट हल्का रहता है और गैस-अफारा कम होता है।",
+      en: "Kya aap jaante hain? Subah khaali pet jeera paani peeney se pet halka rehta hai aur gas-afaara kam hoti hai.",
+      key: "jeera-paani",
+    },
+    {
+      hi: "क्या आप जानते हैं? सुबह मेथी के भीगे दाने खाने से ब्लड शुगर और पाचन दोनों को फ़ायदा होता है।",
+      en: "Kya aap jaante hain? Subah methi ke bheegey daane khaaney se blood sugar aur pachan dono ko faayda hota hai.",
+      key: "methi-paani",
+    },
   ],
-  en: [
-    "🌿 Subah ek glass garam paani mein aadha nimbu — pachan accha rehta hai aur energy bani rehti hai.",
-    "🍃 Raat ko sone se pehle ek cup haldi wala doodh — neend gehri aati hai aur thakaan kam hoti hai.",
-    "🌸 Din mein 5-10 minute dhoop lena — sehat aur mann dono ke liye faydemand hai.",
-    "🫚 Sarson ya til ka tel pair ke talhon par laga ke so jaao — neend shant aati hai.",
+  noon: [
+    {
+      hi: "क्या आप जानते हैं? खाने के बाद थोड़ी सौंफ चबाने से गैस और अफारा कम होता है — पाचन भी बेहतर रहता है।",
+      en: "Kya aap jaante hain? Khaane ke baad thodi saunf chaabaney se gas aur afaara kam hota hai — pachan bhi behtar rehta hai.",
+      key: "saunf-paani",
+    },
+    {
+      hi: "क्या आप जानते हैं? दोपहर के खाने के बाद धनिया पानी पीने से पाचन में मदद मिलती है और शरीर ठंडा रहता है।",
+      en: "Kya aap jaante hain? Dopahar ke khaane ke baad dhaniya paani peeney se pachan mein madad milti hai aur shareer thanda rehta hai.",
+      key: "dhaniya-paani",
+    },
+  ],
+  evening: [
+    {
+      hi: "क्या आप जानते हैं? शाम की थकान में अदरक-तुलसी की चाय ताज़गी देती है और गले-नाक की दिक्कत में भी आराम मिलता है।",
+      en: "Kya aap jaante hain? Shaam ki thakaan mein adrak-tulsi ki chai taazgi deti hai aur gale-naak ki dikkat mein bhi aaram milta hai.",
+      key: "adrak-chai",
+    },
+    {
+      hi: "क्या आप जानते हैं? मौसम बदल रहा हो तो शाम को तुलसी कढ़ा पीना इम्युनिटी बढ़ाने का सबसे आसान तरीका है।",
+      en: "Kya aap jaante hain? Mausam badal raha ho toh shaam ko tulsi kadha peena immunity badhaane ka sabse aasaan tarika hai.",
+      key: "tulsi-kadha",
+    },
+  ],
+  night: [
+    {
+      hi: "क्या आप जानते हैं? सोने से पहले हल्दी दूध पीने से गहरी नींद आती है और शरीर की अंदरूनी सूजन कम होती है।",
+      en: "Kya aap jaante hain? Sone se pehle haldi doodh peeney se gehri neend aati hai aur shareer ki andarooni soozhan kam hoti hai.",
+      key: "haldi-doodh",
+    },
+    {
+      hi: "क्या आप जानते हैं? रात को गुनगुना जीरा पानी पीने से सुबह पेट साफ़ रहता है और नींद भी अच्छी आती है।",
+      en: "Kya aap jaante hain? Raat ko gungunaa jeera paani peeney se subah pet saaf rehta hai aur neend bhi acchi aati hai.",
+      key: "jeera-paani",
+    },
+    {
+      hi: "क्या आप जानते हैं? तुलसी-शहद का मिश्रण रात को लेने से खाँसी-गले की खराश में राहत मिलती है।",
+      en: "Kya aap jaante hain? Tulsi-shahad ka mishran raat ko lene se khansi-gale ki kharash mein rahat milti hai.",
+      key: "tulsi-shahad",
+    },
   ],
 };
 
@@ -12012,16 +12076,45 @@ window.handleCheckinDismiss = function (remedyKey) {
   _renderCompanionNuskha(el);
 };
 
-// Internal: render the default daily nuskha tip into a companion card element
+// Internal: render the TOD-aware tappable daily nuskha tip into a companion card element.
+// Picks the bucket from getTodWarm(), rotates within that bucket by date of month,
+// and renders the whole card as a tap target opening the matching guided remedy.
 function _renderCompanionNuskha(el) {
-  const _tips = NUSKHA_TIPS[getLang()] || NUSKHA_TIPS.hi;
-  const dayIdx = new Date().getDate() % _tips.length;
-  const tip = _tips[dayIdx];
+  const tod = getTodWarm();
+  const bucket = tod.bucket; // "morning" | "noon" | "evening" | "night"
+  const tips = NUSKHA_TIPS_BY_TOD[bucket] || NUSKHA_TIPS_BY_TOD.morning;
+  const dayIdx = new Date().getDate() % tips.length;
+  const tip = tips[dayIdx];
+
+  const lang = getLang();
+  const tipText = lang === "hi" ? tip.hi : tip.en;
+  const remedyKey = tip.key;
+
+  // TOD label: Devanagari when hi, Roman when en
+  const todLabelMap = {
+    morning: { hi: "सुबह",  en: "Subah"   },
+    noon:    { hi: "दोपहर", en: "Dopahar" },
+    evening: { hi: "शाम",  en: "Shaam"   },
+    night:   { hi: "रात",  en: "Raat"    },
+  };
+  const todLabel = (todLabelMap[bucket] || todLabelMap.morning)[lang === "hi" ? "hi" : "en"];
+
+  // CTA label
+  const ctaLabel = lang === "hi" ? "अभी आज़माएँ" : "Abhi aazmayein";
+
+  // Guard: call openRemedy if available, else openWalkthrough
+  const onclickFn =
+    "(window.openRemedy||window.openWalkthrough)('" + remedyKey + "')";
+
   el.dataset.kind = "nuskha";
   el.innerHTML =
-    '<div class="nuskha-card">' +
-    '<div class="nuskha-card-title" data-i18n="hub_nuskha_title">' + t("hub_nuskha_title") + '</div>' +
-    '<div class="nuskha-card-body">' + tip + '</div>' +
+    '<div class="nuskha-card" onclick="' + onclickFn + '" style="cursor:pointer">' +
+      '<div class="nuskha-card-title" data-i18n="hub_nuskha_title">' +
+        t("hub_nuskha_title") +
+        ' <span class="nk-tod">&middot; ' + todLabel + '</span>' +
+      '</div>' +
+      '<div class="nuskha-card-body">' + tipText + '</div>' +
+      '<div class="nuskha-cta">' + ctaLabel + ' →</div>' +
     '</div>';
 }
 
