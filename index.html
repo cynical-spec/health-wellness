@@ -16924,6 +16924,14 @@ window.toggleLang = toggleLang;
   // is ALSO what we send back into handleFollowup() so chat history matches
   // what the user actually tapped.
   function injectFollowups(ctx, msgsContainer) {
+    // Gate: do NOT render generic follow-up chips while a deterministic triage
+    // is active (a clarifying question is showing, awaiting a user tap).
+    // _activeTriage is set to { key, stepIdx, answers } on the first question and
+    // cleared to null inside _finalizeTriageInChat (all questions answered) or when
+    // the user taps "Skip". Once null, the remedy/companion entry is already in the
+    // chat and generic chips are appropriate again.
+    if (_activeTriage) return;
+
     const followups = {
       nushke: ["chip_aur_batao", "chip_doctor_kab", "chip_dadi_kahani"],
       tension: ["chip_bas_suno", "tri_rail_saans", "chip_doctor_baat"],
@@ -17449,10 +17457,17 @@ window.toggleLang = toggleLang;
       : function (s) { return s; };
 
     const q = qList[idx];
-    // Show the question as a bot bubble first, then the options as chips.
+    // For the FIRST question (idx === 0) merge the dadiOpener into the same bubble so
+    // the user sees ONE combined bot message instead of two consecutive bot bubbles.
+    // _activeTriage._opener is set by maybeAppendGuidedCta and cleared here after use.
     const _translatedQ = _t(q.q);
-    addMsg("bot", _translatedQ, false);
-    if (typeof speak === "function") speak(_translatedQ);
+    let _bubbleText = _translatedQ;
+    if (idx === 0 && _activeTriage._opener) {
+      _bubbleText = _activeTriage._opener + " " + _translatedQ;
+      _activeTriage._opener = ""; // consume — subsequent questions have no prefix
+    }
+    addMsg("bot", _bubbleText, false);
+    if (typeof speak === "function") speak(_bubbleText);
 
     // Build option list — translate each option, include a "Skip" escape
     const skipLabel =
@@ -17645,21 +17660,19 @@ window.toggleLang = toggleLang;
       ? function (s) { return window.ssT(s) || s; }
       : function (s) { return s; };
 
-    // Initialize triage state
-    _activeTriage = { key, stepIdx: 0, answers: {} };
+    // Initialize triage state.
+    // _opener: the translated dadiOpener string to be merged into the FIRST question
+    // bubble (step 0). _renderNextTriageQuestion reads it, prepends it, then clears it
+    // so subsequent questions are emitted without the prefix.
+    const _translatedOpener = (flow && flow.dadiOpener) ? _t(flow.dadiOpener) : "";
+    _activeTriage = { key, stepIdx: 0, answers: {}, _opener: _translatedOpener };
 
-    // ISSUE 4 FIX: set _guidedCtaActive BEFORE the dadiOpener addMsg call so the
+    // ISSUE 4 FIX: set _guidedCtaActive BEFORE the first addMsg call so the
     // followup-chip timer inside addMsg reads the flag as true and skips generic chips.
-    // (Previously this was set AFTER addMsg, meaning the 1100ms timer inside addMsg
-    // always saw the flag as false and injected a duplicate set of followup chips.)
     ST._guidedCtaActive = true;
 
-    // Show the flow opener — translated into the selected language
-    if (flow && flow.dadiOpener) {
-      const _translatedOpener = _t(flow.dadiOpener);
-      addMsg("bot", _translatedOpener, false);
-      if (typeof speak === "function") speak(_translatedOpener);
-    }
+    // Do NOT emit the opener as a standalone bubble — _renderNextTriageQuestion will
+    // merge it with the first question into a single bot bubble (step 0 only).
 
     // Render first question as bubbles — _renderNextTriageQuestion uses ssT internally
     setTimeout(() => _renderNextTriageQuestion(msgsContainer), 200);
