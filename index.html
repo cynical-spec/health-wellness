@@ -19208,6 +19208,42 @@ function chatSend() {
     return;
   }
 
+  // v10.1: Hindi triage short-circuit — for typed symptoms that map to a
+  // deterministic FOCUS_FLOW, launch the triage directly and SKIP the LLM
+  // call entirely. This prevents two redundant clarifying bubbles:
+  //   (a) the LLM's own "समझ गई। कहाँ दर्द है?" reply, AND
+  //   (b) maybeAppendGuidedCta's dadiOpener + first triage question.
+  // Only applies to Hindi (getLang()==="hi"). Non-Hindi chat, the EXPERIENCE
+  // walkthrough path (triSymptomTap with a non-typed aiPrompt), and all
+  // non-symptom Hindi chat fall through to callAI as before.
+  const _chatSendIsHindi =
+    (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
+  if (_chatSendIsHindi) {
+    const _symptomKey =
+      typeof _detectSymptomKey === "function" ? _detectSymptomKey(txt) : null;
+    if (
+      _symptomKey &&
+      typeof FOCUS_FLOWS !== "undefined" &&
+      FOCUS_FLOWS[_symptomKey]
+    ) {
+      // Seed chat history with the user message, then launch triage.
+      // triSymptomTap resets context and re-adds the user bubble, so we
+      // do NOT add it here — just let triSymptomTap own the whole flow.
+      trackEvent("chat_send", { ctx: ST.chatCtx, len: txt.length });
+      if (isOverDailyCap()) {
+        trackEvent("daily_cap_hit");
+        addMsg("user", txt, false);
+        addMsg("assistant", t("daily_cap_msg"), false);
+        return;
+      }
+      bumpDailyChatCount();
+      // triSymptomTap adds the user bubble, sets up context, and launches
+      // the deterministic triage — no LLM call for this turn.
+      triSymptomTap(txt, txt);
+      return;
+    }
+  }
+
   addMsg("user", txt, false);
   trackEvent("chat_send", { ctx: ST.chatCtx, len: txt.length });
   if (isOverDailyCap()) {
@@ -24388,7 +24424,7 @@ const BREATH_PHASES = [
     const _pickerLang = (function () {
       try { return typeof getLang === "function" ? getLang() : null; } catch (_) { return null; }
     })();
-    if (_pickerLang === "en") return ELEVENLABS_VOICE_ID; // real English → Sarah voice
+    if (_pickerLang === "en") return ELEVENLABS_VOICE_ID_HIEN; // real English → Indian multilingual voice (Indian accent, consistent with Hindi)
     if (_pickerLang === "bn") return ELEVENLABS_VOICE_ID_INDIC; // Bengali picker
     // Fall back to session language (set by STT auto-detect, or explicitly changed)
     const lang = (ST && ST.currentLanguage) || "";
@@ -24563,9 +24599,13 @@ const BREATH_PHASES = [
         _modelId = "eleven_flash_v2_5";
         _voiceSettings = { stability: 0.65, similarity_boost: 0.85, style: 0.25, use_speaker_boost: true, speed: 0.95 };
       } else {
-        // English (en-IN / Latin/unknown): flash_v2_5 — warmer/more expressive
-        _modelId = "eleven_flash_v2_5";
-        _voiceSettings = { stability: 0.55, similarity_boost: 0.85, style: 0.45, use_speaker_boost: true, speed: 0.95 };
+        // English (en-IN / Latin/unknown): eleven_multilingual_v2 — Indian-accented, reliable speed control.
+        // eleven_flash_v2_5 ignores the `speed` param for English; multilingual_v2 honours it.
+        // speed: 0.88 → calm, slower pace as requested by user feedback (was US-accented & fast).
+        // Note: multilingual_v2 does NOT support optimize_streaming_latency query param (flash-only),
+        // handled below in the URL builder (_modelId check).
+        _modelId = "eleven_multilingual_v2";
+        _voiceSettings = { stability: 0.60, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true, speed: 0.88 };
       }
 
       // v6.7.20: optimize_streaming_latency is a flash-only query param.
@@ -24573,6 +24613,8 @@ const BREATH_PHASES = [
       // is known so we can omit the param for v3.
       const _elevenBase = (USE_WORKER ? WORKER_URL + "/elevenlabs" : "https://api.elevenlabs.io") +
         "/v1/text-to-speech/" + voiceId + "/stream";
+      // optimize_streaming_latency is a flash_v2_5-only query param.
+      // eleven_v3 (Bengali) and eleven_multilingual_v2 (English) both reject it with 400.
       const elevenUrlBase = _elevenBase +
         (_modelId === "eleven_flash_v2_5"
           ? "?optimize_streaming_latency=4&output_format=mp3_44100_128"
@@ -28986,8 +29028,8 @@ const BREATH_PHASES = [
       titleHi: "सिर दर्द का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Samajh gayi. Kahan dard hai —",
-          "समझ गई। कहाँ दर्द है —"
+          "Samajh gayi — thoda batao.",
+          "समझ गई — थोड़ा बताओ।"
         );
       },
       get qa() {
@@ -29079,8 +29121,8 @@ const BREATH_PHASES = [
       titleHi: "सर्दी-खांसी का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Samajh gayi. Khaansi zyada hai ya nazla —",
-          "समझ गई। खाँसी ज़्यादा है या नज़ला —"
+          "Samajh gayi — thoda batao.",
+          "समझ गई — थोड़ा बताओ।"
         );
       },
       get qa() {
@@ -29158,8 +29200,8 @@ const BREATH_PHASES = [
       titleHi: "पेट की दिक्कत का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Samajh gayi. Kya takleef hai —",
-          "समझ गई। क्या तकलीफ़ है —"
+          "Samajh gayi — thoda batao.",
+          "समझ गई — थोड़ा बताओ।"
         );
       },
       get qa() {
@@ -29240,8 +29282,8 @@ const BREATH_PHASES = [
       titleHi: "बुखार का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Samajh gayi. Kab se hai bukhar —",
-          "समझ गई। कब से है बुखार —"
+          "Samajh gayi — thoda batao.",
+          "समझ गई — थोड़ा बताओ।"
         );
       },
       get qa() {
@@ -29317,8 +29359,8 @@ const BREATH_PHASES = [
       titleHi: "कमर दर्द का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Samajh gayi. Kamar dard kaise shuru hua —",
-          "समझ गई। कमर दर्द कैसे शुरू हुआ —"
+          "Samajh gayi — thoda batao.",
+          "समझ गई — थोड़ा बताओ।"
         );
       },
       get qa() {
@@ -29392,8 +29434,8 @@ const BREATH_PHASES = [
       titleHi: "टेंशन/स्ट्रेस का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Samajh gayi. Abhi kya feel ho raha hai —",
-          "समझ गई। अभी क्या feel हो रहा है —"
+          "Samajh gayi — thoda batao.",
+          "समझ गई — थोड़ा बताओ।"
         );
       },
       get qa() {
@@ -29467,8 +29509,8 @@ const BREATH_PHASES = [
       titleHi: "नींद का इलाज",
       get dadiOpener() {
         return _locStr(
-          "Samajh gayi. Neend mein kya dikkat hai —",
-          "समझ गई। नींद में क्या दिक्कत है —"
+          "Samajh gayi — thoda batao.",
+          "समझ गई — थोड़ा बताओ।"
         );
       },
       get qa() {
