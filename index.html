@@ -10531,12 +10531,16 @@ Rules for OPTIONS:
 - Always include a natural escape option as the last one: "कुछ और" (Hindi), "Aur kuch" (Roman), "আরও কিছু" (Bengali), "Something else" (English), "வேறு ஏதாவது" (Tamil), "మరొకటి" (Telugu), "ಇನ್ನೇನಾದರೂ" (Kannada).
 - Output the OPTIONS line ONLY when you are ASKING a question. When you are GIVING a remedy/answer (not asking), do NOT output an OPTIONS line.
 - The word OPTIONS itself must never appear in your spoken sentence — it is a machine-readable control line only, stripped before display.
-- CRITICAL — DO NOT emit OPTIONS for these symptom topics: sir dard, sardi/khansi, pet ki takleef, neend, bukhar, kamar dard, tension/stress. The app's deterministic guided triage OWNS clarification for these — emitting OPTIONS for them creates duplicate competing bubbles. For these topics, give a short warm acknowledgement line ONLY (no question, no OPTIONS). The triage will take over automatically.
-Examples:
-  Question: "कहाँ दर्द है?" → OPTIONS: जोड़ों में | पीठ में | पूरे शरीर में | कुछ और
-  Question: "कब से हो रहा है?" → OPTIONS: आज से | कल से | हफ्ते भर से | कुछ और
-  Question: "साथ में बुखार भी है?" → OPTIONS: हाँ, बुखार है | नहीं | पता नहीं | कुछ और
+- HINDI ONLY — DO NOT emit OPTIONS for these 7 symptom topics when the reply language is Hindi (LANG:hi): sir dard, sardi/khansi, pet ki takleef, neend, bukhar, kamar dard, tension/stress. The app's deterministic guided triage OWNS clarification for these in Hindi — emitting OPTIONS for them creates duplicate competing bubbles. For these topics in Hindi, give a short warm acknowledgement line ONLY (no question, no OPTIONS). The triage will take over automatically.
+- ALL OTHER LANGUAGES (English, Bengali, Tamil, Telugu, Kannada, etc.) — The deterministic Hindi triage does NOT run. You MUST handle clarification yourself. For ANY health symptom — including those same 7 topics (headache, cold/cough, stomach, sleep, fever, back pain, stress/tension) — ask ONE short warm clarifying question and ALWAYS end with an OPTIONS line of 2–4 tappable choices in the reply language. After the user answers (or taps a choice), give the remedy as 2–3 short warm actionable steps in the reply language.
+Examples (Hindi — no OPTIONS for the 7 core symptoms):
   Symptom (no OPTIONS): "सिर दर्द है? — ठीक है, समझ आया। अभी guided तरीके से ठीक करते हैं।" [NO OPTIONS line]
+Examples (non-Hindi — OPTIONS required even for the 7 core symptoms):
+  English headache: "I see, headache. Since when — today or longer?" → OPTIONS: Just today | Since yesterday | Few days | Something else
+  English cold: "Sorry to hear that! Is it mostly a runny nose, sore throat, or cough?" → OPTIONS: Runny nose | Sore throat | Cough | All three
+  Bengali stomach: "পেটে কী ধরনের সমস্যা — গ্যাস, বমি ভাব, নাকি ব্যথা?" → OPTIONS: গ্যাস | বমি ভাব | পেটে ব্যথা | আরও কিছু
+  Tamil fever: "எப்போதிலிருந்து காய்ச்சல் உள்ளது?" → OPTIONS: இன்று | நேற்று | சில நாட்களாக | வேறு ஏதாவது
+  Question (any language): "कहाँ दर्द है?" → OPTIONS: जोड़ों में | पीठ में | पूरे शरीर में | कुछ और
 
 GUIDED COMPANION CONTRACT (v7.1 — machine-readable, never shown to user):
 When Saathi is ready to GUIDE the user through a remedy or practice (i.e. recommending they actively DO something), she ends her reply with a final machine-readable line in EXACTLY this format:
@@ -17448,7 +17452,14 @@ window.toggleLang = toggleLang;
         _selectedMeta.script +
         " script, EVEN IF the user types in Hindi, Hinglish/Roman-Hindi, or any other language. Do NOT mirror the user's input language. The selected app language always wins. Begin with \"LANG:" +
         _selectedMeta.langCode +
-        "\".";
+        "\"." +
+        "\n\nNON-HINDI SYMPTOM FLOW (mandatory): The Hindi deterministic triage does NOT run for this language. For ANY health symptom the user describes — including headache, cold/cough, stomach trouble, sleep, fever, back pain, or stress — you MUST: (1) acknowledge warmly in one short clause, (2) ask exactly ONE clarifying question (e.g. since when / what type / any other symptoms), and (3) end the reply with an OPTIONS line of 2–4 tappable choices in " +
+        _selectedMeta.name +
+        " (last option always a natural escape like \"Something else\" in " +
+        _selectedMeta.name +
+        "). After the user answers or taps a choice, THEN give the remedy as 2–3 short warm actionable steps in " +
+        _selectedMeta.name +
+        ". Do NOT skip the clarifying question and jump straight to remedy on the first symptom mention.";
     }
     // v10: walkthrough companion card is only available in Hindi.
     // For all other languages the app cannot show the card — so DO NOT emit
@@ -24393,10 +24404,14 @@ const BREATH_PHASES = [
   const ELEVENLABS_VOICE_ID_INDIC =
     (window.__SS_CONFIG__ && window.__SS_CONFIG__.elevenVoiceIdIndic) ||
     "WiaIVvI1gDL4vT4y7qUU"; // Bengali specialist — NEXT_PUBLIC_ELEVENLABS_VOICE_ID_INDIC
-  // Hindi/English neutral voice — yM93hbw8Qtvdma2wCnJG (speaks both hi-IN and en-IN)
+  // Hindi voice — mActWQg9kibLro6Z2ouY (Indian-accented Hindi specialist)
   const ELEVENLABS_VOICE_ID_HIEN =
     (window.__SS_CONFIG__ && window.__SS_CONFIG__.elevenVoiceIdHiEn) ||
-    "yM93hbw8Qtvdma2wCnJG"; // Hindi+English neutral — NEXT_PUBLIC_ELEVENLABS_VOICE_ID_HIEN
+    "mActWQg9kibLro6Z2ouY"; // Hindi Indian-accented — NEXT_PUBLIC_ELEVENLABS_VOICE_ID_HIEN
+  // English voice — 2zRM7PkgwBPiau2jvVXc (Indian-accented English specialist)
+  const ELEVENLABS_VOICE_ID_EN =
+    (window.__SS_CONFIG__ && window.__SS_CONFIG__.elevenVoiceIdEn) ||
+    "2zRM7PkgwBPiau2jvVXc"; // English Indian-accented — NEXT_PUBLIC_ELEVENLABS_VOICE_ID_EN
   // Finding #5 fix / v7.6: voice selection is script-detect first (inspect the actual
   // text being spoken), then language picker (getLang()), then ST.currentLanguage.
   // This prevents a stale bn-IN ST.currentLanguage from routing Hindi card steps to
@@ -24424,7 +24439,7 @@ const BREATH_PHASES = [
     const _pickerLang = (function () {
       try { return typeof getLang === "function" ? getLang() : null; } catch (_) { return null; }
     })();
-    if (_pickerLang === "en") return ELEVENLABS_VOICE_ID_HIEN; // real English → Indian multilingual voice (Indian accent, consistent with Hindi)
+    if (_pickerLang === "en") return ELEVENLABS_VOICE_ID_EN; // real English → Indian-accented English voice
     if (_pickerLang === "bn") return ELEVENLABS_VOICE_ID_INDIC; // Bengali picker
     // Fall back to session language (set by STT auto-detect, or explicitly changed)
     const lang = (ST && ST.currentLanguage) || "";
@@ -24634,11 +24649,11 @@ const BREATH_PHASES = [
       } else {
         // English (en-IN / Latin/unknown): eleven_multilingual_v2 — Indian-accented, reliable speed control.
         // eleven_flash_v2_5 ignores the `speed` param for English; multilingual_v2 honours it.
-        // speed: 0.88 → calm, slower pace as requested by user feedback (was US-accented & fast).
+        // speed: 0.9 → calm pace (multilingual_v2 honours the speed param).
         // Note: multilingual_v2 does NOT support optimize_streaming_latency query param (flash-only),
         // handled below in the URL builder (_modelId check).
         _modelId = "eleven_multilingual_v2";
-        _voiceSettings = { stability: 0.60, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true, speed: 0.88 };
+        _voiceSettings = { stability: 0.60, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true, speed: 0.9 };
       }
 
       // v6.7.20: optimize_streaming_latency is a flash-only query param.
@@ -25123,17 +25138,14 @@ const BREATH_PHASES = [
     })();
     if (_speakPickerLang) {
       if (_speakPickerLang === "en") {
-        // v8.3: Real English session → Sarvam en-IN (vidya) at pace 0.85.
-        // ElevenLabs was producing US-accented English regardless of voice/model;
-        // Sarvam vidya en-IN is reliably Indian-accented and honours pace control.
-        // pace 0.85 is slightly slower than the Sarvam default (0.9) — calmer delivery.
-        // Text is sent as-is (Latin/English) — no Devanagari transliteration runs
-        // for English (tgtEarly==="en-IN" skips translit above).
-        console.info("[TTS] getLang=en → Sarvam en-IN vidya pace=0.85 chars=" + prepText.length);
-        if (await speakSarvamLang(prepText, "en-IN", 0.85)) return;
-        console.info("[speak] Sarvam en-IN failed, falling back to ElevenLabs");
-        // Sarvam failed → fall back to ElevenLabs as last resort.
+        // Real English session → ElevenLabs 2zRM7PkgwBPiau2jvVXc (Indian-accented English voice),
+        // eleven_multilingual_v2, speed ~0.9 (calm pace). Text sent as-is (Latin/English) —
+        // no Devanagari transliteration runs for English (tgtEarly==="en-IN" skips translit above).
+        console.info("[TTS] getLang=en → ElevenLabs English voice chars=" + prepText.length);
         if (await speakElevenLabs(prepText, opts)) return;
+        console.info("[speak] ElevenLabs en failed, falling back to Sarvam en-IN");
+        // ElevenLabs failed → fall back to Sarvam en-IN as last resort.
+        if (await speakSarvamLang(prepText, "en-IN", 0.9)) return;
         return; // both failed — nothing more to try for English
       } else if (_speakPickerLang === "ta" || _speakPickerLang === "te" || _speakPickerLang === "kn") {
         // Dravidian sessions → Sarvam vidya in the correct Indic language, always.
