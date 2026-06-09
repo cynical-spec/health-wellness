@@ -10846,7 +10846,9 @@ function renderOnboardStep(step) {
       btn.className = "ob-opt ob-lang-opt";
       btn.innerHTML =
         '<span class="ob-lang-native">' + _obEscape(lang.nativeName) + '</span>' +
-        '<span class="ob-lang-en">' + _obEscape(lang.enName) + '</span>';
+        (lang.nativeName !== lang.enName
+          ? '<span class="ob-lang-en">' + _obEscape(lang.enName) + '</span>'
+          : '');
       btn.onclick = () => {
         langGrid.querySelectorAll(".ob-lang-opt").forEach((b) => b.classList.remove("sel"));
         btn.classList.add("sel");
@@ -12539,11 +12541,13 @@ function openLangPicker() {
     const native = document.createElement("span");
     native.textContent = lang.nativeName;
     native.style.cssText = "font-size:18px;font-weight:700;color:#fff;display:block;";
-    const enLabel = document.createElement("span");
-    enLabel.textContent = lang.enName;
-    enLabel.style.cssText = "font-size:13px;color:rgba(255,255,255,.5);margin-top:2px;display:block;";
     left.appendChild(native);
-    left.appendChild(enLabel);
+    if (lang.nativeName !== lang.enName) {
+      const enLabel = document.createElement("span");
+      enLabel.textContent = lang.enName;
+      enLabel.style.cssText = "font-size:13px;color:rgba(255,255,255,.5);margin-top:2px;display:block;";
+      left.appendChild(enLabel);
+    }
 
     const check = document.createElement("span");
     check.textContent = isActive ? "✓" : "";
