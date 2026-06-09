@@ -24539,6 +24539,39 @@ const BREATH_PHASES = [
     return chunks.length ? chunks : [text];
   }
 
+  // ── _stripForTts: remove markdown symbols before sending text to any TTS engine ──
+  // Removes: **, *, _, __, ``, #, ~, ^, >, markdown list bullets at line-start.
+  // Converts leading bullet markers ("* " / "- " / "• ") to a brief pause marker
+  // (just a comma+space so the TTS pauses naturally at each list item).
+  // Collapses leftover runs of whitespace.
+  // ONLY applied to the spoken string — displayed chat text is NOT affected.
+  function _stripForTts(text) {
+    if (!text) return text;
+    let t = text;
+    // Convert bullet list markers at start of line into a natural pause (comma).
+    // Handles: "* item", "- item", "• item" (with optional leading whitespace).
+    t = t.replace(/^[ \t]*[*\-•][ \t]+/gm, ", ");
+    // Remove bold/italic markdown: ***text***, **text**, *text*, ___text___, __text__, _text_
+    t = t.replace(/\*{1,3}([^*\n]*?)\*{1,3}/g, "$1");
+    t = t.replace(/_{1,3}([^_\n]*?)_{1,3}/g, "$1");
+    // Remove inline code: `code`
+    t = t.replace(/`[^`\n]*`/g, "");
+    // Remove heading markers: # / ## / ### etc. at start of line
+    t = t.replace(/^#{1,6}[ \t]*/gm, "");
+    // Remove tilde strikethrough: ~~text~~
+    t = t.replace(/~~([^~\n]*)~~/g, "$1");
+    // Remove blockquote marker: "> " at line start
+    t = t.replace(/^>[ \t]*/gm, "");
+    // Remove any residual lone asterisks, underscores, backticks, hashes, tildes, carets
+    t = t.replace(/[*_`#~^]/g, "");
+    // Collapse multiple commas/spaces introduced by bullet replacement
+    t = t.replace(/,\s*,/g, ",");
+    // Collapse excess whitespace (multiple spaces / blank lines)
+    t = t.replace(/[ \t]{2,}/g, " ");
+    t = t.replace(/\n{3,}/g, "\n\n");
+    return t.trim();
+  }
+
   async function speakElevenLabs(text, opts) {
     if (_elevenLabsBlocked && !USE_WORKER) return false;
     // half-duplex: kill the recognition sidecar AND stop the MediaRecorder
@@ -24575,7 +24608,7 @@ const BREATH_PHASES = [
     }
     try {
       const _t = performance.now();
-      const speakText = (opts && opts.ttsText) || text;
+      const speakText = _stripForTts((opts && opts.ttsText) || text);
       // v6.7.14: voice picked from the text's actual script — see _pickElevenVoice
       const voiceId = _pickElevenVoice(speakText);
       const elevenHeaders = USE_WORKER
@@ -24906,9 +24939,15 @@ const BREATH_PHASES = [
     _stopRecorderForTts();
     const _pace = (typeof pace === "number" && pace > 0) ? pace : 0.9;
     try {
-      const speakText = text.length > 500 ? text.substring(0, 500) : text;
+      const _rawForSarvam = _stripForTts(text);
+      const speakText = _rawForSarvam.length > 500 ? _rawForSarvam.substring(0, 500) : _rawForSarvam;
       const _t0 = performance.now();
-      console.info("[TTS-SV] Sarvam lang=" + langCode + " speaker=vidya pace=" + _pace + " chars=" + speakText.length);
+      // BUG-2 FIX: enable_preprocessing is disabled for en-IN because Sarvam's
+      // preprocessing mangled English proper nouns/consonants (S→B substitution on
+      // words like "Sunita"→"Bunita", "sharp"→"barp"). For Indic scripts it remains
+      // on because it helps normalise numbers and punctuation into spoken form.
+      const _svEnablePreprocess = (langCode !== "en-IN");
+      console.info("[TTS-SV] Sarvam lang=" + langCode + " speaker=vidya pace=" + _pace + " preprocess=" + _svEnablePreprocess + " chars=" + speakText.length);
       const res = await fetch(sarvamUrl("/text-to-speech"), {
         method: "POST",
         headers: sarvamHeaders({ "Content-Type": "application/json" }),
@@ -24920,7 +24959,7 @@ const BREATH_PHASES = [
           pace: _pace,
           loudness: 1.4,
           speech_sample_rate: 22050,
-          enable_preprocessing: true,
+          enable_preprocessing: _svEnablePreprocess,
           model: "bulbul:v2",
         }),
       });
@@ -24994,6 +25033,15 @@ const BREATH_PHASES = [
   }
 
   async function speak(text, opts) {
+    if (!text) return;
+    // BUG-1 FIX: strip markdown symbols from the text before any TTS engine
+    // sees it. This prevents the voice from reading "asterisk asterisk bold
+    // asterisk asterisk" or "hash heading" out loud. The displayed chat text
+    // is NOT changed — only the spoken copy passed to the engine is cleaned.
+    // Caller-supplied opts.ttsText is also stripped inside speakElevenLabs /
+    // speakSarvamLang at their own entry points so any path that bypasses
+    // speak() directly also gets clean input.
+    text = _stripForTts(text);
     if (!text) return;
     // v6.7.6: pre-transliterate before EITHER engine. ElevenLabs Sarah pronounced
     // Roman Hinglish/Bengali with English phonology ("sha-HAD ni-MBU PAH-nee"),
