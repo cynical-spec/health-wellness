@@ -8359,6 +8359,116 @@ body:not(.focus) .focus-home {
 .dr-glow[data-lottie] svg { width: 66px; height: 66px; }
 .lottie-hero { width: 100%; max-width: 200px; aspect-ratio: 1/1; margin: 0 auto 4px; }
 .lottie-hero svg { width: 100%; height: 100%; }
+
+/* v11 — Swiggy-model: warm finish, home check-in, streak ribbon */
+.wt-warm-completion {
+  font-size: 16px;
+  font-weight: 600;
+  color: #eef4ff;
+  line-height: 1.5;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 2px 0;
+}
+/* home-screen deferred check-in card (lives in #companion-card slot) */
+.jc-card {
+  background: var(--surface, #fff);
+  border: 1px solid rgba(0, 40, 90, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 40, 90, 0.06);
+  border-radius: 18px;
+  padding: 16px 18px;
+}
+.jc-heading {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary, #0066cc);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.jc-question {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text, #0a1628);
+  line-height: 1.45;
+  margin-bottom: 14px;
+}
+.jc-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.jc-btn {
+  flex: 1;
+  min-width: 120px;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.08s;
+}
+.jc-btn:active {
+  transform: scale(0.97);
+}
+.jc-btn-helped {
+  background: rgba(34, 197, 94, 0.16);
+  color: #15803d;
+}
+.jc-btn-didnt {
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+}
+.jc-btn-alt {
+  background: linear-gradient(135deg, #0066cc, #14b8a6);
+  color: #fff;
+  flex-basis: 100%;
+  box-shadow: 0 6px 18px rgba(0, 102, 204, 0.28);
+}
+.jc-btn-doctor {
+  background: rgba(239, 68, 68, 0.14);
+  color: #b91c1c;
+  flex-basis: 100%;
+}
+.jc-ack {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #15803d;
+  line-height: 1.4;
+}
+.jc-alt {
+  margin-top: 2px;
+}
+.jc-alt-prefix,
+.jc-no-alt-text {
+  font-size: 14px;
+  color: var(--text, #0a1628);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+.jc-alt-title {
+  font-weight: 700;
+}
+.jc-dismiss {
+  display: block;
+  margin: 12px auto 0;
+  background: none;
+  border: 0;
+  color: var(--text3, #8a98ad);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.warm-hero-extra {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 6px;
+  font-weight: 600;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
@@ -9365,6 +9475,46 @@ const LANG = {
   pill_done: { hi: "हो गई", en: "Ho gayi" },
   pill_saal: { hi: "साल", en: "saal" },
   hub_more: { hi: "और सुविधाएँ", en: "Aur suvidhayein" },
+
+  // ── Journey memory + deferred check-in (file 06) ──
+  // Check-in card heading
+  jc_heading: {
+    hi: "पिछला नुस्ख़ा — कैसा रहा?",
+    en: "Pichla nushka — kaisa raha?",
+  },
+  // "{kal/pichli baar} aapne {symptom} ke liye {remedy} try kiya tha"
+  jc_kal: { hi: "कल", en: "Kal" },
+  jc_pichli_baar: { hi: "पिछली बार", en: "Pichli baar" },
+  jc_aapne: { hi: "आपने", en: "aapne" },
+  jc_ke_liye: { hi: "के लिए", en: "ke liye" },
+  jc_try_kiya: { hi: "try किया था —", en: "try kiya tha —" },
+  jc_ab_kaisa: { hi: "अब कैसा लग रहा है?", en: "Ab kaisa lag raha hai?" },
+  // Buttons
+  jc_btn_aram: { hi: "😊 आराम है", en: "😊 Aaram hai" },
+  jc_btn_takleef: { hi: "😕 अभी भी तकलीफ़", en: "😕 Abhi bhi takleef" },
+  jc_btn_baad_mein: { hi: "बाद में", en: "Baad mein" },
+  // Acknowledgement after positive answer
+  jc_ack_helped: {
+    hi: "सुनकर अच्छा लगा! 🌿 ठीक रहें।",
+    en: "Sunkar accha laga! 🌿 Theek rahein.",
+  },
+  // Alt remedy suggestion after negative answer
+  jc_alt_prefix: {
+    hi: "कोई बात नहीं — ये try करके देखें:",
+    en: "Koi baat nahi — ye try karke dekhein:",
+  },
+  jc_alt_btn: { hi: "देखें →", en: "Dekhein →" },
+  // No alt remedy — suggest doctor
+  jc_no_alt: {
+    hi: "अगर तकलीफ़ बनी रहे तो डॉक्टर से मिलें।",
+    en: "Agar takleef bani rahe toh doctor se milein.",
+  },
+  jc_doctor_btn: { hi: "डॉक्टर की जानकारी", en: "Doctor ki jaankari" },
+  // Warm hero — streak ribbon (Part C)
+  warm_streak_ribbon: {
+    hi: "लगातार {N} दिन — बढ़िया! 🌿",
+    en: "Lagaataar {N} din — badhiya! 🌿",
+  },
 };
 function getLang() {
   try {
@@ -10862,6 +11012,101 @@ const FEATURE_REGISTRY = {
     external: true,
   },
 };
+// ══════════════════════════════════════════════════════════════════════════════
+// PART A — Journey Memory Store  (localStorage key: ss_journey)
+// Shape: { entries: [...], opens: ["YYYY-MM-DD",...], streak: N }
+// Every function guards JSON parse. All four are window-exposed.
+// ══════════════════════════════════════════════════════════════════════════════
+
+function _journeyLoad() {
+  try {
+    const raw = localStorage.getItem("ss_journey");
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (parsed && Array.isArray(parsed.entries)) return parsed;
+  } catch (e) {}
+  return { entries: [], opens: [], streak: 0 };
+}
+
+function _journeySave(store) {
+  try {
+    localStorage.setItem("ss_journey", JSON.stringify(store));
+  } catch (e) {}
+}
+
+// Push a new entry with outcome "pending". Called by nuskha on walkthrough finish.
+window.journeyRecordTried = function (symptomKey, remedyKey, remedyTitleHi) {
+  if (!symptomKey || !remedyKey) return;
+  const store = _journeyLoad();
+  store.entries.push({
+    symptom: symptomKey,
+    remedyKey: remedyKey,
+    remedyTitleHi: remedyTitleHi || remedyKey,
+    ts: Date.now(),
+    outcome: "pending",
+  });
+  // Keep most recent 50 entries only
+  if (store.entries.length > 50) store.entries = store.entries.slice(-50);
+  _journeySave(store);
+};
+
+// Set outcome on the most recent pending entry matching remedyKey.
+window.journeySetOutcome = function (remedyKey, outcome) {
+  if (!remedyKey) return;
+  const store = _journeyLoad();
+  for (let i = store.entries.length - 1; i >= 0; i--) {
+    if (store.entries[i].remedyKey === remedyKey && store.entries[i].outcome === "pending") {
+      store.entries[i].outcome = outcome;
+      break;
+    }
+  }
+  _journeySave(store);
+};
+
+// Session flag: track which remedyKey check-ins have been shown this session
+// so journeyPending() doesn't re-surface after the user dismissed it.
+const _journeyShownThisSession = new Set();
+
+// Return the most recent pending entry if it is >90 min old and not yet
+// shown+dismissed this session; else null.
+window.journeyPending = function () {
+  const store = _journeyLoad();
+  const NINETY_MIN = 90 * 60 * 1000;
+  for (let i = store.entries.length - 1; i >= 0; i--) {
+    const e = store.entries[i];
+    if (e.outcome === "pending" && (Date.now() - e.ts) > NINETY_MIN) {
+      if (!_journeyShownThisSession.has(e.remedyKey)) return e;
+    }
+  }
+  return null;
+};
+
+// Add today's ISO date to opens[] (dedupe) and recompute consecutive-day streak.
+// Called from initHubDynamic on every hub load.
+window.journeyMarkOpen = function () {
+  const store = _journeyLoad();
+  const today = new Date().toISOString().slice(0, 10);
+  if (!store.opens.includes(today)) {
+    store.opens.push(today);
+    // Recompute streak: walk backwards from today counting consecutive days
+    const sorted = store.opens.slice().sort();
+    let streak = 0;
+    let cur = today;
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      if (sorted[i] === cur) {
+        streak++;
+        // step back one calendar day
+        const d = new Date(cur + "T12:00:00Z");
+        d.setUTCDate(d.getUTCDate() - 1);
+        cur = d.toISOString().slice(0, 10);
+      } else {
+        break;
+      }
+    }
+    store.streak = streak;
+    _journeySave(store);
+  }
+};
+
 function loadRecentFeatures() {
   try {
     return JSON.parse(localStorage.getItem("ss_recent") || "[]");
@@ -11189,6 +11434,8 @@ function initHubDynamic() {
   renderCompanionCard();
   renderLifeRooms();
   renderHubMore();
+  // Part A: mark today open for streak + journey memory
+  try { window.journeyMarkOpen(); } catch (e) {}
   // mark last-visit so next session's recall logic knows when we were here
   try {
     localStorage.setItem("ss_last_visit", String(Date.now()));
@@ -11223,6 +11470,7 @@ function getTodWarm() {
 function getWarmGreeting(tod, name) {
   // v6.7.2: every visible string flows through t() so the warm hero
   // re-translates on language toggle. Time digit + name stay literal.
+  // Part C: streak ribbon + soft recent-concern reference.
   const who = name ? ", " + name : "";
   const h = new Date().getHours();
   const time = h % 12 === 0 ? 12 : h % 12;
@@ -11232,10 +11480,42 @@ function getWarmGreeting(tod, name) {
     evening: "warm_ask_evening",
     night: "warm_ask_night",
   }[tod.bucket];
+
+  // Build optional extra line: streak ribbon if streak > 1, else soft concern ref
+  let extra = "";
+  try {
+    const store = _journeyLoad();
+    const streak = store.streak || 0;
+    if (streak > 1) {
+      // e.g. "लगातार 3 दिन — बढ़िया! 🌿"
+      extra = t("warm_streak_ribbon").replace("{N}", String(streak));
+    } else {
+      // Soft recent concern: most recent entry with any outcome
+      const recent = store.entries && store.entries.length
+        ? store.entries[store.entries.length - 1]
+        : null;
+      if (recent && recent.remedyTitleHi) {
+        // one soft warm line — just mentions the remedy was tried, no pressure
+        if (recent.outcome === "helped") {
+          // already resolved — don't mention again, keep it fresh
+        } else if (recent.outcome === "pending") {
+          // check-in card will handle this — no duplicate in hero
+        }
+        // if outcome === "didnt" → a gentle follow-up note
+        if (recent.outcome === "didnt") {
+          extra = getLang() === "hi"
+            ? "उम्मीद है आज बेहतर है — यहाँ हूँ। 🌿"
+            : "Umeed hai aaj behtar hai — yahin hoon. 🌿";
+        }
+      }
+    }
+  } catch (e) {}
+
   return {
     title: t("warm_namaste") + who,
     time: t(tod.labelKey) + " " + t("warm_baj_rahe_ke") + " " + time + " " + t("warm_baj_rahe"),
     ask: t(askKey),
+    extra: extra,
   };
 }
 
@@ -11246,6 +11526,10 @@ function renderWarmHero() {
   const profile = ST.userProfile || (typeof loadProfile === "function" ? loadProfile() : null);
   const name = profile && profile.name ? profile.name : "";
   const g = getWarmGreeting(tod, name);
+  // Part C: optional streak/extra line after the ask
+  const extraHtml = g.extra
+    ? '<div class="warm-hero-extra">' + g.extra + '</div>'
+    : "";
   el.innerHTML =
     '<div class="warm-hero-emoji">' +
     tod.emoji +
@@ -11255,7 +11539,9 @@ function renderWarmHero() {
     g.time +
     '</div><div class="warm-hero-ask">' +
     g.ask +
-    "</div></div>";
+    '</div>' +
+    extraHtml +
+    "</div>";
 }
 
 // Pick the most relevant nudge — one card, intentional, not a stack.
@@ -11620,14 +11906,114 @@ const NUSKHA_TIPS = {
   ],
 };
 
-function renderCompanionCard() {
+// ── Part B: helper — friendly symptom display name ──
+// nuskha may expose window.symptomForRemedy(remedyKey) → { key, labelHi, labelEn }
+// If not available, map the bucket key to a friendly localised label.
+// NEVER returns undefined — unknown/empty buckets get a graceful fallback.
+var _JC_SYMPTOM_LABELS = {
+  "sardi-khansi": { hi: "सर्दी-खाँसी",       en: "sardi-khansi" },
+  "gala":         { hi: "गले की तकलीफ़",      en: "gale ki takleef" },
+  "bukhar":       { hi: "बुखार",              en: "bukhar" },
+  "sir-dard":     { hi: "सिर दर्द",           en: "sir dard" },
+  "acidity":      { hi: "एसिडिटी",            en: "acidity" },
+  "kabz":         { hi: "कब्ज़",              en: "kabz" },
+  "neend":        { hi: "नींद की दिक्कत",     en: "neend ki dikkat" },
+  "tension":      { hi: "तनाव",               en: "tension" },
+  "immunity":     { hi: "इम्यूनिटी",          en: "immunity" },
+  "daant":        { hi: "दाँत दर्द",          en: "daant dard" },
+  "nausea":       { hi: "जी मिचलाना",         en: "jee michlana" },
+  "joint":        { hi: "जोड़ों/कमर का दर्द", en: "jodon/kamar dard" },
+  "skin":         { hi: "त्वचा",              en: "twacha" }
+};
+var _JC_SYMPTOM_FALLBACK = { hi: "इस तकलीफ़", en: "is takleef" };
+
+function _jcSymptomLabel(entry) {
+  var bucket = (entry && entry.symptom) || "";
+  if (!bucket && entry && entry.remedyKey && typeof window.symptomForRemedy === "function") {
+    try { bucket = window.symptomForRemedy(entry.remedyKey) || ""; } catch (e) {}
+  }
+  var lang = getLang() === "hi" ? "hi" : "en";
+  var map = _JC_SYMPTOM_LABELS[bucket];
+  return map ? map[lang] : _JC_SYMPTOM_FALLBACK[lang];
+}
+
+// ── Part B: check-in handlers (window-exposed so inline onclick can reach them) ──
+
+// "😊 आराम है" path
+window.handleCheckinHelped = function (remedyKey) {
+  window.journeySetOutcome(remedyKey, "helped");
+  _journeyShownThisSession.add(remedyKey);
+  // If nuskha exposed a community vote function, cast a positive vote
+  try {
+    if (typeof window.castRemedyVote === "function") window.castRemedyVote(remedyKey, "up");
+  } catch (e) {}
+  // Show warm ack inline, then re-render hub after a beat
+  const el = document.getElementById("companion-card");
+  if (el) {
+    el.innerHTML =
+      '<div class="jc-ack">' + t("jc_ack_helped") + '</div>';
+  }
+  if (typeof bumpScore === "function") bumpScore(2);
+  setTimeout(function () {
+    if (typeof initHubDynamic === "function") initHubDynamic();
+  }, 1800);
+};
+
+// "😕 अभी भी तकलीफ़" path
+window.handleCheckinDidnt = function (remedyKey, symptomKey, triedKeysJson) {
+  window.journeySetOutcome(remedyKey, "didnt");
+  _journeyShownThisSession.add(remedyKey);
   const el = document.getElementById("companion-card");
   if (!el) return;
 
-  // साथी की बात: always shows आज का नुस्खा — rotating daily wellness tip.
-  // The active-choice nudge (recall / returner / TOD) now lives at the top of
-  // the hub in #active-choice-card (rendered by renderActiveChoice()).
-  // Pick the array for the CURRENT language so pure Devanagari shows in Hindi mode.
+  // Try to find an alternate remedy via nuskha's window.getAltRemedy
+  let triedKeys = [];
+  try { triedKeys = JSON.parse(triedKeysJson || "[]"); } catch (e) {}
+  let alt = null;
+  try {
+    if (typeof window.getAltRemedy === "function") {
+      alt = window.getAltRemedy(symptomKey, triedKeys);
+    }
+  } catch (e) {}
+
+  if (alt && alt.key) {
+    // Offer the alternate remedy
+    const altTitle = getLang() === "hi" ? (alt.titleHi || alt.title || alt.key) : (alt.title || alt.key);
+    const openFn = typeof window.openWalkthrough === "function"
+      ? "window.openWalkthrough('" + alt.key + "')"
+      : (typeof window.openRemedy === "function"
+          ? "window.openRemedy('" + alt.key + "')"
+          : "goToFeature('nushke')");
+    el.innerHTML =
+      '<div class="jc-alt">' +
+        '<div class="jc-alt-prefix" data-i18n="jc_alt_prefix">' + t("jc_alt_prefix") + '</div>' +
+        '<div class="jc-alt-title">' + altTitle + '</div>' +
+        '<button class="jc-btn jc-btn-alt" onclick="' + openFn + '">' + t("jc_alt_btn") + '</button>' +
+      '</div>';
+  } else {
+    // No alt — gentle doctor nudge
+    const doctorFn = typeof window.openDoctor === "function"
+      ? "window.openDoctor()"
+      : "startFeature('symptoms')";
+    el.innerHTML =
+      '<div class="jc-no-alt">' +
+        '<div class="jc-no-alt-text" data-i18n="jc_no_alt">' + t("jc_no_alt") + '</div>' +
+        '<button class="jc-btn jc-btn-doctor" onclick="' + doctorFn + '">' + t("jc_doctor_btn") + '</button>' +
+      '</div>';
+  }
+};
+
+// "बाद में" dismiss — hides for this session, doesn't change outcome
+window.handleCheckinDismiss = function (remedyKey) {
+  _journeyShownThisSession.add(remedyKey);
+  const el = document.getElementById("companion-card");
+  if (!el) return;
+  // Fall back to showing today's nuskha tip
+  _renderCompanionNuskha(el);
+};
+
+// Internal: render the default daily nuskha tip into a companion card element
+function _renderCompanionNuskha(el) {
   const _tips = NUSKHA_TIPS[getLang()] || NUSKHA_TIPS.hi;
   const dayIdx = new Date().getDate() % _tips.length;
   const tip = _tips[dayIdx];
@@ -11637,6 +12023,63 @@ function renderCompanionCard() {
     '<div class="nuskha-card-title" data-i18n="hub_nuskha_title">' + t("hub_nuskha_title") + '</div>' +
     '<div class="nuskha-card-body">' + tip + '</div>' +
     '</div>';
+}
+
+function renderCompanionCard() {
+  const el = document.getElementById("companion-card");
+  if (!el) return;
+
+  // Part B: priority — show deferred check-in if there's a pending entry
+  const pending = (typeof window.journeyPending === "function") ? window.journeyPending() : null;
+  if (pending) {
+    el.dataset.kind = "checkin";
+
+    // Build the question text:
+    // "कल/पिछली बार आपने {symptom} के लिए {remedyTitleHi} try किया था — अब कैसा लग रहा है?"
+    const now = Date.now();
+    const ageMs = now - pending.ts;
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    const timeRef = ageMs < ONE_DAY * 1.5 ? t("jc_kal") : t("jc_pichli_baar");
+    const symptomLabel = _jcSymptomLabel(pending);
+    const remedyLabel = pending.remedyTitleHi || pending.remedyKey;
+
+    const questionLine =
+      timeRef + " " + t("jc_aapne") + " " +
+      symptomLabel + " " + t("jc_ke_liye") + " " +
+      remedyLabel + " " + t("jc_try_kiya") + " " +
+      t("jc_ab_kaisa");
+
+    // Build triedKeys: all remedyKeys tried for this symptom
+    const store = _journeyLoad();
+    const triedKeys = store.entries
+      .filter(function (e) { return e.symptom === pending.symptom; })
+      .map(function (e) { return e.remedyKey; });
+    const triedJson = JSON.stringify(triedKeys).replace(/'/g, "\\'");
+
+    const rk = pending.remedyKey.replace(/'/g, "\\'");
+    const sk = (pending.symptom || "").replace(/'/g, "\\'");
+
+    el.innerHTML =
+      '<div class="jc-card">' +
+        '<div class="jc-heading" data-i18n="jc_heading">' + t("jc_heading") + '</div>' +
+        '<div class="jc-question">' + questionLine + '</div>' +
+        '<div class="jc-actions">' +
+          '<button class="jc-btn jc-btn-helped" onclick="window.handleCheckinHelped(\'' + rk + '\')">' +
+            t("jc_btn_aram") +
+          '</button>' +
+          '<button class="jc-btn jc-btn-didnt" onclick="window.handleCheckinDidnt(\'' + rk + "','" + sk + "','" + triedJson + '\')">' +
+            t("jc_btn_takleef") +
+          '</button>' +
+        '</div>' +
+        '<button class="jc-dismiss" onclick="window.handleCheckinDismiss(\'' + rk + '\')">' +
+          t("jc_btn_baad_mein") +
+        '</button>' +
+      '</div>';
+    return;
+  }
+
+  // Default: today's nuskha tip
+  _renderCompanionNuskha(el);
 }
 window.renderCompanionCard = renderCompanionCard;
 
@@ -13997,65 +14440,82 @@ function renderHubMore() {
       _wtChime();
     }
 
-    // ── Speech-completion-driven auto-advance (fixes the race/overlap bug) ──
+    // ── MANUAL-ADVANCE ONLY (v7.1) ──
     //
-    // Contract with @awaaz (file 11): window.speak(text, opts) returns a Promise
-    // that resolves when TTS playback truly ends (or on error/abort). When that
-    // Promise resolves we schedule the next step, so audio NEVER overlaps.
+    // Auto-advance on speech-end and timer-based advance are both removed.
+    // speak() still narrates the step (voice accompanies the text), but the
+    // step does NOT move forward when TTS finishes.  The user MUST tap "Aage ›"
+    // to proceed.  On the last step the button label becomes "Ho gaya" and tapping
+    // it calls finishWalkthrough() via walkthroughNext() → runWalkthroughStep
+    // (idx past last step → finishWalkthrough).
     //
-    // Safety net: if speak() doesn't return a Promise (legacy/no-key path), we
-    // fall back to a fixed durationSec timer — same behaviour as before the fix,
-    // but that path only activates when TTS is unavailable.
+    // The timer bar is repurposed as a subtle speech-activity indicator:
+    //   • It fills while TTS is playing (progress bar tracks expected duration).
+    //   • When TTS ends it freezes at its current position — it does NOT advance
+    //     the step.  This preserves the breathing-orb + bar visual feel without
+    //     any auto-advance side-effect.
     //
-    // A per-step abortFlag lets walkthroughNext (user tap) and closeWalkthrough
-    // cancel a pending auto-advance before it fires.
+    // _speakAbortFn is kept so walkthroughNext / closeWalkthrough can cancel
+    // in-flight TTS audio cleanly when the user taps ahead.
     let _stepAborted = false;
     _wt._speakAbortFn = function () {
       _stepAborted = true;
     };
+
+    // Update "Aage ›" button label: last step shows "Ho gaya" to signal finish.
+    const _isLastStep = (_wt.idx === _wt.exp.steps.length - 1);
+    try {
+      const _nextBtn = document.getElementById("wt-next-btn");
+      if (_nextBtn) {
+        _nextBtn.textContent = _isLastStep ? "Ho gaya ✓" : "Aage ›";
+      }
+    } catch (_btnErr) {}
 
     console.info("[walkthrough] step", step.ix, step.titleHi);
 
     if (typeof speak === "function") {
       const speakResult = speak(step.lineHi, { ttsText: step.sayHi || step.lineHi });
 
-      // If speak() returns a real Promise, await it then auto-advance.
       if (speakResult && typeof speakResult.then === "function") {
-        // Start the visual progress bar running for the expected duration —
-        // gives the user a time cue while audio plays.
+        // Start the visual progress bar for the expected duration — speech-activity
+        // indicator only, NOT an auto-advance trigger.
         startWalkthroughTimer(step.durationSec, /*autoAdvance=*/false);
 
         speakResult.then(function () {
-          // Speech finished naturally — advance unless user already tapped next
-          // or the walkthrough was closed.
-          if (_stepAborted || !_wt || _wt.paused) return;
+          // TTS done — freeze the bar at current fill, do NOT advance step.
+          if (_stepAborted || !_wt) return;
+          // Clear the visual animation so the bar stays wherever it reached.
+          try {
+            const fill = document.getElementById("wt-timer-fill");
+            if (fill) {
+              const cs = window.getComputedStyle(fill);
+              fill.style.transition = "none";
+              fill.style.width = cs.width;
+            }
+          } catch (_) {}
           _wt._stepRunning = false;
           _wt._speakAbortFn = null;
-          // Cancel the visual timer (we're advancing now) then move on.
-          if (_wt && _wt.timerId) {
-            clearTimeout(_wt.timerId);
-            _wt.timerId = null;
-          }
-          walkthroughNext();
         }).catch(function (err) {
-          // TTS error / abort — fall back to timer-based advance so the
-          // walkthrough doesn't get stuck.
-          console.warn("[walkthrough] speak error/abort on step", step.ix, err);
-          if (_stepAborted || !_wt || _wt.paused) return;
+          // TTS error/abort — freeze the bar, do NOT advance.
+          if (_stepAborted || !_wt) return;
+          try {
+            const fill = document.getElementById("wt-timer-fill");
+            if (fill) { fill.style.transition = "none"; }
+          } catch (_) {}
           _wt._stepRunning = false;
           _wt._speakAbortFn = null;
-          walkthroughNext();
         });
       } else {
-        // speak() returned undefined/null — TTS unavailable or legacy path.
-        // Use the fixed durationSec timer as the only advance mechanism.
+        // speak() returned no Promise (TTS unavailable) — just mark step ready,
+        // bar stays at 0. User taps to advance.
         _wt._stepRunning = false;
-        startWalkthroughTimer(step.durationSec, /*autoAdvance=*/true);
+        // Provide a minimal visual cue: fill bar quickly to show step is "ready".
+        startWalkthroughTimer(step.durationSec, /*autoAdvance=*/false);
       }
     } else {
-      // speak not available at all — timer only.
+      // speak not available at all — step is immediately ready for manual advance.
       _wt._stepRunning = false;
-      startWalkthroughTimer(step.durationSec, /*autoAdvance=*/true);
+      startWalkthroughTimer(step.durationSec, /*autoAdvance=*/false);
     }
   }
 
@@ -14177,12 +14637,11 @@ function renderHubMore() {
       // ── Clean up any stale injected elements from a previous run ──
       try {
         finishEl.querySelectorAll(
-          ".wt-btn-faayda, .wt-btn-didnt-work, .wt-vote-thanks, " +
-          ".wt-reason-picker, .wt-social-proof-line, .yt-offer, .yt-video"
+          ".wt-warm-completion, .wt-social-proof-line, .yt-offer, .yt-video"
         ).forEach(function (el) { el.remove(); });
       } catch (_) {}
 
-      // ── Social-proof line (injected above the vote buttons) ──
+      // ── Social-proof line (read-only, injected above the warm message) ──
       try {
         if (typeof socialProof === "function" && _wt.key) {
           const _sp = socialProof(_wt.key);
@@ -14194,7 +14653,7 @@ function renderHubMore() {
           spLine.textContent = _sp.line;
           const fbDiv = finishEl.querySelector(".wt-finish-feedback");
           if (fbDiv && fbDiv.parentNode) {
-            fbDiv.parentNode.insertBefore(spLine, fbDiv); // full-width sibling above the button row
+            fbDiv.parentNode.insertBefore(spLine, fbDiv);
           } else {
             finishEl.appendChild(spLine);
           }
@@ -14203,49 +14662,27 @@ function renderHubMore() {
         console.warn("[walkthrough] social-proof inject error:", _spErr);
       }
 
-      // ── Vote buttons: clear 👍 / 👎 with high-contrast labels ──
-      // The dark immersive finish overlay (#1e293b / dark slate) needs LIGHT
-      // text and clearly coloured fills — not the old grey-on-dark buttons.
+      // ── Warm completion message (v7.1 — no instant vote, Swiggy model) ──
+      // "Did it help?" is asked LATER on the home screen (sehat-ghar).
+      // Here we only show a warm, encouraging line so the user leaves relaxed.
       try {
-        const _ls = typeof locStr === "function" ? locStr : function (r) { return r; };
-
         const fbDiv = finishEl.querySelector(".wt-finish-feedback");
-
-        // 👍 "Faayda hua" up-vote button
-        if (!finishEl.querySelector(".wt-btn-faayda")) {
-          const faaydaBtn = document.createElement("button");
-          faaydaBtn.className = "wt-feedback-btn wt-btn-faayda";
-          faaydaBtn.style.cssText =
-            "background:#16a34a;color:#fff;border:none;padding:10px 22px;" +
-            "border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;" +
-            "min-width:130px;box-shadow:0 2px 8px rgba(22,163,74,.35);";
-          faaydaBtn.textContent = "👍 " + _ls("Faayda hua", "फ़ायदा हुआ");
-          faaydaBtn.onclick = function () { walkthroughFeedback("better"); };
+        if (!finishEl.querySelector(".wt-warm-completion")) {
+          const warmDiv = document.createElement("div");
+          warmDiv.className = "wt-warm-completion";
+          warmDiv.style.cssText =
+            "margin-top:14px;padding:12px 16px;border-radius:14px;" +
+            "background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.25);" +
+            "color:#86efac;font-size:14px;text-align:center;line-height:1.6;";
+          warmDiv.textContent = "Ho gaya 🌿 Thodi der mein farak mehsoos hoga, aaram karein.";
           if (fbDiv) {
-            fbDiv.appendChild(faaydaBtn);
+            fbDiv.appendChild(warmDiv);
           } else {
-            finishEl.appendChild(faaydaBtn);
+            finishEl.appendChild(warmDiv);
           }
         }
-
-        // 👎 "Kaam nahi aaya" down-vote button
-        if (!finishEl.querySelector(".wt-btn-didnt-work")) {
-          const didntWork = document.createElement("button");
-          didntWork.className = "wt-feedback-btn wt-btn-didnt-work";
-          didntWork.style.cssText =
-            "background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.4);" +
-            "padding:10px 22px;border-radius:12px;font-size:15px;font-weight:600;" +
-            "cursor:pointer;min-width:130px;";
-          didntWork.textContent = "👎 " + _ls("Kaam nahi aaya", "काम नहीं आया");
-          didntWork.onclick = function () { _wtOpenReasonPicker(); };
-          if (fbDiv) {
-            fbDiv.appendChild(didntWork);
-          } else {
-            finishEl.appendChild(didntWork);
-          }
-        }
-      } catch (_btnErr) {
-        console.warn("[walkthrough] vote buttons inject error:", _btnErr);
+      } catch (_warmErr) {
+        console.warn("[walkthrough] warm completion inject error:", _warmErr);
       }
     }
     setText("wt-finish-line", _wt.exp.finishLine || "Bas ho gaya.");
@@ -14431,6 +14868,22 @@ function renderHubMore() {
         ttsText: _wt.exp.finishLineHi || _wt.exp.finishLine,
       });
     }
+
+    // v7.1 — Record attempt into journey memory so the home screen (sehat-ghar)
+    // can ask "did it help?" LATER, at the right moment (Swiggy model).
+    // Guard with typeof so this is a no-op when sehat-ghar hasn't exposed the hook yet.
+    try {
+      if (typeof window.journeyRecordTried === "function") {
+        const _exp = _wt.exp;
+        const _symptomBucket = (typeof window.symptomForRemedy === "function")
+          ? window.symptomForRemedy(_wt.key)
+          : "general";
+        window.journeyRecordTried(_symptomBucket, _wt.key, _exp.titleHi || _exp.title);
+      }
+    } catch (_jrErr) {
+      console.warn("[walkthrough] journeyRecordTried error:", _jrErr);
+    }
+
     console.info("[walkthrough] finished", _wt.key);
     // WS1: if this walkthrough was launched from a focus (guided-ilaj) step,
     // mark that step done. Key-matched so a chat-opened walkthrough of a
@@ -14619,13 +15072,12 @@ function renderHubMore() {
     _wt = null;
     // v6.2.1: release the gate so future voice transcripts route normally
     window._walkthroughOpen = false;
-    // WS5: clean up injected vote UI so finish screen is blank next open.
+    // v7.1: clean up injected finish UI so finish screen is blank next open.
     try {
       const finishEl = document.getElementById("wt-finish");
       if (finishEl) {
         const toRemove = finishEl.querySelectorAll(
-          ".wt-btn-faayda, .wt-btn-didnt-work, .wt-reason-picker, " +
-          ".wt-vote-thanks, .wt-evidence-panel, .wt-social-proof-line, .yt-offer, .yt-video",
+          ".wt-warm-completion, .wt-evidence-panel, .wt-social-proof-line, .yt-offer, .yt-video",
         );
         toRemove.forEach(function (el) { el.remove(); });
       }
@@ -14633,6 +15085,60 @@ function renderHubMore() {
   }
   window.closeWalkthrough = closeWalkthrough;
   window.openWalkthrough = openWalkthrough;
+
+  // ── v7.1: ALT-REMEDY ENGINE ───────────────────────────────────────────────
+  //
+  // ALT_MAP groups remedy keys by symptom bucket, in TRY ORDER.
+  // Used by the home check-in (sehat-ghar) to offer the next remedy when the
+  // user reports the previous one didn't help (Swiggy model: ask later, pivot fast).
+  //
+  // Keys must match real REMEDY_EXPERIENCES entries above.
+  // ─────────────────────────────────────────────────────────────────────────
+  var ALT_MAP = {
+    "sardi-khansi": ["adrak-chai",   "tulsi-kadha",       "mulethi-kadha"],
+    "gala":         ["namak-gargle", "tulsi-shahad"],
+    "bukhar":       ["tulsi-kadha",  "giloy-paani"],
+    "sir-dard":     ["pudina-balm-sir", "tulsi-kadha"],
+    "acidity":      ["saunf-paani",  "ajwain-namak-chura","jeera-paani"],
+    "kabz":         ["isabgol-doodh","methi-paani"],
+    "neend":        ["haldi-doodh",  "jaiphal-doodh"],
+    "tension":      ["ashwagandha-doodh","jaiphal-doodh"],
+    "immunity":     ["giloy-paani",  "amla-roz"],
+    "daant":        ["laung-daant"],
+    "nausea":       ["elaichi-mitli","saunf-paani"],
+    "joint":        ["sarso-tel-malish","methi-paani"],
+    "skin":         ["aloe-vera-pimple","neem-haldi-paste"],
+  };
+
+  // symptomForRemedy(remedyKey) — reverse lookup: which symptom bucket owns this key?
+  // Returns the bucket string, or "general" if the key isn't in any bucket.
+  function symptomForRemedy(remedyKey) {
+    for (var bucket in ALT_MAP) {
+      if (ALT_MAP[bucket].indexOf(remedyKey) !== -1) return bucket;
+    }
+    return "general";
+  }
+  window.symptomForRemedy = symptomForRemedy;
+
+  // getAltRemedy(symptomKey, triedKeysArray)
+  // Returns { key, titleHi } for the next remedy in bucket order that is NOT
+  // in triedKeysArray, or null if none left.
+  function getAltRemedy(symptomKey, triedKeysArray) {
+    var bucket = ALT_MAP[symptomKey];
+    if (!bucket || !bucket.length) return null;
+    var tried = Array.isArray(triedKeysArray) ? triedKeysArray : [];
+    for (var i = 0; i < bucket.length; i++) {
+      var candidateKey = bucket[i];
+      if (tried.indexOf(candidateKey) !== -1) continue;
+      var exp = REMEDY_EXPERIENCES[candidateKey];
+      return {
+        key: candidateKey,
+        titleHi: (exp && exp.titleHi) ? exp.titleHi : candidateKey,
+      };
+    }
+    return null; // all remedies in bucket have been tried
+  }
+  window.getAltRemedy = getAltRemedy;
 
   // openWalkthroughExp(expObj, displayKey) — immersive player entry point for
   // TRANSIENT experience objects (e.g. kit-adapter from file 12).
