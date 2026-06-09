@@ -10553,6 +10553,7 @@ Rules for EXPERIENCE:
 - RED FLAGS (chest pain, breathing difficulty, severe/persistent pain, bleeding, fainting, stroke signs): advise seeing a doctor warmly, then emit EXPERIENCE: general-care (it carries the escalation path).
 - When the OPTIONS: line is present (clarifying-question turn), do NOT also emit EXPERIENCE: on that same reply.
 - The EXPERIENCE: line is a separate final line, never spoken aloud, never shown as text to the user — it is a machine-readable control line only.
+- NON-HINDI LANGUAGES: If the user's selected app language is NOT Hindi (i.e. the per-call language note says the language is Bengali, Tamil, Telugu, Kannada, English, etc.), do NOT emit an EXPERIENCE: line at all. The step-by-step walkthrough card is unavailable in that language. Give the remedy guidance directly as 2–3 short, warm, actionable steps in the user's language; your text reply IS the complete guidance.
 
 OUTPUT FORMAT (strict):
 First line: LANG:<code>  where <code> is one of hi, mr, bn, ta, te, kn, ml, gu, pa, en.
@@ -16441,9 +16442,12 @@ window.toggleLang = toggleLang;
       addMsg("user", displayText, false);
       if (ST.chatHistory) ST.chatHistory.push({ role: "user", content: displayText });
 
-      // Check for deterministic triage flow
-      const symptomKey = _detectSymptomKey(displayText) || _detectSymptomKey(aiPrompt);
-      if (symptomKey && typeof FOCUS_FLOWS !== "undefined" && FOCUS_FLOWS[symptomKey]) {
+      // Check for deterministic triage flow — Hindi-only (non-Hindi gets AI reply in selected language)
+      const _isHindi = (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
+      const symptomKey = _isHindi
+        ? (_detectSymptomKey(displayText) || _detectSymptomKey(aiPrompt))
+        : null;
+      if (_isHindi && symptomKey && typeof FOCUS_FLOWS !== "undefined" && FOCUS_FLOWS[symptomKey]) {
         // Launch bubble-triage directly — no LLM call on first symptom turn
         ST._symptomTurnSeen = 1;
         _activeTriage = { key: symptomKey, stepIdx: 0, answers: {} };
@@ -16454,7 +16458,7 @@ window.toggleLang = toggleLang;
         }
         setTimeout(() => _renderNextTriageQuestion(msgs), 200);
       } else {
-        // No deterministic flow — fall through to LLM
+        // Non-Hindi or no deterministic flow — fall through to AI in selected language
         callAI(aiPrompt, getSystemPromptFor("nushke"));
       }
     }, 100);
@@ -16833,8 +16837,10 @@ window.toggleLang = toggleLang;
         // openRemedy → openWalkthrough (the new magical player).
         // v7.1: skip remedy/acupressure mirror when EXPERIENCE: contract fired —
         // the companion entry is the single affordance for this turn.
+        // v10: Hinglish content cards are Hindi-only; non-Hindi gets AI-native guidance.
+        const _addMsgIsHindi = (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
         const voiceTa = document.getElementById("voice-transcript-area");
-        if (voiceTa && !ST._experienceShownThisTurn) {
+        if (_addMsgIsHindi && voiceTa && !ST._experienceShownThisTurn) {
           if (typeof injectRemedyCard === "function") {
             setTimeout(() => injectRemedyCard(text, voiceTa), 80);
           }
@@ -16844,7 +16850,7 @@ window.toggleLang = toggleLang;
           if (typeof injectMovementCard === "function") {
             setTimeout(() => injectMovementCard(text, voiceTa), 220);
           }
-        } else if (voiceTa && ST._experienceShownThisTurn) {
+        } else if (_addMsgIsHindi && voiceTa && ST._experienceShownThisTurn) {
           // Movement cards are non-remedy (exercise/yoga) — still allow them
           if (typeof injectMovementCard === "function") {
             setTimeout(() => injectMovementCard(text, voiceTa), 220);
@@ -16877,11 +16883,14 @@ window.toggleLang = toggleLang;
         }
       }
       row.appendChild(acts);
-      // skill check
+      // skill check — Hindi-only: Hinglish content cards are unavailable in non-Hindi
+      // v10: gate detectSkill card, injectRemedyCard, injectAcupressureCard,
+      // injectMovementCard on Hindi. Follow-up chips + speaker button stay language-neutral.
+      const _chatMsgIsHindi = (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
       // Dedupe guard: skip if (a) a triage is currently running (companion entry
       // from _finalizeTriageInChat is the correct single affordance for that turn),
       // or (b) the same skill key was already injected earlier in this turn.
-      const skill = detectSkill(text);
+      const skill = _chatMsgIsHindi ? detectSkill(text) : null;
       if (skill && !_activeTriage && ST._lastCardKeyThisTurn !== ("skill:" + skill))
         setTimeout(() => {
           // Re-check _activeTriage inside the timer — it may have started in the
@@ -16901,15 +16910,16 @@ window.toggleLang = toggleLang;
       // remedy card — guided CTA handles triage instead. From turn 2+, allow.
       // v7.1: also suppress when EXPERIENCE: contract fired this turn —
       // callAI already rendered the single companion entry; no competing cards.
-      if (ST.chatCtx === "nushke" || ST.chatCtx === "wellness") {
+      // v10: Hindi-only gate applied to remedy + acupressure + movement cards.
+      if (_chatMsgIsHindi && (ST.chatCtx === "nushke" || ST.chatCtx === "wellness")) {
         const _suppressRemedy = (ST._symptomTurnSeen === 1) || !!ST._experienceShownThisTurn;
         if (!_suppressRemedy) {
           setTimeout(() => injectRemedyCard(text, msgs), 800);
           setTimeout(() => injectAcupressureCard(text, msgs), 950);
         }
       }
-      // movement skill / wellness habit card — fires in all ctxs when keyword matches
-      setTimeout(() => injectMovementCard(text, msgs), 900);
+      // movement skill / wellness habit card — Hindi-only, fires in all ctxs when keyword matches
+      if (_chatMsgIsHindi) setTimeout(() => injectMovementCard(text, msgs), 900);
       // v3.2: Follow-up CTA chips (after a beat, only on AI replies — not template ones)
       // WS1 fix: skip generic chips when the guided-ilaj CTA was injected for this
       // turn (ST._guidedCtaActive). Reset the flag and the dedupe key after reading.
@@ -17419,6 +17429,18 @@ window.toggleLang = toggleLang;
       "\". If the user writes in another language (e.g. types in a different script), mirror that language, but default to " +
       _selectedMeta.name +
       " otherwise.";
+    // v10: walkthrough companion card is only available in Hindi.
+    // For all other languages the app cannot show the card — so DO NOT emit
+    // an EXPERIENCE: line. Give the remedy guidance directly as short, warm,
+    // actionable steps in the user's language; your text reply IS the complete guidance.
+    if (_selectedLang !== "hi") {
+      _sysContent +=
+        "\n\nIMPORTANT — EXPERIENCE LINE SUPPRESSED: The step-by-step walkthrough card is NOT available in " +
+        _selectedMeta.name +
+        ". Do NOT emit an EXPERIENCE: line in this reply. Instead, give the remedy guidance directly as 2–3 short, warm, actionable steps in " +
+        _selectedMeta.name +
+        ". Your text reply is the complete guidance.";
+    }
 
     // Inject a compact VOICE directive so the model skips visual affordances
     // and converses naturally. Kept short to minimise token overhead.
@@ -17622,7 +17644,11 @@ window.toggleLang = toggleLang;
 
         // ── v7.1: Render single companion entry when EXPERIENCE contract fired ─
         // Replaces maybeAppendRemedyCta + injectRemedyCard competing paths.
-        if (_experienceKey) {
+        // v10: The walkthrough companion card is Hindi-only. For non-Hindi, the
+        // AI's native-language text reply IS the complete guidance — no card.
+        // The EXPERIENCE: line is stripped from displayed/spoken text for ALL languages.
+        const _callAIIsHindi = (typeof window.getLang === "function" ? window.getLang() : "hi") === "hi";
+        if (_experienceKey && _callAIIsHindi) {
           // Resolve experience object from REMEDY_EXPERIENCES or fall back to a
           // generic general-care placeholder (nuskha is adding that in parallel).
           const _expObj =
@@ -17692,10 +17718,11 @@ window.toggleLang = toggleLang;
               voiceTa.scrollTop = voiceTa.scrollHeight;
             }, 600);
           }
-        } else {
+        } else if (!_experienceKey) {
           // No EXPERIENCE contract — use the old substring-based CTA as fallback
           if (typeof maybeAppendRemedyCta === "function") maybeAppendRemedyCta(cleanReply);
         }
+        // Non-Hindi with _experienceKey: line already stripped above; AI text reply is the guidance.
         // ── /v7.1 companion entry ────────────────────────────────────────────
 
         // ── v9.1: Voice hero-card deterministic fallback ──────────────────────
@@ -17718,7 +17745,7 @@ window.toggleLang = toggleLang;
         //      Guard: ST._voiceRemedyShownSymptoms (Set) accumulates per session;
         //      reset to an empty Set each time voiceModeActive is freshly true
         //      AND the overlay was previously closed (overlay just re-opened).
-        if (voiceModeActive && !_experienceKey) {
+        if (_callAIIsHindi && voiceModeActive && !_experienceKey) {
           // Lazy-init / reset the session guard when the overlay opens fresh.
           // _voiceOv.classList.contains("on") is true right now; we detect a
           // "new session" by checking ST._voiceOverlayWasOn: false means we
