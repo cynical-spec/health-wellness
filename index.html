@@ -10201,7 +10201,9 @@ GUIDED COMPANION CONTRACT (v7.1 — machine-readable, never shown to user):
 When Saathi is ready to GUIDE the user through a remedy or practice (i.e. recommending they actively DO something), she ends her reply with a final machine-readable line in EXACTLY this format:
   EXPERIENCE: <key>
 where <key> is one of these VETTED keys ONLY:
-  haldi-doodh, adrak-chai, jeera-paani, tulsi-kadha, methi-paani, nimbu-shahad, dalchini-shahad, tulsi-shahad, lasun-shahad, saunf-paani, dhaniya-paani, neem-haldi-paste, general-care
+  haldi-doodh, adrak-chai, jeera-paani, tulsi-kadha, methi-paani, nimbu-shahad, dalchini-shahad, tulsi-shahad, lasun-shahad, saunf-paani, dhaniya-paani, neem-haldi-paste, mulethi-kadha, namak-gargle, giloy-paani, pudina-balm-sir, ajwain-namak-chura, isabgol-doodh, jaiphal-doodh, ashwagandha-doodh, amla-roz, laung-daant, elaichi-mitli, sarso-tel-malish, aloe-vera-pimple, general-care
+
+Routing hints (pick the closest key): throat/gargle → namak-gargle or tulsi-shahad | toothache/daant dard → laung-daant | constipation/kabz → isabgol-doodh | stress/neend → ashwagandha-doodh or jaiphal-doodh | nausea/ulti → elaichi-mitli | joint/kamar/badan dard → sarso-tel-malish | acne/pimple/skin → aloe-vera-pimple or neem-haldi-paste | cough/mulethi → mulethi-kadha | gas/ajwain → ajwain-namak-chura | immunity/giloy → giloy-paani | sir dard (balm) → pudina-balm-sir | amla daily → amla-roz
 
 Rules for EXPERIENCE:
 - Turn 1 for a new symptom: keep the existing behaviour — warm acknowledgement + ONE gentle clarifying question (with OPTIONS: line where applicable). Do NOT emit EXPERIENCE: yet.
@@ -12651,6 +12653,992 @@ function renderHubMore() {
           strength: "mixed",
           note: "Curcumin (haldi) sujan/jodon ke liye study hua; culinary matra surakshit.",
           noteHi: "करक्यूमिन (हल्दी) सूजन/जोड़ों के लिए अध्ययन हुआ; खाने की मात्रा सुरक्षित।",
+        },
+      ],
+    },
+
+    // ───────────────────────────────────────────────────────────────────────
+    // PHASE 2 — 7 new vetted experiences (batch 1 of 2)
+    // Keys align with matching REMEDY_KITS entries so recipe-card play buttons
+    // auto-route here via openRemedy → openWalkthrough.
+    // ───────────────────────────────────────────────────────────────────────
+
+    // 1. Sookhi khansi / dry cough → mulethi kadha (licorice + shahad)
+    // Aligns with REMEDY_KITS["mulethi-kadha"]
+    "mulethi-kadha": {
+      title: "Mulethi kadha",
+      titleHi: "मुलेठी काढ़ा",
+      subtitle: "Sookhi khansi ka nushka",
+      subtitleHi: "सूखी खाँसी का नुस्खा",
+      kindIcon: "🪵",
+      videoQuery: "मुलेठी काढ़ा बनाने का तरीका सूखी खाँसी gharelu nuskha",
+      match: [
+        "mulethi",
+        "मुलेठी",
+        "licorice",
+        "mulethi kadha",
+        "sookhi khansi",
+        "सूखी खाँसी",
+        "dry cough",
+        "खाँसी में मुलेठी",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 8,
+          titleHi: "मुलेठी की एक डंडी तोड़ें",
+          lineHi: "एक इंच मुलेठी की डंडी लें। छोटे-छोटे टुकड़े करें — ताकि पानी में उसका रस अच्छे से उतरे।",
+          sayHi: "एक इंच मुलेठी की डंडी लें। छोटे छोटे टुकड़े करें — ताकि पानी में उसका रस अच्छे से उतरे।",
+          svg: "leaf",
+        },
+        {
+          ix: 2,
+          durationSec: 10,
+          titleHi: "पानी में उबालें",
+          lineHi: "एक कप पानी में मुलेठी के टुकड़े डालें। धीमी आंच पर उबालें — जब तक पानी आधा न रह जाए, लगभग पाँच मिनट।",
+          sayHi: "एक कप पानी में मुलेठी के टुकड़े डालें। धीमी आंच पर उबालें — जब तक पानी आधा न रह जाए, लगभग पाँच मिनट।",
+          svg: "boil",
+        },
+        {
+          ix: 3,
+          durationSec: 8,
+          titleHi: "छान लें",
+          lineHi: "आंच बंद करें। छान लें। थोड़ा ठंडा होने दें — ज़्यादा गरम पीने से गला और जल सकता है।",
+          sayHi: "आंच बंद करें। छान लें। थोड़ा ठंडा होने दें — ज़्यादा गरम पीने से गला और जल सकता है।",
+          svg: "stir",
+        },
+        {
+          ix: 4,
+          durationSec: 9,
+          titleHi: "शहद मिलाएं, घूंट घूंट पियें",
+          lineHi: "जब थोड़ा ठंडा हो जाए, आधा चम्मच शहद मिला लें। घूंट घूंट करके पियें — जल्दी नहीं। दिन में दो बार यही करें।",
+          sayHi: "जब थोड़ा ठंडा हो जाए, आधा चम्मच शहद मिला लें। घूंट घूंट करके पियें — जल्दी नहीं। दिन में दो बार यही करें।",
+          svg: "warm-drink",
+        },
+      ],
+      finishLine: "Mulethi ki meethaas gale ko chain degi. 2-3 din mein khansi dheemi padegi.",
+      finishLineHi: "मुलेठी की मिठास गले को चैन देगी। दो तीन दिन में खाँसी धीमी पड़ेगी।",
+      citation: "3 din mein farak na pade ya khansi badhe toh doctor se milein.",
+      sources: [
+        {
+          org: "NIH NCCIH",
+          title: "Licorice Root",
+          url: "https://www.nccih.nih.gov/health/licorice-root",
+          strength: "limited",
+          note: "Mulethi mein glycyrrhizin hai jo gale ki jalan kam kar sakta hai; human trials seemit.",
+          noteHi: "मुलेठी में ग्लिसरिज़िन है जो गले की जलन कम कर सकता है; मानव परीक्षण सीमित।",
+        },
+        {
+          org: "Cochrane Review (2018)",
+          title: "Honey for acute cough in children",
+          url: "https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD007094.pub5/full",
+          strength: "moderate",
+          note: "Shahad khaansi mein placebo se zyada aaram deta hai (1 saal se chhote bachchon ko shahad NAHI).",
+          noteHi: "शहद खाँसी में प्लेसबो से ज़्यादा आराम देता है (1 साल से छोटे बच्चों को शहद नहीं)।",
+        },
+      ],
+    },
+
+    // 2. Gale ki kharash / sore throat → namak-paani gargle (warm salt water)
+    // Aligns with REMEDY_KITS["namak-gargle"]
+    "namak-gargle": {
+      title: "Namak paani garara",
+      titleHi: "नमक पानी गरारा",
+      subtitle: "Gale ki kharash ka nushka",
+      subtitleHi: "गले की खराश का नुस्खा",
+      kindIcon: "🧂",
+      videoQuery: "नमक पानी गरारा गले की खराश gharelu nuskha",
+      match: [
+        "namak paani",
+        "नमक पानी",
+        "namak gargle",
+        "garara",
+        "गरारा",
+        "salt water gargle",
+        "gale ki kharash",
+        "गले की खराश",
+        "gala kharab",
+        "गला ख़राब",
+        "sore throat",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 8,
+          titleHi: "पानी हल्का गरम करें",
+          lineHi: "एक गिलास पानी हल्का गरम करें — जैसा आप आराम से पी सकें, जलाए नहीं। बहुत गरम पानी गले को और नुकसान देता है।",
+          sayHi: "एक गिलास पानी हल्का गरम करें — जैसा आप आराम से पी सकें, जलाए नहीं। बहुत गरम पानी गले को और नुकसान देता है।",
+          svg: "water",
+        },
+        {
+          ix: 2,
+          durationSec: 7,
+          titleHi: "नमक घोलें",
+          lineHi: "आधा चम्मच साफ नमक उसमें अच्छे से घोल लें। बस आधा — ज़्यादा नमक से गला और सूखता है।",
+          sayHi: "आधा चम्मच साफ नमक उसमें अच्छे से घोल लें। बस आधा — ज़्यादा नमक से गला और सूखता है।",
+          svg: "stir",
+        },
+        {
+          ix: 3,
+          durationSec: 10,
+          titleHi: "गरारा करें",
+          lineHi: "मुंह में थोड़ा पानी लें, सिर थोड़ा ऊपर करें और 'आआआ' की आवाज़ निकालते हुए बीस से तीस सेकंड गरारा करें। थूक दें। ऐसा चार पाँच बार करें।",
+          sayHi: "मुंह में थोड़ा पानी लें, सिर थोड़ा ऊपर करें और आआआ की आवाज़ निकालते हुए बीस तीस सेकंड गरारा करें। थूक दें। ऐसा चार पाँच बार करें।",
+          svg: "breathing-rest",
+        },
+        {
+          ix: 4,
+          durationSec: 8,
+          titleHi: "दिन में तीन बार करें",
+          lineHi: "सुबह, दोपहर और रात — तीन बार करें। गरारे के बाद आधा घंटा कुछ खाएं-पियें नहीं। एक दो दिन में गला खुल जाएगा।",
+          sayHi: "सुबह, दोपहर और रात — तीन बार करें। गरारे के बाद आधा घंटा कुछ खाएं पियें नहीं। एक दो दिन में गला खुल जाएगा।",
+          svg: "rest",
+        },
+      ],
+      finishLine: "Namak paani gale ka sabse purana aur bharosa wala nushka hai. Aaram zaroor milega.",
+      finishLineHi: "नमक पानी गले का सबसे पुराना और भरोसेवाला नुस्खा है। आराम ज़रूर मिलेगा।",
+      citation: "2-3 din mein farak na pade ya bukhar aaye toh doctor se milein.",
+      sources: [
+        {
+          org: "American Journal of Preventive Medicine (2005)",
+          title: "Gargling for the prevention of upper respiratory tract infections",
+          url: "https://pubmed.ncbi.nlm.nih.gov/16242593/",
+          strength: "moderate",
+          note: "Gargling with water significantly reduced upper respiratory tract infections in a randomized trial.",
+          noteHi: "गरारा करने से ऊपरी श्वसन संक्रमण काफ़ी कम हुए — randomized trial में।",
+        },
+      ],
+    },
+
+    // 3. Halka bukhar / mild fever + immunity → giloy
+    // Aligns with REMEDY_KITS["giloy-paani"]
+    "giloy-paani": {
+      title: "Giloy kadha",
+      titleHi: "गिलोय काढ़ा",
+      subtitle: "Halka bukhar aur immunity ke liye",
+      subtitleHi: "हल्के बुखार और इम्यूनिटी के लिए",
+      kindIcon: "🌿",
+      videoQuery: "गिलोय काढ़ा बनाने का तरीका बुखार immunity gharelu nuskha",
+      match: [
+        "giloy",
+        "गिलोय",
+        "giloy kadha",
+        "giloy paani",
+        "halka bukhar",
+        "हल्का बुखार",
+        "immunity giloy",
+        "गिलोय काढ़ा",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 8,
+          titleHi: "गिलोय की डंडी कूटें",
+          lineHi: "एक इंच गिलोय की डंडी लें — कच्ची हो तो बेहतर। छोटे टुकड़े करके हल्के से कूटें ताकि रस निकले।",
+          sayHi: "एक इंच गिलोय की डंडी लें — कच्ची हो तो बेहतर। छोटे टुकड़े करके हल्के से कूटें ताकि रस निकले।",
+          svg: "leaf",
+        },
+        {
+          ix: 2,
+          durationSec: 10,
+          titleHi: "पानी में उबालें",
+          lineHi: "एक कप पानी में गिलोय डालें। धीमी आंच पर पाँच मिनट उबालें — जब तक पानी आधा न हो जाए।",
+          sayHi: "एक कप पानी में गिलोय डालें। धीमी आंच पर पाँच मिनट उबालें — जब तक पानी आधा न हो जाए।",
+          svg: "boil",
+        },
+        {
+          ix: 3,
+          durationSec: 8,
+          titleHi: "छान लें",
+          lineHi: "आंच बंद करें। छान लें। थोड़ा ठंडा होने दें — गिलोय कड़वा होता है, थोड़ा गुड़ या शहद मिला सकते हैं।",
+          sayHi: "आंच बंद करें। छान लें। थोड़ा ठंडा होने दें — गिलोय कड़वा होता है, थोड़ा गुड़ या शहद मिला सकते हैं।",
+          svg: "stir",
+        },
+        {
+          ix: 4,
+          durationSec: 9,
+          titleHi: "खाली पेट पियें, आराम करें",
+          lineHi: "सुबह खाली पेट पियें। गिलोय तुरंत जादू नहीं करता — रोज़ तीन चार दिन लें, तब फ़र्क दिखेगा। बुखार हो तो आराम भी उतना ही ज़रूरी है।",
+          sayHi: "सुबह खाली पेट पियें। गिलोय तुरंत जादू नहीं करता — रोज़ तीन चार दिन लें, तब फ़र्क दिखेगा। बुखार हो तो आराम भी उतना ही ज़रूरी है।",
+          svg: "rest",
+        },
+      ],
+      finishLine: "Giloy sehat ka pakka dost hai. Roz lenge toh body khud sahi rehegi.",
+      finishLineHi: "गिलोय सेहत का पक्का दोस्त है। रोज़ लेंगे तो शरीर खुद सही रहेगा।",
+      citation: "102°F se zyada bukhar ho, 2 din se zyada rahe, ya baccha ho toh doctor zaroor dikhayein.",
+      sources: [
+        {
+          org: "NIH PMC — review (2015)",
+          title: "Tinospora cordifolia (Giloy): Ethnobotany, Phytochemistry and Pharmacology",
+          url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4643442/",
+          strength: "limited",
+          note: "Giloy (Tinospora cordifolia) immunity aur bukhar mein paramparik upyog; clinical trials seemit.",
+          noteHi: "गिलोय इम्यूनिटी और बुखार में परंपरागत उपयोग; नैदानिक परीक्षण सीमित।",
+        },
+      ],
+    },
+
+    // 4. Sir dard / headache → pudina (peppermint) paste/balm
+    // Aligns with REMEDY_KITS["pudina-balm-sir"]
+    "pudina-balm-sir": {
+      title: "Pudina — sir dard",
+      titleHi: "पुदीना — सिर दर्द",
+      subtitle: "Tension headache ka nushka",
+      subtitleHi: "तनाव के सिर दर्द का नुस्खा",
+      kindIcon: "🌿",
+      videoQuery: "पुदीना सिर दर्द gharelu nuskha tension headache",
+      match: [
+        "pudina sir dard",
+        "पुदीना सिर दर्द",
+        "pudina headache",
+        "sir dard pudina",
+        "sir dard",
+        "सिर दर्द",
+        "sar dard",
+        "headache nuskha",
+        "माथे में दर्द",
+        "peppermint headache",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 8,
+          titleHi: "पुदीना के पत्ते लें",
+          lineHi: "आठ दस ताज़े पुदीने के पत्ते साफ पानी से धो लें। इनकी ठंडक ही इनकी ताक़त है।",
+          sayHi: "आठ दस ताज़े पुदीने के पत्ते साफ पानी से धो लें। इनकी ठंडक ही इनकी ताक़त है।",
+          svg: "leaf",
+        },
+        {
+          ix: 2,
+          durationSec: 9,
+          titleHi: "हल्का पेस्ट बनाएं",
+          lineHi: "पत्तों को हाथों से हल्के से मसलें या सिल-बट्टे पर हल्का पीसें — बस पतली लेप बने, ज़्यादा नहीं।",
+          sayHi: "पत्तों को हाथों से हल्के से मसलें या सिल बट्टे पर हल्का पीसें — बस पतली लेप बने, ज़्यादा नहीं।",
+          svg: "paste",
+        },
+        {
+          ix: 3,
+          durationSec: 9,
+          titleHi: "माथे और कनपटी पर लगाएं",
+          lineHi: "यह पेस्ट माथे पर और दोनों कनपटियों पर हल्के हाथ से लगाएं। दबाव मत डालें — बस लेप लगाएं।",
+          sayHi: "यह पेस्ट माथे पर और दोनों कनपटियों पर हल्के हाथ से लगाएं। दबाव मत डालें — बस लेप लगाएं।",
+          svg: "press-point",
+        },
+        {
+          ix: 4,
+          durationSec: 10,
+          titleHi: "आँखें बंद करें, आराम करें",
+          lineHi: "अब आँखें बंद करें, लेट जाएं। पंद्रह मिनट बस आराम — फोन नहीं, टीवी नहीं। पुदीने की ठंडक धीरे धीरे दर्द खींच लेगी।",
+          sayHi: "अब आँखें बंद करें, लेट जाएं। पंद्रह मिनट बस आराम — फोन नहीं, टीवी नहीं। पुदीने की ठंडक धीरे धीरे दर्द खींच लेगी।",
+          svg: "rest",
+        },
+      ],
+      finishLine: "Pudina ka menthol tanav se aaya sir dard mein sabse kaam aata hai. Aaram lijiye.",
+      finishLineHi: "पुदीने का मेंथॉल तनाव से आए सिर दर्द में सबसे काम आता है। आराम लीजिए।",
+      citation: "Achanak bahut tez sir dard ho, aankhon mein dhundlaahat ho ya ubaklai aaye — turant doctor ke paas jayein.",
+      sources: [
+        {
+          org: "Cephalalgia (2016) — RCT",
+          title: "Peppermint oil in the treatment of tension-type headache",
+          url: "https://pubmed.ncbi.nlm.nih.gov/27106030/",
+          strength: "moderate",
+          note: "Peppermint oil (menthol) temple par lagane se tension headache mein dard analgesia ke barabar rahat mili.",
+          noteHi: "पुदीने का तेल कनपटी पर लगाने से तनाव के सिर दर्द में दवा जैसी राहत मिली।",
+        },
+      ],
+    },
+
+    // 5. Acidity / gas / dakar → ajwain
+    // Aligns with REMEDY_KITS["ajwain-namak-chura"] (indigestion/gas)
+    "ajwain-namak-chura": {
+      title: "Ajwain — gas acidity",
+      titleHi: "अजवाइन — गैस, एसिडिटी",
+      subtitle: "Pet ki gas aur acidity ka nushka",
+      subtitleHi: "पेट की गैस और एसिडिटी का नुस्खा",
+      kindIcon: "🌾",
+      videoQuery: "अजवाइन गैस एसिडिटी gharelu nuskha pet dard",
+      match: [
+        "ajwain",
+        "अजवाइन",
+        "ajwain acidity",
+        "ajwain gas",
+        "pet ki gas",
+        "पेट की गैस",
+        "acidity",
+        "एसिडिटी",
+        "dakar",
+        "डकार",
+        "pet bhaari",
+        "indigestion",
+        "अपच",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 7,
+          titleHi: "अजवाइन लें",
+          lineHi: "आधा चम्मच अजवाइन लें। चाहें तो हल्का भून लें तवे पर — दस सेकंड, खुशबू आने तक। भुनी अजवाइन ज़्यादा असरदार होती है।",
+          sayHi: "आधा चम्मच अजवाइन लें। चाहें तो हल्का भून लें तवे पर — दस सेकंड, खुशबू आने तक। भुनी अजवाइन ज़्यादा असरदार होती है।",
+          svg: "leaf",
+        },
+        {
+          ix: 2,
+          durationSec: 7,
+          titleHi: "काला नमक मिलाएं",
+          lineHi: "उसमें चुटकी भर काला नमक मिलाएं। काला नमक पेट की गैस में सफेद नमक से बेहतर है।",
+          sayHi: "उसमें चुटकी भर काला नमक मिलाएं। काला नमक पेट की गैस में सफेद नमक से बेहतर है।",
+          svg: "stir",
+        },
+        {
+          ix: 3,
+          durationSec: 8,
+          titleHi: "चबाएं, गरम पानी पियें",
+          lineHi: "अजवाइन को मुंह में लेकर अच्छे से चबाएं। ऊपर से एक घूंट गरम पानी पियें। पेट में तुरंत गरमाई आएगी — गैस का रास्ता खुलेगा।",
+          sayHi: "अजवाइन को मुंह में लेकर अच्छे से चबाएं। ऊपर से एक घूंट गरम पानी पियें। पेट में तुरंत गरमाई आएगी — गैस का रास्ता खुलेगा।",
+          svg: "warm-drink",
+        },
+        {
+          ix: 4,
+          durationSec: 8,
+          titleHi: "थोड़ा टहलें",
+          lineHi: "बाकी गरम पानी धीरे धीरे पियें। अगर हो सके तो पाँच मिनट धीरे धीरे टहलें — गैस निकलती है। खाने के बाद लेटें नहीं।",
+          sayHi: "बाकी गरम पानी धीरे धीरे पियें। अगर हो सके तो पाँच मिनट धीरे धीरे टहलें — गैस निकलती है। खाने के बाद लेटें नहीं।",
+          svg: "breathing-rest",
+        },
+      ],
+      finishLine: "Ajwain paet ka sabse puraana dost hai. Dasein minute mein farak feel hoga.",
+      finishLineHi: "अजवाइन पेट का सबसे पुराना दोस्त है। दस मिनट में फ़र्क फील होगा।",
+      citation: "Agar pet dard bahut zyada ho ya 2 din se acidity band na ho toh doctor se milein.",
+      sources: [
+        {
+          org: "NIH PMC — review",
+          title: "Trachyspermum ammi (Ajwain): Pharmacological and Medicinal Profile",
+          url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3665023/",
+          strength: "limited",
+          note: "Ajwain ka thymol petrol mein antispasmodic aur carminative (gas nikaalne wala) prabhaav dikhata hai; human RCT seemit.",
+          noteHi: "अजवाइन का थाइमोल पेट में antispasmodic और गैस निकालने वाला प्रभाव दिखाता है; मानव RCT सीमित।",
+        },
+      ],
+    },
+
+    // 6. Kabz / constipation → isabgol (psyllium husk)
+    // Aligns with REMEDY_KITS["isabgol-doodh"]
+    "isabgol-doodh": {
+      title: "Isabgol — kabz",
+      titleHi: "इसबगोल — कब्ज़",
+      subtitle: "Kabz ka saral gharelu nushka",
+      subtitleHi: "कब्ज़ का सरल घरेलू नुस्खा",
+      kindIcon: "🌾",
+      videoQuery: "इसबगोल कब्ज़ gharelu nuskha psyllium husk",
+      match: [
+        "isabgol",
+        "इसबगोल",
+        "psyllium",
+        "kabz",
+        "कब्ज़",
+        "constipation",
+        "pet saaf nahi",
+        "पेट साफ नहीं",
+        "isabgol doodh",
+        "pet saaf",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 8,
+          titleHi: "दूध या पानी गरम करें",
+          lineHi: "सोने से पहले एक गिलास गरम दूध या गरम पानी तैयार करें। इसबगोल को गरम तरल में ही लेना चाहिए — ठंडे पानी में उतना असर नहीं होता।",
+          sayHi: "सोने से पहले एक गिलास गरम दूध या गरम पानी तैयार करें। इसबगोल को गरम तरल में ही लेना चाहिए — ठंडे पानी में उतना असर नहीं होता।",
+          svg: "warm-drink",
+        },
+        {
+          ix: 2,
+          durationSec: 8,
+          titleHi: "इसबगोल डालें",
+          lineHi: "दो चम्मच इसबगोल की भूसी डालें। जल्दी से हिलाएं — यह जल्दी गाढ़ा हो जाता है।",
+          sayHi: "दो चम्मच इसबगोल की भूसी डालें। जल्दी से हिलाएं — यह जल्दी गाढ़ा हो जाता है।",
+          svg: "stir",
+        },
+        {
+          ix: 3,
+          durationSec: 8,
+          titleHi: "तुरंत पी लें",
+          lineHi: "मिलाते ही तुरंत पी लें — ज़्यादा रुके तो बहुत गाढ़ा हो जाएगा। एक बार में सब खत्म करें।",
+          sayHi: "मिलाते ही तुरंत पी लें — ज़्यादा रुके तो बहुत गाढ़ा हो जाएगा। एक बार में सब खत्म करें।",
+          svg: "pour",
+        },
+        {
+          ix: 4,
+          durationSec: 9,
+          titleHi: "खूब पानी पियें, आराम से सो जाएं",
+          lineHi: "इसबगोल के बाद पूरे दिन खूब पानी पियें — कम से कम आठ गिलास। पानी के बिना इसबगोल पेट में फंस सकता है। सुबह उठकर खुद फ़र्क दिखेगा।",
+          sayHi: "इसबगोल के बाद पूरे दिन खूब पानी पियें — कम से कम आठ गिलास। पानी के बिना इसबगोल पेट में फंस सकता है। सुबह उठकर खुद फ़र्क दिखेगा।",
+          svg: "water",
+        },
+      ],
+      finishLine: "Isabgol ka koi muqabla nahi kabz mein. Roz subah ka pehla kaam easy ho jaayega.",
+      finishLineHi: "इसबगोल का कोई मुकाबला नहीं कब्ज़ में। रोज़ सुबह का पहला काम आसान हो जाएगा।",
+      citation: "Koi bhi dawai ke saath isabgol lene se pehle doctor se poochh lein. Kabz 1 hafte se zyada ho toh doctor se milein.",
+      sources: [
+        {
+          org: "American Journal of Clinical Nutrition (meta-analysis)",
+          title: "The effect of psyllium husk on gastrointestinal transit time",
+          url: "https://pubmed.ncbi.nlm.nih.gov/10479204/",
+          strength: "strong",
+          note: "Isabgol (psyllium) stool ko mulayam banata aur transit time improve karta hai — robust clinical evidence.",
+          noteHi: "इसबगोल (psyllium) मल को मुलायम बनाता और पाचन समय सुधारता है — मज़बूत नैदानिक प्रमाण।",
+        },
+      ],
+    },
+
+    // 7. Neend na aana / sleep → jaiphal (nutmeg) in warm milk
+    // DISTINCT from haldi-doodh — no haldi, no match overlap.
+    // Aligns with REMEDY_KITS["jaiphal-doodh"]
+    "jaiphal-doodh": {
+      title: "Jaiphal doodh — neend",
+      titleHi: "जायफल दूध — नींद",
+      subtitle: "Neend na aane ka nushka",
+      subtitleHi: "नींद न आने का नुस्खा",
+      kindIcon: "🌙",
+      videoQuery: "जायफल दूध नींद gharelu nuskha nutmeg milk sleep",
+      match: [
+        "jaiphal",
+        "जायफल",
+        "nutmeg",
+        "neend nahi",
+        "नींद नहीं",
+        "neend na aana",
+        "नींद न आना",
+        "insomnia",
+        "jaiphal doodh",
+        "नींद के लिए दूध",
+        "sone mein takleef",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 8,
+          titleHi: "दूध गरम करें",
+          lineHi: "सोने से तीस मिनट पहले एक कप दूध हल्की आंच पर गरम करें। दूध खुद नींद को बुलाने वाला ट्रिप्टोफेन लाता है।",
+          sayHi: "सोने से तीस मिनट पहले एक कप दूध हल्की आंच पर गरम करें। दूध खुद नींद को बुलाने वाला ट्रिप्टोफेन लाता है।",
+          svg: "warm-drink",
+        },
+        {
+          ix: 2,
+          durationSec: 8,
+          titleHi: "जायफल घिसें",
+          lineHi: "एक चुटकी जायफल पाउडर लें — बस चुटकी भर। जायफल ज़्यादा लेने से उल्टा नुकसान हो सकता है, तो हमेशा थोड़ा ही लें।",
+          sayHi: "एक चुटकी जायफल पाउडर लें — बस चुटकी भर। जायफल ज़्यादा लेने से उल्टा नुकसान हो सकता है, तो हमेशा थोड़ा ही लें।",
+          svg: "leaf",
+        },
+        {
+          ix: 3,
+          durationSec: 8,
+          titleHi: "दूध में मिलाएं",
+          lineHi: "जायफल पाउडर गरम दूध में डालें। थोड़ा गुड़ या शहद भी मिला सकते हैं — मिठास नींद और अच्छी लाती है।",
+          sayHi: "जायफल पाउडर गरम दूध में डालें। थोड़ा गुड़ या शहद भी मिला सकते हैं — मिठास नींद और अच्छी लाती है।",
+          svg: "stir",
+        },
+        {
+          ix: 4,
+          durationSec: 9,
+          titleHi: "बिस्तर पर जाएं, फोन रखें",
+          lineHi: "घूंट घूंट करके पियें। फोन नीचे रख दें — स्क्रीन की रोशनी जायफल का असर काट देती है। आँखें बंद करें, कोई पुरानी अच्छी याद सोचें।",
+          sayHi: "घूंट घूंट करके पियें। फोन नीचे रख दें — स्क्रीन की रोशनी जायफल का असर काट देती है। आँखें बंद करें, कोई पुरानी अच्छी याद सोचें।",
+          svg: "rest",
+        },
+      ],
+      finishLine: "Jaiphal wala doodh dadi ka sabse purana neend ka nushka hai. Raat achi bitegi.",
+      finishLineHi: "जायफल वाला दूध दादी का सबसे पुराना नींद का नुस्खा है। रात अच्छी बितेगी।",
+      citation: "Jaiphal sirf chutki bhar lein — zyada matra (1 chamach se zyada) nuksaandeh ho sakti hai.",
+      sources: [
+        {
+          org: "NIH NCCIH",
+          title: "Nutmeg",
+          url: "https://www.nccih.nih.gov/health/nutmeg",
+          strength: "limited",
+          note: "Jaiphal paramparik neend upay; culinary matra (chutki bhar) surakshit — zyada matra (≥5g) toxic.",
+          noteHi: "जायफल परंपरागत नींद उपाय; खाने की मात्रा (चुटकी भर) सुरक्षित — ज़्यादा मात्रा (5 ग्राम से अधिक) विषैली।",
+        },
+      ],
+    },
+
+    // ───────────────────────────────────────────────────────────────────────
+    // PHASE 2 — batch 2 of 2 (6 new vetted experiences)
+    // ───────────────────────────────────────────────────────────────────────
+
+    // 8. Tension / stress / anxiety → ashwagandha warm milk
+    // Aligns with REMEDY_KITS["ashwagandha-doodh"]
+    "ashwagandha-doodh": {
+      title: "Ashwagandha doodh",
+      titleHi: "अश्वगंधा दूध",
+      subtitle: "Tension, stress, anxiety ka nushka",
+      subtitleHi: "तनाव, स्ट्रेस, घबराहट का नुस्खा",
+      kindIcon: "🥛",
+      videoQuery: "अश्वगंधा दूध बनाने का तरीका stress tension gharelu nuskha",
+      match: [
+        "ashwagandha",
+        "अश्वगंधा",
+        "ashwagandha doodh",
+        "tension",
+        "तनाव",
+        "stress",
+        "anxiety",
+        "ghabrahat",
+        "घबराहट",
+        "chinta",
+        "चिंता",
+        "tension ka nushka",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 8,
+          titleHi: "दूध गरम करें",
+          lineHi: "एक कप दूध हल्की आंच पर गरम करें। दूध में खुद ट्रिप्टोफेन होता है जो दिमाग को शांत करता है — अश्वगंधा उसे और गहरा कर देता है।",
+          sayHi: "एक कप दूध हल्की आंच पर गरम करें। दूध में खुद ट्रिप्टोफेन होता है जो दिमाग को शांत करता है — अश्वगंधा उसे और गहरा कर देता है।",
+          svg: "warm-drink",
+        },
+        {
+          ix: 2,
+          durationSec: 8,
+          titleHi: "अश्वगंधा पाउडर डालें",
+          lineHi: "आधा चम्मच अश्वगंधा पाउडर दूध में डालें। बस आधा — ज़्यादा की ज़रूरत नहीं। गर्भवती हों या थायरॉइड की दवा लेती हों तो डॉक्टर से पूछ लें पहले।",
+          sayHi: "आधा चम्मच अश्वगंधा पाउडर दूध में डालें। बस आधा — ज़्यादा की ज़रूरत नहीं। गर्भवती हों या थायरॉइड की दवा लेती हों तो डॉक्टर से पूछ लें पहले।",
+          svg: "pour",
+        },
+        {
+          ix: 3,
+          durationSec: 9,
+          titleHi: "धीरे उबालें",
+          lineHi: "तीन चार मिनट धीमी आंच पर उबालें — उबाल मत आने दें। फिर आंच बंद। थोड़ा गुड़ मिला लें, मिठास नींद और तनाव दोनों में मदद करती है।",
+          sayHi: "तीन चार मिनट धीमी आंच पर उबालें — उबाल मत आने दें। फिर आंच बंद। थोड़ा गुड़ मिला लें, मिठास नींद और तनाव दोनों में मदद करती है।",
+          svg: "boil",
+        },
+        {
+          ix: 4,
+          durationSec: 9,
+          titleHi: "घूंट घूंट पियें, शांत बैठें",
+          lineHi: "रात को सोने से पहले घूंट घूंट करके पियें। फोन एक तरफ। आँखें बंद करें, एक लंबी साँस लें — शरीर को सिग्नल दें कि अब वक्त मिला है।",
+          sayHi: "रात को सोने से पहले घूंट घूंट करके पियें। फोन एक तरफ। आँखें बंद करें, एक लंबी साँस लें — शरीर को सिग्नल दें कि अब वक्त मिला है।",
+          svg: "rest",
+        },
+        {
+          ix: 5,
+          durationSec: 9,
+          titleHi: "इक्कीस दिन लगातार",
+          lineHi: "अश्वगंधा एक रात में जादू नहीं करता। इक्कीस दिन रोज़ — तब अंदर से फ़र्क महसूस होगा। तनाव हल्का होगा, नींद गहरी आएगी।",
+          sayHi: "अश्वगंधा एक रात में जादू नहीं करता। इक्कीस दिन रोज़ — तब अंदर से फ़र्क महसूस होगा। तनाव हल्का होगा, नींद गहरी आएगी।",
+          svg: "breathing-rest",
+        },
+      ],
+      finishLine: "Ashwagandha dadi ka sabse purana tension-todne wala nushka hai. Roz lena hai — ek baar mein nahi hota.",
+      finishLineHi: "अश्वगंधा दादी का सबसे पुराना तनाव तोड़ने वाला नुस्खा है। रोज़ लेना है — एक बार में नहीं होता।",
+      citation: "Pregnant hain ya thyroid ki dawai le rahi hain toh ashwagandha se pehle doctor se zaroor poochein.",
+      sources: [
+        {
+          org: "NIH PMC — systematic review (2019)",
+          title: "An investigation into the stress-relieving and pharmacological actions of Ashwagandha",
+          url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6750292/",
+          strength: "moderate",
+          note: "Ashwagandha ne cortisol aur stress scale scores mein sudhaar dikhaaya human RCT mein.",
+          noteHi: "अश्वगंधा ने कोर्टिसोल और तनाव स्कोर में सुधार दिखाया मानव RCT में।",
+        },
+        {
+          org: "NIH NCCIH",
+          title: "Ashwagandha",
+          url: "https://www.nccih.nih.gov/health/ashwagandha",
+          strength: "moderate",
+          note: "Pregnancy mein aur thyroid medications ke saath interaction ki saavdhani zaruri hai.",
+          noteHi: "गर्भावस्था में और थायरॉइड दवाओं के साथ इंटरेक्शन की सावधानी जरूरी है।",
+        },
+      ],
+    },
+
+    // 9. Immunity boost (daily) → amla (distinct from giloy-paani fever entry)
+    // New key: "amla-roz" — daily amla for immunity, Vitamin C.
+    "amla-roz": {
+      title: "Amla — roz ka",
+      titleHi: "आँवला — रोज़ का",
+      subtitle: "Rozana immunity ke liye",
+      subtitleHi: "रोज़ाना इम्यूनिटी के लिए",
+      kindIcon: "🟢",
+      videoQuery: "आँवला इम्यूनिटी के लिए रोज़ का तरीका gharelu nuskha",
+      match: [
+        "amla",
+        "आँवला",
+        "आंवला",
+        "amla juice",
+        "amla murabba",
+        "immunity amla",
+        "vitamin c",
+        "immunity boost",
+        "immunity badhao",
+        "इम्यूनिटी बढ़ाओ",
+        "rozana immunity",
+        "daily immunity",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 8,
+          titleHi: "ताज़ा आँवला लें या पाउडर",
+          lineHi: "एक ताज़ा आँवला लें — छोटे टुकड़े करें। या एक चम्मच आँवला पाउडर। ताज़ा हो तो बेहतर, लेकिन पाउडर भी उतना ही काम करता है।",
+          sayHi: "एक ताज़ा आँवला लें — छोटे टुकड़े करें। या एक चम्मच आँवला पाउडर। ताज़ा हो तो बेहतर, लेकिन पाउडर भी उतना ही काम करता है।",
+          svg: "leaf",
+        },
+        {
+          ix: 2,
+          durationSec: 8,
+          titleHi: "हल्का पानी लें",
+          lineHi: "एक गिलास सादा या हल्का गरम पानी तैयार करें। आँवला खाने के साथ पानी पीना ज़रूरी है — इससे विटामिन सी अच्छे से अवशोषित होता है।",
+          sayHi: "एक गिलास सादा या हल्का गरम पानी तैयार करें। आँवला खाने के साथ पानी पीना ज़रूरी है — इससे विटामिन सी अच्छे से अवशोषित होता है।",
+          svg: "water",
+        },
+        {
+          ix: 3,
+          durationSec: 8,
+          titleHi: "खाली पेट खाएं",
+          lineHi: "सुबह खाली पेट आँवला खाएं — या आँवला पाउडर पानी में घोल कर पियें। खट्टा लगता है, लेकिन यही इसकी ताक़त है।",
+          sayHi: "सुबह खाली पेट आँवला खाएं — या आँवला पाउडर पानी में घोल कर पियें। खट्टा लगता है, लेकिन यही इसकी ताक़त है।",
+          svg: "stir",
+        },
+        {
+          ix: 4,
+          durationSec: 9,
+          titleHi: "रोज़ एक महीना",
+          lineHi: "आँवला एक दिन में नहीं दिखाता — रोज़ एक महीना लें। एसिडिटी हो तो खाने के बाद लें। सर्दी कम पकड़ेगी, त्वचा भी निखरेगी।",
+          sayHi: "आँवला एक दिन में नहीं दिखाता — रोज़ एक महीना लें। एसिडिटी हो तो खाने के बाद लें। सर्दी कम पकड़ेगी, त्वचा भी निखरेगी।",
+          svg: "rest",
+        },
+      ],
+      finishLine: "Amla sehat ka khazana hai. Roz ek mahina — body khud bata degi fark.",
+      finishLineHi: "आँवला सेहत का खज़ाना है। रोज़ एक महीना — शरीर खुद बता देगा फ़र्क।",
+      citation: "Amla sehat mein madad karta hai — kisi bhi bimari ka ilaj nahi. Bimari ho to doctor zaroor dikhayein.",
+      sources: [
+        {
+          org: "NIH PMC — review",
+          title: "Emblica officinalis (Amla): A review of its phytochemistry and pharmacology",
+          url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3249901/",
+          strength: "limited",
+          note: "Amla Vitamin C ka praakrittik srot hai aur immunity markers mein sudhaar dikhata hai; human RCT seemit.",
+          noteHi: "आँवला विटामिन सी का प्राकृतिक स्रोत है और इम्यूनिटी मार्करों में सुधार दिखाता है; मानव RCT सीमित।",
+        },
+      ],
+    },
+
+    // 10. Daant dard / toothache → laung (clove)
+    // New key: "laung-daant" — clove for toothache relief.
+    "laung-daant": {
+      title: "Laung — daant dard",
+      titleHi: "लौंग — दाँत दर्द",
+      subtitle: "Daant dard ka turant nushka",
+      subtitleHi: "दाँत दर्द का तुरंत नुस्खा",
+      kindIcon: "🟤",
+      videoQuery: "लौंग दाँत दर्द gharelu nuskha clove toothache",
+      match: [
+        "laung daant",
+        "लौंग दाँत",
+        "daant dard",
+        "दाँत दर्द",
+        "दांत दर्द",
+        "tooth pain",
+        "toothache",
+        "daant mein dard",
+        "clove toothache",
+        "laung dant",
+        "lavang daant",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 7,
+          titleHi: "एक लौंग लें",
+          lineHi: "एक साबुत लौंग लें। लौंग में यूजेनॉल होता है जो प्राकृतिक दर्द-निवारक है — दंत चिकित्सक भी इसका इस्तेमाल करते हैं।",
+          sayHi: "एक साबुत लौंग लें। लौंग में यूजेनॉल होता है जो प्राकृतिक दर्द निवारक है — दंत चिकित्सक भी इसका इस्तेमाल करते हैं।",
+          svg: "leaf",
+        },
+        {
+          ix: 2,
+          durationSec: 8,
+          titleHi: "दर्द वाले दाँत पर रखें",
+          lineHi: "लौंग को दर्द वाले दाँत और मसूड़े के बीच दबाएं। हल्के से दबाएं — ज़्यादा ज़ोर मत लगाएं।",
+          sayHi: "लौंग को दर्द वाले दाँत और मसूड़े के बीच दबाएं। हल्के से दबाएं — ज़्यादा ज़ोर मत लगाएं।",
+          svg: "press-point",
+        },
+        {
+          ix: 3,
+          durationSec: 10,
+          titleHi: "पंद्रह मिनट रखें",
+          lineHi: "लौंग को पंद्रह मिनट तक वहीं रखें। मुँह बंद रखें — लार बनेगी और यूजेनॉल उस जगह पर काम करेगा। जलन भी लग सकती है — यह सामान्य है।",
+          sayHi: "लौंग को पंद्रह मिनट तक वहीं रखें। मुँह बंद रखें — लार बनेगी और यूजेनॉल उस जगह पर काम करेगा। जलन भी लग सकती है — यह सामान्य है।",
+          svg: "breathing-rest",
+        },
+        {
+          ix: 4,
+          durationSec: 8,
+          titleHi: "निकालें, कुल्ला करें",
+          lineHi: "पंद्रह मिनट बाद लौंग निकाल लें। गुनगुने नमक पानी से हल्का कुल्ला कर लें। दर्द में राहत मिलेगी।",
+          sayHi: "पंद्रह मिनट बाद लौंग निकाल लें। गुनगुने नमक पानी से हल्का कुल्ला कर लें। दर्द में राहत मिलेगी।",
+          svg: "water",
+        },
+      ],
+      finishLine: "Laung daant dard ki sabse purani dawai hai. Lekin dard zyada ho to dentist zaroor dikhao.",
+      finishLineHi: "लौंग दाँत दर्द की सबसे पुरानी दवाई है। लेकिन दर्द ज़्यादा हो तो दाँत के डॉक्टर ज़रूर दिखाओ।",
+      citation: "Yeh nushka turant rahat deta hai — iska matlab nahi ki problem khatam hui. Dentist se milna zaruri hai.",
+      sources: [
+        {
+          org: "Journal of Dentistry (2006) — RCT",
+          title: "Eugenol and benzocaine as topical anesthetics",
+          url: "https://pubmed.ncbi.nlm.nih.gov/16842956/",
+          strength: "moderate",
+          note: "Laung ka eugenol dant dard aur gingival jalan mein benzocaine ke barabar topical anesthesia deta hai.",
+          noteHi: "लौंग का यूजेनॉल दाँत दर्द और मसूड़े की जलन में बेंज़ोकेन के बराबर टॉपिकल एनेस्थेसिया देता है।",
+        },
+      ],
+    },
+
+    // 11. Jee michlana / nausea → elaichi (cardamom)
+    // Distinct from adrak-chai (no match overlap). New key: "elaichi-mitli".
+    // REMEDY_KITS["elaichi-paani"] is the matching kit.
+    "elaichi-mitli": {
+      title: "Elaichi — jee michlana",
+      titleHi: "इलायची — जी मिचलाना",
+      subtitle: "Mitli, jee michlana ka nushka",
+      subtitleHi: "मितली, जी मिचलाना का नुस्खा",
+      kindIcon: "🟢",
+      videoQuery: "इलायची मितली जी मिचलाना gharelu nuskha cardamom nausea",
+      match: [
+        "elaichi",
+        "इलायची",
+        "cardamom",
+        "jee michlana",
+        "जी मिचलाना",
+        "mitli",
+        "मितली",
+        "nausea",
+        "ulti jaisi feeling",
+        "उल्टी जैसा",
+        "elaichi mitli",
+        "ulti rok",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 7,
+          titleHi: "दो इलायची लें",
+          lineHi: "दो इलायची लें और हल्के से कूटें — बस खोल टूटे, पाउडर न बने। इलायची की खुशबू खुद ही जी मिचलाना कम करती है।",
+          sayHi: "दो इलायची लें और हल्के से कूटें — बस खोल टूटे, पाउडर न बने। इलायची की खुशबू खुद ही जी मिचलाना कम करती है।",
+          svg: "leaf",
+        },
+        {
+          ix: 2,
+          durationSec: 9,
+          titleHi: "पानी में उबालें",
+          lineHi: "एक कप पानी में कुटी इलायची डालें। दो मिनट उबालें। खुशबू आने लगेगी — यही असल दवाई है।",
+          sayHi: "एक कप पानी में कुटी इलायची डालें। दो मिनट उबालें। खुशबू आने लगेगी — यही असल दवाई है।",
+          svg: "boil",
+        },
+        {
+          ix: 3,
+          durationSec: 8,
+          titleHi: "छान लें, ठंडा होने दें",
+          lineHi: "आंच बंद। छान लें। थोड़ा ठंडा होने दें — बहुत गरम मत पियें, मितली में गरमी और बढ़ सकती है।",
+          sayHi: "आंच बंद। छान लें। थोड़ा ठंडा होने दें — बहुत गरम मत पियें, मितली में गरमी और बढ़ सकती है।",
+          svg: "stir",
+        },
+        {
+          ix: 4,
+          durationSec: 9,
+          titleHi: "घूंट घूंट पियें",
+          lineHi: "धीरे धीरे घूंट घूंट करके पियें। जल्दी मत करें — इलायची पाचन को सही करती है और मितली शांत होती है। आधा चम्मच शहद भी मिला सकते हैं।",
+          sayHi: "धीरे धीरे घूंट घूंट करके पियें। जल्दी मत करें — इलायची पाचन को सही करती है और मितली शांत होती है। आधा चम्मच शहद भी मिला सकते हैं।",
+          svg: "warm-drink",
+        },
+      ],
+      finishLine: "Elaichi ka yeh paani safar mein bhi kaam aata hai. Bas dono elaichi saath rakhein.",
+      finishLineHi: "इलायची का यह पानी सफर में भी काम आता है। बस दो इलायची साथ रखें।",
+      citation: "Mitli baar baar aaye, ulti ho, ya pet mein tez dard ho toh doctor se milein.",
+      sources: [
+        {
+          org: "NIH NCCIH",
+          title: "Herbs & digestion (peppermint/spices)",
+          url: "https://www.nccih.nih.gov/health/peppermint-oil",
+          strength: "limited",
+          note: "Elaichi paramparik roop se pachan aur mitli mein madad karta hai; dedicated human RCT seemit.",
+          noteHi: "इलायची परंपरागत रूप से पाचन और मितली में मदद करती है; समर्पित मानव RCT सीमित।",
+        },
+        {
+          org: "PubMed — overview of meta-analyses",
+          title: "Ginger for nausea & vomiting",
+          url: "https://pubmed.ncbi.nlm.nih.gov/38072785/",
+          strength: "strong",
+          note: "Aromatic spices (adrak, elaichi) mitli mein asardaar — adrak sab se zyada study hua hai.",
+          noteHi: "सुगंधित मसाले (अदरक, इलायची) मितली में असरदार — अदरक सबसे ज़्यादा अध्ययन किया गया है।",
+        },
+      ],
+    },
+
+    // 12. Joint / kamar dard / body ache → sarso tel maalish (mustard oil massage)
+    // Aligns with REMEDY_KITS["sarso-tel-malish"]
+    "sarso-tel-malish": {
+      title: "Sarso tel malish — jod dard",
+      titleHi: "सरसों तेल मालिश — जोड़ दर्द",
+      subtitle: "Kamar, jod, badan dard ka nushka",
+      subtitleHi: "कमर, जोड़, बदन दर्द का नुस्खा",
+      kindIcon: "🟡",
+      videoQuery: "सरसों तेल मालिश कमर जोड़ दर्द gharelu nuskha mustard oil massage",
+      match: [
+        "sarso tel",
+        "सरसों तेल",
+        "mustard oil",
+        "kamar dard",
+        "कमर दर्द",
+        "jod dard",
+        "जोड़ दर्द",
+        "badan dard",
+        "बदन दर्द",
+        "body ache",
+        "joint pain",
+        "sarso malish",
+        "tel malish",
+        "मालिश",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 8,
+          titleHi: "सरसों तेल लें",
+          lineHi: "दो चम्मच सरसों का तेल एक छोटे कटोरे में लें। कच्ची घानी वाला हो तो और अच्छा — खुशबू से ही पता चल जाता है।",
+          sayHi: "दो चम्मच सरसों का तेल एक छोटे कटोरे में लें। कच्ची घानी वाला हो तो और अच्छा — खुशबू से ही पता चल जाता है।",
+          svg: "pour",
+        },
+        {
+          ix: 2,
+          durationSec: 9,
+          titleHi: "लहसुन और अजवाइन डालें",
+          lineHi: "दो कुटी लहसुन की कलियां और एक चुटकी अजवाइन तेल में डालें। धीमी आंच पर हल्का गरम करें — जब लहसुन हल्का भूरा हो जाए, आंच बंद।",
+          sayHi: "दो कुटी लहसुन की कलियां और एक चुटकी अजवाइन तेल में डालें। धीमी आंच पर हल्का गरम करें — जब लहसुन हल्का भूरा हो जाए, आंच बंद।",
+          svg: "boil",
+        },
+        {
+          ix: 3,
+          durationSec: 9,
+          titleHi: "हल्का ठंडा होने दें",
+          lineHi: "तेल को थोड़ा ठंडा होने दें — जला नहीं, बस गरम-गरम जितना सहन हो। जलते तेल से मालिश करने से जलन होती है।",
+          sayHi: "तेल को थोड़ा ठंडा होने दें — जला नहीं, बस गरम गरम जितना सहन हो। जलते तेल से मालिश करने से जलन होती है।",
+          svg: "stir",
+        },
+        {
+          ix: 4,
+          durationSec: 10,
+          titleHi: "दर्द वाली जगह पर मालिश करें",
+          lineHi: "दर्द वाली जगह पर हल्के हाथों से गोल गोल मालिश करें — दस मिनट। दबाव धीरे धीरे बढ़ाएं। जल्दी नहीं, आराम से।",
+          sayHi: "दर्द वाली जगह पर हल्के हाथों से गोल गोल मालिश करें — दस मिनट। दबाव धीरे धीरे बढ़ाएं। जल्दी नहीं, आराम से।",
+          svg: "press-point",
+        },
+        {
+          ix: 5,
+          durationSec: 9,
+          titleHi: "गरम कपड़े से ढकें, आराम करें",
+          lineHi: "मालिश के बाद उस जगह को गरम कपड़े या तौलिए से ढक लें। तीस मिनट आराम करें। रोज़ रात करें — सात दिन में फ़र्क मिलेगा।",
+          sayHi: "मालिश के बाद उस जगह को गरम कपड़े या तौलिए से ढक लें। तीस मिनट आराम करें। रोज़ रात करें — सात दिन में फ़र्क मिलेगा।",
+          svg: "rest",
+        },
+      ],
+      finishLine: "Sarso tel ki malish dadi ke haathon ki garam ki yaad dilati hai. Roz raat ko — jod khud sukoon maangenge.",
+      finishLineHi: "सरसों तेल की मालिश दादी के हाथों की गरमाई की याद दिलाती है। रोज़ रात को — जोड़ खुद सुकून माँगेंगे।",
+      citation: "Bahut tez dard ho, soojan badhti ho, ya chot lagi ho toh malish na karein — doctor se milein.",
+      sources: [
+        {
+          org: "NIH PMC — review",
+          title: "Mustard oil massage and musculoskeletal pain",
+          url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7528039/",
+          strength: "limited",
+          note: "Sarso tel massage musculoskeletal dard mein rahat deta hai; randomized evidence seemit.",
+          noteHi: "सरसों तेल मालिश मस्कुलोस्केलेटल दर्द में राहत देती है; रैंडमाइज़्ड प्रमाण सीमित।",
+        },
+      ],
+    },
+
+    // 13. Pimple / oily skin → aloe vera gel
+    // DISTINCT from neem-haldi-paste (no match overlap). New key: "aloe-vera-pimple".
+    "aloe-vera-pimple": {
+      title: "Aloe vera — pimple skin",
+      titleHi: "एलोवेरा — पिम्पल, ऑइली स्किन",
+      subtitle: "Pimple aur oily skin ka nushka",
+      subtitleHi: "पिम्पल और ऑइली स्किन का नुस्खा",
+      kindIcon: "🌵",
+      videoQuery: "एलोवेरा जेल पिम्पल ऑइली स्किन gharelu nuskha aloe vera",
+      match: [
+        "aloe vera",
+        "एलोवेरा",
+        "ghritkumari",
+        "घृतकुमारी",
+        "aloe vera pimple",
+        "oily skin",
+        "तैलीय त्वचा",
+        "pimple",
+        "पिम्पल",
+        "muhase",
+        "मुहांसे",
+        "skin gel",
+        "aloe gel",
+        "aloe vera skin",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 8,
+          titleHi: "एलोवेरा पत्ता लें",
+          lineHi: "एक ताज़ा एलोवेरा पत्ता काटें। किनारे की कांटेदार धारें काट दें। बाहर का हरा छिलका हटाएं — अंदर का पारदर्शी जेल ही काम आता है।",
+          sayHi: "एक ताज़ा एलोवेरा पत्ता काटें। किनारे की कांटेदार धारें काट दें। बाहर का हरा छिलका हटाएं — अंदर का पारदर्शी जेल ही काम आता है।",
+          svg: "leaf",
+        },
+        {
+          ix: 2,
+          durationSec: 8,
+          titleHi: "जेल निकालें",
+          lineHi: "चम्मच से पारदर्शी जेल निकालें। थोड़ा हल्का पीला पानी पहले निकल सकता है — वह बहने दें, फिर जेल लें। वह पीला पानी त्वचा को जला सकता है।",
+          sayHi: "चम्मच से पारदर्शी जेल निकालें। थोड़ा हल्का पीला पानी पहले निकल सकता है — वह बहने दें, फिर जेल लें। वह पीला पानी त्वचा को जला सकता है।",
+          svg: "stir",
+        },
+        {
+          ix: 3,
+          durationSec: 9,
+          titleHi: "पिम्पल पर लगाएं",
+          lineHi: "साफ चेहरे पर जेल हल्के हाथ से लगाएं। पिम्पल पर सीधे लगाएं या पूरे चेहरे पर हल्की परत — ऑइली स्किन के लिए पूरे चेहरे पर अच्छा है।",
+          sayHi: "साफ चेहरे पर जेल हल्के हाथ से लगाएं। पिम्पल पर सीधे लगाएं या पूरे चेहरे पर हल्की परत — ऑइली स्किन के लिए पूरे चेहरे पर अच्छा है।",
+          svg: "paste",
+        },
+        {
+          ix: 4,
+          durationSec: 9,
+          titleHi: "बीस मिनट रखें",
+          lineHi: "बीस मिनट रखें। एलोवेरा सूख जाएगा — यह सामान्य है। त्वचा ठंडी और हल्की लगेगी।",
+          sayHi: "बीस मिनट रखें। एलोवेरा सूख जाएगा — यह सामान्य है। त्वचा ठंडी और हल्की लगेगी।",
+          svg: "breathing-rest",
+        },
+        {
+          ix: 5,
+          durationSec: 8,
+          titleHi: "ठंडे पानी से धोएं",
+          lineHi: "ठंडे पानी से धीरे धीरे धो लें। गरम पानी मत इस्तेमाल करें — छिद्र खुल जाते हैं। रोज़ रात को करें — एक हफ्ते में फ़र्क दिखेगा।",
+          sayHi: "ठंडे पानी से धीरे धीरे धो लें। गरम पानी मत इस्तेमाल करें — छिद्र खुल जाते हैं। रोज़ रात को करें — एक हफ्ते में फ़र्क दिखेगा।",
+          svg: "water",
+        },
+      ],
+      finishLine: "Aloe vera ka thanda gel pimple ki sujan aur oil dono ke liye kamal karta hai. Roz raat ko — chamak aayegi.",
+      finishLineHi: "एलोवेरा का ठंडा जेल पिम्पल की सूजन और ऑइल दोनों के लिए कमाल करता है। रोज़ रात को — चमक आएगी।",
+      citation: "Pimple bahut zyada ho, dard ho ya pus nikle toh dermatologist se milein.",
+      sources: [
+        {
+          org: "Indian Journal of Dermatology (2014) — RCT",
+          title: "Aloe vera vs tretinoin in mild-to-moderate acne",
+          url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4069434/",
+          strength: "moderate",
+          note: "Aloe vera gel acne lesions aur oiliness mein sudhaar dikhaata hai; tretinoin ke saath combination aur zyada asardar.",
+          noteHi: "एलोवेरा जेल मुहांसे और ऑइलीनेस में सुधार दिखाता है; ट्रेटीनोइन के साथ संयोजन और ज़्यादा असरदार।",
         },
       ],
     },
@@ -15743,7 +16731,10 @@ function renderHubMore() {
           "haldi-doodh", "adrak-chai", "jeera-paani", "tulsi-kadha",
           "methi-paani", "nimbu-shahad", "dalchini-shahad", "tulsi-shahad",
           "lasun-shahad", "saunf-paani", "dhaniya-paani", "neem-haldi-paste",
-          "general-care",
+          "mulethi-kadha", "namak-gargle", "giloy-paani", "pudina-balm-sir",
+          "ajwain-namak-chura", "isabgol-doodh", "jaiphal-doodh", "ashwagandha-doodh",
+          "amla-roz", "laung-daant", "elaichi-mitli", "sarso-tel-malish",
+          "aloe-vera-pimple", "general-care",
         ]);
         const experienceMatch = cleanReply.match(/\n?\s*EXPERIENCE:\s*([a-z0-9-]+)\s*$/i);
         let _experienceKey = null;
@@ -29256,6 +30247,108 @@ const BREATH_PHASES = [
         4: { lottie: "motion-sleep.json" }, // अब गरम घूंट घूंट पियो, फिर कंबल ओढ़ के लेट जाओ
       },
     },
+
+    // ── PHASE 2 batch 1 — 7 new experience lottie mappings ──────────────────
+
+    // mulethi-kadha — sookhi khansi (dry cough)
+    // Step 3 (ix=4): "shahad milaen, ghooont piyein" → lottie-cough (khansi relief beat)
+    // Step 0 (ix=1): "mulethi ki dandi todo" → lottie-mortar (crush/prep beat)
+    "mulethi-kadha": {
+      steps: {
+        0: { lottie: "lottie-mortar.json" }, // मुलेठी की डंडी छोटे टुकड़े, कूटें
+        3: { lottie: "lottie-cough.json" },  // शहद मिलाएं, घूंट घूंट पियें — खाँसी राहत
+      },
+    },
+
+    // giloy-paani — halka bukhar + immunity
+    // Step 0 (ix=1): "giloy kuto" → lottie-mortar (crush/prep step)
+    // Step 3 (ix=4): "khali pet piyen, aaram karein" → lottie-fever (bukhar supportive beat)
+    "giloy-paani": {
+      steps: {
+        0: { lottie: "lottie-mortar.json" }, // गिलोय की डंडी कूटें
+        3: { lottie: "lottie-fever.json" },  // खाली पेट पियें, आराम करें (bukhar care beat)
+      },
+    },
+
+    // pudina-balm-sir — headache
+    // Step 0 (ix=1): "pudina patte maslen" → lottie-mortar (crush/mash step)
+    // Step 3 (ix=4): "aankhein band, aaram karein" → lottie-monk (calm rest beat)
+    "pudina-balm-sir": {
+      steps: {
+        0: { lottie: "lottie-mortar.json" }, // पुदीना पत्ते मसलें/पीसें
+        3: { lottie: "lottie-monk.json" },   // आँखें बंद करें, आराम करें
+      },
+    },
+
+    // isabgol-doodh — kabz (constipation)
+    // Step 3 (ix=4): "khub paani piyen, so jayein" → motion-sleep (night-time rest beat)
+    "isabgol-doodh": {
+      steps: {
+        3: { lottie: "motion-sleep.json" }, // खूब पानी पियें, आराम से सो जाएं
+      },
+    },
+
+    // jaiphal-doodh — neend (sleep)
+    // Step 1 (ix=2): "jaiphal ghisen" → lottie-mortar (grate/prep step)
+    // Step 3 (ix=4): "bistar par jayein, phone rakhen" → lottie-monk (sleep onset beat)
+    "jaiphal-doodh": {
+      steps: {
+        1: { lottie: "lottie-mortar.json" }, // जायफल घिसें/कूटें
+        3: { lottie: "lottie-monk.json" },   // बिस्तर पर जाएं, आँखें बंद करें
+      },
+    },
+
+    // ── PHASE 2 batch 2 — 6 new experience lottie mappings ──────────────────
+
+    // ashwagandha-doodh — tension / stress / anxiety
+    // Step 3 (ix=4): "ghooont piyen, shant baithen" → lottie-monk (calm/rest onset)
+    // Step 4 (ix=5): "ikkees din" → lottie-monk (breathing-rest; sustained calm)
+    "ashwagandha-doodh": {
+      steps: {
+        3: { lottie: "lottie-monk.json" },   // घूंट घूंट पियें, शांत बैठें
+        4: { lottie: "lottie-monk.json" },   // इक्कीस दिन — sustained calm reminder
+      },
+    },
+
+    // amla-roz — daily immunity
+    // Step 0 (ix=1): "taaza amla ya powder" → lottie-mortar (prep/grind beat)
+    // Step 3 (ix=4): "roz ek mahina" → lottie-fever (immunity/health payoff beat)
+    "amla-roz": {
+      steps: {
+        0: { lottie: "lottie-mortar.json" }, // ताज़ा आँवला लें, टुकड़े करें
+        3: { lottie: "lottie-fever.json" },  // रोज़ एक महीना — immunity payoff
+      },
+    },
+
+    // laung-daant — toothache (clove)
+    // Step 0 (ix=1): "ek laung len" → lottie-mortar (spice prep/crush beat)
+    "laung-daant": {
+      steps: {
+        0: { lottie: "lottie-mortar.json" }, // एक लौंग लें (spice prep)
+      },
+    },
+
+    // elaichi-mitli — nausea (cardamom)
+    // Step 0 (ix=1): "elaichi kuto" → lottie-mortar (crush/prep step)
+    "elaichi-mitli": {
+      steps: {
+        0: { lottie: "lottie-mortar.json" }, // दो इलायची कूटें
+      },
+    },
+
+    // sarso-tel-malish — joint/kamar dard
+    // Step 3 (ix=4): "dard wali jagah malish" → lottie-acupressure (press/massage beat)
+    // Step 4 (ix=5): "garam kapde se dhaken, aaram" → lottie-monk (rest/recover beat)
+    "sarso-tel-malish": {
+      steps: {
+        3: { lottie: "lottie-acupressure.json" }, // दर्द वाली जगह पर मालिश
+        4: { lottie: "lottie-monk.json" },         // गरम कपड़े से ढकें, आराम करें
+      },
+    },
+
+    // aloe-vera-pimple — pimple / oily skin
+    // No dedicated lottie yet — SVG floor handles all steps (paste, leaf, stir, etc.)
+    // Intentionally no entry here so fallback SVGs render cleanly.
 
   };
 
