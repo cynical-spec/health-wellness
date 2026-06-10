@@ -23120,6 +23120,9 @@ function renderFamilyMember(idx) {
   if (!flow) return;
 
   const memberKey = "fam_" + m.name;
+
+  // Seed sample demo data if not yet seeded (idempotent)
+  _fcSeedDemoData(memberKey, m.name);
   const memberLabel = m.name;
   const condStr = Array.isArray(m.conditions) ? m.conditions.join(", ") : m.conditions || "";
 
@@ -23190,6 +23193,12 @@ function renderFamilyMember(idx) {
       .join("");
   }
 
+  // Check if demo data has been seeded for this member (for sensor tile display)
+  const _demoSeeded = (function () {
+    try { return JSON.parse(localStorage.getItem("ss_demo_seeded") || "{}")[memberKey] || false; }
+    catch (e) { return false; }
+  })();
+
   // Compute all dashboard values
   const bmiResult = _fcBmi(m.weight, m.height);
   const lastTs = wb ? (wb.ts || null) : null;
@@ -23255,25 +23264,25 @@ function renderFamilyMember(idx) {
             <div class="fc-tile-label">${_fct("fc_reports")}</div>
           </div>
 
-          <!-- SENSOR PLACEHOLDER: Steps -->
-          <div class="fc-tile connect" onclick="(typeof showToast==='function')&&showToast('${_fct("fc_coming_soon").replace(/'/g, "&#39;")}')">
-            <div class="fc-tile-val">—</div>
+          <!-- SENSOR PLACEHOLDER: Steps (sample value shown when demo-seeded) -->
+          <div class="fc-tile${_demoSeeded ? "" : " connect"}" onclick="${_demoSeeded ? "" : "(typeof showToast===\\'function\\')&&showToast(\\'"+_fct("fc_coming_soon").replace(/'/g, "&#39;")+"\\')"}">
+            <div class="fc-tile-val">${_demoSeeded ? "4,200" : "—"}</div>
             <div class="fc-tile-label">${_fct("fc_steps")}</div>
-            <div style="font-size:10px;color:var(--text3);margin-top:3px">${_fct("fc_connect_hint")}</div>
+            ${_demoSeeded ? "" : `<div style="font-size:10px;color:var(--text3);margin-top:3px">${_fct("fc_connect_hint")}</div>`}
           </div>
 
-          <!-- SENSOR PLACEHOLDER: Sleep -->
-          <div class="fc-tile connect" onclick="(typeof showToast==='function')&&showToast('${_fct("fc_coming_soon").replace(/'/g, "&#39;")}')">
-            <div class="fc-tile-val">—</div>
+          <!-- SENSOR PLACEHOLDER: Sleep (sample value shown when demo-seeded) -->
+          <div class="fc-tile${_demoSeeded ? "" : " connect"}" onclick="${_demoSeeded ? "" : "(typeof showToast===\\'function\\')&&showToast(\\'"+_fct("fc_coming_soon").replace(/'/g, "&#39;")+"\\')"}">
+            <div class="fc-tile-val">${_demoSeeded ? "6.5 hr" : "—"}</div>
             <div class="fc-tile-label">${_fct("fc_sleep")}</div>
-            <div style="font-size:10px;color:var(--text3);margin-top:3px">${_fct("fc_connect_hint")}</div>
+            ${_demoSeeded ? "" : `<div style="font-size:10px;color:var(--text3);margin-top:3px">${_fct("fc_connect_hint")}</div>`}
           </div>
 
-          <!-- SENSOR PLACEHOLDER: Activity -->
-          <div class="fc-tile connect" onclick="(typeof showToast==='function')&&showToast('${_fct("fc_coming_soon").replace(/'/g, "&#39;")}')">
-            <div class="fc-tile-val">—</div>
+          <!-- SENSOR PLACEHOLDER: Activity (sample value shown when demo-seeded) -->
+          <div class="fc-tile${_demoSeeded ? "" : " connect"}" onclick="${_demoSeeded ? "" : "(typeof showToast===\\'function\\')&&showToast(\\'"+_fct("fc_coming_soon").replace(/'/g, "&#39;")+"\\')"}">
+            <div class="fc-tile-val">${_demoSeeded ? "25 min" : "—"}</div>
             <div class="fc-tile-label">${_fct("fc_activity")}</div>
-            <div style="font-size:10px;color:var(--text3);margin-top:3px">${_fct("fc_connect_hint")}</div>
+            ${_demoSeeded ? "" : `<div style="font-size:10px;color:var(--text3);margin-top:3px">${_fct("fc_connect_hint")}</div>`}
           </div>
 
         </div>
@@ -23487,6 +23496,107 @@ function toggleCond(el, val) {
   else ST.condSelected.add(val);
 }
 
+// ── PROTOTYPE DEMO SEEDING ────────────────────────────────────────────────────
+// Seeds pleasant sample data for a freshly-added loved-one member so the
+// dashboard looks alive during demos. Idempotent: guarded by ss_demo_seeded[memberKey].
+// Scoped to non-self members only. Remove this block (and its callers) for production.
+function _fcSeedDemoData(memberKey, memberName) {
+  // Self-profile never gets seeded
+  if (!memberKey || memberKey === "self") return;
+
+  // Idempotency guard — seed only once per member
+  const seededStore = (function () {
+    try { return JSON.parse(localStorage.getItem("ss_demo_seeded") || "{}"); }
+    catch (e) { return {}; }
+  })();
+  if (seededStore[memberKey]) return;
+
+  const today = new Date().toLocaleDateString("en-IN", {
+    day: "numeric", month: "short", year: "numeric",
+  });
+  const now = Date.now();
+
+  // 1. Wellbeing check-in: mood "Theek" (ok), dated today
+  const wbEntry = {
+    status: "ok",
+    date: today,
+    ts: now,
+    history: [{ status: "ok", ts: now - 86400000 }, { status: "ok", ts: now }],
+  };
+  _fcSet("ss_family_wellbeing", memberKey, wbEntry);
+
+  // 2. Medicine reminders: 2 sample reminders keyed to this member
+  const rems = (typeof loadReminders === "function") ? loadReminders() : [];
+  const sampleRems = [
+    {
+      id: now + 0.1,
+      rxId: "demo_" + memberKey,
+      name: "BP ki dawai",
+      strength: "50 mg",
+      who: memberName,
+      member: memberKey,
+      time: "08:00",
+      times: ["08:00"],
+      slotIndex: 0,
+      freq: 1,
+      timing: "Subah",
+      dose: "1 tablet",
+      duration_days: 30,
+      channel: "app",
+      phone: "",
+      notes: "Khaane ke baad",
+    },
+    {
+      id: now + 0.2,
+      rxId: "demo_" + memberKey,
+      name: "Sugar ki dawai",
+      strength: "500 mg",
+      who: memberName,
+      member: memberKey,
+      time: "21:00",
+      times: ["21:00"],
+      slotIndex: 0,
+      freq: 1,
+      timing: "Raat",
+      dose: "1 tablet",
+      duration_days: 30,
+      channel: "app",
+      phone: "",
+      notes: "Dinner ke baad",
+    },
+  ];
+  sampleRems.forEach(function (r) { rems.push(r); });
+  if (typeof saveReminders === "function") saveReminders(rems);
+
+  // 3. Lab report: 1 sample CBC result (clearly benign, normal range)
+  const sampleReport = {
+    date: today,
+    fileName: "CBC_sample.pdf",
+    reportType: "CBC (Complete Blood Count)",
+    summary:
+      memberName + " ki CBC report bilkul normal hai. Hemoglobin 13.2 g/dL (normal range mein), WBC 7,200 /uL, Platelets 2.8 lakh — sab theek. Koi anemia ya infection ke signs nahi hain. Healthy diet aur regular check-up jaari rakhein.",
+    markers: [
+      { name: "Hemoglobin", value: "13.2 g/dL", range: "12-17 g/dL", status: "Normal" },
+      { name: "WBC Count", value: "7,200 /uL", range: "4,000-11,000", status: "Normal" },
+      { name: "Platelets", value: "2.8 lakh", range: "1.5-4.5 lakh", status: "Normal" },
+      { name: "RBC Count", value: "4.8 mil/uL", range: "4.5-5.5 mil", status: "Normal" },
+    ],
+    doctorAdvice: "Sab normal hai — agla routine check-up 6 mahine mein karein.",
+  };
+  try {
+    const lr = JSON.parse(localStorage.getItem("ss_lab_reports") || "{}");
+    if (!lr[memberKey]) lr[memberKey] = [];
+    lr[memberKey].unshift(sampleReport);
+    lr[memberKey] = lr[memberKey].slice(0, 10);
+    localStorage.setItem("ss_lab_reports", JSON.stringify(lr));
+  } catch (e) {}
+
+  // Mark seeded
+  seededStore[memberKey] = true;
+  localStorage.setItem("ss_demo_seeded", JSON.stringify(seededStore));
+}
+// ── END PROTOTYPE DEMO SEEDING ────────────────────────────────────────────────
+
 function saveFamilyMember() {
   const name = document.getElementById("fam-name").value.trim();
   const age = document.getElementById("fam-age").value.trim();
@@ -23516,26 +23626,11 @@ function saveFamilyMember() {
   fam.push(member);
   saveFamily(fam);
   showToast(`${name} add ho gaye!`);
-  // Show follow-up suggestions instead of dead-ending on the family list
-  const flow = document.getElementById("family-list");
-  if (flow) {
-    // Build the member key for the newly added member (last in fam array)
-    const _newMemberKey = "fam_" + name;
-    const _newMemberKeyEsc = _newMemberKey.replace(/'/g, "\\'");
-    const _newNameEsc = name.replace(/'/g, "\\'");
-    flow.innerHTML = `
-      <div style="text-align:center;padding:30px 16px 20px">
-        <div style="font-size:48px;margin-bottom:12px">🎉</div>
-        <div style="font-size:18px;font-weight:700;margin-bottom:6px">${name} jud gaye!</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:24px">${name} ke liye Sehat Saathi ab dekhbhal karega.</div>
-        <div style="display:flex;flex-direction:column;gap:8px;max-width:320px;margin:0 auto">
-          <button class="lab-cta" onclick="(typeof window.startLabForMember==='function'?window.startLabForMember('${_newMemberKeyEsc}','${_newNameEsc}'):startFeature('lab'))">🧪 ${name} ki lab report jodein</button>
-          <button class="lab-cta secondary" onclick="startRxForMember('${_newMemberKeyEsc}','${_newNameEsc}')">💊 ${name} ke liye dawai reminder</button>
-          <button class="lab-cta secondary" onclick="renderFamilyList()">Family list dekhein</button>
-          <button class="lab-cta secondary" onclick="goTo('s-hub')">Wapas Sehat Saathi</button>
-        </div>
-      </div>`;
-  }
+  // Seed demo data for the new member, then navigate directly to their detail dashboard.
+  const _newMemberKey = "fam_" + name;
+  const _newMemberIdx = fam.length - 1;
+  _fcSeedDemoData(_newMemberKey, name);
+  renderFamilyMember(_newMemberIdx);
 }
 
 // ── BREATHWORK ──
