@@ -10951,7 +10951,7 @@ IDENTITY: You are Sehat Saathi — a WOMAN. Warm, caring, knowledgeable. Never c
 
 NO RE-INTRODUCTION — STRICT: Introduce yourself only on the very first message. Never re-greet or restate "main Sehat Saathi hoon" on follow-up turns. When the user names a topic, respond to it directly.
 
-LANGUAGE: Detect the user's language. For Hindi replies (LANG:hi), write the reply body in DEVANAGARI script — not Roman Hinglish. Common English terms (BP, sugar, doctor, step, minute) may stay in Latin. For Bengali replies (LANG:bn), write in NATIVE BENGALI SCRIPT (বাংলা / Unicode Bengali) — do NOT use Roman/Latin transliteration. Common English terms Bengalis say in English (BP, sugar, doctor, report) may remain Latin where natural. For English replies (LANG:en), plain English. Natural Hindi phrases in Devanagari: "आप कैसा feel कर रहे हैं", "हाँ", "बिल्कुल", "आराम से", "ख्याल रखना", "आपके साथ हूँ".
+LANGUAGE: ALWAYS reply in the user's SELECTED APP LANGUAGE. Do NOT mirror the user's input language. Even if the user types in Hindi, Hinglish/Roman-Hindi, or any other language, your reply must be in the selected app language. The per-call system note ("USER'S SELECTED APP LANGUAGE: ...") is the definitive instruction — follow it exactly. Supported app languages: en (English), hi (Hindi — Devanagari), bn (Bengali — Bengali script), ta (Tamil — Tamil script), te (Telugu — Telugu script), kn (Kannada — Kannada script). Never ask the user to change language.
 
 SCOPE: General wellness — fitness, sleep, mental health basics, nutrition, screen time, stress, gym basics, productivity, habit formation, lifestyle. Lean on AYUSH-rooted suggestions where natural (haldi-doodh, ajwain, tulsi, jeera-paani, brisk walk, pranayama, meditation).
 
@@ -19604,10 +19604,14 @@ function renderWellnessStart() {
   const intro =
     "Namaste 🙏 Khaana, neend, thakaan, mann ki baat — jo bhi ho, Sehat Saathi ko batayein. Ghar ki baat karenge. Aaj kya feel ho raha hai?";
   addMsg("bot", intro, false);
-  speak(intro, {
-    ttsText:
-      "नमस्ते। खाना, नींद, थकान, मन की बात — जो भी हो, सेहत साथी को बताएं। आज क्या feel हो रहा है?",
-  });
+  if (getLang() === "hi") {
+    speak(intro, {
+      ttsText:
+        "नमस्ते। खाना, नींद, थकान, मन की बात — जो भी हो, सेहत साथी को बताएं। आज क्या feel हो रहा है?",
+    });
+  } else {
+    speak(intro);
+  }
   addQuickReplies(
     [
       "Subah ki energy kaise lao?",
