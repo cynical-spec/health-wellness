@@ -9671,6 +9671,9 @@ function getLang() {
 
 // setLang(code) — accepts any of the 6 codes; ignores unknown values.
 // Persists to ss_lang, updates in-memory state, re-renders [data-i18n] nodes.
+// For regional langs (bn/ta/te/kn): also fires ssPrewarmUI() in the background
+// so the now-cached translations are applied after the prewarm resolves.
+// hi and en: behaviour unchanged — no prewarm, no extra re-render.
 function setLang(code) {
   if (!VALID_LANG_CODES.has(code)) return;
   _currentLang = code;
@@ -9688,28 +9691,55 @@ function setLang(code) {
   try {
     trackEvent("lang_set", { to: code });
   } catch (_) {}
+  // Regional only: background prewarm + re-render after cache warms.
+  // ssPrewarmUI() is a no-op for hi/en so the guard here is a belt-and-suspenders
+  // defence, but the explicit check makes the intent obvious.
+  if (code === "bn" || code === "ta" || code === "te" || code === "kn") {
+    ssPrewarmUI(); // async, fire-and-forget; never throws
+  }
 }
 
 // ── t(key) — translate with fallback chain ────────────────────────────────────
 // Priority: LANG_NATIVE[key][lang] → LANG[key][lang] → en → hi → key itself.
-// This ensures bn/ta/te/kn keys that aren't yet translated always surface
-// something readable (English or Hindi) rather than a raw key string.
+// For regional langs (bn/ta/te/kn):
+//   - LANG_NATIVE keys (10 hand-authored) are returned directly — never ssT'd.
+//   - All other keys: ssT(LANG[key].hi) || LANG[key].en || key.
+// hi and en resolution is unchanged.
 function t(key) {
   const lang = _currentLang;
+  const isRegional = (lang === "bn" || lang === "ta" || lang === "te" || lang === "kn");
+
   // 1. Check LANG_NATIVE first (full 6-column entries take precedence)
   const native = LANG_NATIVE[key];
   if (native) {
-    if (native[lang])           return native[lang];
+    if (native[lang])               return native[lang];
+    if (isRegional) {
+      // LANG_NATIVE keys are hand-authored — do NOT ssT them; just fall through
+      // to their en/hi values as plain fallback (should rarely be reached since
+      // all 10 LANG_NATIVE keys have all 6 columns populated).
+      if (native.en)                return native.en;
+      if (native.hi)                return native.hi;
+    }
     if (lang !== "en" && native.en) return native.en;
     if (lang !== "hi" && native.hi) return native.hi;
     // If native entry exists but has no usable column, fall through to LANG
   }
+
   // 2. Check LANG (existing hi/en pairs)
   const e = LANG[key];
   if (!e) return key; // key not found anywhere — return key itself (fail-loud)
-  if (e[lang])                    return e[lang];
-  if (lang !== "en" && e.en)      return e.en;
-  if (lang !== "hi" && e.hi)      return e.hi;
+
+  // hi and en: exact same logic as before — no ssT in their path.
+  if (!isRegional) {
+    if (e[lang])                    return e[lang];
+    if (lang !== "en" && e.en)      return e.en;
+    if (lang !== "hi" && e.hi)      return e.hi;
+    return key;
+  }
+
+  // Regional (bn/ta/te/kn): machine-translate from Hindi value; fall back to en.
+  if (e.hi) return ssT(e.hi) || e.en || key;
+  if (e.en) return e.en;
   return key;
 }
 
@@ -9902,7 +9932,9 @@ function locStr(roman, deva) {
     if (deva && EN_OVERRIDES[deva] !== undefined) return EN_OVERRIDES[deva];
     return roman; // unmapped string: fall back to Hinglish roman
   }
-  // bn / ta / te / kn — keep existing behavior (return roman)
+  // bn / ta / te / kn — machine-translate from Devanagari source (best quality);
+  // fall back to roman (Hinglish) if ssT returns empty/undefined/the input itself.
+  if (deva) return ssT(deva) || roman;
   return roman;
 }
 
@@ -10167,9 +10199,73 @@ async function ssPrewarm(hiTextArray) {
   }
 }
 
+/**
+ * ssPrewarmUI() — ASYNC, background-safe.
+ *
+ * For the current regional language (bn/ta/te/kn) only:
+ *   1. Collects every LANG[key].hi value (all ~250 keys), deduped, non-empty.
+ *   2. Calls ssPrewarm(thatArray) — it chunks ≤50/req internally.
+ *   3. After warming resolves, re-renders the UI: applyLanguage() +
+ *      initHubDynamic() if the hub screen is active.
+ *
+ * No-op for hi and en — those paths never touch ssT.
+ * Wrapped in try/catch; never throws; never blocks the immediate render.
+ * The first render shows Devanagari/English fallback; translations surface
+ * once the cache is warm (ssT is sync, so a re-render is what shows them).
+ */
+async function ssPrewarmUI() {
+  try {
+    const lang = getLang();
+    // Strict no-op for hi and en — must not change their behaviour.
+    if (lang !== "bn" && lang !== "ta" && lang !== "te" && lang !== "kn") return;
+
+    // Collect every LANG[key].hi value (the Devanagari source strings).
+    const hiValues = [];
+    const seen = new Set();
+    for (const key of Object.keys(LANG)) {
+      const e = LANG[key];
+      if (e && e.hi && typeof e.hi === "string" && !seen.has(e.hi)) {
+        seen.add(e.hi);
+        hiValues.push(e.hi);
+      }
+    }
+
+    if (hiValues.length === 0) return;
+
+    // Bulk-warm via ssPrewarm (it dedupes + chunks ≤50/req internally).
+    await ssPrewarm(hiValues);
+
+    // Re-render now that the cache is populated.
+    try { applyLanguage(); } catch (_) {}
+    try {
+      const hubActive = document.querySelector("#s-hub.active");
+      if (hubActive && typeof initHubDynamic === "function") {
+        initHubDynamic();
+      }
+    } catch (_) {}
+  } catch (_) {
+    // Never throw — prewarm is a progressive enhancement.
+  }
+}
+
 // Expose translation engine on window.
 window.ssT = ssT;
 window.ssPrewarm = ssPrewarm;
+window.ssPrewarmUI = ssPrewarmUI;
+
+// ── On app init: prewarm translations for any persisted regional language ──
+// Fires once per page load. No-op for hi/en (ssPrewarmUI guards internally).
+// Uses DOMContentLoaded so the DOM is ready before applyLanguage() re-renders.
+(function () {
+  try {
+    const _initPrewarm = function () { ssPrewarmUI(); };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", _initPrewarm, { once: true });
+    } else {
+      _initPrewarm();
+    }
+  } catch (_) {}
+})();
 
 // ── v6.6: WhatsApp feedback button handler ──
 // Number is hardcoded (Nawaneet's work mobile). Prefill includes app
@@ -11259,7 +11355,8 @@ function renderOnboardStep(step) {
     if (!card) return;
     card.appendChild(_obField({
       type: "text",
-      placeholder: "Sunita, Ramesh…",
+      // Item 17: placeholder routed through locStr for regional translation.
+      placeholder: locStr("Sunita, Ramesh…", "सुनीता, रमेश…"),
       maxlength: 30,
       value: d.name || "",
       onSubmit: (v) => {
@@ -11379,7 +11476,8 @@ function finishOnboardingThen(nextAction) {
     lang: d.lang || getLang(),
   };
   saveProfile(profile);
-  showToast("Profile save ho gaya 💚");
+  // Item 19: toast routed through locStr for regional translation.
+  showToast(locStr("Profile save ho gaya 💚", "प्रोफ़ाइल सेव हो गई 💚"));
   if (nextAction === "family") {
     goTo("s-family");
     setTimeout(() => {
@@ -11748,8 +11846,9 @@ function startFeature(f) {
     {
       const lbl = document.getElementById("chat-ctx-label");
       if (lbl) {
+        // Item 11: "Symptoms" label converted to locStr for regional.
         lbl.removeAttribute("data-i18n");
-        lbl.textContent = "Symptoms"; // legacy ctx — leave Roman
+        lbl.textContent = locStr("Symptoms", "लक्षण");
       }
     }
     renderSymptomStart();
@@ -11761,8 +11860,9 @@ function startFeature(f) {
     {
       const lbl = document.getElementById("chat-ctx-label");
       if (lbl) {
+        // Item 11: "Wellness Baat" label converted to locStr for regional.
         lbl.removeAttribute("data-i18n");
-        lbl.textContent = "Wellness Baat";
+        lbl.textContent = locStr("Wellness Baat", "वेलनेस बात");
       }
     }
     renderWellnessStart();
@@ -11813,7 +11913,12 @@ function bumpScore(points) {
 }
 
 const DOT_POINTS = { paani: 5, swas: 10, khana: 5 };
-const DOT_NAMES = { paani: "Paani piya", swas: "Swas kiya", khana: "Raat ka khana" };
+// Item 7: DOT_NAMES — routed through locStr for regional translation.
+const DOT_NAMES = {
+  paani: () => locStr("Paani piya",   "पानी पिया"),
+  swas:  () => locStr("Swas kiya",    "साँस ली"),
+  khana: () => locStr("Raat ka khana","रात का खाना"),
+};
 
 function markDailyDot(type, el) {
   const today = new Date().toDateString();
@@ -11824,7 +11929,8 @@ function markDailyDot(type, el) {
   const pts = DOT_POINTS[type] || 5;
   bumpScore(pts);
   if (typeof refreshScoreChip === "function") refreshScoreChip();
-  showToast("+" + pts + " Sehat Score 💚 (" + DOT_NAMES[type] + ")");
+  const dotLabel = (DOT_NAMES[type] && typeof DOT_NAMES[type] === "function") ? DOT_NAMES[type]() : (DOT_NAMES[type] || type);
+  showToast("+" + pts + " Sehat Score 💚 (" + dotLabel + ")");
 }
 
 function refreshDailyDots() {
@@ -11838,10 +11944,11 @@ function refreshDailyDots() {
 }
 
 function getLevel(score) {
-  if (score <= 40) return { num: 1, name: "Sehat Shishya" };
-  if (score <= 70) return { num: 2, name: "Sehat Rakshak" };
-  if (score <= 90) return { num: 3, name: "Sehat Mitra" };
-  return { num: 4, name: "Sehat Guru" };
+  // Item 8: level names routed through locStr for regional translation.
+  if (score <= 40) return { num: 1, name: locStr("Sehat Shishya", "सेहत शिष्य") };
+  if (score <= 70) return { num: 2, name: locStr("Sehat Rakshak", "सेहत रक्षक") };
+  if (score <= 90) return { num: 3, name: locStr("Sehat Mitra",   "सेहत मित्र") };
+  return { num: 4, name: locStr("Sehat Guru", "सेहत गुरु") };
 }
 
 function refreshScore() {
@@ -11856,20 +11963,69 @@ function refreshScore() {
 }
 
 function askName() {
-  const name = (prompt("Aapka naam kya hai? (sirf first name)") || "").trim().slice(0, 30);
+  // Item 12: prompt text and toast routed through locStr for regional.
+  const promptText = locStr("Aapka naam kya hai? (sirf first name)", "आपका नाम क्या है? (सिर्फ़ पहला नाम)");
+  const name = (prompt(promptText) || "").trim().slice(0, 30);
   if (!name) return;
   const p = loadProfile() || { skipCount: 0 };
   p.name = name;
   if (!p.completed) p.completed = true;
   saveProfile(p);
   initHubDynamic();
-  showToast("Namaste " + name + " 🙏");
+  const namasteToast = locStr("Namaste " + name + " 🙏", "नमस्ते " + name + " 🙏");
+  showToast(namasteToast);
 }
 
 // ── v3 Hub: 3-zone interactions ──
-const PERSONA_MODE_LBL = { dadi: "Saathi", maa: "Saathi", saathi: "Saathi" };
+// Item 10: PERSONA_MODE_LBL — lazy getters so locStr is evaluated at read-time.
+const PERSONA_MODE_LBL = {
+  get dadi()   { return locStr("Saathi", "साथी"); },
+  get maa()    { return locStr("Saathi", "साथी"); },
+  get saathi() { return locStr("Saathi", "साथी"); },
+};
 
 function initHubDynamic() {
+  // PREWARM: for regional langs, pre-populate the ssT cache with all Devanagari
+  // sources used on this screen so the first render shows translated text
+  // (rather than a flash of Devanagari). Async fire-and-forget; never blocks.
+  try {
+    const _pwLang = typeof getLang === "function" ? getLang() : "hi";
+    const _isReg = (_pwLang === "bn" || _pwLang === "ta" || _pwLang === "te" || _pwLang === "kn");
+    if (_isReg && typeof ssPrewarm === "function") {
+      // Collect Devanagari sources: todLabel labels, level names, safar labels,
+      // dot names, streak/extra strings, companion CTA, one TOD-bucket of prompts
+      // and nushka tips.
+      const _pwTod = typeof getTodWarm === "function" ? getTodWarm() : { bucket: "morning" };
+      const _pwBucket = _pwTod.bucket || "morning";
+      const _pwPrompts = (HUB_PROMPTS_BY_TOD.hi[_pwBucket] || HUB_PROMPTS_BY_TOD.hi.morning);
+      const _pwTips = NUSKHA_TIPS_BY_TOD[_pwBucket] || [];
+      ssPrewarm([
+        // TOD labels
+        "सुबह", "दोपहर", "शाम", "रात",
+        // Level names
+        "सेहत शिष्य", "सेहत रक्षक", "सेहत मित्र", "सेहत गुरु",
+        // Safar labels
+        "पानी", "स्ट्रेच", "नाश्ता", "टहलें", "साँस", "नींद",
+        // Dot names
+        "पानी पिया", "साँस ली", "रात का खाना",
+        // Companion CTA
+        "अभी आज़माएँ",
+        // Streak extra
+        "उम्मीद है आज बेहतर है — यहाँ हूँ। 🌿",
+        // Active choice toast
+        "अच्छा लगा सुन के 💚",
+        // Persona label
+        "साथी",
+        // Symptom fallback
+        "इस तकलीफ़",
+        // Current TOD hub prompts
+        ..._pwPrompts,
+        // Current TOD nushka tip(s)
+        ..._pwTips.map(function(tp) { return tp && tp.hi ? tp.hi : ""; }).filter(Boolean),
+      ]).catch(function() {});
+    }
+  } catch (_pwErr) {}
+
   // v3.1: Populate greeting with name (or prompt to set one)
   const profile = ST.userProfile || loadProfile();
   const nameEl = document.getElementById("hub3-name");
@@ -11979,9 +12135,8 @@ function getWarmGreeting(tod, name) {
         }
         // if outcome === "didnt" → a gentle follow-up note
         if (recent.outcome === "didnt") {
-          extra = getLang() === "hi"
-            ? "उम्मीद है आज बेहतर है — यहाँ हूँ। 🌿"
-            : "Umeed hai aaj behtar hai — yahin hoon. 🌿";
+          // Item 5: streak ribbon converted to locStr for regional translation.
+          extra = locStr("Umeed hai aaj behtar hai — yahin hoon. 🌿", "उम्मीद है आज बेहतर है — यहाँ हूँ। 🌿");
         }
       }
     }
@@ -12115,7 +12270,8 @@ function renderActiveChoice() {
 async function handleActiveChoice(action) {
   if (action === "ac_resolve") {
     if (typeof bumpScore === "function") bumpScore(1);
-    if (typeof showToast === "function") showToast("Achha laga sun ke 💚");
+    // Item 13: toast routed through locStr for regional translation.
+    if (typeof showToast === "function") showToast(locStr("Achha laga sun ke 💚", "अच्छा लगा सुन के 💚"));
     const el = document.getElementById("active-choice-card");
     if (el) el.style.display = "none";
     return;
@@ -12171,13 +12327,14 @@ window.handleActiveChoice = handleActiveChoice;
 // Aaj ka safar — 6 light suggestions. Not a tracker; current time-of-day
 // determines what's "passed" (filled). User can tap to mark done — but the
 // feature works fine even if they never tap anything.
+// Item 6: label getters use locStr so regional langs get Devanagari-sourced translation.
 const SAFAR_STEPS = [
-  { id: "paani", label: "Paani", emoji: "💧", whenHour: 6 },
-  { id: "stretch", label: "Stretch", emoji: "🧘", whenHour: 8 },
-  { id: "naashta", label: "Naashta", emoji: "🍵", whenHour: 9 },
-  { id: "walk", label: "Walk", emoji: "🚶", whenHour: 14 },
-  { id: "saans", label: "Saans", emoji: "🌬", whenHour: 18 },
-  { id: "neend", label: "Neend", emoji: "🌙", whenHour: 22 },
+  { id: "paani",   get label() { return locStr("Paani",   "पानी");    }, emoji: "💧", whenHour: 6  },
+  { id: "stretch", get label() { return locStr("Stretch", "स्ट्रेच"); }, emoji: "🧘", whenHour: 8  },
+  { id: "naashta", get label() { return locStr("Naashta", "नाश्ता");  }, emoji: "🍵", whenHour: 9  },
+  { id: "walk",    get label() { return locStr("Walk",    "टहलें");   }, emoji: "🚶", whenHour: 14 },
+  { id: "saans",   get label() { return locStr("Saans",   "साँस");    }, emoji: "🌬", whenHour: 18 },
+  { id: "neend",   get label() { return locStr("Neend",   "नींद");    }, emoji: "🌙", whenHour: 22 },
 ];
 
 function loadRituals() {
@@ -12343,12 +12500,18 @@ function startHubPlaceholderRotation() {
     // Read getLang() on every tick so a language toggle mid-session is
     // reflected on the very next cycle — no re-init of the rotation needed.
     const lang = (typeof getLang === "function" ? getLang() : null) || "hi";
-    const langPool = HUB_PROMPTS_BY_TOD[lang] || HUB_PROMPTS_BY_TOD.hi;
+    const isRegional = (lang === "bn" || lang === "ta" || lang === "te" || lang === "kn");
+    // Item 1: for regional langs, fall back to the hi Devanagari pool as source
+    // and machine-translate via ssT() so placeholders render in the user's script.
+    const langPool = isRegional
+      ? HUB_PROMPTS_BY_TOD.hi
+      : (HUB_PROMPTS_BY_TOD[lang] || HUB_PROMPTS_BY_TOD.hi);
     const pool = langPool[tod.bucket] || langPool.noon;
     // "जैसे:" / "Jaise:" prefix is already baked into each example string,
     // so we no longer prepend t("hub_try_prefix") separately — the examples
     // are self-contained and consistent across both scripts.
-    input.placeholder = pool[_hubPlaceholderIdx % pool.length];
+    const rawPrompt = pool[_hubPlaceholderIdx % pool.length];
+    input.placeholder = isRegional ? (ssT(rawPrompt) || rawPrompt) : rawPrompt;
     _hubPlaceholderIdx++;
   };
   apply();
@@ -12454,9 +12617,17 @@ function _jcSymptomLabel(entry) {
   if (!bucket && entry && entry.remedyKey && typeof window.symptomForRemedy === "function") {
     try { bucket = window.symptomForRemedy(entry.remedyKey) || ""; } catch (e) {}
   }
-  var lang = getLang() === "hi" ? "hi" : "en";
+  var lang = getLang();
+  var isRegional = (lang === "bn" || lang === "ta" || lang === "te" || lang === "kn");
   var map = _JC_SYMPTOM_LABELS[bucket];
-  return map ? map[lang] : _JC_SYMPTOM_FALLBACK[lang];
+  var fallback = _JC_SYMPTOM_FALLBACK;
+  // Item 9: for regional langs, machine-translate the hi value via ssT().
+  if (isRegional) {
+    var hiVal = map ? map.hi : fallback.hi;
+    return ssT(hiVal) || (map ? map.en : fallback.en);
+  }
+  var col = lang === "hi" ? "hi" : "en";
+  return map ? map[col] : fallback[col];
 }
 
 // ── Part B: check-in handlers (window-exposed so inline onclick can reach them) ──
@@ -12545,20 +12716,25 @@ function _renderCompanionNuskha(el) {
   const tip = tips[dayIdx];
 
   const lang = getLang();
-  const tipText = lang === "hi" ? tip.hi : tip.en;
+  const isRegional = (lang === "bn" || lang === "ta" || lang === "te" || lang === "kn");
+  // Item 4: for regional langs, machine-translate the hi Devanagari tip body via ssT().
+  // hi/en branches unchanged.
+  const tipText = isRegional
+    ? (ssT(tip.hi) || tip.en)
+    : (lang === "hi" ? tip.hi : tip.en);
   const remedyKey = tip.key;
 
-  // TOD label: Devanagari when hi, Roman when en
+  // Item 2: TOD label — routed through locStr for regional translation.
   const todLabelMap = {
-    morning: { hi: "सुबह",  en: "Subah"   },
-    noon:    { hi: "दोपहर", en: "Dopahar" },
-    evening: { hi: "शाम",  en: "Shaam"   },
-    night:   { hi: "रात",  en: "Raat"    },
+    morning: () => locStr("Subah",   "सुबह"),
+    noon:    () => locStr("Dopahar", "दोपहर"),
+    evening: () => locStr("Shaam",   "शाम"),
+    night:   () => locStr("Raat",    "रात"),
   };
-  const todLabel = (todLabelMap[bucket] || todLabelMap.morning)[lang === "hi" ? "hi" : "en"];
+  const todLabel = (todLabelMap[bucket] || todLabelMap.morning)();
 
-  // CTA label
-  const ctaLabel = lang === "hi" ? "अभी आज़माएँ" : "Abhi aazmayein";
+  // Item 3: CTA label — routed through locStr for regional translation.
+  const ctaLabel = locStr("Abhi aazmayein", "अभी आज़माएँ");
 
   // Guard: call openRemedy if available, else openWalkthrough
   const onclickFn =
@@ -15518,7 +15694,8 @@ window.toggleLang = toggleLang;
     // ssPrewarm; falls back to Hindi text unchanged for hi mode).
     // WIRING SITE 2: for English use authored En fields directly (no ssT).
     const _ssTfn = typeof window.ssT === "function" ? window.ssT : function (s) { return s; };
-    setText("wt-step-counter", "Step " + step.ix + " / " + _wt.exp.steps.length);
+    const _locStrFn = typeof locStr === "function" ? locStr : function (r) { return r; };
+    setText("wt-step-counter", _locStrFn("Step", "कदम") + " " + step.ix + " / " + _wt.exp.steps.length);
     const _stepTitleEn = _expEn(step.titleEn, step.titleHi);
     setText("wt-step-title", _stepTitleEn ? _stepTitleEn : _ssTfn(step.titleHi || ""));
     const _stepLineEn = _expEn(step.lineEn, step.lineHi);
@@ -15576,7 +15753,8 @@ window.toggleLang = toggleLang;
     try {
       const _nextBtn = document.getElementById("wt-next-btn");
       if (_nextBtn) {
-        _nextBtn.textContent = _isLastStep ? "Ho gaya ✓" : "Aage ›";
+        const _locStrNav = typeof locStr === "function" ? locStr : function (r) { return r; };
+        _nextBtn.textContent = _isLastStep ? _locStrNav("Ho gaya ✓", "हो गया ✓") : _locStrNav("Aage ›", "आगे ›");
       }
     } catch (_btnErr) {}
 
@@ -15927,9 +16105,14 @@ window.toggleLang = toggleLang;
           disc.style.cssText =
             "margin-top:8px;padding:8px 10px;border-radius:8px;" +
             "background:rgba(248,250,252,1);font-size:11px;color:#64748b;line-height:1.45;";
+          const _discHi = "ये घरेलू उपाय हैं — गंभीर या लगातार दिक्कत में डॉक्टर ज़रूर दिखाएँ।";
+          const _ssTdisc = typeof window.ssT === "function" ? window.ssT : function (s) { return s; };
+          const _discLang = typeof getLang === "function" ? getLang() : "hi";
           disc.textContent = _isHi
-            ? "ये घरेलू उपाय हैं — गंभीर या लगातार दिक्कत में डॉक्टर ज़रूर दिखाएँ।"
-            : "Yeh gharelu upay hain — gambhir ya lagataar dikkat mein doctor zaroor dikhayein.";
+            ? _discHi
+            : (_discLang === "en"
+                ? "Yeh gharelu upay hain — gambhir ya lagataar dikkat mein doctor zaroor dikhayein."
+                : _ssTdisc(_discHi));
           body.appendChild(disc);
 
           panel.appendChild(body);
@@ -16029,7 +16212,8 @@ window.toggleLang = toggleLang;
   function walkthroughFeedback(answer) {
     if (typeof bumpScore === "function") bumpScore(answer === "better" ? 3 : 1);
     if (typeof showToast === "function") {
-      showToast(answer === "better" ? "Achha laga sun ke 💚" : "Theek hai, dhyan rakhna");
+      const _locStrFb = typeof locStr === "function" ? locStr : function (r) { return r; };
+      showToast(answer === "better" ? _locStrFb("Achha laga sun ke 💚", "अच्छा लगा सुन के 💚") : _locStrFb("Theek hai, dhyan rakhna", "ठीक है, ध्यान रखना"));
     }
     if (_wt) {
       // Persist outcome for future Active Choice recall
@@ -17032,38 +17216,41 @@ window.toggleLang = toggleLang;
   }
 
   // ── v3.2: Aaj ke liye carousel (time-of-day) ──
+  // Item 21: TOD_CARDS — all title/sub/cta routed through locStr(roman, deva)
+  // so regional langs (bn/ta/te/kn) machine-translate the Devanagari source.
+  // hi/en output is unchanged (locStr is a no-op for those).
   const TOD_CARDS = {
     morning: [
       {
         type: "kahani",
         emoji: "👵",
-        title: "Subah ki kahani",
-        sub: "Saathi ki awaaz · 2 min",
-        cta: "Suno",
+        get title() { return locStr("Subah ki kahani", "सुबह की कहानी"); },
+        get sub()   { return locStr("Saathi ki awaaz · 2 min", "साथी की आवाज़ · 2 मिन"); },
+        get cta()   { return locStr("Suno", "सुनो"); },
         action: "story",
       },
       {
         type: "saans",
         emoji: "🌬",
-        title: "Anulom-Vilom",
-        sub: "Saans ka santulan · 5 min",
-        cta: "Karo",
+        get title() { return locStr("Anulom-Vilom", "अनुलोम-विलोम"); },
+        get sub()   { return locStr("Saans ka santulan · 5 min", "साँस का संतुलन · 5 मिन"); },
+        get cta()   { return locStr("Karo", "करो"); },
         action: "breathe",
       },
       {
         type: "yoga",
         emoji: "☀️",
-        title: "Surya Namaskar warmup",
-        sub: "Body ko jagao · 4 min",
-        cta: "Karo",
+        get title() { return locStr("Surya Namaskar warmup", "सूर्य नमस्कार वार्मअप"); },
+        get sub()   { return locStr("Body ko jagao · 4 min", "बॉडी को जगाओ · 4 मिन"); },
+        get cta()   { return locStr("Karo", "करो"); },
         action: "sunsalute",
       },
       {
         type: "tip",
         emoji: "🍋",
-        title: "Garam paani + nimbu",
-        sub: "Subah ka detox · 1 min",
-        cta: "Try",
+        get title() { return locStr("Garam paani + nimbu", "गरम पानी + नींबू"); },
+        get sub()   { return locStr("Subah ka detox · 1 min", "सुबह का डिटॉक्स · 1 मिन"); },
+        get cta()   { return locStr("Try", "ट्राय"); },
         action: "tip_lemon",
       },
     ],
@@ -17071,33 +17258,33 @@ window.toggleLang = toggleLang;
       {
         type: "kahani",
         emoji: "👵",
-        title: "Dopahar ki tip",
-        sub: "Saathi ki awaaz · 2 min",
-        cta: "Suno",
+        get title() { return locStr("Dopahar ki tip", "दोपहर की टिप"); },
+        get sub()   { return locStr("Saathi ki awaaz · 2 min", "साथी की आवाज़ · 2 मिन"); },
+        get cta()   { return locStr("Suno", "सुनो"); },
         action: "story",
       },
       {
         type: "tip",
         emoji: "🚶",
-        title: "Khaane ke baad walk",
-        sub: "Paachan shakti · 10 min",
-        cta: "Try",
+        get title() { return locStr("Khaane ke baad walk", "खाने के बाद वॉक"); },
+        get sub()   { return locStr("Paachan shakti · 10 min", "पाचन शक्ति · 10 मिन"); },
+        get cta()   { return locStr("Try", "ट्राय"); },
         action: "tip_walk",
       },
       {
         type: "yoga",
         emoji: "🧘",
-        title: "Sukshma vyayam",
-        sub: "Stretching · 3 min",
-        cta: "Karo",
+        get title() { return locStr("Sukshma vyayam", "सूक्ष्म व्यायाम"); },
+        get sub()   { return locStr("Stretching · 3 min", "स्ट्रेचिंग · 3 मिन"); },
+        get cta()   { return locStr("Karo", "करो"); },
         action: "stretch",
       },
       {
         type: "tip",
         emoji: "🥱",
-        title: "Power nap",
-        sub: "Bas 20 minute · 1 tip",
-        cta: "Try",
+        get title() { return locStr("Power nap", "पावर नैप"); },
+        get sub()   { return locStr("Bas 20 minute · 1 tip", "बस 20 मिनट · 1 टिप"); },
+        get cta()   { return locStr("Try", "ट्राय"); },
         action: "tip_nap",
       },
     ],
@@ -17105,33 +17292,33 @@ window.toggleLang = toggleLang;
       {
         type: "kahani",
         emoji: "👵",
-        title: "Sham ki baat",
-        sub: "Saathi ki awaaz · 2 min",
-        cta: "Suno",
+        get title() { return locStr("Sham ki baat", "शाम की बात"); },
+        get sub()   { return locStr("Saathi ki awaaz · 2 min", "साथी की आवाज़ · 2 मिन"); },
+        get cta()   { return locStr("Suno", "सुनो"); },
         action: "story",
       },
       {
         type: "saans",
         emoji: "🌬",
-        title: "Nadi Shodhana",
-        sub: "Din ka therav · 7 min",
-        cta: "Karo",
+        get title() { return locStr("Nadi Shodhana", "नाड़ी शोधन"); },
+        get sub()   { return locStr("Din ka therav · 7 min", "दिन का ठहराव · 7 मिन"); },
+        get cta()   { return locStr("Karo", "करो"); },
         action: "breathe",
       },
       {
         type: "tip",
         emoji: "🚶",
-        title: "Sham ki walk",
-        sub: "Tension utaaro · 15 min",
-        cta: "Try",
+        get title() { return locStr("Sham ki walk", "शाम की वॉक"); },
+        get sub()   { return locStr("Tension utaaro · 15 min", "टेंशन उतारो · 15 मिन"); },
+        get cta()   { return locStr("Try", "ट्राय"); },
         action: "tip_eve_walk",
       },
       {
         type: "tip",
         emoji: "📵",
-        title: "Screen-free 30 min",
-        sub: "Khaane se pehle · 1 tip",
-        cta: "Try",
+        get title() { return locStr("Screen-free 30 min", "स्क्रीन-फ्री 30 मिन"); },
+        get sub()   { return locStr("Khaane se pehle · 1 tip", "खाने से पहले · 1 टिप"); },
+        get cta()   { return locStr("Try", "ट्राय"); },
         action: "tip_screenfree",
       },
     ],
@@ -17139,67 +17326,124 @@ window.toggleLang = toggleLang;
       {
         type: "kahani",
         emoji: "👵",
-        title: "Raat ki nasihat",
-        sub: "Saathi ki awaaz · 2 min",
-        cta: "Suno",
+        get title() { return locStr("Raat ki nasihat", "रात की नसीहत"); },
+        get sub()   { return locStr("Saathi ki awaaz · 2 min", "साथी की आवाज़ · 2 मिन"); },
+        get cta()   { return locStr("Suno", "सुनो"); },
         action: "story",
       },
       {
         type: "saans",
         emoji: "🌬",
-        title: "Bhramari Pranayam",
-        sub: "Mann ki shaanti · 5 min",
-        cta: "Karo",
+        get title() { return locStr("Bhramari Pranayam", "भ्रामरी प्राणायाम"); },
+        get sub()   { return locStr("Mann ki shaanti · 5 min", "मन की शांति · 5 मिन"); },
+        get cta()   { return locStr("Karo", "करो"); },
         action: "breathe",
       },
       {
         type: "yoga",
         emoji: "🧘",
-        title: "Yoga Nidra",
-        sub: "Gehri neend · 10 min",
-        cta: "Karo",
+        get title() { return locStr("Yoga Nidra", "योग निद्रा"); },
+        get sub()   { return locStr("Gehri neend · 10 min", "गहरी नींद · 10 मिन"); },
+        get cta()   { return locStr("Karo", "करो"); },
         action: "breathe",
       },
       {
         type: "tip",
         emoji: "🥛",
-        title: "Haldi wala doodh",
-        sub: "Sone se pehle · 1 tip",
-        cta: "Try",
+        get title() { return locStr("Haldi wala doodh", "हल्दी वाला दूध"); },
+        get sub()   { return locStr("Sone se pehle · 1 tip", "सोने से पहले · 1 टिप"); },
+        get cta()   { return locStr("Try", "ट्राय"); },
         action: "tip_haldi",
       },
     ],
   };
 
+  // Item 21 PREWARM: for regional langs, prewarm all TOD Devanagari sources on first load
+  // so they don't flash untranslated on first scroll. Guard no-op for hi/en.
+  (function _prewarmTodCards() {
+    try {
+      const _lg = typeof getLang === "function" ? getLang() : "hi";
+      if (_lg === "hi" || _lg === "en") return;
+      if (typeof window.ssPrewarm !== "function") return;
+      window.ssPrewarm([
+        "सुबह की कहानी","साथी की आवाज़ · 2 मिन","सुनो",
+        "अनुलोम-विलोम","साँस का संतुलन · 5 मिन","करो",
+        "सूर्य नमस्कार वार्मअप","बॉडी को जगाओ · 4 मिन",
+        "गरम पानी + नींबू","सुबह का डिटॉक्स · 1 मिन","ट्राय",
+        "दोपहर की टिप","खाने के बाद वॉक","पाचन शक्ति · 10 मिन",
+        "सूक्ष्म व्यायाम","स्ट्रेचिंग · 3 मिन",
+        "पावर नैप","बस 20 मिनट · 1 टिप",
+        "शाम की बात","नाड़ी शोधन","दिन का ठहराव · 7 मिन",
+        "शाम की वॉक","टेंशन उतारो · 15 मिन",
+        "स्क्रीन-फ्री 30 मिन","खाने से पहले · 1 टिप",
+        "रात की नसीहत","भ्रामरी प्राणायाम","मन की शांति · 5 मिन",
+        "योग निद्रा","गहरी नींद · 10 मिन",
+        "हल्दी वाला दूध","सोने से पहले · 1 टिप",
+      ]).catch(function() {});
+    } catch (e) {}
+  })();
+
+  // Item 22: TIP_CONTENTS — body routed through locStr(roman, deva).
+  // The `say` field is already Devanagari (for TTS) — leave it untouched.
   const TIP_CONTENTS = {
     tip_lemon: {
       title: "Garam paani + nimbu",
-      body: "Subah uth ke pehle, ek glass garam paani mein ek nimbu nichod ke piyo. Pet saaf hota hai, paachan shakti badhti hai. Bas yahi ek aadat — ek hafte try karo, fark dikh jayega.",
+      get body() {
+        return locStr(
+          "Subah uth ke pehle, ek glass garam paani mein ek nimbu nichod ke piyo. Pet saaf hota hai, paachan shakti badhti hai. Bas yahi ek aadat — ek hafte try karo, fark dikh jayega.",
+          "सुबह उठ के पहले, एक ग्लास गरम पानी में एक नींबू निचोड़ के पियो। पेट साफ होता है, पाचन शक्ति बढ़ती है। बस यही एक आदत — एक हफ्ते ट्राय करो, फर्क दिख जाएगा।",
+        );
+      },
       say: "सुबह उठ के पहले, एक ग्लास गरम पानी में एक नींबू निचोड़ के पियो। पेट साफ होता है, पाचन शक्ति बढ़ती है।",
     },
     tip_walk: {
       title: "Khaane ke baad walk",
-      body: "Dopahar ke khaane ke baad seedhe na baitho. Bas das minute dheere dheere ghar mein chal lo. Khaana paacheya jaayega aur dopahar ki susti bhi nahi aayegi.",
+      get body() {
+        return locStr(
+          "Dopahar ke khaane ke baad seedhe na baitho. Bas das minute dheere dheere ghar mein chal lo. Khaana paacheya jaayega aur dopahar ki susti bhi nahi aayegi.",
+          "दोपहर के खाने के बाद सीधे ना बैठो। बस दस मिनट धीरे धीरे घर में चल लो। खाना पचेगा और दोपहर की सुस्ती भी नहीं आएगी।",
+        );
+      },
       say: "दोपहर के खाने के बाद सीधे ना बैठो। बस दस मिनट धीरे धीरे घर में चल लो।",
     },
     tip_nap: {
       title: "Sirf 20 minute ki neend",
-      body: "Dopahar mein neend aaye toh 20 minute ki choti neend lo — alarm laga ke. Zyada lagi toh raat ko neend nahi aayegi. Yeh ek puraana Indian rivaaj hai — sahi tarike se kiya gaya.",
+      get body() {
+        return locStr(
+          "Dopahar mein neend aaye toh 20 minute ki choti neend lo — alarm laga ke. Zyada lagi toh raat ko neend nahi aayegi. Yeh ek puraana Indian rivaaj hai — sahi tarike se kiya gaya.",
+          "दोपहर में नींद आए तो 20 मिनट की छोटी नींद लो — अलार्म लगा के। ज़्यादा लगी तो रात को नींद नहीं आएगी। यह एक पुराना भारतीय रिवाज है — सही तरीके से किया गया।",
+        );
+      },
       say: "दोपहर में नींद आए तो बीस मिनट की छोटी नींद लो, अलार्म लगा के।",
     },
     tip_eve_walk: {
       title: "Sham ki walk",
-      body: "Sham 6 baje ke around 15 minute ki walk lo. Khali pet par nahi — thoda kuch khaake. Yeh din bhar ki tension ko utaarti hai aur raat ko gehri neend laati hai.",
+      get body() {
+        return locStr(
+          "Sham 6 baje ke around 15 minute ki walk lo. Khali pet par nahi — thoda kuch khaake. Yeh din bhar ki tension ko utaarti hai aur raat ko gehri neend laati hai.",
+          "शाम 6 बजे के आसपास 15 मिनट की वॉक लो। खाली पेट नहीं — थोड़ा कुछ खाके। यह दिन भर की टेंशन उतारती है और रात को गहरी नींद लाती है।",
+        );
+      },
       say: "शाम छह बजे के आसपास पंद्रह मिनट की वॉक लो — दिन भर की टेंशन उतर जाएगी।",
     },
     tip_screenfree: {
       title: "Khaane se pehle screen band",
-      body: "Khaane se 30 minute pehle phone, TV, laptop sab band kar do. Khaana achhe se chabaake khao. Paachan dugna ho jaata hai — yeh purana gharelu tarika hai.",
+      get body() {
+        return locStr(
+          "Khaane se 30 minute pehle phone, TV, laptop sab band kar do. Khaana achhe se chabaake khao. Paachan dugna ho jaata hai — yeh purana gharelu tarika hai.",
+          "खाने से 30 मिनट पहले फोन, टीवी, लैपटॉप सब बंद कर दो। खाना अच्छे से चबाके खाओ। पाचन दुगना हो जाता है — यह पुराना घरेलू तरीका है।",
+        );
+      },
       say: "खाने से तीस मिनट पहले फोन, टीवी, लैपटॉप सब बंद कर दो।",
     },
     tip_haldi: {
       title: "Haldi wala doodh",
-      body: "Sone se pehle ek glass garam doodh, chutki haldi, thoda gud. Saans ki naliyaa saaf, badan halka, aur neend bhi gehri. Mere ghar mein har raat yahi banta tha.",
+      get body() {
+        return locStr(
+          "Sone se pehle ek glass garam doodh, chutki haldi, thoda gud. Saans ki naliyaa saaf, badan halka, aur neend bhi gehri. Mere ghar mein har raat yahi banta tha.",
+          "सोने से पहले एक ग्लास गरम दूध, चुटकी हल्दी, थोड़ा गुड़। साँस की नलियाँ साफ, बदन हल्का, और नींद भी गहरी। मेरे घर में हर रात यही बनता था।",
+        );
+      },
       say: "सोने से पहले एक ग्लास गरम दूध में चुटकी हल्दी, और थोड़ा गुड़ डाल के पियो।",
     },
   };
@@ -17259,7 +17503,7 @@ window.toggleLang = toggleLang;
     ST.isFirstMsg = true;
     ST._symptomTurnSeen = 0; // WS1: reset per-conversation symptom counter
     goTo("s-chat");
-    document.getElementById("chat-ctx-label").textContent = "Ghar ke Nushke";
+    document.getElementById("chat-ctx-label").textContent = locStr("Ghar ke Nushke", "घर के नुस्खे"); // Item 24
     setTimeout(() => {
       document.getElementById("chat-msgs").innerHTML = "";
       addMsg("user", question, false);
@@ -17280,7 +17524,7 @@ window.toggleLang = toggleLang;
     if (typeof pushCheckin === "function") pushCheckin(displayText, aiPrompt);
     goTo("s-chat");
     const lbl = document.getElementById("chat-ctx-label");
-    if (lbl) lbl.textContent = "Ghar ke Nushke";
+    if (lbl) lbl.textContent = locStr("Ghar ke Nushke", "घर के नुस्खे"); // Item 24
     setTimeout(() => {
       const msgs = document.getElementById("chat-msgs");
       msgs.innerHTML = "";
@@ -17311,7 +17555,7 @@ window.toggleLang = toggleLang;
     trackFeature("wellness");
     goTo("s-chat");
     const lbl = document.getElementById("chat-ctx-label");
-    if (lbl) lbl.textContent = "Sehat banao";
+    if (lbl) lbl.textContent = locStr("Sehat banao", "सेहत बनाओ"); // Item 23
     setTimeout(() => {
       document.getElementById("chat-msgs").innerHTML = "";
       addMsg("user", displayText, false);
@@ -17331,9 +17575,13 @@ window.toggleLang = toggleLang;
   }
 
   // v6.7.1: chip arrays use LANG keys so they re-translate on toggle.
-  // Each entry is a key into LANG; t(key) yields the visible label, which
-  // is ALSO what we send back into handleFollowup() so chat history matches
-  // what the user actually tapped.
+  // Item 25 FIX (Wave 1): t(key) NOW already returns the regional translation
+  // (bn/ta/te/kn) via the i18n + ssT pipeline. Wrapping in ssT() a second time
+  // was double-translating (garbage output). Removed the extra ssT wrap — just
+  // use t(k) directly. hi/en are unchanged (t() is a no-op for them here).
+  // Item 26 FIX: chip carries data-action="<key>" so handleFollowup() branches
+  // on the STABLE LANG key, not on the translated visible text (which breaks for
+  // all non-English locales). The key never changes; the visible label does.
   function injectFollowups(ctx, msgsContainer) {
     // Gate: do NOT render generic follow-up chips while a deterministic triage
     // is active (a clarifying question is showing, awaiting a user tap).
@@ -17358,17 +17606,20 @@ window.toggleLang = toggleLang;
     row.className = "msg-row bot followup-row";
     const wrap = document.createElement("div");
     wrap.className = "followup-chips";
-    // Helper: run i18n label through ssT for additional translation if needed
-    const _ssT = (typeof window.ssT === "function") ? window.ssT : null;
     for (const k of list) {
       const btn = document.createElement("button");
       btn.className = "followup-chip";
       btn.setAttribute("data-i18n", k);
-      const _rawLabel = t(k);
-      btn.textContent = _ssT ? (_ssT(_rawLabel) || _rawLabel) : _rawLabel;
+      // Item 26: store the stable LANG key as data-action so handleFollowup
+      // can match on it regardless of display language.
+      btn.setAttribute("data-action", k);
+      // Item 25: t(k) already returns the final regional-translated label for
+      // bn/ta/te/kn — do NOT wrap in ssT again.
+      btn.textContent = t(k);
       btn.onclick = () => {
         row.remove();
-        handleFollowup(_rawLabel, ctx);
+        // Pass the stable key (data-action) — not the translated visible text.
+        handleFollowup(k, ctx);
       };
       wrap.appendChild(btn);
     }
@@ -17377,25 +17628,35 @@ window.toggleLang = toggleLang;
     msgsContainer.scrollTop = msgsContainer.scrollHeight;
   }
 
-  function handleFollowup(label, ctx) {
-    if (label === "Saans karein") return goTo("s-breathwork");
-    if (label === "Wapas hub") return goTo("s-hub");
-    if (label === "Lab report") return startFeature("lab");
-    if (label === "Dawai") return startFeature("medicine");
-    if (label === "Plan banao") return startFeature("meal");
-    if (/kahani|कहानी/i.test(label)) { // v7: match new i18n labels (chip_dadi_kahani/exit_dadi_kahani_title)
+  // Item 26: handleFollowup now branches on the stable LANG key (k), not on
+  // the translated visible text. hi/en behaviour is identical — the keys map
+  // to the same actions they always did. Regional langs now route correctly too.
+  function handleFollowup(key, ctx) {
+    if (key === "tri_rail_saans") return goTo("s-breathwork");
+    if (key === "chip_wapas_hub") return goTo("s-hub");
+    if (key === "chip_lab_report") return startFeature("lab");
+    if (key === "chip_dawai") return startFeature("medicine");
+    if (key === "chip_plan_banao") return startFeature("meal");
+    if (key === "chip_dadi_kahani" || key === "exit_dadi_kahani_title") {
       goTo("s-hub");
       setTimeout(() => playStory("general"), 200);
       return;
     }
-    if (label === "Aaj ka nushka") {
-      addMsg("user", "Aaj ka ek accha nushka batao", false);
+    if (key === "chip_aaj_nushka") {
+      addMsg("user", t("chip_aaj_nushka"), false);
       callAI("Aaj ka ek accha nushka batao — aam sehat ke liye", getSystemPromptFor("nushke"));
       return;
     }
-    // Default — send as user message
-    addMsg("user", label, false);
-    callAI(label, getSystemPromptFor(ST.chatCtx));
+    if (key === "chip_bas_suno") {
+      // "Bas suno" — user wants the Saathi to just listen/empathise; send as user message
+      addMsg("user", t("chip_bas_suno"), false);
+      callAI(t("chip_bas_suno"), getSystemPromptFor(ctx));
+      return;
+    }
+    // Default — send the localised label as user message (chip_aur_batao, chip_doctor_kab,
+    // chip_doctor_baat, chip_aur_tips, chip_try_kiya, and any future chips)
+    addMsg("user", t(key), false);
+    callAI(t(key), getSystemPromptFor(ST.chatCtx));
   }
 
   // ── v3.4: Voice picker (Bulbul v3 candidates) ──
@@ -18034,7 +18295,7 @@ window.toggleLang = toggleLang;
         '<div class="remedy-cta-emoji">' + _icon + "</div>" +
         '<div class="remedy-cta-text">' +
         '<div class="remedy-cta-title">' + _ctaLabel + "</div>" +
-        '<div class="remedy-cta-sub">' + _title + " · Step-by-step</div>" +
+        '<div class="remedy-cta-sub">' + _title + (typeof locStr === "function" ? locStr(" · Step-by-step", " · कदम-दर-कदम") : " · Step-by-step") + "</div>" + // Item 29
         "</div>" +
         '<div class="remedy-cta-arrow">›</div>';
       msgs.appendChild(cta);
@@ -18615,11 +18876,12 @@ window.toggleLang = toggleLang;
               : (_expLang !== "hi" && _expLang !== "en" && _expObj && _expObj.titleHi)
                 ? ((typeof window.ssT === "function" && window.ssT(_expObj.titleHi)) || _expObj.titleHi)
                 : ((_expObj && _expObj.titleHi) || _experienceKey);
+            const _stepSuffix = (typeof locStr === "function") ? locStr(" · Step-by-step", " · कदम-दर-कदम") : " · Step-by-step"; // Item 29
             cta.innerHTML =
               '<div class="remedy-cta-emoji">' + _icon + "</div>" +
               '<div class="remedy-cta-text">' +
               '<div class="remedy-cta-title">' + _ctaLabel + "</div>" +
-              '<div class="remedy-cta-sub">' + _titleHi + " · Step-by-step</div>" +
+              '<div class="remedy-cta-sub">' + _titleHi + _stepSuffix + "</div>" +
               "</div>" +
               '<div class="remedy-cta-arrow">›</div>';
             msgs.appendChild(cta);
@@ -18649,11 +18911,12 @@ window.toggleLang = toggleLang;
                 : (_expLang2 !== "hi" && _expLang2 !== "en" && _expObj && _expObj.titleHi)
                   ? ((typeof window.ssT === "function" && window.ssT(_expObj.titleHi)) || _expObj.titleHi)
                   : ((_expObj && _expObj.titleHi) || _experienceKey);
+              const _stepSuffix2 = (typeof locStr === "function") ? locStr(" · Step-by-step", " · कदम-दर-कदम") : " · Step-by-step"; // Item 29
               vtaCta.innerHTML =
                 '<div class="remedy-cta-emoji">' + _icon2 + "</div>" +
                 '<div class="remedy-cta-text">' +
                 '<div class="remedy-cta-title">' + _ctaLabel + "</div>" +
-                '<div class="remedy-cta-sub">' + _titleHi2 + " · Step-by-step</div>" +
+                '<div class="remedy-cta-sub">' + _titleHi2 + _stepSuffix2 + "</div>" +
                 "</div>" +
                 '<div class="remedy-cta-arrow">›</div>';
               voiceTa.appendChild(vtaCta);
@@ -18958,6 +19221,27 @@ const NUSHKE_CATS = [
 ];
 
 function renderNushkeStart() {
+  // PREWARM (Item 40 / lab + nushke): for regional langs, prewarm the Devanagari
+  // sources authored for this screen so chips don't flash untranslated on first render.
+  // Guard is a no-op for hi/en.
+  (function _prewarmNushkeStart() {
+    try {
+      const _lg = typeof getLang === "function" ? getLang() : "hi";
+      if (_lg === "hi" || _lg === "en") return;
+      if (typeof window.ssPrewarm !== "function") return;
+      const _sources = [
+        "कौन सी तकलीफ़ के लिए नुस्ख़ा चाहिए? नीचे से चुनें या खुद लिखें 👇",
+        // NUSHKE_CATS labelHi values
+        "सर्दी-खाँसी","पेट की तकलीफ़","सिर दर्द","नींद की दिक्कत",
+        "बदन दर्द","टेंशन/चिंता","बुखार","स्किन प्रॉब्लम",
+        "साँस की दिक्कत","पानी की कमी",
+        // self-label for lab member picker (Item 40)
+        "आप",
+      ];
+      window.ssPrewarm(_sources).catch(function() {});
+    } catch (e) {}
+  })();
+
   const msgs = document.getElementById("chat-msgs");
   msgs.innerHTML = "";
   const bubble =
@@ -19141,7 +19425,11 @@ function renderLabStep(step) {
     const fam = loadFamily();
     const reports = loadLabReports();
     const profile = ST.userProfile || loadProfile();
-    const selfLabel = profile && profile.age ? `Aap (${profile.age} saal)` : "Aap (self)";
+    // Item 40: route self-label through locStr so regional langs get a translated version.
+    const age = profile && profile.age;
+    const selfLabel = age
+      ? locStr("Aap (" + age + " saal)", "आप (" + age + " साल)")
+      : locStr("Aap (self)", "आप (self)");
 
     let memberHtml = `
       <button class="lab-member-btn ${ST.labData.member === "self" ? "selected" : ""}" onclick="selectLabMember('self','${selfLabel.replace(/'/g, "")}')">
@@ -21273,6 +21561,24 @@ ST.orderStep = 0;
 ST.orderData = {};
 ST.editingMedIdx = null;
 
+// — File-level locStr alias — used throughout this file for Hinglish → regional auto-translation —
+const _loc = (roman, deva) => (typeof locStr === "function" ? locStr(roman, deva) : roman);
+
+// — Timing-label localizer: maps stored Roman values to localized display strings —
+// Stored values ("Subah","Dopahar","Shaam","Raat") are never changed — only display is wrapped.
+const _TIMING_MAP = {
+  "Subah":   () => _loc("Subah",   "सुबह"),
+  "Dopahar": () => _loc("Dopahar", "दोपहर"),
+  "Shaam":   () => _loc("Shaam",   "शाम"),
+  "Raat":    () => _loc("Raat",    "रात"),
+};
+function _locTiming(t) {
+  return (_TIMING_MAP[t] && _TIMING_MAP[t]()) || t;
+}
+function _locTimingArr(arr) {
+  return (arr || []).map(_locTiming).join(", ");
+}
+
 // ─── Global helper: phone assignment from inline handler (must be global-scoped) ───
 function rxSetPhone(v) {
   try {
@@ -21337,69 +21643,69 @@ function _renderRxStepInner(step) {
 
   if (step === 0) {
     // Member triage
-    if (titleEl) titleEl.textContent = "Yeh dawai kiske liye?";
-    if (subEl) subEl.textContent = "Member chunein";
+    if (titleEl) titleEl.textContent = _loc("Yeh dawai kiske liye?", "यह दवाई किसके लिए?");
+    if (subEl) subEl.textContent = _loc("Member chunein", "मेम्बर चुनें");
     const fam = loadFamily();
     const profile = ST.userProfile || loadProfile();
     const selfLabel = profile && profile.age ? `Aap (${profile.age} saal)` : "Aap (self)";
     let html = `<div class="rx-body">
-      <div class="rx-step-title">Yeh dawai kiske liye?</div>
-      <div class="rx-step-sub">Hum is member ke liye reminder + order history rakhenge</div>
+      <div class="rx-step-title">${_loc("Yeh dawai kiske liye?", "यह दवाई किसके लिए?")}</div>
+      <div class="rx-step-sub">${_loc("Hum is member ke liye reminder + order history rakhenge", "हम इस मेम्बर के लिए रिमाइंडर + ऑर्डर हिस्ट्री रखेंगे")}</div>
       <div class="lab-member-list">`;
     html += `<button class="lab-member-btn" onclick="rxSelectMember('self','${selfLabel.replace(/'/g, "")}')">
       <div class="lab-mem-avatar">${profile && profile.sex === "Female" ? "👩" : profile && profile.sex === "Male" ? "👨" : "🧑"}</div>
-      <div class="lab-mem-info"><div class="lab-mem-name">${selfLabel}</div><div class="lab-mem-meta">Apni dawaiyaan</div></div>
+      <div class="lab-mem-info"><div class="lab-mem-name">${selfLabel}</div><div class="lab-mem-meta">${_loc("Apni dawaiyaan", "अपनी दवाइयाँ")}</div></div>
     </button>`;
     for (const m of fam) {
       const key = "fam_" + m.name;
       const condStr = Array.isArray(m.conditions) ? m.conditions.join(", ") : m.conditions || "";
       html += `<button class="lab-member-btn" onclick="rxSelectMember('${key}','${m.name.replace(/'/g, "")}')">
         <div class="lab-mem-avatar">${m.name.charAt(0).toUpperCase()}</div>
-        <div class="lab-mem-info"><div class="lab-mem-name">${m.name}</div><div class="lab-mem-meta">${m.age || "-"} saal · ${condStr || "Koi condition nahi"}</div></div>
+        <div class="lab-mem-info"><div class="lab-mem-name">${m.name}</div><div class="lab-mem-meta">${m.age || "-"} saal · ${condStr || _loc("Koi condition nahi", "कोई कंडीशन नहीं")}</div></div>
       </button>`;
     }
     html += `<button class="lab-member-btn" onclick="goTo('s-family');setTimeout(()=>{renderFamilyList();showAddFamily();},100)">
       <div class="lab-mem-avatar" style="background:var(--surface2);font-size:20px">+</div>
-      <div class="lab-mem-info"><div class="lab-mem-name">Naya member jodein</div><div class="lab-mem-meta">Maa, papa, bachha, koi bhi</div></div>
+      <div class="lab-mem-info"><div class="lab-mem-name">${_loc("Naya member jodein", "नया मेम्बर जोड़ें")}</div><div class="lab-mem-meta">${_loc("Maa, papa, bachha, koi bhi", "माँ, पापा, बच्चा, कोई भी")}</div></div>
     </button></div></div>`;
     el.innerHTML = html;
     return;
   }
 
   if (step === 1) {
-    if (titleEl) titleEl.textContent = "Parchi kaise daal sakte hain?";
-    if (subEl) subEl.textContent = ST.rxData.memberLabel + " ke liye";
+    if (titleEl) titleEl.textContent = _loc("Parchi kaise daal sakte hain?", "पर्ची कैसे डाल सकते हैं?");
+    if (subEl) subEl.textContent = ST.rxData.memberLabel + _loc(" ke liye", " के लिए");
     el.innerHTML = `<div class="rx-body">
       <div class="lottie-hero" data-lottie="lottie-takemed.json"></div>
-      <div class="rx-step-title">${ST.rxData.memberLabel} ki parchi</div>
-      <div class="rx-step-sub">Doctor ki parchi ki photo khichein, ya manually likhein</div>
+      <div class="rx-step-title">${ST.rxData.memberLabel} ${_loc("ki parchi", "की पर्ची")}</div>
+      <div class="rx-step-sub">${_loc("Doctor ki parchi ki photo khichein, ya manually likhein", "डॉक्टर की पर्ची की फोटो खींचें, या मैन्युअली लिखें")}</div>
       <div class="rx-methods">
         <label class="rx-method-card recommended" for="rx-photo-input">
           <div class="rx-method-icon">📷</div>
           <div style="flex:1">
-            <div class="rx-method-name">Parchi ka photo khichein</div>
-            <div class="rx-method-sub">Camera khulega — saaf photo lijiye</div>
-            <span class="rx-method-tag">Sabse aasaan · AI padhega</span>
+            <div class="rx-method-name">${_loc("Parchi ka photo khichein", "पर्ची का फोटो खींचें")}</div>
+            <div class="rx-method-sub">${_loc("Camera khulega — saaf photo lijiye", "कैमरा खुलेगा — साफ फोटो लीजिए")}</div>
+            <span class="rx-method-tag">${_loc("Sabse aasaan · AI padhega", "सबसे आसान · AI पढ़ेगा")}</span>
           </div>
           <input type="file" id="rx-photo-input" accept="image/*" capture="environment" style="display:none" onchange="rxOnPhoto(event)">
         </label>
         <label class="rx-method-card" for="rx-pdf-input">
           <div class="rx-method-icon" style="background:rgba(30,204,176,.18)">📄</div>
           <div style="flex:1">
-            <div class="rx-method-name">PDF upload karein</div>
-            <div class="rx-method-sub">Doctor ne softcopy bheji ho — PDF chunein</div>
+            <div class="rx-method-name">${_loc("PDF upload karein", "PDF अपलोड करें")}</div>
+            <div class="rx-method-sub">${_loc("Doctor ne softcopy bheji ho — PDF chunein", "डॉक्टर ने सॉफ्टकॉपी भेजी हो — PDF चुनें")}</div>
           </div>
           <input type="file" id="rx-pdf-input" accept="application/pdf" style="display:none" onchange="rxOnPdf(event)">
         </label>
         <button class="rx-method-card" onclick="rxManualStart()">
           <div class="rx-method-icon" style="background:rgba(251,146,60,.18)">✍️</div>
           <div style="flex:1;text-align:left">
-            <div class="rx-method-name">Manually likhein</div>
-            <div class="rx-method-sub">Naam yaad hai? Seedha add kar dein</div>
+            <div class="rx-method-name">${_loc("Manually likhein", "मैन्युअली लिखें")}</div>
+            <div class="rx-method-sub">${_loc("Naam yaad hai? Seedha add kar dein", "नाम याद है? सीधा ऐड कर दें")}</div>
           </div>
         </button>
       </div>
-      <div class="lab-warn">Yeh prototype hai — abhi Vision API ke bina sample data ka istemaal ho raha hai. Real prescription bhi save hogi.</div>
+      <div class="lab-warn">${_loc("Yeh prototype hai — abhi Vision API ke bina sample data ka istemaal ho raha hai. Real prescription bhi save hogi.", "यह प्रोटोटाइप है — अभी Vision API के बिना सैंपल डेटा का इस्तेमाल हो रहा है। रियल प्रेस्क्रिप्शन भी सेव होगी।")}</div>
     </div>`;
     if (typeof window.initLottieHeroes === 'function') window.initLottieHeroes();
     return;
@@ -21407,8 +21713,8 @@ function _renderRxStepInner(step) {
 
   if (step === 2) {
     // Scanning anim then auto-advance to review
-    if (titleEl) titleEl.textContent = "Padh rahi hoon...";
-    if (subEl) subEl.textContent = "Thoda waqt";
+    if (titleEl) titleEl.textContent = _loc("Padh rahi hoon...", "पढ़ रही हूँ...");
+    if (subEl) subEl.textContent = _loc("Thoda waqt", "थोड़ा वक्त");
     el.innerHTML = `<div class="rx-body">
       <div class="rx-scan-wrap">
         <div class="rx-scan-paper">
@@ -21420,16 +21726,16 @@ function _renderRxStepInner(step) {
             <div class="ln short"></div><div class="ln med"></div>
           </div>
         </div>
-        <div class="rx-scan-status" id="rx-scan-msg">Doctor ka likha padh rahi hoon<span class="blink"></span></div>
+        <div class="rx-scan-status" id="rx-scan-msg">${_loc("Doctor ka likha padh rahi hoon", "डॉक्टर का लिखा पढ़ रही हूँ")}<span class="blink"></span></div>
       </div>
     </div>`;
     setTimeout(() => {
       const m = document.getElementById("rx-scan-msg");
-      if (m) m.innerHTML = 'Dawaiyaan dhoondh rahi hoon<span class="blink"></span>';
+      if (m) m.innerHTML = _loc("Dawaiyaan dhoondh rahi hoon", "दवाइयाँ ढूंढ रही हूँ") + '<span class="blink"></span>';
     }, 900);
     setTimeout(() => {
       const m = document.getElementById("rx-scan-msg");
-      if (m) m.innerHTML = 'Dose aur timing nikaal rahi hoon<span class="blink"></span>';
+      if (m) m.innerHTML = _loc("Dose aur timing nikaal rahi hoon", "डोज़ और टाइमिंग निकाल रही हूँ") + '<span class="blink"></span>';
     }, 1700);
     setTimeout(() => renderRxStep(3), 2500);
     return;
@@ -21437,13 +21743,13 @@ function _renderRxStepInner(step) {
 
   if (step === 3) {
     // Review extracted meds
-    if (titleEl) titleEl.textContent = "Yeh dawaiyaan dikhi";
-    if (subEl) subEl.textContent = "Galti ho toh edit karein";
+    if (titleEl) titleEl.textContent = _loc("Yeh dawaiyaan dikhi", "यह दवाइयाँ दिखीं");
+    if (subEl) subEl.textContent = _loc("Galti ho toh edit karein", "गलती हो तो एडिट करें");
     let html = `<div class="rx-body">
-      <div class="rx-step-title">Parchi padh li ✓</div>
+      <div class="rx-step-title">${_loc("Parchi padh li ✓", "पर्ची पढ़ ली ✓")}</div>
       <div class="rx-step-sub">${ST.rxData.doctor || "Manual entry"}${ST.rxData.clinic ? " · " + ST.rxData.clinic : ""}</div>
       <div class="rx-meds-head">
-        <div class="rx-meds-head-l">${ST.rxData.meds.length} dawaiyaan mili</div>
+        <div class="rx-meds-head-l">${ST.rxData.meds.length} ${_loc("dawaiyaan mili", "दवाइयाँ मिलीं")}</div>
         ${ST.rxData.confidence ? `<div class="rx-conf-pill">${Math.round(ST.rxData.confidence * 100)}% confidence</div>` : ""}
       </div>`;
     ST.rxData.meds.forEach((m, i) => {
@@ -21459,8 +21765,8 @@ function _renderRxStepInner(step) {
             <div class="rx-med-strength">${m.strength} · ${m.form}</div>
             <div class="rx-med-meta">
               <div class="rx-med-meta-pill"><b>${m.dose}</b></div>
-              <div class="rx-med-meta-pill">${(m.timing || []).join(", ") || "-"}</div>
-              <div class="rx-med-meta-pill"><b>${m.duration}</b> din</div>
+              <div class="rx-med-meta-pill">${_locTimingArr(m.timing) || "-"}</div>
+              <div class="rx-med-meta-pill"><b>${m.duration}</b> ${_loc("din", "दिन")}</div>
             </div>
             ${m.notes ? `<div style="font-size:10px;color:var(--text3);margin-top:6px;font-style:italic">📝 ${m.notes}</div>` : ""}
           </div>
@@ -21468,14 +21774,14 @@ function _renderRxStepInner(step) {
         </div>`;
       }
     });
-    html += `<button class="rx-med-add" onclick="rxAddMed()">+ Aur dawai jodein</button>`;
-    html += `<button class="rx-cta" onclick="renderRxStep(4)">${ST.rxData.meds.length === 0 ? "Pehle ek dawai jodein" : "Reminder lagao →"}</button>`;
+    html += `<button class="rx-med-add" onclick="rxAddMed()">${_loc("+ Aur dawai jodein", "+ और दवाई जोड़ें")}</button>`;
+    html += `<button class="rx-cta" onclick="renderRxStep(4)">${ST.rxData.meds.length === 0 ? _loc("Pehle ek dawai jodein", "पहले एक दवाई जोड़ें") : _loc("Reminder lagao →", "रिमाइंडर लगाओ →")}</button>`;
     if (ST.rxData.meds.length === 0)
       html = html.replace(
         '<button class="rx-cta"',
         '<button class="rx-cta" disabled style="opacity:.5;pointer-events:none"',
       );
-    html += `<button class="rx-cta secondary" onclick="renderRxStep(1)">Phir se scan karein</button>
+    html += `<button class="rx-cta secondary" onclick="renderRxStep(1)">${_loc("Phir se scan karein", "फिर से स्कैन करें")}</button>
     </div>`;
     el.innerHTML = html;
     return;
@@ -21484,8 +21790,8 @@ function _renderRxStepInner(step) {
   if (step === 4) {
     // Reminder timings + delivery channel
     // Frequency → N time-slot defaults
-    if (titleEl) titleEl.textContent = "Reminder lagao";
-    if (subEl) subEl.textContent = "Kitni baar aur kab?";
+    if (titleEl) titleEl.textContent = _loc("Reminder lagao", "रिमाइंडर लगाओ");
+    if (subEl) subEl.textContent = _loc("Kitni baar aur kab?", "कितनी बार और कब?");
 
     // Default time arrays by frequency (1/2/3/4 per day)
     const _freqDefaults = {
@@ -21511,36 +21817,35 @@ function _renderRxStepInner(step) {
       delete m._time;
     });
 
-    const _loc = (hi, en) => (typeof locStr === "function" ? locStr(hi, en) : en);
     let html = `<div class="rx-body">
-      <div class="rx-step-title">Reminder kab lagana hai?</div>
-      <div class="rx-step-sub">Har dawai ke liye frequency aur time chunein</div>`;
+      <div class="rx-step-title">${_loc("Reminder kab lagana hai?", "रिमाइंडर कब लगाना है?")}</div>
+      <div class="rx-step-sub">${_loc("Har dawai ke liye frequency aur time chunein", "हर दवाई के लिए फ्रीक्वेंसी और टाइम चुनें")}</div>`;
 
     ST.rxData.meds.forEach((m, i) => {
       html += `<div class="rx-timing-card">
         <div class="rx-timing-head">${m.name}<span class="strength">${m.strength} · ${m.dose}</span></div>
-        <div class="rx-timing-q">Kitni baar leni hai? (rozana)</div>
+        <div class="rx-timing-q">${_loc("Kitni baar leni hai? (rozana)", "कितनी बार लेनी है? (रोज़ाना)")}</div>
         <div class="rx-timing-chips" data-med="${i}" style="margin-bottom:10px">`;
       [1, 2, 3, 4].forEach((n) => {
-        const label = n === 1 ? "1 baar" : n === 2 ? "2 baar" : n === 3 ? "3 baar" : "4 baar";
+        const label = n === 1 ? _loc("1 baar", "1 बार") : n === 2 ? _loc("2 baar", "2 बार") : n === 3 ? _loc("3 baar", "3 बार") : _loc("4 baar", "4 बार");
         html += `<button class="rx-timing-chip${m._freq === n ? " selected" : ""}" onclick="rxSetFreq(${i},${n})">${label}</button>`;
       });
       html += `</div>`;
 
       // Kitne din field (inline in the timing card so duration is visible and editable here)
       html += `<div class="rx-timing-time" style="margin-bottom:8px">
-        📅 Kitne din leni hai:&nbsp;
+        📅 ${_loc("Kitne din leni hai:", "कितने दिन लेनी है:")}&nbsp;
         <input type="number" min="1" max="365" value="${m.duration || 7}"
           style="width:70px;display:inline-block"
-          onchange="rxSetDuration(${i}, this.value)"> din
+          onchange="rxSetDuration(${i}, this.value)"> ${_loc("din", "दिन")}
       </div>`;
 
       // N time inputs — one per dose
-      html += `<div class="rx-timing-q" style="margin-bottom:6px">Har dose ka time:</div>`;
-      const slotLabels = ["1st dose", "2nd dose", "3rd dose", "4th dose"];
+      html += `<div class="rx-timing-q" style="margin-bottom:6px">${_loc("Har dose ka time:", "हर डोज़ का टाइम:")}</div>`;
+      const slotLabels = [_loc("1st dose", "पहला डोज़"), _loc("2nd dose", "दूसरा डोज़"), _loc("3rd dose", "तीसरा डोज़"), _loc("4th dose", "चौथा डोज़")];
       (m._times || []).forEach((t, si) => {
         html += `<div class="rx-timing-time" style="margin-bottom:6px">
-          ⏰ ${slotLabels[si] || "Dose " + (si + 1)}:&nbsp;
+          ⏰ ${slotLabels[si] || (_loc("Dose", "डोज़") + " " + (si + 1))}:&nbsp;
           <input type="time" value="${t}"
             onchange="rxSetSlotTime(${i},${si},this.value)"
             style="display:inline-block">
@@ -21576,8 +21881,8 @@ function _renderRxStepInner(step) {
       </div>
     </div>`;
 
-    html += `<button class="rx-cta" onclick="rxSaveReminders()">Reminders set karein →</button>
-      <button class="rx-cta secondary" onclick="renderRxStep(3)">Wapas dawaiyaan dekhein</button>
+    html += `<button class="rx-cta" onclick="rxSaveReminders()">${_loc("Reminders set karein →", "रिमाइंडर सेट करें →")}</button>
+      <button class="rx-cta secondary" onclick="renderRxStep(3)">${_loc("Wapas dawaiyaan dekhein", "वापस दवाइयाँ देखें")}</button>
     </div>`;
     el.innerHTML = html;
     return;
@@ -22503,31 +22808,31 @@ function renderOrderStep(step) {
   }
 
   if (step === 2) {
-    if (titleEl) titleEl.textContent = "Payment";
-    if (subEl) subEl.textContent = "Kaise pay karein?";
+    if (titleEl) titleEl.textContent = _loc("Payment", "पेमेंट");
+    if (subEl) subEl.textContent = _loc("Kaise pay karein?", "कैसे पे करें?");
     const sel = ST.orderData.payment || "cod";
     let html = `<div class="rx-body">
-      <div class="rx-step-title">Payment kaise karein?</div>
-      <div class="rx-step-sub">Tier 2/3 ke liye COD bhi available — saamne paise dein</div>
+      <div class="rx-step-title">${_loc("Payment kaise karein?", "पेमेंट कैसे करें?")}</div>
+      <div class="rx-step-sub">${_loc("Tier 2/3 ke liye COD bhi available — saamne paise dein", "Tier 2/3 के लिए COD भी उपलब्ध — सामने पैसे दें")}</div>
       <div class="bz-pay-list">
         <button class="bz-pay-opt ${sel === "upi" ? "selected" : ""}" onclick="orderSelPay('upi')" style="font-family:inherit;color:inherit;width:100%;text-align:left">
           <div class="bz-pay-opt-ic" style="background:rgba(57,0,173,.18);color:#a855f7">🟣</div>
-          <div style="flex:1"><div class="bz-pay-opt-name">UPI · GPay / PhonePe / Paytm</div><div class="bz-pay-opt-sub">Instant · No charges</div></div>
+          <div style="flex:1"><div class="bz-pay-opt-name">UPI · GPay / PhonePe / Paytm</div><div class="bz-pay-opt-sub">${_loc("Instant · No charges", "तुरंत · कोई चार्ज नहीं")}</div></div>
           <div class="bz-pay-radio"></div>
         </button>
         <button class="bz-pay-opt ${sel === "cod" ? "selected" : ""}" onclick="orderSelPay('cod')" style="font-family:inherit;color:inherit;width:100%;text-align:left">
           <div class="bz-pay-opt-ic" style="background:rgba(34,197,94,.18);color:#22c55e">💵</div>
-          <div style="flex:1"><div class="bz-pay-opt-name">Cash on Delivery</div><div class="bz-pay-opt-sub">Saamne paise dein · ₹0 charges</div></div>
+          <div style="flex:1"><div class="bz-pay-opt-name">${_loc("Cash on Delivery", "कैश ऑन डिलीवरी")}</div><div class="bz-pay-opt-sub">${_loc("Saamne paise dein · ₹0 charges", "सामने पैसे दें · ₹0 चार्ज")}</div></div>
           <div class="bz-pay-radio"></div>
         </button>
         <button class="bz-pay-opt ${sel === "jio" ? "selected" : ""}" onclick="orderSelPay('jio')" style="font-family:inherit;color:inherit;width:100%;text-align:left">
           <div class="bz-pay-opt-ic" style="background:rgba(168,85,247,.18);color:#a855f7">J</div>
-          <div style="flex:1"><div class="bz-pay-opt-name">Jio Wallet</div><div class="bz-pay-opt-sub">Linked to JioBharatIQ · 5% cashback</div></div>
+          <div style="flex:1"><div class="bz-pay-opt-name">${_loc("Jio Wallet", "जियो वॉलेट")}</div><div class="bz-pay-opt-sub">${_loc("Linked to JioBharatIQ · 5% cashback", "JioBharatIQ से जुड़ा · 5% कैशबैक")}</div></div>
           <div class="bz-pay-radio"></div>
         </button>
       </div>
-      <button class="rx-cta" onclick="orderPlace()">Order confirm karein →</button>
-      <button class="rx-cta secondary" onclick="renderOrderStep(1)">Wapas address</button>
+      <button class="rx-cta" onclick="orderPlace()">${_loc("Order confirm karein →", "ऑर्डर कन्फर्म करें →")}</button>
+      <button class="rx-cta secondary" onclick="renderOrderStep(1)">${_loc("Wapas address", "वापस एड्रेस")}</button>
     </div>`;
     el.innerHTML = html;
     return;
@@ -22535,7 +22840,7 @@ function renderOrderStep(step) {
 
   if (step === 3) {
     // Success
-    if (titleEl) titleEl.textContent = "Order ho gaya ✓";
+    if (titleEl) titleEl.textContent = _loc("Order ho gaya ✓", "ऑर्डर हो गया ✓");
     if (subEl) subEl.textContent = "ID: " + (ST.orderData.orderId || "");
     const o = ST.orderData;
     const addrs = loadAddresses();
@@ -22545,21 +22850,21 @@ function renderOrderStep(step) {
       (o.items.reduce((s, it) => s + it.price * it.qty, 0) >= 199 ? 0 : 30);
     let html = `<div class="bz-success">
       <div class="bz-tick">✓</div>
-      <h2>Order confirm ho gaya!</h2>
-      <p>${o.forMember || "Aap"} ke liye ${o.items.length} dawaiyaan pack ho rahi hain</p>
+      <h2>${_loc("Order confirm ho gaya!", "ऑर्डर कन्फर्म हो गया!")}</h2>
+      <p>${o.forMember || "Aap"} ${_loc("ke liye", "के लिए")} ${o.items.length} ${_loc("dawaiyaan pack ho rahi hain", "दवाइयाँ पैक हो रही हैं")}</p>
       <div class="bz-success-id">${o.orderId}</div>
       <div style="background:var(--surface);border-radius:14px;padding:14px;text-align:left;margin-bottom:14px">
-        <div style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px">Delivery</div>
+        <div style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px">${_loc("Delivery", "डिलीवरी")}</div>
         <div style="font-size:13px;font-weight:700">${addr.name} · ${addr.tag}</div>
         <div style="font-size:11px;color:var(--text2);margin-top:3px;line-height:1.45">${addr.line}, ${addr.city} − ${addr.pin}</div>
-        <div style="font-size:13px;color:#22c55e;font-weight:700;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.1)">⏱ Kal shaam tak pohchega · ₹${total} ${o.payment === "cod" ? "(COD)" : o.payment === "upi" ? "(UPI)" : "(Jio Wallet)"}</div>
+        <div style="font-size:13px;color:#22c55e;font-weight:700;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.1)">⏱ ${_loc("Kal shaam tak pohchega", "कल शाम तक पहुँचेगा")} · ₹${total} ${o.payment === "cod" ? "(COD)" : o.payment === "upi" ? "(UPI)" : "(Jio Wallet)"}</div>
       </div>
       <div style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:12px;padding:12px;text-align:left;margin-bottom:14px">
-        <div style="font-size:12px;font-weight:700;color:#25d366;margin-bottom:3px">💬 WhatsApp pe tracking link bhej diya</div>
-        <div style="font-size:11px;color:var(--text2);line-height:1.45">${addr.phone} pe order updates milte rahenge — Hindi mein</div>
+        <div style="font-size:12px;font-weight:700;color:#25d366;margin-bottom:3px">💬 ${_loc("WhatsApp pe tracking link bhej diya", "WhatsApp पे ट्रैकिंग लिंक भेज दिया")}</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.45">${addr.phone} ${_loc("pe order updates milte rahenge — Hindi mein", "पे ऑर्डर अपडेट मिलते रहेंगे — हिंदी में")}</div>
       </div>
-      <button class="rx-cta" onclick="trackOrder('${o.orderId}')">Order track karein →</button>
-      <button class="rx-cta secondary" onclick="goTo('s-hub')">Wapas Sehat Saathi</button>
+      <button class="rx-cta" onclick="trackOrder('${o.orderId}')">${_loc("Order track karein →", "ऑर्डर ट्रैक करें →")}</button>
+      <button class="rx-cta secondary" onclick="goTo('s-hub')">${_loc("Wapas Sehat Saathi", "वापस सेहत साथी")}</button>
     </div>`;
     el.innerHTML = html;
     return;
@@ -22628,11 +22933,11 @@ function orderPlace() {
 }
 
 const ORDER_STAGES = [
-  { name: "Order placed", sub: "Reliance Netmeds ne aapka order receive kiya" },
-  { name: "Confirmed by pharmacy", sub: "Pharmacist ne prescription verify ki" },
-  { name: "Packed", sub: "Dawaiyaan thandi jagah pe pack ho gayi" },
-  { name: "Out for delivery", sub: "Delivery partner aapke ghar ki taraf nikla" },
-  { name: "Delivered", sub: "Order pohch gaya — dawai shuru karein" },
+  { name: "Order placed", sub: "Reliance Netmeds ne aapka order receive kiya", nameL: () => _loc("Order placed", "ऑर्डर दिया गया"), subL: () => _loc("Reliance Netmeds ne aapka order receive kiya", "Reliance Netmeds ने आपका ऑर्डर रिसीव किया") },
+  { name: "Confirmed by pharmacy", sub: "Pharmacist ne prescription verify ki", nameL: () => _loc("Confirmed by pharmacy", "फार्मेसी ने कन्फर्म किया"), subL: () => _loc("Pharmacist ne prescription verify ki", "फार्मासिस्ट ने प्रेस्क्रिप्शन वेरीफाई की") },
+  { name: "Packed", sub: "Dawaiyaan thandi jagah pe pack ho gayi", nameL: () => _loc("Packed", "पैक हो गया"), subL: () => _loc("Dawaiyaan thandi jagah pe pack ho gayi", "दवाइयाँ ठंडी जगह पे पैक हो गईं") },
+  { name: "Out for delivery", sub: "Delivery partner aapke ghar ki taraf nikla", nameL: () => _loc("Out for delivery", "डिलीवरी पर निकला"), subL: () => _loc("Delivery partner aapke ghar ki taraf nikla", "डिलीवरी पार्टनर आपके घर की तरफ निकला") },
+  { name: "Delivered", sub: "Order pohch gaya — dawai shuru karein", nameL: () => _loc("Delivered", "डिलीवर हो गया"), subL: () => _loc("Order pohch gaya — dawai shuru karein", "ऑर्डर पहुँच गया — दवाई शुरू करें") },
 ];
 
 function scheduleOrderProgress(orderId) {
@@ -22681,7 +22986,7 @@ function renderTrack(o) {
     phone: "-",
   };
   const stage = ORDER_STAGES[o.statusIdx] || ORDER_STAGES[0];
-  const eta = o.statusIdx >= 4 ? "Delivered ✓" : "Kal shaam tak pohch jayegi";
+  const eta = o.statusIdx >= 4 ? _loc("Delivered ✓", "डिलीवर हो गया ✓") : _loc("Kal shaam tak pohch jayegi", "कल शाम तक पहुँच जाएगी");
   let timeline = '<div class="bz-tl">';
   ORDER_STAGES.forEach((s, i) => {
     const cls = i < o.statusIdx ? "done" : i === o.statusIdx ? "active" : "";
@@ -22693,13 +22998,13 @@ function renderTrack(o) {
           })
         : "";
     timeline += `<div class="bz-tl-step ${cls}">
-      <div class="bz-tl-name">${s.name}</div>
-      <div class="bz-tl-meta">${s.sub}${time ? " · " + time : ""}</div>
+      <div class="bz-tl-name">${typeof s.nameL === "function" ? s.nameL() : s.name}</div>
+      <div class="bz-tl-meta">${typeof s.subL === "function" ? s.subL() : s.sub}${time ? " · " + time : ""}</div>
     </div>`;
   });
   timeline += "</div>";
   let itemsHtml =
-    '<div style="margin-top:14px"><div class="bz-section-lbl" style="padding:0 0 8px">Order items</div>';
+    `<div style="margin-top:14px"><div class="bz-section-lbl" style="padding:0 0 8px">${_loc("Order items", "ऑर्डर आइटम")}</div>`;
   o.items.forEach((it) => {
     itemsHtml += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.06)">
       <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:16px">${it.emoji || "💊"}</div>
@@ -22712,14 +23017,14 @@ function renderTrack(o) {
   el.innerHTML = `<div class="bz-track">
     <div class="bz-track-summary">
       <div class="bz-track-id">ORDER ${o.id}</div>
-      <div class="bz-track-eta">${stage.name === "Delivered" ? "✓ Delivered" : "<b>" + eta + "</b>"}</div>
+      <div class="bz-track-eta">${stage.name === "Delivered" ? "✓ " + _loc("Delivered", "डिलीवर हो गया") : "<b>" + eta + "</b>"}</div>
       <div class="bz-track-addr">📍 ${addr.tag} · ${addr.line}, ${addr.city} − ${addr.pin}</div>
       <div class="bz-track-addr">📞 ${addr.phone}${o.payment === "cod" ? " · COD ₹" + o.total : ""}</div>
     </div>
     ${timeline}
     ${itemsHtml}
     <div style="margin-top:18px">
-      <button class="rx-cta secondary" onclick="goTo('s-hub')">Wapas Sehat Saathi</button>
+      <button class="rx-cta secondary" onclick="goTo('s-hub')">${_loc("Wapas Sehat Saathi", "वापस सेहत साथी")}</button>
     </div>
   </div>`;
 }
@@ -22734,12 +23039,12 @@ function renderBazaarList() {
   const labCount = Object.values(labReports).reduce((s, arr) => s + (arr ? arr.length : 0), 0);
 
   // ── Active reminders section ──
-  let html = '<div class="bz-section-lbl">Active reminders</div>';
+  let html = `<div class="bz-section-lbl">${_loc("Active reminders", "सक्रिय रिमाइंडर")}</div>`;
   if (!rems.length) {
     html += `<div class="bz-empty">
       <div class="bz-empty-emoji">⏰</div>
-      Abhi koi reminder nahi.<br>Parchi scan karein — auto-set ho jayega.
-      <div style="margin-top:12px"><button class="rx-cta" onclick="startFeature('rx')" style="display:inline-block;width:auto;padding:10px 20px">+ Parchi scan karein</button></div>
+      ${_loc("Abhi koi reminder nahi.", "अभी कोई रिमाइंडर नहीं।")}<br>${_loc("Parchi scan karein — auto-set ho jayega.", "पर्ची स्कैन करें — ऑटो-सेट हो जाएगा।")}
+      <div style="margin-top:12px"><button class="rx-cta" onclick="startFeature('rx')" style="display:inline-block;width:auto;padding:10px 20px">${_loc("+ Parchi scan karein", "+ पर्ची स्कैन करें")}</button></div>
     </div>`;
   } else {
     rems.forEach((r) => {
@@ -22749,32 +23054,32 @@ function renderBazaarList() {
         <div class="bz-list-ic" style="background:rgba(168,85,247,.18);color:#a855f7">💊</div>
         <div class="bz-list-info">
           <div class="bz-list-name">${r.name}${r.strength ? " · " + r.strength : ""}</div>
-          <div class="bz-list-sub">${r.who} · ${r.timing || "-"} · ${Array.isArray(r.times) && r.times.length ? r.times.join(" / ") : (r.time || "-")}<span class="rem-channel-pill ${ch}">${chLabel}</span></div>
+          <div class="bz-list-sub">${r.who} · ${r.timing ? _locTiming(r.timing) : "-"} · ${Array.isArray(r.times) && r.times.length ? r.times.join(" / ") : (r.time || "-")}<span class="rem-channel-pill ${ch}">${chLabel}</span></div>
         </div>
         <button onclick="deleteReminder('${r.id}')" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer">✕</button>
       </div>`;
     });
-    html += `<div style="padding:0 16px 4px"><button class="rx-cta secondary" onclick="startFeature('rx')">+ Naya reminder lagao</button></div>`;
+    html += `<div style="padding:0 16px 4px"><button class="rx-cta secondary" onclick="startFeature('rx')">${_loc("+ Naya reminder lagao", "+ नया रिमाइंडर लगाओ")}</button></div>`;
   }
 
   // ── Orders section ──
-  html += '<div class="bz-section-lbl">Mere orders</div>';
+  html += `<div class="bz-section-lbl">${_loc("Mere orders", "मेरे ऑर्डर")}</div>`;
   if (!orders.length) {
     html += `<div class="bz-empty">
       <div class="bz-empty-emoji">🛒</div>
-      Abhi koi order nahi.<br>Parchi scan karke ghar mangao.
+      ${_loc("Abhi koi order nahi.", "अभी कोई ऑर्डर नहीं।")}<br>${_loc("Parchi scan karke ghar mangao.", "पर्ची स्कैन करके घर मँगाओ।")}
     </div>`;
   } else {
     orders.forEach((o) => {
       const stIdx = o.statusIdx || 0;
       const statusLabel =
         stIdx >= 4
-          ? "Delivered"
+          ? _loc("Delivered", "डिलीवर हो गया")
           : stIdx >= 3
-            ? "Out for Delivery"
+            ? _loc("Out for Delivery", "डिलीवरी पर निकला")
             : stIdx >= 1
-              ? "Packing"
-              : "Placed";
+              ? _loc("Packing", "पैकिंग")
+              : _loc("Placed", "ऑर्डर दिया");
       const cls = stIdx >= 4 ? "delivered" : stIdx >= 3 ? "shipped" : "placed";
       html += `<div class="bz-list-card" onclick="trackOrder('${o.id}')">
         <div class="bz-list-ic" style="background:rgba(251,146,60,.18);color:#fb923c">🛒</div>
@@ -22788,12 +23093,12 @@ function renderBazaarList() {
   }
 
   // ── Lab reports ──
-  html += '<div class="bz-section-lbl">Lab reports</div>';
+  html += `<div class="bz-section-lbl">${_loc("Lab reports", "लैब रिपोर्ट")}</div>`;
   if (labCount === 0) {
     html += `<div class="bz-empty">
       <div class="bz-empty-emoji">🧪</div>
-      Koi lab report save nahi.<br>Photo ya PDF se padhwao.
-      <div style="margin-top:12px"><button class="rx-cta" onclick="startFeature('family')" style="display:inline-block;width:auto;padding:10px 20px">Family Care mein report jodein</button></div>
+      ${_loc("Koi lab report save nahi.", "कोई लैब रिपोर्ट सेव नहीं।")}<br>${_loc("Photo ya PDF se padhwao.", "फोटो या PDF से पढ़वाओ।")}
+      <div style="margin-top:12px"><button class="rx-cta" onclick="startFeature('family')" style="display:inline-block;width:auto;padding:10px 20px">${_loc("Family Care mein report jodein", "Family Care में रिपोर्ट जोड़ें")}</button></div>
     </div>`;
   } else {
     Object.keys(labReports).forEach((memKey) => {
@@ -23311,7 +23616,7 @@ function renderFamilyMember(idx) {
     memRems.forEach((r) => {
       html += `<div class="fc-row">
           <span style="font-weight:600">${r.name}${r.strength ? " · " + r.strength : ""}</span>
-          <span style="color:var(--text2);font-size:11px">${r.timing || "-"} · ${r.time || "-"}</span>
+          <span style="color:var(--text2);font-size:11px">${r.timing ? _locTiming(r.timing) : "-"} · ${r.time || "-"}</span>
         </div>`;
     });
   }
@@ -28451,9 +28756,10 @@ const BREATH_PHASES = [
         const btn = document.createElement("button");
         btn.className = "yt-offer";
         btn.setAttribute("data-ytid", _ytId);
+        const _ytLsKit = typeof locStr === "function" ? locStr : function (r) { return r; };
         btn.innerHTML =
           '<span class="yt-offer-ico">🎬</span>' +
-          '<span>ये वीडियो भी आपको बेहतर महसूस करने में मदद करेगा — देखें</span>';
+          '<span>' + _ytLsKit("Yeh video bhi aapko behtar mehsoos karne mein madad karega — dekhein", "ये वीडियो भी आपको बेहतर महसूस करने में मदद करेगा — देखें") + '</span>';
         btn.onclick = function () { window.ytReveal(btn, _ytId); };
         row.appendChild(btn);
         msgsContainer.scrollTop = msgsContainer.scrollHeight;
@@ -28782,7 +29088,10 @@ const BREATH_PHASES = [
     } catch (e) {}
     // Reuse move-ov player; render an SVG silhouette in the anim slot
     // v4.2: pass tts[] through so TTS reads clean Devanagari (not ambiguous Roman)
-    _moveSkill = { emoji: p.emoji, title: p.title, titleHi: p.titleHi, durSec: 60, steps: p.instr, tts: p.tts };
+    // i18n: translate instr steps via ssT for regional langs (no-op for hi/en).
+    const _ssTacuInstr = typeof window.ssT === "function" ? window.ssT : function (s) { return s; };
+    const _acuInstrSteps = p.instr.map(function (s) { return _ssTacuInstr(s); });
+    _moveSkill = { emoji: p.emoji, title: p.title, titleHi: p.titleHi, durSec: 60, steps: _acuInstrSteps, tts: p.tts };
     _moveStepIdx = 0;
     document.getElementById("move-ov").classList.add("on");
     // i18n: translate acupressure overlay title via ssT.
