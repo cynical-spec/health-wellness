@@ -17415,9 +17415,15 @@ window.toggleLang = toggleLang;
   let _vpCurrentAudio = null;
 
   function openVoicePicker() {
-    // v5.5.3: validate against bulbul:v2 allowlist (older "kavitha" default
-    // returns HTTP 400 on every TTS call). _validSarvamSpeaker handles clearing
-    // stale prefs and falling back to manisha.
+    // PILOT: voice-picker modal temporarily DISABLED. The in-modal voice choices
+    // and the dev-only "paste ElevenLabs key" affordance are confusing for end
+    // users, so we don't open it. We still normalize the saved speaker against
+    // the bulbul:v2 allowlist (older "kavitha" default returns HTTP 400 on every
+    // TTS call) so TTS keeps a valid default (manisha).
+    // To RE-ENABLE later: remove the early return and restore the two lines below.
+    if (typeof _validSarvamSpeaker === "function") _validSarvamSpeaker();
+    return;
+    // eslint-disable-next-line no-unreachable
     _vpSelected = typeof _validSarvamSpeaker === "function" ? _validSarvamSpeaker() : "manisha";
     renderVoicePickerList();
     document.getElementById("voice-picker-ov").classList.add("on");
