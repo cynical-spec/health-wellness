@@ -9743,6 +9743,66 @@ function t(key) {
   return key;
 }
 
+// ── tInterp(key, vars) ────────────────────────────────────────────────────────
+// Interpolate-then-translate. Replaces every {token} placeholder in the source
+// template with its concrete value BEFORE the string ever reaches ssT(), so no
+// brace-token survives into the translation engine.
+//
+// vars  — plain object, e.g. { N: 9 } or { name: "Priya" }.
+//         Every key whose name matches a {token} in the template is substituted.
+//         Substitution is global (all occurrences, not just the first).
+//
+// Source template selection by language:
+//   hi          → LANG[key].hi
+//   en          → LANG[key].en  (falls back to .hi if .en is absent)
+//   bn/ta/te/kn → LANG[key].hi  (Devanagari is the translation source)
+//   (any)       → key string itself if the LANG entry is missing
+//
+// Return value:
+//   hi          → interpolated Hindi string (no translation)
+//   en          → interpolated English string (no translation)
+//   bn/ta/te/kn → ssT(interpolatedHindi) || interpolatedHindi
+//                 ssT is synchronous and returns the Hindi fallback if the
+//                 translation is not yet cached — placeholders are already gone
+//                 at this point so digits/names survive cleanly.
+function tInterp(key, vars) {
+  const lang = _currentLang;
+  const isRegional = (lang === "bn" || lang === "ta" || lang === "te" || lang === "kn");
+
+  const entry = LANG[key] || LANG_NATIVE[key];
+
+  // Pick the right source template.
+  let template;
+  if (!entry) {
+    template = key; // missing entry — degrade gracefully
+  } else if (lang === "hi") {
+    template = entry.hi || key;
+  } else if (lang === "en") {
+    template = entry.en || entry.hi || key;
+  } else {
+    // bn / ta / te / kn: translate from Hindi source.
+    template = entry.hi || key;
+  }
+
+  // Replace every {token} with its concrete value (global, all occurrences).
+  if (vars && typeof vars === "object") {
+    for (const name of Object.keys(vars)) {
+      const token = "{" + name + "}";
+      const value = String(vars[name]);
+      // Replace all occurrences — String.prototype.split/join is safe and fast.
+      template = template.split(token).join(value);
+    }
+  }
+
+  // For regional languages: machine-translate the now-interpolated Hindi text.
+  if (isRegional) {
+    return ssT(template) || template;
+  }
+
+  // hi and en: already the correct interpolated string.
+  return template;
+}
+
 // ── applyLanguage() ───────────────────────────────────────────────────────────
 // Walk every [data-i18n] node and rewrite its content using t().
 // Idempotent — safe to call after any language change.
@@ -9940,6 +10000,7 @@ function locStr(roman, deva) {
 
 // Expose for JSX/HTML callers
 window.t = t;
+window.tInterp = tInterp;
 window.LANG = LANG;
 window.LANG_NATIVE = LANG_NATIVE;
 window.LANG_OPTIONS = LANG_OPTIONS;
@@ -11424,7 +11485,7 @@ function renderOnboardStep(step) {
   if (step === 4) {
     const nameStr = d.name ? _obEscape(d.name) : "";
     const greet = nameStr
-      ? t("ob_done_greeting_named").replace("{name}", nameStr)
+      ? tInterp("ob_done_greeting_named", { name: nameStr })
       : t("ob_done_greeting");
     _obCard({
       icon: "✨",
@@ -12120,7 +12181,7 @@ function getWarmGreeting(tod, name) {
     const streak = store.streak || 0;
     if (streak > 1) {
       // e.g. "लगातार 3 दिन — बढ़िया! 🌿"
-      extra = t("warm_streak_ribbon").replace("{N}", String(streak));
+      extra = tInterp("warm_streak_ribbon", { N: streak });
     } else {
       // Soft recent concern: most recent entry with any outcome
       const recent = store.entries && store.entries.length
@@ -23595,7 +23656,7 @@ function renderFamilyMember(idx) {
 
       <!-- Wellbeing Check-in -->
       <div class="fc-section">
-        <div class="fc-section-title">${(_fct("fc_checkin_q_member") || "{name} aaj kaise hain?").replace("{name}", m.name)}</div>
+        <div class="fc-section-title">${tInterp("fc_checkin_q_member", { name: m.name })}</div>
         <div class="fc-row-sub" style="font-size:11px;color:var(--text3);margin-bottom:10px">${_fct("fc_checkin_hint") || "Jaisa aap dekh rahe hain waisa bharein"}</div>
         <div class="fc-checkin">
           <button class="fc-checkin-chip ok${wb && wb.status === "ok" ? " selected" : ""}" onclick="fcCheckin(${idx},'ok')">${_fct("fc_status_ok")}</button>
