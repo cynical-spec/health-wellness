@@ -18005,9 +18005,14 @@ window.toggleLang = toggleLang;
       const _expObj =
         (typeof REMEDY_EXPERIENCES !== "undefined" && REMEDY_EXPERIENCES[_experienceKey]) || null;
 
-      const _ctaLabel = (typeof locStr === "function")
+      // FIX 2 (site 2): for machine languages (bn/ta/te/kn) translate CTA label via ssT.
+      // ssT is a no-op for hi and en, so existing behaviour for those is unchanged.
+      let _ctaLabel = (typeof locStr === "function")
         ? locStr("Chalo, main aapke saath karti hoon →", "चलो, मैं आपके साथ करती हूँ →")
         : "Chalo, main aapke saath karti hoon →";
+      if (typeof getLang === "function" && getLang() !== "hi" && getLang() !== "en") {
+        _ctaLabel = (typeof window.ssT === "function" && window.ssT("चलो, मैं आपके साथ करती हूँ →")) || _ctaLabel;
+      }
 
       const cta = document.createElement("button");
       cta.className = "remedy-cta";
@@ -18017,9 +18022,14 @@ window.toggleLang = toggleLang;
         if (typeof openWalkthrough === "function") openWalkthrough(_experienceKey);
       };
       const _icon  = (_expObj && _expObj.kindIcon) || "🌿";
-      const _title = (typeof getLang === "function" && getLang() === "en" && _expObj && _expObj.titleEn)
+      // FIX 3 (site 1 of 2): for machine languages translate titleHi via ssT.
+      // hi keeps raw titleHi; en keeps titleEn.
+      const _triageLang = typeof getLang === "function" ? getLang() : "hi";
+      const _title = (_triageLang === "en" && _expObj && _expObj.titleEn)
         ? _expObj.titleEn
-        : ((_expObj && _expObj.titleHi) || _experienceKey);
+        : (_triageLang !== "hi" && _triageLang !== "en" && _expObj && _expObj.titleHi)
+          ? ((typeof window.ssT === "function" && window.ssT(_expObj.titleHi)) || _expObj.titleHi)
+          : ((_expObj && _expObj.titleHi) || _experienceKey);
       cta.innerHTML =
         '<div class="remedy-cta-emoji">' + _icon + "</div>" +
         '<div class="remedy-cta-text">' +
@@ -18068,6 +18078,25 @@ window.toggleLang = toggleLang;
       }
       // Generic followup chips used by the triage
       _stringsToWarm.push("Aur batao", "Iske baare mein aur", "Doctor se kab milein?");
+
+      // FIX 4: also prewarm strings that appear in _finalizeTriageInChat / companion
+      // card so they are cached by the time the ack bubble and CTA render.
+      // HI_ACK for this symptom — machine-language ack source
+      if (typeof HI_ACK !== "undefined" && HI_ACK[key]) {
+        _stringsToWarm.push(HI_ACK[key]);
+      } else {
+        _stringsToWarm.push("समझ गई — बताने के लिए शुक्रिया। चलिए इसे साथ में ठीक करते हैं।");
+      }
+      // CTA label Devanagari source
+      _stringsToWarm.push("चलो, मैं आपके साथ करती हूँ →");
+      // Skip-question label Devanagari source (rendered in _renderNextTriageQuestion)
+      _stringsToWarm.push("स्किप — साथी चुनेगा");
+      // Resolved remedy titleHi — look up from REMEDY_EXPERIENCES via the triage map
+      const _expKeyForWarm = (typeof _TRIAGE_EXPERIENCE_MAP !== "undefined" && _TRIAGE_EXPERIENCE_MAP[key]) || "general-care";
+      const _expObjForWarm =
+        (typeof REMEDY_EXPERIENCES !== "undefined" && REMEDY_EXPERIENCES[_expKeyForWarm]) || null;
+      if (_expObjForWarm && _expObjForWarm.titleHi) _stringsToWarm.push(_expObjForWarm.titleHi);
+
       try { await window.ssPrewarm(_stringsToWarm); } catch (e) {}
     }
 
@@ -18526,9 +18555,14 @@ window.toggleLang = toggleLang;
 
           // Determine current UI language for CTA label — route through locStr so
           // English gets the authored EN_OVERRIDES value, never raw Hinglish.
-          const _ctaLabel = (typeof locStr === "function")
+          // FIX 2 (site 1): for machine languages (bn/ta/te/kn) translate via ssT.
+          // ssT is a no-op for hi and en, so their existing behaviour is unchanged.
+          let _ctaLabel = (typeof locStr === "function")
             ? locStr("Chalo, main aapke saath karti hoon →", "चलो, मैं आपके साथ करती हूँ →")
             : "Chalo, main aapke saath karti hoon →";
+          if (typeof getLang === "function" && getLang() !== "hi" && getLang() !== "en") {
+            _ctaLabel = (typeof window.ssT === "function" && window.ssT("चलो, मैं आपके साथ करती हूँ →")) || _ctaLabel;
+          }
 
           setTimeout(function () {
             const msgs = document.getElementById("chat-msgs");
@@ -18546,9 +18580,14 @@ window.toggleLang = toggleLang;
               }
             };
             const _icon = (_expObj && _expObj.kindIcon) || "🌿";
-            const _titleHi = (typeof getLang === "function" && getLang() === "en" && _expObj && _expObj.titleEn)
+            // FIX 3 (site 2 of 2): for machine languages translate titleHi via ssT.
+            // hi keeps raw titleHi; en keeps titleEn.
+            const _expLang = typeof getLang === "function" ? getLang() : "hi";
+            const _titleHi = (_expLang === "en" && _expObj && _expObj.titleEn)
               ? _expObj.titleEn
-              : ((_expObj && _expObj.titleHi) || _experienceKey);
+              : (_expLang !== "hi" && _expLang !== "en" && _expObj && _expObj.titleHi)
+                ? ((typeof window.ssT === "function" && window.ssT(_expObj.titleHi)) || _expObj.titleHi)
+                : ((_expObj && _expObj.titleHi) || _experienceKey);
             cta.innerHTML =
               '<div class="remedy-cta-emoji">' + _icon + "</div>" +
               '<div class="remedy-cta-text">' +
@@ -18576,9 +18615,13 @@ window.toggleLang = toggleLang;
                 if (typeof openWalkthrough === "function") openWalkthrough(_experienceKey);
               };
               const _icon2 = (_expObj && _expObj.kindIcon) || "🌿";
-              const _titleHi2 = (typeof getLang === "function" && getLang() === "en" && _expObj && _expObj.titleEn)
+              // Voice overlay: same fix — machine languages get ssT-translated sub-label
+              const _expLang2 = typeof getLang === "function" ? getLang() : "hi";
+              const _titleHi2 = (_expLang2 === "en" && _expObj && _expObj.titleEn)
                 ? _expObj.titleEn
-                : ((_expObj && _expObj.titleHi) || _experienceKey);
+                : (_expLang2 !== "hi" && _expLang2 !== "en" && _expObj && _expObj.titleHi)
+                  ? ((typeof window.ssT === "function" && window.ssT(_expObj.titleHi)) || _expObj.titleHi)
+                  : ((_expObj && _expObj.titleHi) || _experienceKey);
               vtaCta.innerHTML =
                 '<div class="remedy-cta-emoji">' + _icon2 + "</div>" +
                 '<div class="remedy-cta-text">' +
@@ -30741,7 +30784,12 @@ const BREATH_PHASES = [
         if (msgs.querySelector('[data-experience-key="' + _experienceKey + '"]')) return;
         const _expObj =
           (typeof REMEDY_EXPERIENCES !== "undefined" && REMEDY_EXPERIENCES[_experienceKey]) || null;
-        const _ctaLabel = _locStr("Chalo, main aapke saath karti hoon →", "चलो, मैं आपके साथ करती हूँ →");
+        // FIX 2 (site 3): for machine languages (bn/ta/te/kn) translate the CTA label
+        // via ssT from clean Devanagari source. ssT is a no-op for hi and en.
+        let _ctaLabel = _locStr("Chalo, main aapke saath karti hoon →", "चलो, मैं आपके साथ करती हूँ →");
+        if (typeof getLang === "function" && getLang() !== "hi" && getLang() !== "en") {
+          _ctaLabel = (typeof window.ssT === "function" && window.ssT("चलो, मैं आपके साथ करती हूँ →")) || _ctaLabel;
+        }
         const cta = document.createElement("button");
         cta.className = "remedy-cta";
         cta.setAttribute("data-experience-key", _experienceKey);
@@ -30750,7 +30798,14 @@ const BREATH_PHASES = [
           if (typeof openWalkthrough === "function") openWalkthrough(_experienceKey);
         };
         const _icon  = (_expObj && _expObj.kindIcon) || "🌿";
-        const _title = (_expObj && _expObj.titleHi)  || _experienceKey;
+        // FIX 3 (site in file 14): for machine languages translate titleHi via ssT;
+        // hi keeps raw titleHi; en keeps titleEn.
+        const _lang14 = typeof getLang === "function" ? getLang() : "hi";
+        const _title = (_lang14 === "en" && _expObj && _expObj.titleEn)
+          ? _expObj.titleEn
+          : (_lang14 !== "hi" && _lang14 !== "en" && _expObj && _expObj.titleHi)
+            ? ((typeof window.ssT === "function" && window.ssT(_expObj.titleHi)) || _expObj.titleHi)
+            : ((_expObj && _expObj.titleHi) || _experienceKey);
         cta.innerHTML =
           '<div class="remedy-cta-emoji">' + _icon + "</div>" +
           '<div class="remedy-cta-text">' +
@@ -30781,12 +30836,33 @@ const BREATH_PHASES = [
     "neend":       "Got it — trouble sleeping. This is very common, and it can get better. Let's work on it gently together.",
   };
 
+  // Clean Devanagari ack strings for machine-translation languages (bn/ta/te/kn).
+  // No answer interpolation — these are fed to ssT() as clean source text so the
+  // MT engine sees a well-formed Hindi sentence rather than Hinglish fragments.
+  const HI_ACK = {
+    "sir-dard":    "समझ गई — सिर दर्द। यह अक्सर तनाव या पानी की कमी से होता है, इसलिए चिंता न करें। चलिए इसे साथ में ठीक करते हैं।",
+    "sardi-khansi":"समझ गई — सर्दी-खाँसी। यह आमतौर पर गर्माहट और आराम से ठीक हो जाती है। चलिए इसे साथ में संभालते हैं।",
+    "pet":         "समझ गई — पेट की तकलीफ़। पेट को शांत करने पर यह आमतौर पर ठीक हो जाती है। चलिए इसे साथ में ठीक करते हैं।",
+    "bukhar":      "समझ गई — बुखार। ज़्यादातर बुखार आराम और पानी पीने से उतर जाता है। चलिए इस पर साथ में नज़र रखते हैं।",
+    "kamar-dard":  "समझ गई — कमर दर्द। यह अक्सर हल्की हरकत और आराम से ठीक हो जाता है। चलिए इस पर साथ में काम करते हैं।",
+    "tension":     "समझ गई — आप तनाव महसूस कर रहे हैं। यह ठीक है, और आप अकेले नहीं हैं। चलिए धीरे-धीरे इसे साथ में शांत करते हैं।",
+    "neend":       "समझ गई — नींद की दिक्कत। यह बहुत आम है और ठीक हो सकती है। चलिए इसे धीरे-धीरे साथ में सुलझाते हैं।",
+  };
+
   // Returns an instant, answer-aware warm line per symptom.
   // Weaves in their actual answer labels without ever being blank.
   function _warmAckTemplate(symptom, answers) {
     // English: return a clean authored sentence — never interpolate Hinglish labels.
     if (typeof getLang === "function" && getLang() === "en") {
       return EN_ACK[symptom] || "Got it — thank you for telling me. Let's take care of this together.";
+    }
+    // Machine-translation languages (bn/ta/te/kn): translate a clean Devanagari
+    // source via ssT so the MT engine sees proper Hindi, not Hinglish fragments.
+    // ssT is a synchronous cache hit after ssPrewarm ran in maybeAppendGuidedCta.
+    // ssT is a no-op for hi and en, so this branch only activates for bn/ta/te/kn.
+    if (typeof getLang === "function" && getLang() !== "hi") {
+      const _hiAckSrc = HI_ACK[symptom] || "समझ गई — बताने के लिए शुक्रिया। चलिए इसे साथ में ठीक करते हैं।";
+      return (typeof window.ssT === "function" ? window.ssT(_hiAckSrc) : null) || _hiAckSrc;
     }
     const a = answers || {};
     switch (symptom) {
