@@ -18878,6 +18878,43 @@ window.toggleLang = toggleLang;
         // Push clean reply (without OPTIONS/EXPERIENCE lines) into chat history so
         // subsequent turns see natural conversation, not control syntax.
         ST.chatHistory.push({ role: "assistant", content: cleanReply });
+
+        // ── LANGUAGE-COMPLIANCE GUARD (regional langs only) ──────────────────
+        // If the LLM ignored the language directive and replied in Hindi/Devanagari
+        // or a Latin/Hinglish run when the user selected bn/ta/te/kn, translate
+        // cleanReply to the target script before it reaches addMsg or speak.
+        // hi and en: _scriptRe[_gLang] is undefined → whole block is skipped,
+        // zero cost, zero change for those languages.
+        // Never throws, never hangs — any failure silently keeps the original text.
+        {
+          const _gLang = (typeof getLang === "function") ? getLang() : "hi";
+          const _scriptRe = {
+            bn: /[ঀ-৿]/,   // Bengali
+            ta: /[஀-௿]/,   // Tamil
+            te: /[ఀ-౿]/,   // Telugu
+            kn: /[ಀ-೿]/,   // Kannada
+          };
+          const _re = _scriptRe[_gLang];
+          if (_re && cleanReply) {
+            const _hasTarget = _re.test(cleanReply);
+            const _hasDeva   = /[ऀ-ॿ]/.test(cleanReply);   // Hindi/Devanagari
+            const _hasLatin  = /[A-Za-z]{4,}/.test(cleanReply); // English/Hinglish run
+            if (!_hasTarget && (_hasDeva || _hasLatin)) {
+              // Wrong language slipped through — translate to the selected language.
+              // ssPrewarm fetches+caches the string; ssT returns cached translation sync.
+              try {
+                if (typeof window.ssPrewarm === "function") await window.ssPrewarm([cleanReply]);
+                if (typeof window.ssT === "function") cleanReply = window.ssT(cleanReply) || cleanReply;
+                // Update the history entry that was just pushed with the corrected text.
+                if (ST.chatHistory.length > 0) {
+                  ST.chatHistory[ST.chatHistory.length - 1].content = cleanReply;
+                }
+              } catch (e) { /* keep original on any failure — never block */ }
+            }
+          }
+        }
+        // ── /LANGUAGE-COMPLIANCE GUARD ───────────────────────────────────────
+
         hideThinking();
 
         // v7.1: set/clear suppression flag BEFORE addMsg so the timers inside
