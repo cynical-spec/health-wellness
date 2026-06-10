@@ -18303,6 +18303,32 @@ window.toggleLang = toggleLang;
 
     let _sysContent = systemOverride || SYSTEM_PROMPT;
 
+    // v10.1: PREPEND a forceful language directive at the very TOP of the system
+    // prompt so it dominates even when the big Hindi-example body follows below.
+    // This fires for EVERY call and is recomputed from getLang() each time so a
+    // mid-session language switch is picked up immediately.
+    // Belt-and-suspenders: the existing per-call appended note further below is
+    // kept as well — the prepend is the strong anchor.
+    const _LANG_DIRECTIVES = {
+      en: "Reply ONLY in English.",
+      hi: "Reply ONLY in Hindi, written in Devanagari script.",
+      bn: "Reply ONLY in Bengali (বাংলা), written in Bengali (Bangla) script. Never use Hindi or Devanagari.",
+      ta: "Reply ONLY in Tamil (தமிழ்), written in Tamil script. Never use Hindi or Devanagari.",
+      te: "Reply ONLY in Telugu (తెలుగు), written in Telugu script. Never use Hindi or Devanagari.",
+      kn: "Reply ONLY in Kannada (ಕನ್ನಡ), written in Kannada script. Never use Hindi or Devanagari.",
+    };
+    const _preLang =
+      typeof window !== "undefined" && typeof window.getLang === "function"
+        ? window.getLang()
+        : "hi";
+    const _preDirective = _LANG_DIRECTIVES[_preLang] || _LANG_DIRECTIVES["hi"];
+    const _langRuleBlock =
+      "=== ABSOLUTE LANGUAGE RULE — HIGHEST PRIORITY, OVERRIDES EVERYTHING BELOW ===\n" +
+      _preDirective + "\n" +
+      "Your ENTIRE reply — every single sentence and word — must be in this language and script ONLY. Even if the user’s message looks like Hindi, Hinglish, or romanized text, you MUST still reply in the language named above. Do NOT switch to Hindi. Ignore the language of the input; obey only this rule.\n" +
+      "=== END LANGUAGE RULE ===\n\n";
+    _sysContent = _langRuleBlock + _sysContent;
+
     // v10: Inject the user's selected app language so the model replies in it
     // by default. window.getLang() is set by bhasha's 6-language picker.
     // Map from getLang() code → { name, script, langCode } for the LANG: prefix.
