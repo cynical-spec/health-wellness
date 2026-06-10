@@ -17600,7 +17600,7 @@ window.toggleLang = toggleLang;
     const t = text.toLowerCase();
     if (/tension|ghabrahat|chinta|anxiety|stress|darr|घबराहट|तनाव|fikar|pareshan/.test(t))
       return "breathe";
-    if (/(sir dard|headache|migrain|matha|माथा|सिर दर्द)/.test(t)) return "pressure";
+    if (/(sir dard|headache|migrain|matha|माथा|सिर दर्द)/.test(t)) return "breathe";
     if (/(badan|muscles|akadna|kamar|पीठ|कमर|बदन|dard|body ache|jodo)/.test(t) && !/chest/.test(t))
       return "stretch";
     return null;
@@ -17641,12 +17641,6 @@ window.toggleLang = toggleLang;
       action: () => {
         goTo("s-breathwork");
       },
-    },
-    pressure: {
-      icon: iconSvg("health_conditions", 24, "#fff"),
-      title: "Pressure Points for Headache",
-      sub: "3 points jo sir dard mein help karte hain",
-      action: showPressureGuide,
     },
     stretch: {
       icon: iconSvg("yoga", 24, "#fff"),
