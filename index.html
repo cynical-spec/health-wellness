@@ -17754,7 +17754,7 @@ window.toggleLang = toggleLang;
       // v7.1: also suppress when EXPERIENCE: contract fired this turn —
       // callAI already rendered the single companion entry; no competing cards.
       if (ST.chatCtx === "nushke" || ST.chatCtx === "wellness") {
-        const _suppressRemedy = (ST._symptomTurnSeen === 1) || !!ST._experienceShownThisTurn;
+        const _suppressRemedy = !!_activeTriage || !!ST._experienceShownThisTurn;
         if (!_suppressRemedy) {
           setTimeout(() => injectRemedyCard(text, msgs), 800);
           setTimeout(() => injectAcupressureCard(text, msgs), 950);
